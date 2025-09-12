@@ -1,0 +1,153 @@
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+  AuthError as FirebaseAuthError,
+} from "firebase/auth";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "./api/firebase";
+import { User, SignUpData, LoginData, AuthError } from "./types";
+
+// 아이디를 이메일로 변환하는 함수
+const usernameToEmail = (username: string): string => {
+  return `${username}@connectone.local`;
+};
+
+// 에러 코드를 한국어 메시지로 변환
+const getErrorMessage = (error: FirebaseAuthError): string => {
+  switch (error.code) {
+    case "auth/email-already-in-use":
+      return "이미 사용 중인 아이디입니다.";
+    case "auth/weak-password":
+      return "비밀번호는 8자 이상이어야 하며 특수문자를 포함해야 합니다.";
+    case "auth/invalid-email":
+      return "유효하지 않은 아이디 형식입니다.";
+    case "auth/user-not-found":
+      return "등록되지 않은 아이디입니다.";
+    case "auth/wrong-password":
+      return "잘못된 비밀번호입니다.";
+    case "auth/invalid-credential":
+      return "아이디 또는 비밀번호가 올바르지 않습니다.";
+    case "auth/too-many-requests":
+      return "너무 많은 시도로 인해 일시적으로 차단되었습니다. 잠시 후 다시 시도해주세요.";
+    default:
+      return "인증 중 오류가 발생했습니다.";
+  }
+};
+
+// 회원가입
+export const signUp = async (data: SignUpData): Promise<User> => {
+  try {
+    // 아이디를 이메일로 변환
+    const email = usernameToEmail(data.username);
+
+    // Firebase Auth로 사용자 생성
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      data.password
+    );
+
+    const firebaseUser = userCredential.user;
+
+    // Firestore에 사용자 프로필 생성
+    const userData: Omit<User, "createdAt" | "updatedAt"> = {
+      uid: firebaseUser.uid,
+      username: data.username,
+      nickname: data.nickname,
+      region: data.region,
+      grade: "C",
+      tradesCount: 0,
+      reviewsCount: 0,
+    };
+
+    await setDoc(doc(db, "users", firebaseUser.uid), {
+      ...userData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    return {
+      ...userData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  } catch (error) {
+    const authError = error as FirebaseAuthError;
+    throw new Error(getErrorMessage(authError));
+  }
+};
+
+// 로그인
+export const signIn = async (data: LoginData): Promise<FirebaseUser> => {
+  try {
+    // 아이디를 이메일로 변환
+    const email = usernameToEmail(data.username);
+
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      data.password
+    );
+    return userCredential.user;
+  } catch (error) {
+    const authError = error as FirebaseAuthError;
+    throw new Error(getErrorMessage(authError));
+  }
+};
+
+// 로그아웃
+export const logout = async (): Promise<void> => {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    const authError = error as FirebaseAuthError;
+    throw new Error(getErrorMessage(authError));
+  }
+};
+
+// 사용자 프로필 가져오기
+export const getUserProfile = async (uid: string): Promise<User | null> => {
+  try {
+    console.log("getUserProfile 호출:", uid);
+    const userDoc = await getDoc(doc(db, "users", uid));
+    console.log("Firestore 문서 존재 여부:", userDoc.exists());
+
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      console.log("Firestore 사용자 데이터:", data);
+      const userData = {
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+      } as User;
+      console.log("변환된 사용자 데이터:", userData);
+      return userData;
+    }
+    console.log("Firestore에 사용자 문서가 존재하지 않음");
+    return null;
+  } catch (error) {
+    console.error("Error getting user profile:", error);
+    return null;
+  }
+};
+
+// Firebase User를 User 타입으로 변환
+export const mapFirebaseUser = (firebaseUser: FirebaseUser): User => {
+  // 이메일에서 아이디 추출
+  const username = firebaseUser.email?.replace("@connectone.local", "") || "";
+
+  return {
+    uid: firebaseUser.uid,
+    username: username,
+    nickname: firebaseUser.displayName || "",
+    region: "",
+    grade: "C",
+    tradesCount: 0,
+    reviewsCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+};

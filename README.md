@@ -1,172 +1,297 @@
-# ConnecTone - 중고 악기 거래 플랫폼
+# 🎵 ConnecTone - 중고 악기 거래 플랫폼
 
-Next.js 15와 Firebase를 사용한 중고 악기 거래 플랫폼입니다.
+안전하고 신뢰할 수 있는 중고 악기 거래 플랫폼입니다. 피아노, 기타, 드럼, 바이올린 등 다양한 악기를 거래할 수 있습니다.
 
-## 🚀 주요 기능
+## ✨ 주요 기능
 
-- **사용자 인증**: Firebase Auth (이메일/비밀번호, SMS 인증)
-- **상품 관리**: 악기 등록, 검색, 필터링, 정렬
-- **실시간 채팅**: 1:1 채팅 및 공개 Q&A
-- **안전결제**: 에스크로 시스템 (플레이스홀더)
-- **AI 이미지 분석**: Google Cloud Vision API로 브랜드/모델 자동 인식
-- **AI 상태 평가**: Roboflow/YOLOv8로 악기 외관 상태 자동 분석
-- **반응형 디자인**: 모바일/데스크톱 최적화
+### 🎯 핵심 기능
 
-## 🛠 기술 스택
+- **사용자 인증**: 이메일/SMS 인증, 등급 시스템 (C~B)
+- **상품 등록**: AI 이미지 분석, 상태 평가, 카테고리 분류
+- **검색/필터**: 키워드, 카테고리, 지역, 가격 범위 필터
+- **실시간 채팅**: 1:1 채팅, 공개 Q&A
+- **안전결제**: PG사 연동, 에스크로 시스템
+- **운송 서비스**: 대형 악기 운송 견적/주문
 
-- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
-- **Backend**: Firebase (Firestore, Storage, Auth)
-- **AI**: Google Cloud Vision API, Roboflow/YOLOv8 (준비됨)
-- **State Management**: Zustand, React Query
-- **Form**: React Hook Form, Zod
-- **UI**: Lucide React, Custom Components
+### 🤖 AI 기능
+
+- **Google Vision API**: 브랜드/모델 자동 인식
+- **Roboflow/YOLOv8**: 악기 상태 평가 (스크래치, 덴트 등)
+- **자동 태깅**: 감정 분석, 보증 라벨
+
+### 📧 알림 시스템
+
+- **이메일 알림**: 거래/채팅/질문/결제 상태
+- **템플릿 3종**: 신규메시지, 거래진행, 운송견적
+- **PWA 준비**: 웹푸시, FCM 푸시 (향후)
+
+### 🛡️ 관리자 기능
+
+- **신고 관리**: 사용자/상품/메시지 신고 처리
+- **분쟁 처리**: 거래 분쟁 조사/해결
+- **사용자 관리**: 정지/해제, 등급 관리
+- **매물 관리**: 숨김/노출, 라벨 부여
+
+## 🚀 기술 스택
+
+### Frontend
+
+- **Next.js 15** (App Router, TypeScript)
+- **Tailwind CSS** (스타일링)
+- **Zustand** (상태 관리)
+- **React Query** (서버 상태 관리)
+- **React Hook Form + Zod** (폼 관리)
+
+### Backend
+
+- **Firebase** (Authentication, Firestore, Storage)
+- **Next.js API Routes** (서버리스 API)
+- **Google Cloud Vision API** (이미지 분석)
+
+## 🔧 환경 설정
+
+### Firebase 설정
+
+1. [Firebase Console](https://console.firebase.google.com/)에서 새 프로젝트 생성
+2. Authentication에서 이메일/비밀번호 인증 활성화
+3. Firestore Database 생성
+4. Storage 버킷 생성
+5. 프로젝트 설정 > 일반 > 웹 앱에서 설정 정보 복사
+
+### 환경변수 설정
+
+`.env.local` 파일을 생성하고 다음 내용을 추가하세요:
+
+```bash
+# Firebase Configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# Firebase Admin SDK (서버 사이드용)
+FIREBASE_ADMIN_PRIVATE_KEY=your_private_key
+FIREBASE_ADMIN_CLIENT_EMAIL=your_client_email
+```
+
+### AI/ML
+
+- **Google Vision API** (브랜드/모델 인식)
+- **Roboflow/YOLOv8** (상태 평가, 준비됨)
+
+### 배포/인프라
+
+- **Vercel** (호스팅)
+- **Cloudinary** (이미지 CDN)
+- **Sentry** (오류 로깅)
+- **GA4/PostHog** (분석)
 
 ## 📦 설치 및 실행
 
 ### 1. 저장소 클론
 
 ```bash
-git clone <repository-url>
-cd connectone
+git clone https://github.com/your-username/connetone.git
+cd connetone
 ```
 
 ### 2. 의존성 설치
 
 ```bash
 npm install
+# 또는
+yarn install
 ```
 
-### 3. 환경 변수 설정
+### 3. 환경변수 설정
 
-`.env.local` 파일을 생성하고 다음 내용을 추가하세요:
+```bash
+# 환경변수 파일 복사
+cp env.example .env.local
 
-```env
-# Firebase Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
-
-# Google Cloud Vision API
-GOOGLE_APPLICATION_CREDENTIALS=./lib/config/connetone-f7c505e1a75c.json
-GOOGLE_CLOUD_PROJECT_ID=connetone
-VISION_API_ENDPOINT=https://vision.googleapis.com/v1/images:annotate
-
-# API Configuration
-NEXT_PUBLIC_API_BASE_URL=/api
-
-# Development
-NODE_ENV=development
+# .env.local 파일 편집
+# Firebase, Google Cloud, 기타 API 키 설정
 ```
 
-### 4. Google Cloud 서비스 계정 키 설정
-
-1. Google Cloud Console에서 서비스 계정 키를 다운로드
-2. `lib/config/` 폴더에 `connetone-f7c505e1a75c.json` 파일로 저장
-3. Vision API가 활성화되어 있는지 확인
-
-### 5. 개발 서버 실행
+### 4. 개발 서버 실행
 
 ```bash
 npm run dev
+# 또는
+yarn dev
 ```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인하세요.
 
-## 🔧 Google Cloud Vision API 설정
+## 🔧 환경변수 설정
 
-### 1. Google Cloud Console 설정
-
-1. [Google Cloud Console](https://console.cloud.google.com/)에 접속
-2. 새 프로젝트 생성 또는 기존 프로젝트 선택
-3. Vision API 활성화
-4. 서비스 계정 생성 및 키 다운로드
-
-### 2. 서비스 계정 권한
-
-서비스 계정에 다음 권한이 필요합니다:
-
-- Cloud Vision API 사용자
-- Firestore 사용자 (선택사항)
-
-### 3. 환경 변수 설정
+### 필수 환경변수
 
 ```env
-GOOGLE_APPLICATION_CREDENTIALS=./lib/config/your-service-account-key.json
-GOOGLE_CLOUD_PROJECT_ID=your-project-id
+# Firebase 설정
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
+
+# Google Cloud Vision API
+GOOGLE_APPLICATION_CREDENTIALS=./lib/config/firebase-service-account.json
+GOOGLE_CLOUD_PROJECT_ID=your_project_id
+
+# 이메일 서비스
+EMAIL_API_KEY=SG.your_sendgrid_api_key
+FROM_EMAIL=noreply@connetone.com
 ```
 
-## 📁 프로젝트 구조
+### 선택적 환경변수
+
+```env
+# 분석 및 모니터링
+SENTRY_DSN=https://your_sentry_dsn@sentry.io/project_id
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+NEXT_PUBLIC_POSTHOG_KEY=phc_your_posthog_key
+
+# CDN 및 이미지 최적화
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+```
+
+자세한 환경변수 설정은 [env.example](env.example) 파일을 참고하세요.
+
+## 🏗️ 프로젝트 구조
 
 ```
-connectone/
+connetone/
 ├── app/                    # Next.js App Router
-│   ├── (auth)/            # 인증 관련 페이지
-│   ├── api/               # API 라우트
-│   │   ├── transactions/  # 결제 API
-│   │   └── vision/        # Vision API
-│   ├── chat/              # 채팅 페이지
-│   ├── item/              # 상품 상세 페이지
-│   ├── list/              # 상품 목록 페이지
+│   ├── api/               # API Routes
+│   ├── auth/              # 인증 페이지
+│   ├── admin/             # 관리자 페이지
 │   ├── profile/           # 프로필 페이지
-│   └── sell/              # 상품 등록 페이지
-├── components/            # 재사용 가능한 컴포넌트
-│   └── ui/               # UI 컴포넌트
-├── data/                 # 타입 정의 및 상수
-├── lib/                  # 유틸리티 및 API 클라이언트
-│   ├── api/             # API 함수들
-│   ├── auth/            # 인증 관련
-│   └── config/          # 설정 파일들
-└── styles/              # 글로벌 스타일
+│   ├── item/              # 상품 상세 페이지
+│   └── globals.css        # 전역 스타일
+├── components/            # React 컴포넌트
+│   ├── ui/                # UI 컴포넌트
+│   ├── SEO/               # SEO 컴포넌트
+│   └── Image/             # 이미지 최적화
+├── lib/                   # 유틸리티 및 설정
+│   ├── auth/              # 인증 로직
+│   ├── email/             # 이메일 서비스
+│   ├── notifications/     # 알림 시스템
+│   ├── analytics/         # 분석 도구
+│   └── monitoring/        # 모니터링
+├── data/                  # 타입 정의 및 상수
+├── public/                # 정적 파일
+│   ├── icons/             # PWA 아이콘
+│   ├── images/            # 이미지 파일
+│   ├── manifest.json      # PWA 매니페스트
+│   └── sw.js             # Service Worker
+└── vercel.json           # Vercel 배포 설정
 ```
-
-## 🎯 주요 기능 설명
-
-### AI 이미지 분석
-
-- 이미지 업로드 시 자동으로 브랜드/모델 인식
-- Google Cloud Vision API 사용
-- 사용자가 제안된 값을 선택/수정 가능
-
-### AI 상태 평가
-
-- 악기 외관 상태 자동 분석 (A~D 등급)
-- 결함 감지: 스크래치, 찌그러짐, 균열, 녹 등
-- Roboflow/YOLOv8 모델 연동 준비됨 (현재 Mock 데이터)
-- 상세한 분석 결과 및 권장사항 제공
-
-### 안전결제 시스템
-
-- 에스크로 방식의 안전한 거래
-- 트랜잭션 상태 관리 (pending → paid_hold → shipped → delivered → released)
-- 플레이스홀더 구현 (실제 PG 연동 준비됨)
-
-### 실시간 채팅
-
-- Firestore onSnapshot을 사용한 실시간 메시징
-- 1:1 채팅 및 공개 Q&A
-- 읽음 표시 및 타임스탬프
 
 ## 🚀 배포
 
 ### Vercel 배포
 
-1. Vercel에 프로젝트 연결
-2. 환경 변수 설정
-3. Google Cloud 서비스 계정 키를 Vercel 환경 변수로 추가
+1. **Vercel CLI 설치**
 
-### 환경 변수 (배포용)
-
-```env
-GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account",...}
+```bash
+npm i -g vercel
 ```
 
-## 📝 라이선스
+2. **로그인 및 배포**
 
-MIT License
+```bash
+vercel login
+vercel
+```
+
+3. **환경변수 설정**
+   Vercel 대시보드에서 프로덕션 환경변수를 설정하세요.
+
+### 환경별 배포
+
+#### 개발 환경
+
+```bash
+npm run dev
+# http://localhost:3000
+```
+
+#### 스테이징 환경
+
+```bash
+npm run build
+npm run start
+# 또는 Vercel Preview
+```
+
+#### 프로덕션 환경
+
+```bash
+vercel --prod
+# https://connetone.vercel.app
+```
+
+## 🔍 개발 가이드
+
+### 코드 스타일
+
+- **ESLint + Prettier** 사용
+- **TypeScript** 엄격 모드
+- **Tailwind CSS** 클래스명 컨벤션
+
+### 커밋 컨벤션
+
+```
+feat: 새로운 기능 추가
+fix: 버그 수정
+docs: 문서 수정
+style: 코드 스타일 변경
+refactor: 코드 리팩토링
+test: 테스트 추가/수정
+chore: 빌드/설정 변경
+```
+
+### 브랜치 전략
+
+- `main`: 프로덕션 브랜치
+- `develop`: 개발 브랜치
+- `feature/*`: 기능 개발 브랜치
+- `hotfix/*`: 긴급 수정 브랜치
+
+## 📊 모니터링 및 분석
+
+### 오류 로깅
+
+- **Sentry**: 실시간 오류 추적
+- **Vercel Analytics**: 성능 모니터링
+
+### 사용자 분석
+
+- **Google Analytics 4**: 페이지뷰, 이벤트 추적
+- **PostHog**: 사용자 행동 분석
+
+### 성능 최적화
+
+- **Next.js Image Optimization**: 자동 이미지 최적화
+- **Cloudinary CDN**: 이미지 CDN 캐싱
+- **PWA**: 오프라인 지원, 웹푸시
+
+## 🔒 보안
+
+### 인증 및 권한
+
+- **Firebase Auth**: 이메일/SMS 인증
+- **JWT 토큰**: API 인증
+- **등급 시스템**: 사용자 권한 관리
+
+### 데이터 보호
+
+- **Firestore Security Rules**: 데이터베이스 보안
+- **환경변수**: 민감한 정보 보호
+- **HTTPS**: 모든 통신 암호화
 
 ## 🤝 기여하기
 
@@ -175,4 +300,42 @@ MIT License
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-# connectone
+
+## 📝 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참고하세요.
+
+## 📞 지원
+
+- **이메일**: support@connetone.com
+- **문서**: [docs.connetone.com](https://docs.connetone.com)
+- **이슈**: [GitHub Issues](https://github.com/your-username/connetone/issues)
+
+## 🗺️ 로드맵
+
+### Phase 1 (현재)
+
+- [x] 기본 플랫폼 구축
+- [x] 사용자 인증 및 등급 시스템
+- [x] 상품 등록 및 검색
+- [x] 실시간 채팅
+- [x] 안전결제 시스템
+- [x] AI 이미지 분석
+
+### Phase 2 (예정)
+
+- [ ] PWA 웹푸시 알림
+- [ ] 모바일 앱 (React Native)
+- [ ] 고급 AI 기능
+- [ ] 실시간 알림
+
+### Phase 3 (장기)
+
+- [ ] 다국어 지원
+- [ ] 국제 거래
+- [ ] NFT 연동
+- [ ] VR/AR 체험
+
+---
+
+**ConnecTone**으로 음악의 새로운 연결을 만들어보세요! 🎵✨
