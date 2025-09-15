@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+
+// Static export configuration
+export const dynamic = "force-static";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 
 // Google Cloud Vision API 클라이언트 초기화
@@ -174,4 +177,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -1,4 +1,4 @@
-import apiClient from "./client";
+import { apiClient } from "./client";
 import {
   CreateLogisticsQuoteInput,
   LogisticsQuote,
@@ -16,7 +16,7 @@ export async function createLogisticsQuote(
       "/api/logistics/quote",
       input
     );
-    return response.data;
+    return response.data || { success: false, error: "응답 데이터가 없습니다" };
   } catch (error: any) {
     console.error("운송 견적 요청 실패:", error);
     return {
@@ -38,7 +38,7 @@ export async function createLogisticsOrder(
       "/api/logistics/order",
       input
     );
-    return response.data;
+    return response.data || { success: false, error: "응답 데이터가 없습니다" };
   } catch (error: any) {
     console.error("운송 주문 생성 실패:", error);
     return {
@@ -130,4 +130,3 @@ export function getEstimatedDeliveryText(estimatedDelivery: Date): string {
     return `${diffDays}일 후 배송 예정`;
   }
 }
-

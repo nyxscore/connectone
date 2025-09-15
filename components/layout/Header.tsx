@@ -5,11 +5,55 @@ import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
 import { logout } from "../../lib/auth";
 import { useRouter } from "next/navigation";
+import {
+  getTotalUnreadMessageCount,
+  subscribeToUnreadCount,
+} from "../../lib/chat/api";
+import { MessageCircle, Bell } from "lucide-react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 export function Header() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // 읽지 않은 메시지 개수 로드
+  useEffect(() => {
+    if (!user?.uid) {
+      setUnreadCount(0);
+      return;
+    }
+
+    // 초기 로드
+    const loadUnreadCount = async () => {
+      try {
+        const result = await getTotalUnreadMessageCount(user.uid);
+        if (result.success) {
+          setUnreadCount(result.count || 0);
+        }
+      } catch (error) {
+        console.error("읽지 않은 메시지 개수 로드 실패:", error);
+      }
+    };
+
+    loadUnreadCount();
+
+    // 실시간 구독
+    const unsubscribe = subscribeToUnreadCount(
+      user.uid,
+      count => {
+        setUnreadCount(count);
+      },
+      error => {
+        console.error("읽지 않은 메시지 구독 오류:", error);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [user?.uid]);
 
   const handleLogout = async () => {
     try {
@@ -57,9 +101,15 @@ export function Header() {
                 </Link>
                 <Link
                   href="/chat"
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium"
+                  className="relative text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium"
                 >
-                  채팅
+                  <div className="flex items-center space-x-1">
+                    <MessageCircle className="w-4 h-4" />
+                    <span>채팅</span>
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-3 w-3 shadow-lg animate-pulse"></span>
+                    )}
+                  </div>
                 </Link>
               </>
             )}

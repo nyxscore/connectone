@@ -4,7 +4,7 @@ import { ProtectedRoute } from "../../../lib/auth/ProtectedRoute";
 import { Card, CardContent, CardHeader } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { useState, useEffect } from "react";
-import { useAuth } from "../../../lib/auth/useAuth";
+import { useAuth } from "../../../lib/hooks/useAuth";
 import {
   Bell,
   Mail,
@@ -453,4 +453,3 @@ export default function NotificationsPage() {
     </ProtectedRoute>
   );
 }
-

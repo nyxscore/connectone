@@ -1,11 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { ItemCard } from "../../components/items/ItemCard";
 import { ItemFilters } from "../../components/items/ItemFilters";
 import { useItemsQuery } from "../../hooks/useItemsQuery";
+import { SellItem } from "../../data/types";
+import { ItemDetailModal } from "../../components/items/ItemDetailModal";
 
 export default function ListPage() {
+  const [selectedItem, setSelectedItem] = useState<SellItem | null>(null);
+  const [showItemModal, setShowItemModal] = useState(false);
+
   const {
     items,
     loading,
@@ -27,6 +33,16 @@ export default function ListPage() {
 
   const handleClearFilters = () => {
     setFilters({});
+  };
+
+  const handleItemClick = (item: SellItem) => {
+    setSelectedItem(item);
+    setShowItemModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowItemModal(false);
+    setSelectedItem(null);
   };
 
   if (loading) {
@@ -81,7 +97,7 @@ export default function ListPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {items.map(item => (
-              <ItemCard key={item.id} item={item} />
+              <ItemCard key={item.id} item={item} onClick={handleItemClick} />
             ))}
           </div>
         )}
@@ -102,6 +118,15 @@ export default function ListPage() {
           </div>
         )}
       </div>
+
+      {/* 상품 상세 모달 */}
+      {selectedItem && (
+        <ItemDetailModal
+          item={selectedItem}
+          isOpen={showItemModal}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 }

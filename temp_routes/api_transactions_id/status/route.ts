@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+
+// Static export configuration
+export const dynamic = "force-static";
 import { doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { db } from "../../../../../lib/api/firebase";
 import { TransactionStatus } from "../../../../../data/types";
@@ -6,10 +9,10 @@ import { notificationTrigger } from "../../../../../lib/notifications/trigger";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { status, notes } = body;
 

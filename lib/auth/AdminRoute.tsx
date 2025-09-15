@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "./useAuth";
+import { useAuth } from "../hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2, Shield, AlertTriangle } from "lucide-react";
@@ -14,7 +14,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && (!user || user.grade !== "S")) {
+    if (!isLoading && (!user || user.grade !== "A")) {
       router.push("/");
     }
   }, [user, isLoading, router]);
@@ -46,7 +46,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
     );
   }
 
-  if (user.grade !== "S") {
+  if (user.grade !== "A") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
@@ -64,4 +64,3 @@ export function AdminRoute({ children }: AdminRouteProps) {
 
   return <>{children}</>;
 }
-

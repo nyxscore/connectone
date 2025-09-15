@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+// Static export configuration
+export const dynamic = "force-static";
+
 // Mock 데이터 (실제로는 데이터베이스에서 조회)
 const staticPages = [
   {
@@ -101,4 +104,3 @@ export async function GET() {
     },
   });
 }
-

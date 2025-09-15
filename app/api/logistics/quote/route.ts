@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Static export configuration
+export const dynamic = "force-static";
+
 // 운송 견적 요청 타입
 interface LogisticsQuoteRequest {
   itemId: string;

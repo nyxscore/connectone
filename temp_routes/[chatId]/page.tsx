@@ -6,7 +6,7 @@ import { useAuth } from "../../../lib/hooks/useAuth";
 import { ProtectedRoute } from "../../../lib/auth/ProtectedRoute";
 import { ChatRoom } from "../../../components/chat/ChatRoom";
 import { getItem } from "../../../lib/api/products";
-import { getUserProfile } from "../../../lib/auth";
+import { getUserProfile } from "../../../lib/profile/api";
 import { Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 
@@ -52,7 +52,7 @@ export default function ChatRoomPage() {
       }
 
       // 현재 사용자가 참여자인지 확인
-      if (user.uid !== buyerUid && user.uid !== sellerUid) {
+      if (!user || (user.uid !== buyerUid && user.uid !== sellerUid)) {
         setError("이 채팅방에 접근할 권한이 없습니다.");
         return;
       }
@@ -64,7 +64,13 @@ export default function ChatRoomPage() {
       // 아이템 정보 가져오기
       const itemResult = await getItem(itemId);
 
-      if (!otherUser || !itemResult.success || !itemResult.item) {
+      if (
+        !otherUser ||
+        !otherUser.success ||
+        !otherUser.data ||
+        !itemResult.success ||
+        !itemResult.item
+      ) {
         setError("채팅 정보를 불러올 수 없습니다.");
         return;
       }
@@ -72,12 +78,12 @@ export default function ChatRoomPage() {
       setChatData({
         otherUser: {
           uid: otherUid,
-          nickname: otherUser.nickname,
-          profileImage: otherUser.profileImage,
+          nickname: otherUser.data.nickname,
+          profileImage: otherUser.data.photoURL,
         },
         item: {
           id: itemResult.item.id,
-          title: itemResult.item.title,
+          title: `${itemResult.item.brand} ${itemResult.item.model}`,
           price: itemResult.item.price,
           imageUrl: itemResult.item.images?.[0],
         },
@@ -95,7 +101,13 @@ export default function ChatRoomPage() {
   };
 
   if (!user) {
-    return <ProtectedRoute />;
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </ProtectedRoute>
+    );
   }
 
   if (loading) {

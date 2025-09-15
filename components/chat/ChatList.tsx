@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 import { ChatWithDetails } from "../../data/chat/types";
 import { getUserChats } from "../../lib/chat/api";
 import { useAuth } from "../../lib/hooks/useAuth";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../../lib/api/firebase";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Loader2, MessageCircle, Clock, User } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
+// date-fns 제거 - 간단한 시간 표시로 변경
 
 interface ChatListProps {
   onChatSelect?: (chatId: string) => void;
+  onChatDeleted?: () => void;
 }
 
-export function ChatList({ onChatSelect }: ChatListProps) {
+export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [chats, setChats] = useState<ChatWithDetails[]>([]);
@@ -24,28 +26,46 @@ export function ChatList({ onChatSelect }: ChatListProps) {
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState<any>(null);
   const [error, setError] = useState("");
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   const loadChats = useCallback(
     async (isLoadMore = false) => {
-      if (!user) return;
+      if (!user) {
+        console.log("ChatList: user가 없어서 로드 중단");
+        return;
+      }
 
       try {
+        console.log("ChatList: loadChats 시작", {
+          isLoadMore,
+          userUid: user.uid,
+        });
+
         if (isLoadMore) {
           setLoadingMore(true);
         } else {
           setLoading(true);
-          setChats([]);
-          setLastDoc(null);
-          setHasMore(true);
+          // 채팅 삭제 후 새로고침이 아닌 경우에만 채팅 목록 초기화
+          if (chats.length === 0) {
+            setChats([]);
+            setLastDoc(null);
+            setHasMore(true);
+          }
         }
 
         const result = await getUserChats(user.uid, lastDoc, 20);
+        console.log("ChatList: getUserChats 결과", result);
 
         if (result.success && result.chats) {
+          // unknown 채팅 필터링
+          const filteredChats = result.chats.filter(
+            chat => chat.itemId !== "unknown" && chat.sellerUid !== "unknown"
+          );
+
           if (isLoadMore) {
-            setChats(prev => [...prev, ...result.chats!]);
+            setChats(prev => [...prev, ...filteredChats]);
           } else {
-            setChats(result.chats);
+            setChats(filteredChats);
           }
           setLastDoc(result.lastDoc);
           setHasMore(result.chats.length === 20);
@@ -64,8 +84,84 @@ export function ChatList({ onChatSelect }: ChatListProps) {
   );
 
   useEffect(() => {
+    console.log("ChatList: useEffect 실행", { user: user?.uid });
     loadChats();
   }, [user]);
+
+  // 채팅이 삭제되었을 때 목록 새로고침
+  useEffect(() => {
+    const handleChatDeleted = (event: CustomEvent) => {
+      console.log(
+        "ChatList: 채팅 삭제 이벤트 감지 - 목록 새로고침",
+        event.detail
+      );
+      const deletedChatId = event.detail?.chatId;
+
+      if (deletedChatId) {
+        // 삭제된 채팅을 목록에서 제거
+        setChats(prevChats =>
+          prevChats.filter(chat => chat.id !== deletedChatId)
+        );
+        console.log("ChatList: 삭제된 채팅 제거 완료", deletedChatId);
+      } else {
+        // chatId가 없으면 전체 새로고침
+        loadChats(false);
+      }
+    };
+
+    // 전역 이벤트 리스너 등록
+    window.addEventListener("chatDeleted", handleChatDeleted as EventListener);
+
+    return () => {
+      window.removeEventListener(
+        "chatDeleted",
+        handleChatDeleted as EventListener
+      );
+    };
+  }, [loadChats]);
+
+  // 실시간으로 미읽음 메시지 수 업데이트
+  useEffect(() => {
+    if (!user || chats.length === 0) return;
+
+    const updateUnreadCounts = async () => {
+      const counts: Record<string, number> = {};
+
+      for (const chat of chats) {
+        try {
+          const messagesRef = collection(db, "messages");
+          const q = query(messagesRef, where("chatId", "==", chat.id));
+
+          const snapshot = await getDocs(q);
+          let unreadCount = 0;
+
+          snapshot.docs.forEach(doc => {
+            const messageData = doc.data();
+            if (
+              messageData.senderUid !== user.uid &&
+              !messageData.readBy.includes(user.uid)
+            ) {
+              unreadCount++;
+            }
+          });
+
+          counts[chat.id] = unreadCount;
+        } catch (error) {
+          console.error(`채팅 ${chat.id} 미읽음 수 계산 실패:`, error);
+          counts[chat.id] = 0;
+        }
+      }
+
+      setUnreadCounts(counts);
+    };
+
+    updateUnreadCounts();
+
+    // 5초마다 업데이트
+    const interval = setInterval(updateUnreadCounts, 5000);
+
+    return () => clearInterval(interval);
+  }, [user, chats]);
 
   const handleChatClick = (chatId: string) => {
     console.log("채팅 클릭:", chatId);
@@ -88,8 +184,58 @@ export function ChatList({ onChatSelect }: ChatListProps) {
 
   const formatTime = (timestamp: any) => {
     if (!timestamp) return "";
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return formatDistanceToNow(date, { addSuffix: true, locale: ko });
+
+    try {
+      let date: Date;
+
+      if (timestamp.toDate && typeof timestamp.toDate === "function") {
+        // Firestore Timestamp
+        date = timestamp.toDate();
+      } else if (timestamp.seconds) {
+        // Firestore Timestamp object
+        date = new Date(timestamp.seconds * 1000);
+      } else if (
+        typeof timestamp === "string" ||
+        typeof timestamp === "number"
+      ) {
+        // String or number timestamp
+        date = new Date(timestamp);
+      } else {
+        console.warn("Unknown timestamp format:", timestamp);
+        return "방금 전";
+      }
+
+      // 유효한 날짜인지 확인
+      if (isNaN(date.getTime()) || !isFinite(date.getTime())) {
+        console.warn("Invalid date:", date, "from timestamp:", timestamp);
+        return "방금 전";
+      }
+
+      // 간단한 시간 표시로 변경 (formatDistanceToNow 대신)
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+      if (diffInMinutes < 1) {
+        return "방금 전";
+      } else if (diffInMinutes < 60) {
+        return `${diffInMinutes}분 전`;
+      } else if (diffInHours < 24) {
+        return `${diffInHours}시간 전`;
+      } else if (diffInDays < 7) {
+        return `${diffInDays}일 전`;
+      } else {
+        return date.toLocaleDateString("ko-KR", {
+          month: "short",
+          day: "numeric",
+        });
+      }
+    } catch (error) {
+      console.error("formatTime error:", error, "timestamp:", timestamp);
+      return "방금 전";
+    }
   };
 
   if (loading) {
@@ -161,9 +307,9 @@ export function ChatList({ onChatSelect }: ChatListProps) {
                     {chat.otherUser.nickname}
                   </h3>
                   <div className="flex items-center space-x-2">
-                    {chat.unreadCount > 0 && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {chat.unreadCount}
+                    {(unreadCounts[chat.id] || 0) > 0 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 shadow-sm">
+                        {unreadCounts[chat.id]}
                       </span>
                     )}
                     <span className="text-xs text-gray-500 flex items-center">

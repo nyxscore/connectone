@@ -82,7 +82,7 @@ export default function MyProfilePage() {
     try {
       // 프로필 업데이트
       const updateResult = await updateUserProfile(currentUser.uid, {
-        photoURL: photoURL || null, // 빈 문자열이면 null로 설정
+        photoURL: photoURL || undefined, // 빈 문자열이면 undefined로 설정
       });
 
       if (updateResult.success && profile) {

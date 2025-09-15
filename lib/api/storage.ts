@@ -3,6 +3,7 @@ import {
   uploadBytes,
   getDownloadURL,
   deleteObject,
+  uploadBytesResumable,
 } from "firebase/storage";
 import { storage } from "./firebase";
 
@@ -46,11 +47,11 @@ export async function uploadImage(
     const storageRef = ref(storage, path);
 
     // 업로드 실행 (진행률 추적 포함)
-    const uploadTask = uploadBytes(storageRef, file);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
     // 진행률 콜백이 있다면 실행
     if (onProgress) {
-      uploadTask.then(snapshot => {
+      uploadTask.on("state_changed", snapshot => {
         const progress =
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         onProgress({

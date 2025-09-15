@@ -10,12 +10,16 @@ import toast from "react-hot-toast";
 interface MessageInputProps {
   chatId: string;
   senderUid: string;
+  itemId: string;
+  sellerUid: string;
   onMessageSent?: () => void;
 }
 
 export function MessageInput({
   chatId,
   senderUid,
+  itemId,
+  sellerUid,
   onMessageSent,
 }: MessageInputProps) {
   const [message, setMessage] = useState("");
@@ -39,10 +43,7 @@ export function MessageInput({
       // 이미지 업로드
       if (selectedFiles.length > 0) {
         setIsUploading(true);
-        const uploadResult = await uploadImages(
-          selectedFiles,
-          `chat/${chatId}/${Date.now()}`
-        );
+        const uploadResult = await uploadImages(selectedFiles);
 
         if (uploadResult.success && uploadResult.urls) {
           imageUrls = uploadResult.urls;
@@ -56,24 +57,36 @@ export function MessageInput({
       }
 
       // 메시지 전송
-      const result = await sendMessage({
+      console.log("메시지 전송 시작:", {
         chatId,
         senderUid,
         content: message.trim(),
+        imageUrl: imageUrls[0],
+        hasImage: imageUrls.length > 0,
+      });
+
+      const result = await sendMessage({
+        chatId,
+        senderUid,
+        content: message.trim() || (imageUrls.length > 0 ? "이미지" : ""), // 이미지만 있으면 "이미지" 텍스트 추가
         imageUrl: imageUrls[0], // 첫 번째 이미지만 사용 (단일 이미지)
       });
 
-      if (result.success) {
-        setMessage("");
-        setSelectedFiles([]);
-        onMessageSent?.();
+      console.log("메시지 전송 결과:", result);
 
-        // 텍스트 영역 높이 초기화
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "auto";
-        }
-      } else {
+      if (!result.success) {
         toast.error(result.error || "메시지 전송에 실패했습니다.");
+        setIsSending(false);
+        return;
+      }
+
+      setMessage("");
+      setSelectedFiles([]);
+      onMessageSent?.();
+
+      // 텍스트 영역 높이 초기화
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
       }
     } catch (error) {
       console.error("메시지 전송 실패:", error);

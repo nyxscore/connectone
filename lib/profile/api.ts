@@ -154,17 +154,21 @@ export async function getRecentTrades(
   try {
     // transactions 컬렉션에서 해당 사용자가 참여한 거래 조회
     const transactionsRef = collection(db, "transactions");
-    const q = query(
-      transactionsRef,
-      where("buyerUid", "==", uid),
-      orderBy("createdAt", "desc"),
-      limit(limitCount)
-    );
+    const q = query(transactionsRef, where("buyerUid", "==", uid));
 
     const snapshot = await getDocs(q);
+
+    // 클라이언트에서 정렬 및 제한
+    const sortedDocs = snapshot.docs
+      .sort((a, b) => {
+        const aTime = a.data().createdAt?.seconds || 0;
+        const bTime = b.data().createdAt?.seconds || 0;
+        return bTime - aTime; // 최신순
+      })
+      .slice(0, limitCount);
     const trades: TradeItem[] = [];
 
-    for (const doc of snapshot.docs) {
+    for (const doc of sortedDocs) {
       const data = doc.data();
 
       // 상품 정보 조회

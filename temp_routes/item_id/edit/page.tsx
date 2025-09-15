@@ -64,7 +64,7 @@ export default function EditItemPage() {
 
       if (result.success && result.item) {
         const itemData = result.item;
-        setItem(itemData);
+        setItem(itemData as SellItem);
 
         // 폼에 기존 데이터 설정
         setValue("brand", itemData.brand);
@@ -75,7 +75,10 @@ export default function EditItemPage() {
         setValue("region", itemData.region);
         setValue("price", itemData.price);
         setValue("description", itemData.description);
-        setValue("shippingType", itemData.shippingType);
+        setValue(
+          "shippingType",
+          itemData.shippingType as "direct" | "pickup" | "courier"
+        );
         setValue("escrowEnabled", itemData.escrowEnabled);
 
         // 이미지 URL 설정
@@ -116,10 +119,7 @@ export default function EditItemPage() {
       // 새로 선택된 파일이 있으면 업로드
       if (selectedFiles.length > 0) {
         console.log("이미지 업로드 시작:", selectedFiles.length, "개 파일");
-        const uploadResult = await uploadImages(
-          selectedFiles,
-          `items/${Date.now()}`
-        );
+        const uploadResult = await uploadImages(selectedFiles);
 
         if (uploadResult.success && uploadResult.urls) {
           finalImageUrls = [...imageUrls, ...uploadResult.urls];
@@ -138,7 +138,7 @@ export default function EditItemPage() {
         aiTags,
       };
 
-      const result = await updateItem(itemId, user.uid, updateData);
+      const result = await updateItem(itemId, user.uid, updateData as any);
 
       if (result.success) {
         toast.success("상품이 수정되었습니다!");

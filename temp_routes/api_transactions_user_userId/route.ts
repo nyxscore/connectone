@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+
+// Static export configuration
+export const dynamic = "force-static";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "../../../../../lib/api/firebase";
 import { Transaction } from "../../../../../data/types";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const { userId } = params;
+    const { userId } = await params;
 
     // 사용자의 모든 거래 내역 조회 (구매자 또는 판매자)
     const q = query(
@@ -45,4 +48,3 @@ export async function GET(
     );
   }
 }
-

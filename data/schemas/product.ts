@@ -12,7 +12,7 @@ export const instrumentCategorySchema = z.enum([
 
 export const conditionGradeSchema = z.enum(["A", "B", "C", "D"]);
 
-export const shippingTypeSchema = z.enum(["meetup", "cargo", "courier"]);
+export const shippingTypeSchema = z.enum(["direct", "pickup", "courier"]);
 
 export const productCreateSchema = z.object({
   title: z.string().min(1, "상품명을 입력해주세요"),

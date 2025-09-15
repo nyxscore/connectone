@@ -65,7 +65,7 @@ export type InstrumentCategory =
 export type ConditionGrade = "A" | "B" | "C" | "D";
 
 // 배송 방법
-export type ShippingType = "meetup" | "cargo" | "courier";
+export type ShippingType = "direct" | "pickup" | "courier";
 
 // 판매글 타입
 export interface Product {
@@ -493,11 +493,4 @@ export interface ProductListResponse {
   pagination: Pagination;
 }
 
-// 사용자 등급별 혜택
-export interface UserGrade {
-  grade: "C" | "B" | "A" | "S";
-  name: string;
-  description: string;
-  benefits: string[];
-  requiredPoints: number;
-}
+// 사용자 등급별 혜택 (기존 인터페이스 - 제거됨)

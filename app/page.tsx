@@ -29,37 +29,183 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-800 to-indigo-800">
+      {/* 세련된 점들 배경 */}
+      <div className="fixed inset-0 pointer-events-none">
+        {/* 왼쪽 점들 */}
+        <div className="absolute top-10 left-10 w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
+        <div
+          className="absolute top-20 left-32 w-1 h-1 bg-blue-300/70 rounded-full animate-pulse"
+          style={{ animationDelay: "1s" }}
+        ></div>
+        <div
+          className="absolute top-32 left-16 w-2 h-2 bg-white/50 rounded-full animate-pulse"
+          style={{ animationDelay: "2s" }}
+        ></div>
+        <div
+          className="absolute top-40 left-48 w-1 h-1 bg-blue-200/60 rounded-full animate-pulse"
+          style={{ animationDelay: "0.5s" }}
+        ></div>
+        <div
+          className="absolute top-60 left-24 w-2 h-2 bg-white/40 rounded-full animate-pulse"
+          style={{ animationDelay: "1.5s" }}
+        ></div>
+        <div
+          className="absolute top-80 left-40 w-1 h-1 bg-blue-300/50 rounded-full animate-pulse"
+          style={{ animationDelay: "2.5s" }}
+        ></div>
+        <div
+          className="absolute top-96 left-56 w-2 h-2 bg-white/30 rounded-full animate-pulse"
+          style={{ animationDelay: "0.8s" }}
+        ></div>
+
+        {/* 오른쪽 점들 */}
+        <div
+          className="absolute top-16 right-20 w-2 h-2 bg-white/60 rounded-full animate-pulse"
+          style={{ animationDelay: "1.2s" }}
+        ></div>
+        <div
+          className="absolute top-28 right-36 w-1 h-1 bg-blue-300/70 rounded-full animate-pulse"
+          style={{ animationDelay: "2.8s" }}
+        ></div>
+        <div
+          className="absolute top-44 right-12 w-2 h-2 bg-white/50 rounded-full animate-pulse"
+          style={{ animationDelay: "0.3s" }}
+        ></div>
+        <div
+          className="absolute top-64 right-44 w-1 h-1 bg-blue-200/60 rounded-full animate-pulse"
+          style={{ animationDelay: "1.8s" }}
+        ></div>
+        <div
+          className="absolute top-84 right-28 w-2 h-2 bg-white/40 rounded-full animate-pulse"
+          style={{ animationDelay: "2.2s" }}
+        ></div>
+        <div
+          className="absolute top-100 right-52 w-1 h-1 bg-blue-300/50 rounded-full animate-pulse"
+          style={{ animationDelay: "0.6s" }}
+        ></div>
+      </div>
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-2xl shadow-lg">
-                <Music className="w-12 h-12 text-white" />
+            <div className="flex items-center justify-center mb-6 relative">
+              {/* 로고 배경 그라데이션 원형 */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-[500px] h-[500px] rounded-full bg-gradient-radial from-white via-white/50 to-transparent"></div>
+              </div>
+
+              {/* 배경 애니메이션 효과 */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-96 h-96 rounded-full bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-pink-400/20 animate-pulse"></div>
+                <div
+                  className="absolute w-80 h-80 rounded-full bg-gradient-to-r from-purple-400/15 via-pink-400/15 to-blue-400/15 animate-spin"
+                  style={{ animationDuration: "8s" }}
+                ></div>
+                <div
+                  className="absolute w-64 h-64 rounded-full bg-gradient-to-r from-pink-400/10 via-blue-400/10 to-purple-400/10 animate-pulse"
+                  style={{ animationDuration: "4s" }}
+                ></div>
+
+                {/* 물제비 파동 효과 - 간소화 */}
+                <div
+                  className="absolute w-[500px] h-[500px] rounded-full border border-blue-300/15 animate-ping"
+                  style={{ animationDuration: "4s", animationDelay: "0s" }}
+                ></div>
+                <div
+                  className="absolute w-[600px] h-[600px] rounded-full border border-purple-300/10 animate-ping"
+                  style={{ animationDuration: "4s", animationDelay: "2s" }}
+                ></div>
+
+                {/* 흐르는 음악 파동 */}
+                <div
+                  className="absolute w-[450px] h-[450px] rounded-full border-2 border-blue-400/30 animate-spin"
+                  style={{ animationDuration: "12s" }}
+                ></div>
+                <div
+                  className="absolute w-[550px] h-[550px] rounded-full border border-purple-400/25 animate-spin"
+                  style={{
+                    animationDuration: "15s",
+                    animationDirection: "reverse",
+                  }}
+                ></div>
+                <div
+                  className="absolute w-[650px] h-[650px] rounded-full border border-pink-400/20 animate-spin"
+                  style={{ animationDuration: "18s" }}
+                ></div>
+              </div>
+
+              {/* 음표 애니메이션 */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div
+                  className="absolute -top-8 -left-8 text-2xl text-blue-400/30 animate-bounce"
+                  style={{ animationDelay: "0s" }}
+                >
+                  ♪
+                </div>
+                <div
+                  className="absolute -top-4 -right-12 text-xl text-purple-400/30 animate-bounce"
+                  style={{ animationDelay: "1s" }}
+                >
+                  ♫
+                </div>
+                <div
+                  className="absolute top-8 -left-16 text-lg text-pink-400/30 animate-bounce"
+                  style={{ animationDelay: "2s" }}
+                >
+                  ♪
+                </div>
+                <div
+                  className="absolute top-4 -right-8 text-xl text-blue-400/30 animate-bounce"
+                  style={{ animationDelay: "3s" }}
+                >
+                  ♫
+                </div>
+                <div
+                  className="absolute -bottom-4 -left-12 text-lg text-purple-400/30 animate-bounce"
+                  style={{ animationDelay: "4s" }}
+                >
+                  ♪
+                </div>
+                <div
+                  className="absolute -bottom-8 -right-16 text-2xl text-pink-400/30 animate-bounce"
+                  style={{ animationDelay: "5s" }}
+                >
+                  ♫
+                </div>
+              </div>
+
+              {/* 메인 로고 텍스트 */}
+              <div className="relative z-10">
+                <h1 className="text-8xl md:text-9xl font-bold text-white mb-4">
+                  ConnecTone
+                </h1>
+                <div className="text-2xl md:text-3xl text-blue-200 font-light">
+                  🎵 Music Marketplace
+                </div>
               </div>
             </div>
 
-            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent mb-6">
-              ConnecTone
-            </h1>
+            <div className="mt-32">
+              <p className="text-xl md:text-2xl text-blue-100 mb-4 max-w-3xl mx-auto">
+                음악을 사랑하는 사람들을 위한 안전한 중고 악기 거래 플랫폼
+              </p>
+              <p className="text-2xl md:text-3xl font-bold text-white mb-8">
+                안전한 중고 악기 거래 플랫폼
+              </p>
 
-            <p className="text-xl md:text-2xl text-gray-600 mb-4 max-w-3xl mx-auto">
-              음악을 사랑하는 사람들을 위한
-            </p>
-            <p className="text-2xl md:text-3xl font-bold text-gray-800 mb-8">
-              안전한 중고 악기 거래 플랫폼
-            </p>
-
-            <p className="text-lg text-gray-600 mb-12 max-w-2xl mx-auto">
-              AI 감정 시스템과 에스크로 서비스로 믿을 수 있는 거래를 경험하세요
-            </p>
+              <p className="text-lg text-blue-200 mb-12 max-w-2xl mx-auto">
+                AI 감정 시스템과 에스크로 서비스로 믿을 수 있는 거래를
+                경험하세요
+              </p>
+            </div>
 
             {user ? (
               <div className="space-y-6 animate-fade-in-up animation-delay-800">
-                <p className="text-xl font-medium text-gray-800">
+                <p className="text-xl font-medium text-white">
                   안녕하세요,{" "}
-                  <span className="text-blue-600 animate-pulse">
+                  <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-500 bg-clip-text text-transparent font-bold animate-pulse">
                     {user.nickname}
                   </span>
                   님! 👋
@@ -76,9 +222,8 @@ export default function HomePage() {
                   </Link>
                   <Link href="/list">
                     <Button
-                      variant="outline"
                       size="lg"
-                      className="w-full sm:w-auto border-2 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                      className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
                     >
                       <Search className="w-5 h-5 mr-2" />
                       상품 둘러보기
@@ -243,9 +388,8 @@ export default function HomePage() {
               </Link>
               <Link href="/list">
                 <Button
-                  variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-blue-600"
+                  className="w-full sm:w-auto bg-white text-blue-600 hover:bg-gray-100 font-semibold"
                 >
                   상품 둘러보기
                 </Button>

@@ -1,4 +1,9 @@
-import { InstrumentCategory, ConditionGrade, UserGrade } from "../types";
+import {
+  InstrumentCategory,
+  ConditionGrade,
+  UserGrade,
+  GradeInfo,
+} from "../types";
 
 // 악기 카테고리 상수
 export const INSTRUMENT_CATEGORIES: {
@@ -49,34 +54,42 @@ export const CONDITION_GRADES: {
 ];
 
 // 사용자 등급 상수
-export const USER_GRADES: UserGrade[] = [
+export const USER_GRADES: GradeInfo[] = [
   {
     grade: "C",
     name: "브론즈",
     description: "신규 회원",
-    benefits: ["기본 거래 기능", "1:1 채팅"],
-    requiredPoints: 0,
+    color: "text-orange-600",
+    requirements: {
+      safeTransactions: 0,
+      averageRating: 0,
+      disputeFree: true,
+      totalTrades: 0,
+    },
   },
   {
     grade: "B",
     name: "실버",
     description: "활성 회원",
-    benefits: ["우선 노출", "AI 분석 서비스", "운송 할인"],
-    requiredPoints: 100,
+    color: "text-gray-600",
+    requirements: {
+      safeTransactions: 5,
+      averageRating: 4.0,
+      disputeFree: true,
+      totalTrades: 10,
+    },
   },
   {
     grade: "A",
     name: "골드",
     description: "신뢰 회원",
-    benefits: ["프리미엄 배치", "전용 고객지원", "수수료 할인"],
-    requiredPoints: 500,
-  },
-  {
-    grade: "S",
-    name: "플래티넘",
-    description: "VIP 회원",
-    benefits: ["무제한 업로드", "우선 검증", "전용 기능"],
-    requiredPoints: 1000,
+    color: "text-yellow-600",
+    requirements: {
+      safeTransactions: 20,
+      averageRating: 4.5,
+      disputeFree: true,
+      totalTrades: 50,
+    },
   },
 ];
 

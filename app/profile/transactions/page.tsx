@@ -3,7 +3,7 @@
 import { ProtectedRoute } from "../../../lib/auth/ProtectedRoute";
 import { Card, CardContent, CardHeader } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
-import { useAuth } from "../../../lib/auth/useAuth";
+import { useAuth } from "../../../lib/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { Transaction, TransactionStatus } from "../../../data/types";
 import { getUserTransactions } from "../../../lib/api/payment";
@@ -250,4 +250,3 @@ export default function TransactionsPage() {
     </ProtectedRoute>
   );
 }
-

@@ -19,9 +19,8 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
   const handleClick = () => {
     if (onClick) {
       onClick(item);
-    } else {
-      router.push(`/item/${item.id}`);
     }
+    // onClick이 없으면 아무것도 하지 않음 (정적 export에서는 동적 라우트가 작동하지 않음)
   };
 
   const formatPrice = (price: number) => {
@@ -41,14 +40,15 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
 
   const getShippingTypeLabel = (type: string) => {
     switch (type) {
-      case "meetup":
-      case "direct": // 기존 데이터 호환성
+      case "direct":
         return "직거래";
-      case "cargo":
-        return "화물";
+      case "pickup":
+        return "픽업";
       case "courier":
       case "parcel": // 기존 데이터 호환성
         return "택배";
+      case "meetup": // meetup도 직거래로 처리
+        return "직거래";
       default:
         return type;
     }

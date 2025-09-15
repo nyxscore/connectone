@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { UserGradeBadge } from "../../../components/ui/UserGradeBadge";
+import { UserGrade } from "../../../data/types";
 import { useState } from "react";
 import {
   Users,
@@ -180,7 +181,7 @@ export default function UsersPage() {
                           {user.nickname}
                         </h3>
                         <UserGradeBadge
-                          grade={user.grade}
+                          grade={user.grade as UserGrade}
                           size="sm"
                           showDescription={false}
                         />
@@ -295,4 +296,3 @@ export default function UsersPage() {
     </AdminRoute>
   );
 }
-

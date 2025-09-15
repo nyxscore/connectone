@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "../../lib/auth/useAuth";
+import { useAuth } from "../../lib/hooks/useAuth";
 import { useState } from "react";
 import { Menu, X, User, LogOut, Plus, Search, Music } from "lucide-react";
 import { Button } from "./Button";

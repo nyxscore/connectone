@@ -96,7 +96,8 @@ export function ItemFilters({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   카테고리
                 </label>
-                <Select
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={filters.category || ""}
                   onChange={e => handleFilterChange("category", e.target.value)}
                 >
@@ -106,14 +107,15 @@ export function ItemFilters({
                       {category.icon} {category.label}
                     </option>
                   ))}
-                </Select>
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   지역
                 </label>
-                <Select
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={filters.region || ""}
                   onChange={e => handleFilterChange("region", e.target.value)}
                 >
@@ -123,7 +125,7 @@ export function ItemFilters({
                       {region}
                     </option>
                   ))}
-                </Select>
+                </select>
               </div>
 
               <div>
@@ -182,7 +184,7 @@ export function ItemFilters({
         <div className="flex items-center space-x-4 pt-4 border-t">
           <span className="text-sm font-medium text-gray-700">정렬:</span>
           <Button
-            variant={sortBy === "createdAt" ? "default" : "outline"}
+            variant={sortBy === "createdAt" ? "primary" : "outline"}
             size="sm"
             onClick={() => handleSortChange("createdAt")}
           >
@@ -194,7 +196,7 @@ export function ItemFilters({
             최신순
           </Button>
           <Button
-            variant={sortBy === "price" ? "default" : "outline"}
+            variant={sortBy === "price" ? "primary" : "outline"}
             size="sm"
             onClick={() => handleSortChange("price")}
           >

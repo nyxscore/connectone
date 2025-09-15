@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "./Card";
 import { Button } from "./Button";
-import { ConditionAssessment, Defect } from "../../data/types";
+import { ConditionAssessment, Defect, ConditionGrade } from "../../data/types";
 import {
-  inspectInstrument,
+  inspectImage,
   getConditionLabel,
   getConditionColor,
   getSeverityLabel,
@@ -53,10 +53,24 @@ export function ConditionAssessmentComponent({
     setError("");
 
     try {
-      const result = await inspectInstrument(imageUrl);
+      const result = await inspectImage(imageUrl);
 
       if (result.success && result.data) {
-        setAssessment(result.data);
+        // InspectionResult를 ConditionAssessment로 변환
+        const assessment: ConditionAssessment = {
+          conditionHint: result.data.conditionHint as ConditionGrade,
+          defects: result.data.defects.map(defect => ({
+            type: defect as any,
+            severity: "moderate" as const,
+            description: defect,
+            location: "전체",
+            confidence: 0.8,
+          })),
+          overallScore: result.data.confidence * 100,
+          recommendations: result.data.suggestions,
+          confidence: result.data.confidence,
+        };
+        setAssessment(assessment);
       } else {
         setError(result.error || "상태 분석에 실패했습니다.");
       }
@@ -281,4 +295,3 @@ export function ConditionAssessmentComponent({
     </div>
   );
 }
-

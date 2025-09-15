@@ -4,7 +4,7 @@ import { AdminRoute } from "../../lib/auth/AdminRoute";
 import { Card, CardContent, CardHeader } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { UserGradeBadge } from "../../components/ui/UserGradeBadge";
-import { useAuth } from "../../lib/auth/useAuth";
+import { useAuth } from "../../lib/hooks/useAuth";
 import {
   Shield,
   AlertTriangle,
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
                 </h1>
               </div>
               <div className="flex items-center space-x-4">
-                <UserGradeBadge grade="S" size="md" showDescription={false} />
+                <UserGradeBadge grade="B" size="md" showDescription={false} />
                 <span className="text-sm text-gray-600">{user?.nickname}</span>
               </div>
             </div>
@@ -166,12 +166,12 @@ export default function AdminDashboard() {
                   <h2 className="text-xl font-semibold text-gray-900">
                     신고 관리
                   </h2>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href="/admin/reports">
+                  <Link href="/admin/reports">
+                    <Button variant="outline" size="sm">
                       <FileText className="w-4 h-4 mr-2" />
                       전체 보기
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               </CardHeader>
               <CardContent>
@@ -214,12 +214,12 @@ export default function AdminDashboard() {
                   <h2 className="text-xl font-semibold text-gray-900">
                     분쟁 관리
                   </h2>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href="/admin/disputes">
+                  <Link href="/admin/disputes">
+                    <Button variant="outline" size="sm">
                       <MessageSquare className="w-4 h-4 mr-2" />
                       전체 보기
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               </CardHeader>
               <CardContent>
@@ -305,4 +305,3 @@ export default function AdminDashboard() {
     </AdminRoute>
   );
 }
-

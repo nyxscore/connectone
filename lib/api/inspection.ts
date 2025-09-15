@@ -13,6 +13,59 @@ export interface InspectionResponse {
   error?: string;
 }
 
+// 누락된 유틸리티 함수들 추가
+export function getConditionLabel(grade: "A" | "B" | "C" | "D"): string {
+  const labels = {
+    A: "A급 - 최상",
+    B: "B급 - 양호",
+    C: "C급 - 보통",
+    D: "D급 - 하",
+  };
+  return labels[grade];
+}
+
+export function getConditionColor(grade: "A" | "B" | "C" | "D"): string {
+  const colors = {
+    A: "text-green-600",
+    B: "text-blue-600",
+    C: "text-yellow-600",
+    D: "text-red-600",
+  };
+  return colors[grade];
+}
+
+export function getSeverityLabel(
+  severity: "minor" | "moderate" | "major"
+): string {
+  const labels = {
+    minor: "경미",
+    moderate: "보통",
+    major: "심각",
+  };
+  return labels[severity];
+}
+
+export function getDefectTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    scratch: "스크래치",
+    dent: "찌그러짐",
+    rust: "녹슨 흔적",
+    crack: "균열",
+    wear: "마모",
+    other: "기타",
+  };
+  return labels[type] || type;
+}
+
+export function getScoreDescription(score: number): string {
+  if (score >= 90) return "거의 새것과 같은 상태";
+  if (score >= 80) return "사용감이 거의 없는 상태";
+  if (score >= 70) return "약간의 사용감이 있는 상태";
+  if (score >= 60) return "사용감이 있는 상태";
+  if (score >= 50) return "상당한 사용감이 있는 상태";
+  return "심각한 손상이 있는 상태";
+}
+
 // AI 검사 API 호출
 export async function inspectImage(
   imageUrl: string

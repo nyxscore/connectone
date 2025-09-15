@@ -22,15 +22,17 @@ import {
 export default function SignUpPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [password, setPassword] = useState("");
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
   });
+
+  const password = watch("password", "");
 
   const onSubmit = async (data: SignUpFormData) => {
     setIsLoading(true);
@@ -87,7 +89,6 @@ export default function SignUpPage() {
                 autoComplete="new-password"
                 placeholder="8자 이상, 영문+숫자+특수문자 포함"
                 error={errors.password?.message}
-                onChange={e => setPassword(e.target.value)}
                 {...register("password")}
               />
               {password && (

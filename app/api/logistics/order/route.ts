@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+
+// Static export configuration
+export const dynamic = "force-static";
 import { collection, addDoc, doc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "../../../../lib/api/firebase";
 import {
@@ -108,4 +111,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

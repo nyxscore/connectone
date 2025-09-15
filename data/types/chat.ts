@@ -15,6 +15,7 @@ export interface Message {
   chatId: string;
   senderUid: string;
   content: string;
+  type: MessageType; // 메시지 타입 (text, image, system)
   imageUrl?: string;
   createdAt: any; // Firebase Timestamp
   readBy: string[]; // 읽은 사용자 UID 배열

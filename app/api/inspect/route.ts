@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Static export configuration
+export const dynamic = "force-static";
+
 // AI 검사 결과 타입
 interface InspectionResult {
   conditionHint: "A" | "B" | "C" | "D";

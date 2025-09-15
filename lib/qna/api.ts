@@ -26,6 +26,8 @@ import {
   PopularTag,
 } from "../../data/qna/types";
 
+export type { QaListOptions };
+
 // 공개 질문 생성
 export async function createPublicQuestion(
   input: CreatePublicQuestionInput

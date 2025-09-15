@@ -3,7 +3,7 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile as updateFirebaseProfile,
-  PhoneAuthProvider,
+  signInWithPhoneNumber,
   signInWithCredential,
   RecaptchaVerifier,
 } from "firebase/auth";
@@ -88,6 +88,9 @@ export const authActions = {
         grade: "C",
         tradeCount: 0,
         reviewCount: 0,
+        safeTransactionCount: 0,
+        averageRating: 0,
+        disputeCount: 0,
         isPhoneVerified: false,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -198,7 +201,8 @@ export const authActions = {
         }
       );
 
-      const confirmationResult = await PhoneAuthProvider.verifyPhoneNumber(
+      const confirmationResult = await signInWithPhoneNumber(
+        auth,
         phoneNumber,
         recaptchaVerifier
       );

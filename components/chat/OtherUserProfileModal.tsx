@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getUserProfile } from "../../lib/auth";
+import { getUserProfile } from "../../lib/profile/api";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { User, X, MapPin, Calendar, Star, MessageCircle } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
 
 interface OtherUserProfileModalProps {
   isOpen: boolean;
@@ -35,7 +33,12 @@ export function OtherUserProfileModal({
   const loadProfile = async () => {
     try {
       setLoading(true);
+      console.log("OtherUserProfileModal - 프로필 로드 시작:", {
+        userUid,
+        userNickname,
+      });
       const userProfile = await getUserProfile(userUid);
+      console.log("OtherUserProfileModal - 프로필 로드 결과:", userProfile);
       setProfile(userProfile);
     } catch (error) {
       console.error("프로필 로드 실패:", error);
@@ -173,13 +176,40 @@ export function OtherUserProfileModal({
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Calendar className="w-4 h-4" />
                   <span>
-                    {formatDistanceToNow(
-                      profile.createdAt.toDate
-                        ? profile.createdAt.toDate()
-                        : new Date(profile.createdAt),
-                      { addSuffix: true, locale: ko }
-                    )}{" "}
-                    가입
+                    {(() => {
+                      try {
+                        let date: Date;
+                        if (
+                          profile.createdAt.toDate &&
+                          typeof profile.createdAt.toDate === "function"
+                        ) {
+                          date = profile.createdAt.toDate();
+                        } else if (profile.createdAt.seconds) {
+                          date = new Date(profile.createdAt.seconds * 1000);
+                        } else {
+                          date = new Date(profile.createdAt);
+                        }
+
+                        if (isNaN(date.getTime())) return "가입일 정보 없음";
+
+                        const now = new Date();
+                        const diffInMs = now.getTime() - date.getTime();
+                        const diffInDays = Math.floor(
+                          diffInMs / (1000 * 60 * 60 * 24)
+                        );
+
+                        if (diffInDays < 1) return "오늘 가입";
+                        else if (diffInDays < 7)
+                          return `${diffInDays}일 전 가입`;
+                        else if (diffInDays < 30)
+                          return `${Math.floor(diffInDays / 7)}주 전 가입`;
+                        else if (diffInDays < 365)
+                          return `${Math.floor(diffInDays / 30)}개월 전 가입`;
+                        else return `${Math.floor(diffInDays / 365)}년 전 가입`;
+                      } catch (error) {
+                        return "가입일 정보 없음";
+                      }
+                    })()}
                   </span>
                 </div>
               )}

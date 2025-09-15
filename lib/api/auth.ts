@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "./config";
-import { User } from "../types";
+import { User } from "../../data/types";
 
 // 회원가입
 export const signUp = async (
@@ -37,6 +37,12 @@ export const signUp = async (
       nickname,
       region,
       grade: "C",
+      tradeCount: 0,
+      reviewCount: 0,
+      safeTransactionCount: 0,
+      averageRating: 0,
+      disputeCount: 0,
+      isPhoneVerified: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

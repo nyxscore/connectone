@@ -70,7 +70,7 @@ export default function ItemDetailPage() {
       if (result.success && result.item) {
         console.log("상품 데이터:", result.item);
         console.log("카테고리:", result.item.category);
-        setItem(result.item);
+        setItem(result.item as any);
       } else {
         setError(result.error || "상품을 찾을 수 없습니다.");
       }
@@ -135,11 +135,10 @@ export default function ItemDetailPage() {
 
   const getShippingTypeLabel = (type: string) => {
     switch (type) {
-      case "meetup":
-      case "direct": // 기존 데이터 호환성
+      case "direct":
         return "직거래";
-      case "cargo":
-        return "화물";
+      case "pickup":
+        return "픽업";
       case "courier":
       case "parcel": // 기존 데이터 호환성
         return "택배";
@@ -525,7 +524,7 @@ export default function ItemDetailPage() {
                 | "shipped"
                 | "sold"
             }
-            statusLog={item.statusLog || []}
+            statusLog={[]}
           />
         </div>
       </div>

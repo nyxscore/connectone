@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+
+// Static export configuration
+export const dynamic = "force-static";
 import { getOrCreateChat } from "../../../../lib/chat/api";
 
 export async function POST(request: NextRequest) {

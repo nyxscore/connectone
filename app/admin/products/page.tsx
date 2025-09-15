@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { UserGradeBadge } from "../../../components/ui/UserGradeBadge";
+import { UserGrade } from "../../../data/types";
 import { useState } from "react";
 import {
   Package,
@@ -269,7 +270,7 @@ export default function ProductsPage() {
                               {product.seller.nickname}
                             </span>
                             <UserGradeBadge
-                              grade={product.seller.grade}
+                              grade={product.seller.grade as UserGrade}
                               size="sm"
                               showDescription={false}
                             />
@@ -352,4 +353,3 @@ export default function ProductsPage() {
     </AdminRoute>
   );
 }
-

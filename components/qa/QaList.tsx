@@ -181,7 +181,8 @@ export function QaList({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     해결 상태
                   </label>
-                  <Select
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={
                       filters.isResolved === undefined
                         ? ""
@@ -198,7 +199,7 @@ export function QaList({
                     <option value="">전체</option>
                     <option value="false">미해결</option>
                     <option value="true">해결됨</option>
-                  </Select>
+                  </select>
                 </div>
 
                 <div className="flex items-end space-x-2">
@@ -213,7 +214,7 @@ export function QaList({
             <div className="flex items-center space-x-4 pt-4 border-t">
               <span className="text-sm font-medium text-gray-700">정렬:</span>
               <Button
-                variant={sortBy === "createdAt" ? "default" : "outline"}
+                variant={sortBy === "createdAt" ? "primary" : "outline"}
                 size="sm"
                 onClick={() => handleSortChange("createdAt")}
               >
@@ -225,7 +226,7 @@ export function QaList({
                 최신순
               </Button>
               <Button
-                variant={sortBy === "views" ? "default" : "outline"}
+                variant={sortBy === "views" ? "primary" : "outline"}
                 size="sm"
                 onClick={() => handleSortChange("views")}
               >
@@ -237,7 +238,7 @@ export function QaList({
                 조회순
               </Button>
               <Button
-                variant={sortBy === "likes" ? "default" : "outline"}
+                variant={sortBy === "likes" ? "primary" : "outline"}
                 size="sm"
                 onClick={() => handleSortChange("likes")}
               >

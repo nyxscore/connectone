@@ -14,7 +14,7 @@ export const profileUpdateSchema = z.object({
 });
 
 export const avatarUploadSchema = z.object({
-  file: z.instanceof(File, "파일을 선택해주세요"),
+  file: z.instanceof(File, { message: "파일을 선택해주세요" }),
 });
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;

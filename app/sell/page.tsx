@@ -60,8 +60,8 @@ const conditions: {
 ];
 
 const shippingTypes: { value: ShippingType; label: string; icon: any }[] = [
-  { value: "meetup", label: "직거래", icon: MapPin },
-  { value: "cargo", label: "화물", icon: Truck },
+  { value: "direct", label: "직거래", icon: MapPin },
+  { value: "pickup", label: "픽업", icon: Truck },
   { value: "courier", label: "택배", icon: Package },
 ];
 
@@ -91,7 +91,7 @@ function SellPageContent() {
     resolver: zodResolver(sellItemSchema),
     defaultValues: {
       escrowEnabled: true,
-      shippingType: "meetup",
+      shippingType: "direct",
     },
   });
 
@@ -103,12 +103,12 @@ function SellPageContent() {
   };
 
   const handleAIConditionChange = (condition: string) => {
-    setValue("condition", condition);
+    setValue("condition", condition as "A" | "B" | "C" | "D");
   };
 
   const nextStep = async () => {
     const fieldsToValidate = getFieldsForStep(currentStep);
-    const isValid = await trigger(fieldsToValidate);
+    const isValid = await trigger(fieldsToValidate as any);
 
     if (isValid) {
       setCurrentStep(prev => Math.min(prev + 1, 4));
@@ -152,11 +152,11 @@ function SellPageContent() {
         ...data,
         images: imageUrls,
         aiTags: aiTags,
-      });
+      } as any);
 
       if (result.success && result.itemId) {
         toast.success("상품이 성공적으로 등록되었습니다!");
-        router.push(`/item/${result.itemId}`);
+        router.push("/list");
       } else {
         toast.error(result.error || "상품 등록에 실패했습니다.");
       }
