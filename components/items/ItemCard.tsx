@@ -2,10 +2,9 @@
 
 import { Card } from "../ui/Card";
 import { SellItem } from "../../data/types";
-import { INSTRUMENT_CATEGORIES } from "../../data/constants";
+import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
 import { MapPin, Calendar } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
+// date-fns 제거 - 성능 최적화
 import { useRouter } from "next/navigation";
 
 interface ItemCardProps {
@@ -19,8 +18,10 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
   const handleClick = () => {
     if (onClick) {
       onClick(item);
+    } else {
+      // 상품 상세 페이지로 이동
+      router.push(`/product/${item.id}`);
     }
-    // onClick이 없으면 아무것도 하지 않음 (정적 export에서는 동적 라우트가 작동하지 않음)
   };
 
   const formatPrice = (price: number) => {
@@ -29,13 +30,35 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
 
   const formatDate = (date: any) => {
     if (!date) return "";
-    const dateObj = date.toDate ? date.toDate() : new Date(date);
-    return formatDistanceToNow(dateObj, { addSuffix: true, locale: ko });
+
+    try {
+      const dateObj = date.toDate ? date.toDate() : new Date(date);
+      if (isNaN(dateObj.getTime())) return "";
+
+      const now = new Date();
+      const diffInMs = now.getTime() - dateObj.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+      if (diffInMinutes < 1) return "방금 전";
+      else if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+      else if (diffInHours < 24) return `${diffInHours}시간 전`;
+      else if (diffInDays < 7) return `${diffInDays}일 전`;
+      else return dateObj.toLocaleDateString("ko-KR");
+    } catch (error) {
+      return "";
+    }
   };
 
   const getCategoryIcon = (category: string) => {
     const categoryInfo = INSTRUMENT_CATEGORIES.find(c => c.key === category);
     return categoryInfo?.icon || "🎵";
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const categoryInfo = INSTRUMENT_CATEGORIES.find(c => c.key === category);
+    return categoryInfo?.label || category;
   };
 
   const getShippingTypeLabel = (type: string) => {
@@ -49,6 +72,10 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
         return "택배";
       case "meetup": // meetup도 직거래로 처리
         return "직거래";
+      case "escrow":
+        return "안전거래";
+      case "shipping":
+        return "화물운송";
       default:
         return type;
     }
@@ -73,46 +100,36 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
           </div>
         )}
 
-        {/* 옵션 배지들 */}
-        <div className="absolute top-2 right-2 flex flex-col space-y-1">
-          {item.escrowEnabled && (
-            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-              안전거래
-            </span>
-          )}
-          <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-            {getShippingTypeLabel(item.shippingType)}
-          </span>
-        </div>
+        {/* 옵션 배지들 - 사진 위에서 제거하고 깔끔하게 */}
       </div>
 
       {/* 상품 정보 */}
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-1">
-          {item.brand} {item.model}
+      <div className="p-3 sm:p-4">
+        <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base line-clamp-2">
+          {item.title || `${item.brand} ${item.model}`}
         </h3>
 
-        <div className="text-lg font-bold text-blue-600 mb-2">
+        <div className="text-base sm:text-lg font-bold text-blue-600 mb-2">
           {formatPrice(item.price)}
         </div>
 
-        <div className="flex items-center text-sm text-gray-600 space-x-4">
+        <div className="flex items-center text-xs sm:text-sm text-gray-600 space-x-2 sm:space-x-4">
           <span className="flex items-center">
-            <MapPin className="w-4 h-4 mr-1" />
-            {item.region}
+            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            <span className="truncate">{item.region}</span>
           </span>
           <span className="flex items-center">
-            <Calendar className="w-4 h-4 mr-1" />
-            {formatDate(item.createdAt)}
+            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            <span className="truncate">{formatDate(item.createdAt)}</span>
           </span>
         </div>
 
-        <div className="flex items-center justify-between mt-3">
-          <span className="text-sm text-gray-500">
-            {getCategoryIcon(item.category)} {item.category}
+        <div className="flex items-center justify-between mt-2 sm:mt-3">
+          <span className="text-xs sm:text-sm text-gray-500 truncate">
+            {getCategoryIcon(item.category)} {getCategoryLabel(item.category)}
           </span>
           <span
-            className={`text-sm font-medium px-2 py-1 rounded ${
+            className={`text-xs sm:text-sm font-medium px-2 py-1 rounded ${
               item.condition === "A"
                 ? "bg-blue-100 text-blue-800"
                 : item.condition === "B"
@@ -125,6 +142,20 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
             {item.condition}등급
           </span>
         </div>
+
+        {/* 판매방법 표시 */}
+        {item.shippingTypes && item.shippingTypes.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {item.shippingTypes.map((type, index) => (
+              <span
+                key={index}
+                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
+              >
+                {getShippingTypeLabel(type)}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </Card>
   );

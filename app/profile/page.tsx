@@ -9,23 +9,47 @@ import {
   uploadAvatar,
   updateUserProfile,
 } from "../../lib/profile/api";
+import { getUserItems } from "../../lib/api/products";
 import { UserProfile, TradeItem } from "../../data/profile/types";
 import { ProfileHeader } from "../../components/profile/ProfileHeader";
 import { ProfileStats } from "../../components/profile/ProfileStats";
 import { ProfileAbout } from "../../components/profile/ProfileAbout";
 import { TradeList } from "../../components/profile/TradeList";
+import { BlockedUsersModal } from "../../components/profile/BlockedUsersModal";
+import { ItemDetailModal } from "../../components/items/ItemDetailModal";
+import { EditItemModal } from "../../components/items/EditItemModal";
 import { Card } from "../../components/ui/Card";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Button } from "../../components/ui/Button";
+import {
+  Loader2,
+  AlertCircle,
+  Shield,
+  MoreVertical,
+  Edit,
+  Trash2,
+  ArrowUp,
+  MapPin,
+  Calendar,
+} from "lucide-react";
 import toast from "react-hot-toast";
+import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
 
 export default function MyProfilePage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [trades, setTrades] = useState<TradeItem[]>([]);
+  const [myItems, setMyItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tradesLoading, setTradesLoading] = useState(true);
+  const [itemsLoading, setItemsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showBlockedUsers, setShowBlockedUsers] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [showItemMenu, setShowItemMenu] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !currentUser) {
@@ -36,8 +60,26 @@ export default function MyProfilePage() {
     if (currentUser) {
       loadProfile();
       loadTrades();
+      loadMyItems();
     }
   }, [currentUser, authLoading, router]);
+
+  // 외부 클릭 시 메뉴 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showItemMenu) {
+        const target = event.target as Element;
+        if (!target.closest(".item-menu")) {
+          setShowItemMenu(null);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showItemMenu]);
 
   const loadProfile = async () => {
     if (!currentUser) return;
@@ -76,6 +118,43 @@ export default function MyProfilePage() {
     }
   };
 
+  const loadMyItems = async () => {
+    if (!currentUser) return;
+
+    try {
+      setItemsLoading(true);
+      console.log("내 상품 로딩 시작:", currentUser.uid);
+      const result = await getUserItems(currentUser.uid, 20);
+      console.log("내 상품 로딩 결과:", result);
+      if (result.success && result.items) {
+        console.log("로딩된 상품 개수:", result.items.length);
+        setMyItems(result.items);
+      } else {
+        console.error("내 상품 로딩 실패:", result.error);
+      }
+    } catch (error) {
+      console.error("내 상품 로딩 중 오류:", error);
+
+      // Firestore 인덱스 오류인 경우 인덱스 생성 링크 열기
+      if (error instanceof Error && error.message.includes("index")) {
+        const indexUrl =
+          "https://console.firebase.google.com/v1/r/project/connectone-8b414/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9jb25uZWN0b25lLThiNDE0L2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9pdGVtcy9pbmRleGVzL18QARoNCglzZWxsZXJVaWQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC";
+        console.log(
+          "Firestore 인덱스가 필요합니다. 다음 링크에서 인덱스를 생성하세요:"
+        );
+        console.log(indexUrl);
+
+        // 사용자에게 알림
+        toast.error("Firestore 인덱스가 필요합니다. 개발자 콘솔을 확인하세요.");
+
+        // 인덱스 생성 페이지 열기
+        window.open(indexUrl, "_blank");
+      }
+    } finally {
+      setItemsLoading(false);
+    }
+  };
+
   const handleAvatarUpload = async (photoURL: string) => {
     if (!currentUser) return;
 
@@ -108,6 +187,103 @@ export default function MyProfilePage() {
   const handleEdit = () => {
     // ProfileAbout 컴포넌트에서 편집 모드로 전환
     // 이는 ProfileAbout 컴포넌트 내부에서 처리됨
+  };
+
+  const handleItemClick = (item: any) => {
+    setSelectedItem(item);
+    setShowItemModal(true);
+  };
+
+  const handleItemEdit = (item: any) => {
+    setShowItemMenu(null);
+    setEditingItem(item);
+    setShowEditModal(true);
+  };
+
+  const handleItemDelete = async (item: any) => {
+    setShowItemMenu(null);
+
+    if (window.confirm("정말로 이 상품을 삭제하시겠습니까?")) {
+      try {
+        // 상품 삭제 API 호출
+        const { deleteItem } = await import("../../lib/api/products");
+        const result = await deleteItem(item.id, currentUser?.uid || "");
+
+        if (result.success) {
+          toast.success("상품이 삭제되었습니다.");
+          // 상품 목록 새로고침
+          loadMyItems();
+        } else {
+          toast.error(result.error || "상품 삭제에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("상품 삭제 실패:", error);
+        toast.error("상품 삭제 중 오류가 발생했습니다.");
+      }
+    }
+  };
+
+  const handleEditComplete = () => {
+    setShowEditModal(false);
+    setEditingItem(null);
+    // 상품 목록 새로고침
+    loadMyItems();
+  };
+
+  const formatDate = (date: any) => {
+    if (!date) return "";
+
+    try {
+      const dateObj = date.toDate ? date.toDate() : new Date(date);
+      if (isNaN(dateObj.getTime())) return "";
+
+      const now = new Date();
+      const diffInMs = now.getTime() - dateObj.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+      if (diffInMinutes < 1) return "방금 전";
+      else if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+      else if (diffInHours < 24) return `${diffInHours}시간 전`;
+      else if (diffInDays < 7) return `${diffInDays}일 전`;
+      else return dateObj.toLocaleDateString("ko-KR");
+    } catch (error) {
+      return "";
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const categoryInfo = INSTRUMENT_CATEGORIES.find(c => c.key === category);
+    return categoryInfo?.icon || "🎵";
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const categoryInfo = INSTRUMENT_CATEGORIES.find(c => c.key === category);
+    return categoryInfo?.label || category;
+  };
+
+  const handleItemBump = async (item: any) => {
+    setShowItemMenu(null);
+
+    try {
+      // 상품 끌어올리기 API 호출
+      const { updateItem } = await import("../../lib/api/products");
+      const result = await updateItem(item.id, currentUser?.uid || "", {
+        updatedAt: new Date(),
+      });
+
+      if (result.success) {
+        toast.success("상품이 끌어올려졌습니다!");
+        // 상품 목록 새로고침
+        loadMyItems();
+      } else {
+        toast.error(result.error || "끌어올리기에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("끌어올리기 실패:", error);
+      toast.error("끌어올리기 중 오류가 발생했습니다.");
+    }
   };
 
   if (authLoading || loading) {
@@ -163,8 +339,244 @@ export default function MyProfilePage() {
 
           {/* 최근 거래 */}
           <TradeList trades={trades} loading={tradesLoading} />
+
+          {/* 내가 등록한 상품 */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                내가 등록한 상품
+              </h3>
+              <Button
+                onClick={() => router.push("/profile/items")}
+                size="sm"
+                variant="outline"
+              >
+                전체 보기
+              </Button>
+            </div>
+
+            {itemsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                <span className="ml-2 text-gray-600">
+                  상품을 불러오는 중...
+                </span>
+              </div>
+            ) : myItems.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">등록한 상품이 없습니다.</p>
+                <div className="space-x-3">
+                  <Button
+                    onClick={() => router.push("/sell")}
+                    variant="primary"
+                  >
+                    첫 상품 등록하기
+                  </Button>
+                  <Button
+                    onClick={() => router.push("/profile/items")}
+                    variant="outline"
+                  >
+                    전체 보기
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {myItems.map(item => (
+                  <div
+                    key={item.id}
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow relative"
+                  >
+                    <div className="aspect-square bg-gray-100 rounded-lg mb-3 overflow-hidden relative group">
+                      {item.images && item.images.length > 0 ? (
+                        <img
+                          src={item.images[0]}
+                          alt={item.title}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onClick={() => handleItemClick(item)}
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center text-gray-400 cursor-pointer"
+                          onClick={() => handleItemClick(item)}
+                        >
+                          이미지 없음
+                        </div>
+                      )}
+
+                      {/* 점 메뉴 버튼 */}
+                      <div className="absolute top-2 right-2 item-menu">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setShowItemMenu(
+                              showItemMenu === item.id ? null : item.id
+                            );
+                          }}
+                          className="bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreVertical className="w-4 h-4 text-gray-600" />
+                        </button>
+
+                        {/* 드롭다운 메뉴 */}
+                        {showItemMenu === item.id && (
+                          <div className="absolute top-10 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleItemEdit(item);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                            >
+                              <Edit className="w-4 h-4" />
+                              <span>수정</span>
+                            </button>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleItemBump(item);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
+                            >
+                              <ArrowUp className="w-4 h-4" />
+                              <span>끌어올리기</span>
+                            </button>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleItemDelete(item);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span>삭제</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <h4 className="font-semibold text-gray-900 mb-1 text-sm line-clamp-2">
+                      {item.title || `${item.brand} ${item.model}`}
+                    </h4>
+                    <p className="text-base font-bold text-blue-600 mb-2">
+                      {item.price?.toLocaleString("ko-KR")}원
+                    </p>
+                    <div className="flex items-center text-xs text-gray-600 space-x-2 mb-2">
+                      <span className="flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        <span className="truncate">{item.region}</span>
+                      </span>
+                      <span className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        <span className="truncate">
+                          {formatDate(item.createdAt)}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500 truncate">
+                        {getCategoryIcon(item.category)}{" "}
+                        {getCategoryLabel(item.category)}
+                      </span>
+                      <span
+                        className={`text-xs font-medium px-2 py-1 rounded ${
+                          item.condition === "A"
+                            ? "bg-blue-100 text-blue-800"
+                            : item.condition === "B"
+                              ? "bg-green-100 text-green-800"
+                              : item.condition === "C"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {item.condition}등급
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          item.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : item.status === "reserved"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : item.status === "paid_hold"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {item.status === "active" && "판매중"}
+                        {item.status === "reserved" && "예약중"}
+                        {item.status === "paid_hold" && "결제완료"}
+                        {item.status === "sold" && "거래완료"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* 차단된 사용자 관리 */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Shield className="w-6 h-6 text-orange-500" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    차단된 사용자 관리
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    차단한 사용자를 확인하고 해제할 수 있습니다
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setShowBlockedUsers(true)}
+                variant="outline"
+                className="border-orange-300 text-orange-600 hover:bg-orange-50"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                차단 관리
+              </Button>
+            </div>
+          </Card>
         </div>
       </div>
+
+      {/* 차단된 사용자 모달 */}
+      <BlockedUsersModal
+        isOpen={showBlockedUsers}
+        onClose={() => setShowBlockedUsers(false)}
+        onUnblock={blockedUid => {
+          console.log("사용자 차단 해제됨:", blockedUid);
+          // 필요시 추가 처리
+        }}
+      />
+
+      {/* 상품 상세 모달 */}
+      {selectedItem && (
+        <ItemDetailModal
+          item={selectedItem}
+          isOpen={showItemModal}
+          onClose={() => {
+            setShowItemModal(false);
+            setSelectedItem(null);
+          }}
+        />
+      )}
+
+      {/* 상품 수정 모달 */}
+      {editingItem && (
+        <EditItemModal
+          itemId={editingItem.id}
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingItem(null);
+          }}
+          onItemUpdated={handleEditComplete}
+        />
+      )}
     </div>
   );
 }

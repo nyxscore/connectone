@@ -118,107 +118,92 @@ export function FirestoreChatModal({
         unsubscribe();
       };
     }
-  }, [chatData?.chatId]);
+  }, [chatData?.chatId, user]);
 
   const loadChatData = async () => {
     try {
-      console.log("FirestoreChatModal loadChatData 시작:", {
-        chatId,
-        itemId,
-        sellerUid,
-        user: user?.uid,
-      });
       setLoading(true);
       setError("");
 
-      if (!user) {
-        console.error("FirestoreChatModal: user가 없음");
-        setError("로그인이 필요합니다.");
-        return;
-      }
-
-      // chatId가 있으면 기존 채팅 정보 로드
       if (chatId) {
+        // 기존 채팅 로드
         console.log("기존 채팅 로드:", chatId);
-        try {
-          // 채팅 정보 가져오기
-          const chatRef = doc(db, "chats", chatId);
-          const chatSnap = await getDoc(chatRef);
+        const chatRef = doc(db, "chats", chatId);
+        const chatSnap = await getDoc(chatRef);
 
-          if (!chatSnap.exists()) {
-            setError("채팅을 찾을 수 없습니다.");
-            return;
-          }
-
-          const chatData = chatSnap.data();
-
-          // 상대방 UID 찾기
-          const otherUid =
-            chatData.buyerUid === user.uid
-              ? chatData.sellerUid
-              : chatData.buyerUid;
-
-          // 상대방 정보 가져오기
-          console.log("상대방 UID:", otherUid);
-          const otherUserResult = await getUserProfile(otherUid);
-          console.log("상대방 사용자 정보 결과:", otherUserResult);
-
-          const otherUser = otherUserResult.success
-            ? otherUserResult.data
-            : null;
-          console.log("상대방 사용자 데이터:", otherUser);
-          console.log(
-            "상대방 닉네임:",
-            otherUser?.nickname,
-            otherUser?.displayName
-          );
-          console.log(
-            "상대방 프로필 이미지:",
-            otherUser?.photoURL,
-            otherUser?.profileImage
-          );
-
-          // 아이템 정보 가져오기
-          let itemResult = null;
-          if (chatData.itemId && chatData.itemId !== "unknown") {
-            itemResult = await getItem(chatData.itemId);
-            console.log("아이템 정보:", itemResult);
-          }
-
-          setChatData({
-            chatId,
-            otherUser: {
-              uid: otherUid,
-              nickname:
-                otherUser?.nickname || otherUser?.displayName || "알 수 없음",
-              profileImage: otherUser?.photoURL || otherUser?.profileImage,
-            },
-            item: {
-              id: chatData.itemId || "unknown",
-              title: itemResult?.title || "상품 정보 없음",
-              price: itemResult?.price || 0,
-              imageUrl: itemResult?.imageUrl,
-            },
-          });
-
-          console.log("최종 사용자 데이터:", {
-            uid: otherUid,
-            nickname: otherUser?.nickname || "알 수 없음",
-            profileImage: otherUser?.profileImage,
-          });
-        } catch (error) {
-          console.error("채팅 정보 로드 실패:", error);
-          setError("채팅 정보를 불러오는데 실패했습니다.");
+        if (!chatSnap.exists()) {
+          setError("채팅을 찾을 수 없습니다.");
+          return;
         }
+
+        const chatData = chatSnap.data() as Chat;
+        const otherUid =
+          chatData.buyerUid === user?.uid
+            ? chatData.sellerUid
+            : chatData.buyerUid;
+
+        // 상대방 정보 가져오기
+        const otherUserResult = await getUserProfile(otherUid);
+        console.log("상대방 사용자 정보 결과:", otherUserResult);
+
+        const otherUser = otherUserResult.success ? otherUserResult.data : null;
+        console.log("상대방 사용자 데이터:", otherUser);
+        console.log(
+          "상대방 닉네임:",
+          otherUser?.nickname,
+          otherUser?.displayName
+        );
+        console.log(
+          "상대방 프로필 이미지:",
+          otherUser?.photoURL,
+          otherUser?.profileImage
+        );
+
+        // 아이템 정보 가져오기
+        let itemResult = null;
+        if (chatData.itemId && chatData.itemId !== "unknown") {
+          itemResult = await getItem(chatData.itemId);
+          console.log("아이템 정보:", itemResult);
+        }
+
+        setChatData({
+          chatId,
+          otherUser: {
+            uid: otherUid,
+            nickname:
+              otherUser?.nickname || otherUser?.displayName || "알 수 없음",
+            profileImage: otherUser?.photoURL || otherUser?.profileImage,
+          },
+          item: {
+            id: chatData.itemId || "unknown",
+            title: itemResult?.title || "상품 정보 없음",
+            price: itemResult?.price || 0,
+            imageUrl: itemResult?.imageUrl,
+          },
+        });
+
+        console.log("최종 사용자 데이터:", {
+          uid: otherUid,
+          nickname: otherUser?.nickname || "알 수 없음",
+          profileImage: otherUser?.profileImage,
+        });
       } else if (itemId && sellerUid) {
         // 새 채팅 생성
         console.log("새 채팅 생성:", { itemId, sellerUid });
         try {
+          // 상품 정보 가져오기
+          const itemInfo = await getItem(itemId);
+          const itemTitle =
+            itemInfo.success && itemInfo.item
+              ? itemInfo.item.title ||
+                itemInfo.item.brand + " " + itemInfo.item.model
+              : itemId;
+
           const result = await getOrCreateChat(
             itemId,
             user.uid,
             sellerUid,
-            `${itemId}에 대해 문의드립니다.`
+            `${itemTitle}에 대해 문의드립니다.`
           );
 
           if (!result.success || !result.chatId) {
@@ -379,21 +364,13 @@ export function FirestoreChatModal({
                       src={chatData.otherUser.profileImage}
                       alt={chatData.otherUser.nickname}
                       className="w-10 h-10 rounded-full object-cover"
-                      onLoad={() =>
-                        console.log("상대방 프로필 이미지 로드 성공")
-                      }
-                      onError={e =>
-                        console.error("상대방 프로필 이미지 로드 실패:", e)
-                      }
                     />
                   ) : (
-                    <span className="text-gray-500 text-sm font-medium">
-                      {chatData.otherUser.nickname.charAt(0)}
-                    </span>
+                    <User className="w-5 h-5 text-gray-500" />
                   )}
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">
+                  <h3 className="font-semibold text-gray-900">
                     {chatData.otherUser.nickname}
                   </h3>
                   <p className="text-sm text-gray-500">{chatData.item.title}</p>
@@ -401,202 +378,149 @@ export function FirestoreChatModal({
               </div>
             )}
           </div>
+
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleDeleteChat}
               className="p-2 text-red-600 hover:text-red-700"
+              title="채팅 삭제"
             >
               <Trash2 className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onClose} className="p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="p-2 text-gray-600 hover:text-gray-700"
+              title="창 닫기"
+            >
               <X className="w-5 h-5" />
             </Button>
           </div>
         </div>
 
-        {/* 로딩 또는 에러 */}
-        {loading && (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-              <p className="text-gray-600">채팅을 불러오는 중...</p>
+        {/* 메시지 영역 */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {loading || messagesLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+                <p className="text-gray-600">
+                  {loading
+                    ? "채팅을 불러오는 중..."
+                    : "메시지를 불러오는 중..."}
+                </p>
+              </div>
             </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                <p className="text-red-600 mb-4">{error}</p>
+                <Button onClick={loadChatData}>다시 시도</Button>
+              </div>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">아직 메시지가 없습니다.</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  첫 메시지를 보내보세요!
+                </p>
+              </div>
+            </div>
+          ) : (
+            messages.map(message => (
+              <div
+                key={message.id}
+                className={`flex ${
+                  message.senderUid === user?.uid
+                    ? "justify-end"
+                    : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    message.senderUid === user?.uid
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-900"
+                  }`}
+                >
+                  {message.imageUrl && (
+                    <img
+                      src={message.imageUrl}
+                      alt="첨부 이미지"
+                      className="w-full h-48 object-cover rounded mb-2"
+                    />
+                  )}
+                  {message.content && (
+                    <p className="text-sm">{message.content}</p>
+                  )}
+                  <p
+                    className={`text-xs mt-1 ${
+                      message.senderUid === user?.uid
+                        ? "text-blue-100"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {(() => {
+                      try {
+                        let date: Date;
+                        if (
+                          message.createdAt.toDate &&
+                          typeof message.createdAt.toDate === "function"
+                        ) {
+                          date = message.createdAt.toDate();
+                        } else if (message.createdAt.seconds) {
+                          date = new Date(message.createdAt.seconds * 1000);
+                        } else {
+                          date = new Date(message.createdAt);
+                        }
+
+                        if (isNaN(date.getTime())) return "방금 전";
+
+                        const now = new Date();
+                        const diffInMs = now.getTime() - date.getTime();
+                        const diffInMinutes = Math.floor(
+                          diffInMs / (1000 * 60)
+                        );
+                        const diffInHours = Math.floor(
+                          diffInMs / (1000 * 60 * 60)
+                        );
+
+                        if (diffInMinutes < 1) return "방금 전";
+                        else if (diffInMinutes < 60)
+                          return `${diffInMinutes}분 전`;
+                        else if (diffInHours < 24)
+                          return `${diffInHours}시간 전`;
+                        else return date.toLocaleDateString("ko-KR");
+                      } catch (error) {
+                        return "방금 전";
+                      }
+                    })()}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* 메시지 입력 */}
+        {chatData && user && (
+          <div className="p-4 border-t">
+            <MessageInput
+              chatId={chatData.chatId}
+              senderUid={user.uid}
+              itemId={chatData.item.id}
+              sellerUid={chatData.otherUser.uid}
+              onMessageSent={() => {
+                console.log("메시지 전송 완료");
+              }}
+            />
           </div>
-        )}
-
-        {error && (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />
-              <p className="text-red-600 mb-4">{error}</p>
-              <Button onClick={loadChatData} variant="outline">
-                다시 시도
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* 채팅 내용 */}
-        {!loading && !error && chatData && (
-          <>
-            <div className="flex-1 overflow-y-auto p-4">
-              {messagesLoading ? (
-                <div className="text-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
-                  <p className="text-gray-600">메시지를 불러오는 중...</p>
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>채팅을 시작해보세요!</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {messages.map(message => (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        message.senderUid === user?.uid
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
-                    >
-                      <div
-                        className={`max-w-xs px-4 py-2 rounded-lg ${
-                          message.senderUid === user?.uid
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200 text-gray-900"
-                        }`}
-                      >
-                        {(() => {
-                          console.log("메시지 렌더링:", {
-                            id: message.id,
-                            type: message.type,
-                            content: message.content,
-                            imageUrl: message.imageUrl,
-                            hasImageUrl: !!message.imageUrl,
-                          });
-                          return null;
-                        })()}
-                        {message.imageUrl && (
-                          <img
-                            src={message.imageUrl}
-                            alt="이미지"
-                            className="max-w-full h-auto rounded mb-2"
-                            onLoad={() =>
-                              console.log("이미지 로드 성공:", message.imageUrl)
-                            }
-                            onError={e =>
-                              console.error(
-                                "이미지 로드 실패:",
-                                message.imageUrl,
-                                e
-                              )
-                            }
-                          />
-                        )}
-                        {message.content && (
-                          <p className="text-sm">{message.content}</p>
-                        )}
-                        <p
-                          className={`text-xs mt-1 ${
-                            message.senderUid === user?.uid
-                              ? "text-blue-100"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          {(() => {
-                            try {
-                              if (!message.createdAt) return "방금 전";
-
-                              let date: Date;
-
-                              if (
-                                message.createdAt.toDate &&
-                                typeof message.createdAt.toDate === "function"
-                              ) {
-                                date = message.createdAt.toDate();
-                              } else if (message.createdAt.seconds) {
-                                date = new Date(
-                                  message.createdAt.seconds * 1000
-                                );
-                              } else {
-                                date = new Date(message.createdAt);
-                              }
-
-                              if (
-                                isNaN(date.getTime()) ||
-                                !isFinite(date.getTime())
-                              ) {
-                                return "방금 전";
-                              }
-
-                              // 간단한 시간 표시로 변경
-                              const now = new Date();
-                              const diffInMs = now.getTime() - date.getTime();
-                              const diffInMinutes = Math.floor(
-                                diffInMs / (1000 * 60)
-                              );
-                              const diffInHours = Math.floor(
-                                diffInMs / (1000 * 60 * 60)
-                              );
-                              const diffInDays = Math.floor(
-                                diffInMs / (1000 * 60 * 60 * 24)
-                              );
-
-                              if (diffInMinutes < 1) {
-                                return "방금 전";
-                              } else if (diffInMinutes < 60) {
-                                return `${diffInMinutes}분 전`;
-                              } else if (diffInHours < 24) {
-                                return `${diffInHours}시간 전`;
-                              } else if (diffInDays < 7) {
-                                return `${diffInDays}일 전`;
-                              } else {
-                                return date.toLocaleDateString("ko-KR", {
-                                  month: "short",
-                                  day: "numeric",
-                                });
-                              }
-                            } catch (error) {
-                              console.error(
-                                "Message time format error:",
-                                error
-                              );
-                              return "방금 전";
-                            }
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 메시지 입력 */}
-            <div className="border-t p-4">
-              <MessageInput
-                chatId={chatData.chatId}
-                senderUid={user?.uid || ""}
-                itemId={itemId || "unknown"}
-                sellerUid={sellerUid || "unknown"}
-                onMessageSent={() => {
-                  console.log("메시지 전송 완료 - 새로고침 시작");
-                  toast.success("메시지가 전송되었습니다!");
-                  // 메시지 목록 새로고침
-                  if (chatData?.chatId) {
-                    console.log("메시지 새로고침 호출:", chatData.chatId);
-                    loadMessages(chatData.chatId);
-                  } else {
-                    console.log("chatData.chatId가 없음:", chatData);
-                  }
-                }}
-              />
-            </div>
-          </>
         )}
 
         {/* 상대방 프로필 모달 */}
@@ -607,6 +531,15 @@ export function FirestoreChatModal({
             userUid={chatData.otherUser.uid}
             userNickname={chatData.otherUser.nickname}
             userProfileImage={chatData.otherUser.profileImage}
+            onBlocked={() => {
+              // 차단 시 채팅 모달 닫기 및 채팅 목록 새로고침
+              onClose();
+              window.dispatchEvent(
+                new CustomEvent("chatDeleted", {
+                  detail: { chatId: chatData.chatId },
+                })
+              );
+            }}
           />
         )}
       </div>

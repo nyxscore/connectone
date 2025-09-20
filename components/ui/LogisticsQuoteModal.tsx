@@ -59,6 +59,7 @@ export function LogisticsQuoteModal({
   });
 
   const handleInputChange = (field: string, value: any) => {
+    console.log(`체크박스 변경: ${field} = ${value}`);
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -147,9 +148,13 @@ export function LogisticsQuoteModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
       <div
         className={`bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto ${className}`}
+        onClick={e => e.stopPropagation()}
       >
         {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b">
@@ -226,32 +231,42 @@ export function LogisticsQuoteModal({
               {/* 옵션들 */}
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={formData.hasElevator}
-                    onChange={checked =>
-                      handleInputChange("hasElevator", checked)
-                    }
+                  <input
+                    type="checkbox"
                     id="hasElevator"
+                    checked={formData.hasElevator}
+                    onChange={e => {
+                      e.stopPropagation();
+                      handleInputChange("hasElevator", e.target.checked);
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <label
                     htmlFor="hasElevator"
-                    className="text-sm text-gray-700"
+                    className="text-sm text-gray-700 cursor-pointer"
+                    onClick={e => e.stopPropagation()}
                   >
                     엘리베이터 있음 (할인 적용)
                   </label>
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={formData.hasInsurance}
-                    onChange={checked =>
-                      handleInputChange("hasInsurance", checked)
-                    }
+                  <input
+                    type="checkbox"
                     id="hasInsurance"
+                    checked={formData.hasInsurance}
+                    onChange={e => {
+                      e.stopPropagation();
+                      handleInputChange("hasInsurance", e.target.checked);
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <label
                     htmlFor="hasInsurance"
-                    className="text-sm text-gray-700"
+                    className="text-sm text-gray-700 cursor-pointer"
+                    onClick={e => e.stopPropagation()}
                   >
                     보험 포함 (추가 비용)
                   </label>

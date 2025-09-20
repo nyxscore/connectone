@@ -20,23 +20,59 @@ export interface Item extends SellItemInput {
   id: string;
   sellerUid: string;
   aiTags: string[];
-  status: "active" | "sold" | "inactive";
+  status: "active" | "reserved" | "paid_hold" | "sold" | "inactive";
   createdAt: any;
   updatedAt: any;
 }
 
 // 아이템 생성
 export async function createItem(
-  sellerUid: string,
-  itemData: SellItemInput
+  itemData: SellItemInput & {
+    sellerUid: string;
+    aiTags?: string[];
+    tradeOptions?: string[];
+  }
 ): Promise<{ success: boolean; itemId?: string; error?: string }> {
   try {
-    console.log("createItem 호출:", { sellerUid, itemData });
+    console.log("createItem 호출:", itemData);
+
+    // 판매자 프로필 확인 및 생성
+    try {
+      const userDoc = await getDoc(doc(db, "users", itemData.sellerUid));
+      if (!userDoc.exists()) {
+        console.log("사용자 프로필이 없어서 생성합니다:", itemData.sellerUid);
+
+        // 기본 사용자 프로필 생성
+        await addDoc(collection(db, "users"), {
+          uid: itemData.sellerUid,
+          username: itemData.sellerUid,
+          nickname: "사용자",
+          region: "서울시 강남구",
+          grade: "Bronze",
+          tradesCount: 0,
+          reviewsCount: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          safeTransactionCount: 0,
+          averageRating: 0,
+          disputeCount: 0,
+          isPhoneVerified: false,
+          isIdVerified: false,
+          isBankVerified: false,
+        });
+
+        console.log("사용자 프로필 생성 완료:", itemData.sellerUid);
+      } else {
+        console.log("사용자 프로필이 이미 존재합니다:", itemData.sellerUid);
+      }
+    } catch (profileError) {
+      console.error("사용자 프로필 확인/생성 실패:", profileError);
+      // 프로필 오류가 있어도 상품 등록은 계속 진행
+    }
 
     const docRef = await addDoc(collection(db, "items"), {
-      sellerUid,
       ...itemData,
-      aiTags: [], // AI 태그는 나중에 추가
+      aiTags: itemData.aiTags || [], // AI 태그는 나중에 추가
       status: "active",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -182,74 +218,109 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       filters = {},
     } = options;
 
-    console.log("getItemList 호출:", {
-      limitCount,
-      sortBy,
-      sortOrder,
-      filters,
-    });
+    // 기본 쿼리: active 상태인 아이템만 조회 (인덱스 없이 작동하도록 단순화)
+    let q = query(collection(db, "items"), where("status", "==", "active"));
 
-    // 기본 쿼리: 모든 아이템 조회 (인덱스 문제를 피하기 위해)
-    let q = query(collection(db, "items"));
-
-    // 필터 적용
+    // 필터 적용 (서버 사이드) - 복합 인덱스가 필요한 필터는 제거
     if (filters.category) {
       q = query(q, where("category", "==", filters.category));
     }
     if (filters.region) {
       q = query(q, where("region", "==", filters.region));
     }
-    if (filters.minPrice !== undefined) {
-      q = query(q, where("price", ">=", filters.minPrice));
-    }
-    if (filters.maxPrice !== undefined) {
-      q = query(q, where("price", "<=", filters.maxPrice));
-    }
+    // 가격 필터는 클라이언트 사이드에서 처리 (복합 인덱스 방지)
+    // if (filters.minPrice !== undefined) {
+    //   q = query(q, where("price", ">=", filters.minPrice));
+    // }
+    // if (filters.maxPrice !== undefined) {
+    //   q = query(q, where("price", "<=", filters.maxPrice));
+    // }
 
-    // 정렬 적용
-    q = query(q, orderBy("createdAt", "desc"));
+    // 정렬은 클라이언트 사이드에서 처리 (복합 인덱스 방지)
+    // q = query(q, orderBy(sortBy, sortOrder));
 
     // 페이지네이션
     if (lastDoc) {
       q = query(q, startAfter(lastDoc));
     }
 
-    // 제한 적용
-    q = query(q, limit(limitCount));
+    // 제한 적용 (키워드 검색을 위해 더 많이 가져옴)
+    const fetchLimit = filters.keyword ? limitCount * 3 : limitCount;
+    q = query(q, limit(fetchLimit));
 
-    console.log("Firestore 쿼리 실행 중...");
     const querySnapshot = await getDocs(q);
-    console.log("쿼리 결과:", querySnapshot.docs.length, "개 문서");
-
     const items: Item[] = [];
     let newLastDoc: any = null;
 
     querySnapshot.forEach(doc => {
       const itemData = { id: doc.id, ...doc.data() } as Item;
-      console.log("아이템 데이터:", {
-        id: itemData.id,
-        brand: itemData.brand,
-        model: itemData.model,
-        status: itemData.status,
-      });
+      items.push(itemData);
+    });
 
-      // status 필터링 (클라이언트 사이드)
-      if (itemData.status !== "active") {
-        return;
+    // 클라이언트 사이드 필터링 및 정렬
+    // 가격 필터링
+    if (filters.minPrice !== undefined) {
+      items = items.filter(item => item.price >= filters.minPrice!);
+    }
+    if (filters.maxPrice !== undefined) {
+      items = items.filter(item => item.price <= filters.maxPrice!);
+    }
+
+    // 키워드 필터링
+    if (filters.keyword) {
+      const keyword = filters.keyword.toLowerCase();
+      items = items.filter(item => {
+        return (
+          item.brand?.toLowerCase().includes(keyword) ||
+          item.model?.toLowerCase().includes(keyword) ||
+          item.description?.toLowerCase().includes(keyword) ||
+          item.title?.toLowerCase().includes(keyword)
+        );
+      });
+    }
+
+    // 정렬 (클라이언트 사이드)
+    items.sort((a, b) => {
+      let aValue: any, bValue: any;
+
+      switch (sortBy) {
+        case "createdAt":
+          aValue = a.createdAt?.toDate
+            ? a.createdAt.toDate()
+            : new Date(a.createdAt);
+          bValue = b.createdAt?.toDate
+            ? b.createdAt.toDate()
+            : new Date(b.createdAt);
+          break;
+        case "updatedAt":
+          aValue = a.updatedAt?.toDate
+            ? a.updatedAt.toDate()
+            : new Date(a.updatedAt);
+          bValue = b.updatedAt?.toDate
+            ? b.updatedAt.toDate()
+            : new Date(b.updatedAt);
+          break;
+        case "price":
+          aValue = a.price;
+          bValue = b.price;
+          break;
+        case "title":
+          aValue = a.title || "";
+          bValue = b.title || "";
+          break;
+        default:
+          aValue = a.createdAt?.toDate
+            ? a.createdAt.toDate()
+            : new Date(a.createdAt);
+          bValue = b.createdAt?.toDate
+            ? b.createdAt.toDate()
+            : new Date(b.createdAt);
       }
 
-      // 키워드 필터링 (클라이언트 사이드)
-      if (filters.keyword) {
-        const keyword = filters.keyword.toLowerCase();
-        const matchesKeyword =
-          itemData.brand.toLowerCase().includes(keyword) ||
-          itemData.model.toLowerCase().includes(keyword);
-
-        if (matchesKeyword) {
-          items.push(itemData);
-        }
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        items.push(itemData);
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
 
@@ -258,11 +329,9 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       newLastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
     }
 
-    console.log("최종 아이템 수:", items.length);
-
     return {
       success: true,
-      items,
+      items: items.slice(0, limitCount), // 정확한 개수로 제한
       lastDoc: newLastDoc,
     };
   } catch (error) {

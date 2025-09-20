@@ -2,9 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { getUserProfile } from "../../lib/profile/api";
+import { reportUser, blockUser } from "../../lib/chat/api";
+import { useAuth } from "../../lib/hooks/useAuth";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { User, X, MapPin, Calendar, Star, MessageCircle } from "lucide-react";
+import {
+  User,
+  X,
+  MapPin,
+  Calendar,
+  Star,
+  MessageCircle,
+  AlertTriangle,
+  Shield,
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 interface OtherUserProfileModalProps {
   isOpen: boolean;
@@ -12,6 +24,7 @@ interface OtherUserProfileModalProps {
   userUid: string;
   userNickname: string;
   userProfileImage?: string;
+  onBlocked?: () => void;
 }
 
 export function OtherUserProfileModal({
@@ -20,9 +33,14 @@ export function OtherUserProfileModal({
   userUid,
   userNickname,
   userProfileImage,
+  onBlocked,
 }: OtherUserProfileModalProps) {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
 
   useEffect(() => {
     if (isOpen && userUid) {
@@ -37,13 +55,83 @@ export function OtherUserProfileModal({
         userUid,
         userNickname,
       });
-      const userProfile = await getUserProfile(userUid);
-      console.log("OtherUserProfileModal - 프로필 로드 결과:", userProfile);
-      setProfile(userProfile);
+      const userProfileResult = await getUserProfile(userUid);
+      console.log(
+        "OtherUserProfileModal - 프로필 로드 결과:",
+        userProfileResult
+      );
+
+      if (userProfileResult.success && userProfileResult.data) {
+        setProfile(userProfileResult.data);
+        console.log(
+          "OtherUserProfileModal - 프로필 데이터 설정:",
+          userProfileResult.data
+        );
+      } else {
+        console.error("프로필 로드 실패:", userProfileResult.error);
+        setProfile(null);
+      }
     } catch (error) {
       console.error("프로필 로드 실패:", error);
+      setProfile(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReport = async () => {
+    if (!user?.uid || !reportReason) {
+      toast.error("신고 사유를 선택해주세요.");
+      return;
+    }
+
+    try {
+      const result = await reportUser(
+        user.uid,
+        userUid,
+        reportReason,
+        reportDescription
+      );
+
+      if (result.success) {
+        toast.success("신고가 접수되었습니다.");
+        setShowReportModal(false);
+        setReportReason("");
+        setReportDescription("");
+      } else {
+        toast.error(result.error || "신고 처리에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("신고 처리 실패:", error);
+      toast.error("신고 처리 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!user?.uid) {
+      toast.error("로그인이 필요합니다.");
+      return;
+    }
+
+    if (
+      confirm(
+        `${userNickname}님을 차단하시겠습니까?\n차단하면 해당 사용자와의 모든 채팅이 삭제됩니다.`
+      )
+    ) {
+      try {
+        const result = await blockUser(user.uid, userUid);
+
+        if (result.success) {
+          toast.success("사용자가 차단되었습니다.");
+          onBlocked?.();
+          onClose();
+        } else {
+          toast.error(result.error || "차단 처리에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("차단 처리 실패:", error);
+        toast.error("차단 처리 중 오류가 발생했습니다.");
+      }
     }
   };
 
@@ -72,11 +160,34 @@ export function OtherUserProfileModal({
               {/* 프로필 사진 및 기본 정보 */}
               <div className="text-center">
                 <div className="relative inline-block">
-                  {profile.profileImage ? (
+                  {(() => {
+                    console.log("프로필 이미지 렌더링:", {
+                      profileImage: profile.profileImage,
+                      photoURL: profile.photoURL,
+                      hasProfileImage: !!(
+                        profile.profileImage || profile.photoURL
+                      ),
+                    });
+                    return null;
+                  })()}
+                  {profile.profileImage || profile.photoURL ? (
                     <img
-                      src={profile.profileImage}
-                      alt={profile.nickname}
+                      src={profile.profileImage || profile.photoURL}
+                      alt={profile.nickname || profile.displayName || "사용자"}
                       className="w-20 h-20 rounded-full object-cover mx-auto"
+                      onError={e => {
+                        console.error(
+                          "프로필 이미지 로드 실패:",
+                          profile.profileImage || profile.photoURL
+                        );
+                        e.currentTarget.style.display = "none";
+                      }}
+                      onLoad={() => {
+                        console.log(
+                          "프로필 이미지 로드 성공:",
+                          profile.profileImage || profile.photoURL
+                        );
+                      }}
                     />
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
@@ -85,7 +196,7 @@ export function OtherUserProfileModal({
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mt-4">
-                  {profile.nickname}
+                  {profile.nickname || profile.displayName || "알 수 없음"}
                 </h3>
                 <p className="text-gray-600 mt-1">
                   {profile.region || "지역 정보 없음"}
@@ -223,12 +334,98 @@ export function OtherUserProfileModal({
         </div>
 
         {/* 하단 버튼 */}
-        <div className="p-4 border-t">
+        <div className="p-4 border-t space-y-3">
+          {/* 신고/차단 버튼 */}
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => setShowReportModal(true)}
+              variant="outline"
+              className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              신고하기
+            </Button>
+            <Button
+              onClick={handleBlock}
+              variant="outline"
+              className="flex-1 text-gray-600 border-gray-300 hover:bg-gray-50"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              차단하기
+            </Button>
+          </div>
+
           <Button onClick={onClose} className="w-full" variant="outline">
             닫기
           </Button>
         </div>
       </div>
+
+      {/* 신고 모달 */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">
+                사용자 신고
+              </h3>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고 사유
+                </label>
+                <select
+                  value={reportReason}
+                  onChange={e => setReportReason(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">사유를 선택해주세요</option>
+                  <option value="spam">스팸/광고</option>
+                  <option value="harassment">괴롭힘/욕설</option>
+                  <option value="fraud">사기/부정거래</option>
+                  <option value="inappropriate">부적절한 내용</option>
+                  <option value="other">기타</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  상세 설명 (선택사항)
+                </label>
+                <textarea
+                  value={reportDescription}
+                  onChange={e => setReportDescription(e.target.value)}
+                  placeholder="신고 사유를 자세히 설명해주세요"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-20 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 border-t flex space-x-2">
+              <Button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportReason("");
+                  setReportDescription("");
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleReport}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                disabled={!reportReason}
+              >
+                신고하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

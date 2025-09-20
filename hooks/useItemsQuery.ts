@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getItemList,
   ItemListFilters,
@@ -49,6 +49,7 @@ export function useItemsQuery(
   const [filters, setFilters] = useState<ItemListFilters>(initialFilters);
   const [sortBy, setSortBy] = useState<"createdAt" | "price">(initialSortBy);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">(initialSortOrder);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadItems = useCallback(
     async (reset = false) => {
@@ -85,6 +86,7 @@ export function useItemsQuery(
           setError(result.error || "상품을 불러오는데 실패했습니다.");
         }
       } catch (err) {
+        console.error("상품 로드 실패:", err);
         setError("상품을 불러오는데 실패했습니다.");
       } finally {
         setLoading(false);
@@ -94,10 +96,30 @@ export function useItemsQuery(
     [filters, sortBy, sortOrder, lastDoc, limit]
   );
 
-  // 필터나 정렬이 변경될 때 초기화하고 다시 로드
+  // 정렬이 변경될 때 즉시 로드
   useEffect(() => {
     loadItems(true);
-  }, [filters, sortBy, sortOrder]);
+  }, [sortBy, sortOrder]);
+
+  // 필터 변경 시 디바운싱 적용
+  useEffect(() => {
+    // 이전 타이머 취소
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // 500ms 후에 검색 실행
+    debounceTimeoutRef.current = setTimeout(() => {
+      loadItems(true);
+    }, 500);
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [filters]);
 
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {

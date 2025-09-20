@@ -7,10 +7,12 @@ import { ItemFilters } from "../../components/items/ItemFilters";
 import { useItemsQuery } from "../../hooks/useItemsQuery";
 import { SellItem } from "../../data/types";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
+import ProductDetailModal from "../../components/product/ProductDetailModal";
 
 export default function ListPage() {
   const [selectedItem, setSelectedItem] = useState<SellItem | null>(null);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
 
   const {
     items,
@@ -37,11 +39,16 @@ export default function ListPage() {
 
   const handleItemClick = (item: SellItem) => {
     setSelectedItem(item);
-    setShowItemModal(true);
+    setShowProductModal(true); // ProductDetailModal 사용
   };
 
   const handleCloseModal = () => {
     setShowItemModal(false);
+    setSelectedItem(null);
+  };
+
+  const handleCloseProductModal = () => {
+    setShowProductModal(false);
     setSelectedItem(null);
   };
 
@@ -64,9 +71,17 @@ export default function ListPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">상품 목록</h1>
-          <p className="text-gray-600">중고 악기를 찾아보세요</p>
+        <div className="mb-6 sm:mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+                상품 목록
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">
+                중고 악기를 찾아보세요
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* 검색 및 필터 */}
@@ -95,7 +110,7 @@ export default function ListPage() {
             <p className="text-gray-600">다른 검색 조건을 시도해보세요.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {items.map(item => (
               <ItemCard key={item.id} item={item} onClick={handleItemClick} />
             ))}
@@ -127,6 +142,13 @@ export default function ListPage() {
           onClose={handleCloseModal}
         />
       )}
+
+      {/* 새로운 상품 상세 모달 */}
+      <ProductDetailModal
+        item={selectedItem}
+        isOpen={showProductModal}
+        onClose={handleCloseProductModal}
+      />
     </div>
   );
 }

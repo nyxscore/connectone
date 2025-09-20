@@ -8,6 +8,8 @@ export interface Chat {
   lastMessage?: string;
   updatedAt: any; // Firebase Timestamp
   createdAt: any; // Firebase Timestamp
+  buyerUnreadCount?: number;
+  sellerUnreadCount?: number;
 }
 
 export interface Message {

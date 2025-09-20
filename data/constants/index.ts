@@ -11,13 +11,46 @@ export const INSTRUMENT_CATEGORIES: {
   label: string;
   icon: string;
 }[] = [
-  { key: "건반", label: "건반악기", icon: "🎹" },
-  { key: "현악", label: "현악기", icon: "🎸" },
-  { key: "관악", label: "관악기", icon: "🎺" },
-  { key: "타악", label: "타악기", icon: "🥁" },
-  { key: "전자", label: "전자악기", icon: "🎛️" },
-  { key: "특수", label: "특수악기", icon: "🎻" },
-  { key: "주변기기", label: "주변기기", icon: "🎧" },
+  {
+    key: "건반",
+    label: "건반악기",
+    icon: "🎹",
+  },
+  {
+    key: "현악",
+    label: "현악기",
+    icon: "🎸",
+  },
+  {
+    key: "관악",
+    label: "관악기",
+    icon: "🎺",
+  },
+  {
+    key: "타악",
+    label: "타악기",
+    icon: "🥁",
+  },
+  {
+    key: "국악",
+    label: "국악기",
+    icon: "🎵",
+  },
+  {
+    key: "음향",
+    label: "음향기기",
+    icon: "🎧",
+  },
+  {
+    key: "특수",
+    label: "특수악기",
+    icon: "🎻",
+  },
+  {
+    key: "용품",
+    label: "기타용품",
+    icon: "🎼",
+  },
 ];
 
 // 상태 등급 상수
@@ -153,6 +186,13 @@ export const UPLOAD_LIMITS = {
   MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
   ALLOWED_IMAGE_TYPES: ["image/jpeg", "image/png", "image/webp"],
 } as const;
+
+// 배송 방법 상수
+export const SHIPPING_TYPES = [
+  { key: "direct", label: "직거래" },
+  { key: "courier", label: "택배" },
+  { key: "pickup", label: "픽업" },
+];
 
 // 앱 설정
 export const APP_CONFIG = {

@@ -9,11 +9,14 @@ import { StatusTimeline } from "./StatusTimeline";
 import { LogisticsQuoteModal } from "../ui/LogisticsQuoteModal";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { SellItem } from "../../data/types";
-import { getUserProfile } from "../../lib/profile/api";
+import { getUserProfile, getGradeInfo } from "../../lib/profile/api";
 import { UserProfile } from "../../data/profile/types";
 import { SellerProfileModal } from "../profile/SellerProfileModal";
 import { CreateLogisticsOrderInput } from "../../data/types/logistics";
-import { CONDITION_GRADES, INSTRUMENT_CATEGORIES } from "../../data/constants";
+import {
+  CONDITION_GRADES,
+  INSTRUMENT_CATEGORIES,
+} from "../../data/constants/index";
 import {
   MapPin,
   Calendar,
@@ -83,8 +86,11 @@ export function ItemDetailModal({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${item?.brand} ${item?.model}`,
-          text: `${item?.category} - ${item?.condition}등급`,
+          title:
+            item?.title ||
+            `${item?.brand || ""} ${item?.model || ""}`.trim() ||
+            "상품명 없음",
+          text: `${categoryInfo?.label || item?.category}`,
           url: window.location.href,
         });
       } catch (err) {
@@ -184,7 +190,11 @@ export function ItemDetailModal({
             <div className="lg:col-span-1">
               <ItemGallery
                 images={item.images || []}
-                alt={`${item.brand} ${item.model}`}
+                alt={
+                  item.title ||
+                  `${item.brand || ""} ${item.model || ""}`.trim() ||
+                  "상품명 없음"
+                }
               />
             </div>
 
@@ -197,7 +207,9 @@ export function ItemDetailModal({
                     <div className="flex items-start justify-between">
                       <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                          {item.brand} {item.model}
+                          {item.title ||
+                            `${item.brand || ""} ${item.model || ""}`.trim() ||
+                            "상품명 없음"}
                         </h1>
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                           <span className="flex items-center">
@@ -222,13 +234,6 @@ export function ItemDetailModal({
                     </div>
 
                     <div className="flex items-center space-x-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          conditionInfo?.color || "text-gray-600"
-                        }`}
-                      >
-                        {conditionInfo?.label}
-                      </span>
                       <span className="text-sm text-gray-600">
                         {categoryInfo?.icon} {categoryInfo?.label}
                       </span>
@@ -256,46 +261,12 @@ export function ItemDetailModal({
                         </tr>
                         <tr>
                           <td className="py-3 px-4 text-sm font-medium text-gray-500">
-                            브랜드
+                            상품명
                           </td>
                           <td className="py-3 px-4 text-sm text-gray-900">
-                            {item.brand}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 px-4 text-sm font-medium text-gray-500">
-                            모델
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-900">
-                            {item.model}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 px-4 text-sm font-medium text-gray-500">
-                            연식
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-900">
-                            {item.year}년
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 px-4 text-sm font-medium text-gray-500">
-                            상태
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-900">
-                            <span
-                              className={`px-2 py-1 rounded text-xs font-medium ${
-                                item.condition === "A"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : item.condition === "B"
-                                    ? "bg-green-100 text-green-800"
-                                    : item.condition === "C"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {conditionInfo?.label}
-                            </span>
+                            {item.title ||
+                              `${item.brand || ""} ${item.model || ""}`.trim() ||
+                              "상품명 없음"}
                           </td>
                         </tr>
                         <tr>
@@ -366,7 +337,11 @@ export function ItemDetailModal({
                         <div className="flex items-center space-x-2">
                           <div className="flex items-center text-sm text-gray-500">
                             <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                            {sellerProfile?.grade || "신규"} 등급
+                            {(() => {
+                              const grade = sellerProfile?.grade || "C";
+                              const gradeInfo = getGradeInfo(grade);
+                              return gradeInfo.displayName;
+                            })()}
                           </div>
                           {sellerProfile?.region && (
                             <div className="flex items-center text-sm text-gray-500">
@@ -416,10 +391,25 @@ export function ItemDetailModal({
                     안전거래 가능
                   </span>
                 )}
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  <Truck className="w-4 h-4 mr-1" />
-                  {getShippingTypeLabel(item.shippingType)}
-                </span>
+                {/* 배송 방법들 */}
+                <div className="flex flex-wrap gap-2">
+                  {item.shippingTypes && item.shippingTypes.length > 0 ? (
+                    item.shippingTypes.map((type, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                      >
+                        <Truck className="w-4 h-4 mr-1" />
+                        {getShippingTypeLabel(type)}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      <Truck className="w-4 h-4 mr-1" />
+                      {getShippingTypeLabel(item.shippingType || "direct")}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* 구매 CTA */}

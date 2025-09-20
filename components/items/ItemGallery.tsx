@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Search } from "lucide-react";
 
 interface ItemGalleryProps {
   images: string[];
@@ -12,8 +12,19 @@ interface ItemGalleryProps {
 export function ItemGallery({ images, alt, className = "" }: ItemGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
+  const [isHovering, setIsHovering] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxPosition, setLightboxPosition] = useState({ x: 0, y: 0 });
 
   const displayImages = images;
+
+  console.log("ItemGallery 렌더링:", {
+    images,
+    displayImages,
+    imagesLength: displayImages.length,
+    alt,
+  });
 
   const nextImage = () => {
     setCurrentIndex(prev => (prev + 1) % displayImages.length);
@@ -29,12 +40,43 @@ export function ItemGallery({ images, alt, className = "" }: ItemGalleryProps) {
     setCurrentIndex(index);
   };
 
+  const openLightbox = (image: string, event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setLightboxPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+    });
+    setLightboxImage(image);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
+  };
+
   const openFullscreen = () => {
+    console.log("풀스크린 열기 클릭됨");
     setIsFullscreen(true);
   };
 
   const closeFullscreen = () => {
     setIsFullscreen(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePosition({ x, y });
+  };
+
+  const handleMouseEnter = () => {
+    console.log("마우스 호버 시작", { isHovering: true });
+    setIsHovering(true);
+  };
+
+  const handleMouseLeave = () => {
+    console.log("마우스 호버 끝", { isHovering: false });
+    setIsHovering(false);
   };
 
   if (displayImages.length === 0) {
@@ -45,6 +87,9 @@ export function ItemGallery({ images, alt, className = "" }: ItemGalleryProps) {
         <div className="text-center">
           <div className="text-6xl mb-2">🎵</div>
           <p className="text-gray-500">이미지 없음</p>
+          <p className="text-xs text-gray-400 mt-2">
+            상품 등록 시 이미지를 업로드해주세요
+          </p>
         </div>
       </div>
     );
@@ -55,12 +100,23 @@ export function ItemGallery({ images, alt, className = "" }: ItemGalleryProps) {
       {/* 메인 갤러리 */}
       <div className={`relative ${className}`}>
         {/* 메인 이미지 */}
-        <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden relative group">
+        <div
+          className="aspect-square bg-gray-200 rounded-lg overflow-hidden relative group"
+          onMouseMove={handleMouseMove}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
           <img
             src={displayImages[currentIndex]}
             alt={alt}
-            className="w-full h-full object-cover cursor-pointer"
+            className="w-full h-full object-cover transition-transform duration-300 cursor-pointer focus:outline-none"
+            style={{
+              transform: isHovering ? `scale(2)` : `scale(1)`,
+              transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
+            }}
+            onDoubleClick={e => e.preventDefault()}
             onClick={openFullscreen}
+            tabIndex={0}
           />
 
           {/* 네비게이션 버튼 */}
@@ -89,21 +145,25 @@ export function ItemGallery({ images, alt, className = "" }: ItemGalleryProps) {
 
         {/* 썸네일 */}
         {displayImages.length > 1 && (
-          <div className="flex space-x-2 mt-4 overflow-x-auto">
+          <div className="flex space-x-3 mt-4 overflow-x-auto">
             {displayImages.map((image, index) => (
               <button
                 key={index}
-                onClick={() => goToImage(index)}
-                className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                onClick={e => {
+                  e.preventDefault();
+                  openLightbox(image, e);
+                }}
+                className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
                   index === currentIndex
                     ? "border-blue-500"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
+                title="클릭하여 원본 이미지 보기"
               >
                 <img
                   src={image}
                   alt={`${alt} ${index + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain bg-gray-100"
                 />
               </button>
             ))}
@@ -113,7 +173,7 @@ export function ItemGallery({ images, alt, className = "" }: ItemGalleryProps) {
 
       {/* 풀스크린 모달 */}
       {isFullscreen && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-[9999] flex items-center justify-center">
           <div className="relative max-w-4xl max-h-full p-4">
             {/* 닫기 버튼 */}
             <button
@@ -177,6 +237,26 @@ export function ItemGallery({ images, alt, className = "" }: ItemGalleryProps) {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 라이트박스 팝업 */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-[9998] cursor-pointer flex items-center justify-center p-4"
+          onClick={closeLightbox}
+        >
+          <div
+            className="relative bg-white rounded-lg shadow-2xl max-w-2xl max-h-[80vh] p-4 cursor-default"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 이미지 */}
+            <img
+              src={lightboxImage}
+              alt={alt}
+              className="max-w-full max-h-[70vh] object-contain rounded"
+            />
           </div>
         </div>
       )}

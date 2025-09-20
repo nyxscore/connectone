@@ -10,6 +10,7 @@ export interface UserProfile {
   grade: UserGrade; // 등급
   tradesCount: number; // 총 거래 횟수
   reviewsCount: number; // 받은 후기 수
+  responseRate: number; // 응답률 (0-100%)
   introShort?: string; // 한 줄 소개
   introLong?: string; // 자기소개(상세)
   createdAt: Timestamp;

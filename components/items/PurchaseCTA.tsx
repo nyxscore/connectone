@@ -12,14 +12,14 @@ import {
   Edit,
   Trash2,
   ArrowUp,
+  ChevronDown,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { StartChatButton } from "../chat/StartChatButton";
 import { deleteItem, updateItem } from "../../lib/api/products";
 import { EditItemModal } from "./EditItemModal";
-import { DeletedItemModal } from "./DeletedItemModal";
 import toast from "react-hot-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface PurchaseCTAProps {
   status: "active" | "reserved" | "paid_hold" | "shipped" | "sold";
@@ -56,8 +56,24 @@ export function PurchaseCTA({
 }: PurchaseCTAProps) {
   const router = useRouter();
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeletedModal, setShowDeletedModal] = useState(false);
-  const [deletedItemTitle, setDeletedItemTitle] = useState("");
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showStatusDropdown) {
+        const target = event.target as Element;
+        if (!target.closest(".status-dropdown")) {
+          setShowStatusDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showStatusDropdown]);
 
   const handlePurchase = () => {
     if (onPurchase) {
@@ -120,10 +136,9 @@ export function PurchaseCTA({
           const result = await deleteItem(itemId, currentUserId);
 
           if (result.success) {
-            // 삭제된 상품 제목 설정 (실제로는 상품 정보를 가져와야 하지만, 간단히 처리)
-            setDeletedItemTitle("상품");
-            // 삭제 완료 모달 표시
-            setShowDeletedModal(true);
+            toast.success("상품이 삭제되었습니다.");
+            // 페이지 새로고침
+            window.location.reload();
           } else {
             toast.error(result.error || "상품 삭제에 실패했습니다.");
           }
@@ -160,6 +175,41 @@ export function PurchaseCTA({
         console.error("끌어올리기 실패:", error);
         toast.error("끌어올리기 중 오류가 발생했습니다.");
       }
+    }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!itemId || !currentUserId) {
+      toast.error("상태를 변경할 수 없습니다.");
+      return;
+    }
+
+    try {
+      const result = await updateItem(itemId, currentUserId, {
+        status: newStatus,
+        updatedAt: new Date(),
+      });
+
+      if (result.success) {
+        const statusLabels = {
+          active: "판매중",
+          reserved: "예약중",
+          paid_hold: "결제완료",
+          sold: "거래완료",
+        };
+
+        toast.success(
+          `상품 상태가 "${statusLabels[newStatus as keyof typeof statusLabels]}"로 변경되었습니다!`
+        );
+        setShowStatusDropdown(false);
+        // 페이지 새로고침으로 최신 데이터 반영
+        window.location.reload();
+      } else {
+        toast.error(result.error || "상태 변경에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("상태 변경 실패:", error);
+      toast.error("상태 변경 중 오류가 발생했습니다.");
     }
   };
 
@@ -274,33 +324,147 @@ export function PurchaseCTA({
     <div className="space-y-4">
       {/* 자신의 글인 경우 */}
       {isOwnItem ? (
-        <div className="space-y-3">
-          {/* 상태 표시 */}
-          <div className="text-center">
-            <p className="text-sm text-gray-600 mb-4">
-              {status === "active" && "내가 등록한 상품"}
-              {status === "reserved" && "예약 중인 상품"}
-              {status === "paid_hold" && "결제 완료된 상품"}
-              {status === "shipped" && "배송 중인 상품"}
-              {status === "sold" && "판매 완료된 상품"}
-            </p>
-          </div>
-
-          {/* 관리 버튼들 */}
-          <div className="grid grid-cols-1 gap-3">
-            {status === "active" && (
-              <>
+        <div className="space-y-4">
+          {/* 거래 상태 섹션 */}
+          <div className="bg-gray-50 rounded-lg p-4 border">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-1">
+                  거래상태
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      status === "active"
+                        ? "bg-green-500"
+                        : status === "reserved"
+                          ? "bg-yellow-500"
+                          : status === "paid_hold"
+                            ? "bg-blue-500"
+                            : "bg-gray-500"
+                    }`}
+                  ></div>
+                  <span className="text-lg font-semibold text-gray-900">
+                    {status === "active" && "판매중"}
+                    {status === "reserved" && "예약중"}
+                    {status === "paid_hold" && "결제완료"}
+                    {status === "sold" && "거래완료"}
+                  </span>
+                </div>
+              </div>
+              {/* 상태 변경 드롭다운 */}
+              <div className="relative status-dropdown">
                 <Button
-                  size="lg"
+                  size="sm"
                   variant="outline"
-                  onClick={handleEdit}
-                  className="w-full"
+                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                  className="p-2 hover:bg-gray-100"
                 >
-                  <Edit className="w-5 h-5 mr-2" />
-                  상품 수정
+                  <ChevronDown className="w-4 h-4" />
                 </Button>
 
-                <div className="grid grid-cols-2 gap-3">
+                {showStatusDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                    <div className="py-1">
+                      {status !== "active" && (
+                        <button
+                          onClick={() => handleStatusChange("active")}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span>판매중</span>
+                        </button>
+                      )}
+                      {status !== "reserved" && (
+                        <button
+                          onClick={() => handleStatusChange("reserved")}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                          <span>예약중</span>
+                        </button>
+                      )}
+                      {status !== "paid_hold" && (
+                        <button
+                          onClick={() => handleStatusChange("paid_hold")}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          <span>결제완료</span>
+                        </button>
+                      )}
+                      {status !== "sold" && (
+                        <button
+                          onClick={() => handleStatusChange("sold")}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-gray-500"></div>
+                          <span>거래완료</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 상품 관리 섹션 */}
+          <div className="bg-white rounded-lg p-4 border">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+              상품 관리
+            </h3>
+
+            {/* 관리 버튼들 */}
+            <div className="grid grid-cols-1 gap-3">
+              {status === "active" && (
+                <>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleEdit}
+                    className="w-full"
+                  >
+                    <Edit className="w-5 h-5 mr-2" />
+                    상품 수정
+                  </Button>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={handleBump}
+                      className="w-full"
+                    >
+                      <ArrowUp className="w-5 h-5 mr-2" />
+                      끌어올리기
+                    </Button>
+
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={handleDelete}
+                      className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-5 h-5 mr-2" />
+                      삭제
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* 예약중 상태 */}
+              {status === "reserved" && (
+                <>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleEdit}
+                    className="w-full"
+                  >
+                    <Edit className="w-5 h-5 mr-2" />
+                    상품 수정
+                  </Button>
                   <Button
                     size="lg"
                     variant="outline"
@@ -310,32 +474,43 @@ export function PurchaseCTA({
                     <ArrowUp className="w-5 h-5 mr-2" />
                     끌어올리기
                   </Button>
+                  <div className="text-center py-2">
+                    <p className="text-xs text-gray-500">
+                      예약된 상품은 삭제할 수 없습니다
+                    </p>
+                  </div>
+                </>
+              )}
 
+              {/* 결제완료/배송중 상태 */}
+              {(status === "paid_hold" || status === "shipped") && (
+                <>
                   <Button
                     size="lg"
                     variant="outline"
-                    onClick={handleDelete}
-                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={handleEdit}
+                    className="w-full"
                   >
-                    <Trash2 className="w-5 h-5 mr-2" />
-                    삭제
+                    <Edit className="w-5 h-5 mr-2" />
+                    상품 수정
                   </Button>
-                </div>
-              </>
-            )}
+                  <div className="text-center py-2">
+                    <p className="text-xs text-gray-500">
+                      거래 진행 중인 상품은 끌어올리기/삭제할 수 없습니다
+                    </p>
+                  </div>
+                </>
+              )}
 
-            {status !== "active" && (
-              <div className="text-center py-4">
-                <p className="text-sm text-gray-500">
-                  {status === "reserved" && "예약된 상품은 수정할 수 없습니다."}
-                  {status === "paid_hold" &&
-                    "결제 완료된 상품은 수정할 수 없습니다."}
-                  {status === "shipped" &&
-                    "배송 중인 상품은 수정할 수 없습니다."}
-                  {status === "sold" && "판매 완료된 상품입니다."}
-                </p>
-              </div>
-            )}
+              {/* 거래완료 상태 */}
+              {status === "sold" && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500">
+                    거래 완료된 상품은 수정할 수 없습니다
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (
@@ -445,13 +620,6 @@ export function PurchaseCTA({
           }}
         />
       )}
-
-      {/* 상품 삭제 완료 모달 */}
-      <DeletedItemModal
-        isOpen={showDeletedModal}
-        onClose={() => setShowDeletedModal(false)}
-        itemTitle={deletedItemTitle}
-      />
     </div>
   );
 }

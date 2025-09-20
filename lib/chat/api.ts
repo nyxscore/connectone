@@ -28,6 +28,17 @@ import {
 import { getItem } from "../api/products";
 import { getUserProfile } from "../auth";
 
+// 응답률 업데이트 (비동기)
+async function updateResponseRateAsync(sellerUid: string) {
+  try {
+    const { updateUserResponseRate } = await import("../profile/responseRate");
+    await updateUserResponseRate(sellerUid);
+    console.log("응답률 업데이트 완료:", sellerUid);
+  } catch (error) {
+    console.error("응답률 업데이트 실패:", error);
+  }
+}
+
 // 채팅 생성 또는 가져오기
 export async function getOrCreateChat(
   itemId: string,
@@ -212,6 +223,12 @@ export async function sendMessage(
   data: SendMessageData
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // senderUid 검증
+    if (!data.senderUid) {
+      console.error("sendMessage: senderUid가 없습니다:", data);
+      return { success: false, error: "발신자 정보가 없습니다." };
+    }
+
     const messagesRef = collection(db, "messages");
     const messageData: Omit<Message, "id"> = {
       chatId: data.chatId,
@@ -241,10 +258,26 @@ export async function sendMessage(
     const chatSnap = await getDoc(chatRef);
 
     if (chatSnap.exists()) {
-      await updateDoc(chatRef, {
+      const chatData = chatSnap.data() as Chat;
+      const updates: any = {
         lastMessage: data.content,
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      // 상대방의 unreadCount 증가
+      if (chatData.buyerUid === data.senderUid) {
+        // 발신자가 buyer인 경우, seller의 unreadCount 증가
+        updates.sellerUnreadCount = (chatData.sellerUnreadCount || 0) + 1;
+      } else if (chatData.sellerUid === data.senderUid) {
+        // 발신자가 seller인 경우, buyer의 unreadCount 증가
+        updates.buyerUnreadCount = (chatData.buyerUnreadCount || 0) + 1;
+
+        // seller가 메시지를 보낸 경우 응답률 업데이트 (비동기)
+        updateResponseRateAsync(chatData.sellerUid);
+      }
+
+      await updateDoc(chatRef, updates);
+      console.log("채팅 업데이트 완료:", updates);
     } else {
       console.warn("채팅 문서가 존재하지 않음, 새로 생성:", data.chatId);
 
@@ -262,7 +295,19 @@ export async function sendMessage(
           sellerUid,
           lastMessage: data.content,
           updatedAt: serverTimestamp() as Timestamp,
+          buyerUnreadCount: 0,
+          sellerUnreadCount: 0,
         };
+
+        // 상대방의 unreadCount 증가
+        if (buyerUid === data.senderUid) {
+          chatData.sellerUnreadCount = 1;
+        } else if (sellerUid === data.senderUid) {
+          chatData.buyerUnreadCount = 1;
+
+          // seller가 첫 메시지를 보낸 경우 응답률 업데이트 (비동기)
+          updateResponseRateAsync(sellerUid);
+        }
 
         await setDoc(chatRef, chatData);
         console.log("채팅 문서 생성 완료:", data.chatId);
@@ -564,17 +609,33 @@ export function subscribeToUnreadCount(
   const sellerQuery = query(chatsRef, where("sellerUid", "==", userId));
 
   let unsubscribers: (() => void)[] = [];
+  let buyerUnreadCount = 0;
+  let sellerUnreadCount = 0;
+
+  const updateTotalUnreadCount = () => {
+    const totalUnreadCount = buyerUnreadCount + sellerUnreadCount;
+    console.log(
+      "전체 읽지 않은 메시지 개수:",
+      totalUnreadCount,
+      "(buyer:",
+      buyerUnreadCount,
+      "seller:",
+      sellerUnreadCount,
+      ")"
+    );
+    callback(totalUnreadCount);
+  };
 
   const unsubscribeBuyer = onSnapshot(
     buyerQuery,
     snapshot => {
-      let totalUnreadCount = 0;
+      buyerUnreadCount = 0;
       snapshot.docs.forEach(doc => {
         const chatData = doc.data() as Chat;
-        totalUnreadCount += chatData.buyerUnreadCount || 0;
+        buyerUnreadCount += chatData.buyerUnreadCount || 0;
       });
-      console.log("Buyer 읽지 않은 메시지 개수:", totalUnreadCount);
-      callback(totalUnreadCount);
+      console.log("Buyer 읽지 않은 메시지 개수:", buyerUnreadCount);
+      updateTotalUnreadCount();
     },
     error => {
       console.error("Buyer 채팅 구독 오류:", error);
@@ -585,13 +646,13 @@ export function subscribeToUnreadCount(
   const unsubscribeSeller = onSnapshot(
     sellerQuery,
     snapshot => {
-      let totalUnreadCount = 0;
+      sellerUnreadCount = 0;
       snapshot.docs.forEach(doc => {
         const chatData = doc.data() as Chat;
-        totalUnreadCount += chatData.sellerUnreadCount || 0;
+        sellerUnreadCount += chatData.sellerUnreadCount || 0;
       });
-      console.log("Seller 읽지 않은 메시지 개수:", totalUnreadCount);
-      callback(totalUnreadCount);
+      console.log("Seller 읽지 않은 메시지 개수:", sellerUnreadCount);
+      updateTotalUnreadCount();
     },
     error => {
       console.error("Seller 채팅 구독 오류:", error);
@@ -643,5 +704,201 @@ export async function markChatAsRead(
   } catch (error) {
     console.error("채팅 읽음 처리 실패:", error);
     return { success: false, error: "채팅 읽음 처리 중 오류가 발생했습니다." };
+  }
+}
+
+// 신고/차단 관련 API 함수들
+export async function reportUser(
+  reporterUid: string,
+  reportedUid: string,
+  reason: string,
+  description?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("사용자 신고 시작:", { reporterUid, reportedUid, reason });
+
+    const reportData = {
+      reporterUid,
+      reportedUid,
+      reason,
+      description: description || "",
+      createdAt: serverTimestamp(),
+      status: "pending", // pending, reviewed, resolved
+    };
+
+    const reportRef = await addDoc(collection(db, "reports"), reportData);
+    console.log("신고 문서 생성 완료:", reportRef.id);
+
+    return { success: true };
+  } catch (error) {
+    console.error("사용자 신고 실패:", error);
+    return {
+      success: false,
+      error: "신고 처리 중 오류가 발생했습니다.",
+    };
+  }
+}
+
+export async function blockUser(
+  blockerUid: string,
+  blockedUid: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("사용자 차단 시작:", { blockerUid, blockedUid });
+
+    const blockData = {
+      blockerUid,
+      blockedUid,
+      createdAt: serverTimestamp(),
+    };
+
+    console.log("차단 데이터:", blockData);
+    const blockRef = await addDoc(collection(db, "blocks"), blockData);
+    console.log("차단 문서 생성 완료:", blockRef.id);
+
+    // 차단된 사용자와의 모든 채팅 삭제
+    const chatsRef = collection(db, "chats");
+    const buyerQuery = query(
+      chatsRef,
+      where("buyerUid", "==", blockerUid),
+      where("sellerUid", "==", blockedUid)
+    );
+    const sellerQuery = query(
+      chatsRef,
+      where("buyerUid", "==", blockedUid),
+      where("sellerUid", "==", blockerUid)
+    );
+
+    const [buyerSnapshot, sellerSnapshot] = await Promise.all([
+      getDocs(buyerQuery),
+      getDocs(sellerQuery),
+    ]);
+
+    const chatsToDelete = [
+      ...buyerSnapshot.docs.map(doc => doc.id),
+      ...sellerSnapshot.docs.map(doc => doc.id),
+    ];
+
+    // 모든 관련 채팅 삭제
+    const deletePromises = chatsToDelete.map(chatId =>
+      deleteChat(chatId, blockerUid)
+    );
+    await Promise.all(deletePromises);
+
+    console.log(
+      "차단된 사용자와의 채팅 삭제 완료:",
+      chatsToDelete.length,
+      "개"
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error("사용자 차단 실패:", error);
+    return {
+      success: false,
+      error: "차단 처리 중 오류가 발생했습니다.",
+    };
+  }
+}
+
+export async function isUserBlocked(
+  blockerUid: string,
+  blockedUid: string
+): Promise<{ success: boolean; isBlocked?: boolean; error?: string }> {
+  try {
+    const blocksRef = collection(db, "blocks");
+    const blockQuery = query(
+      blocksRef,
+      where("blockerUid", "==", blockerUid),
+      where("blockedUid", "==", blockedUid)
+    );
+
+    const snapshot = await getDocs(blockQuery);
+    const isBlocked = !snapshot.empty;
+
+    return { success: true, isBlocked };
+  } catch (error) {
+    console.error("차단 상태 확인 실패:", error);
+    return {
+      success: false,
+      error: "차단 상태를 확인하는데 실패했습니다.",
+    };
+  }
+}
+
+export async function getBlockedUsers(
+  blockerUid: string
+): Promise<{ success: boolean; blockedUsers?: any[]; error?: string }> {
+  try {
+    console.log("차단된 사용자 목록 조회 시작:", blockerUid);
+
+    const blocksRef = collection(db, "blocks");
+    // orderBy를 제거하여 인덱스 없이도 작동하도록 수정
+    const blockQuery = query(blocksRef, where("blockerUid", "==", blockerUid));
+
+    console.log("Firestore 쿼리 실행 중...");
+    const snapshot = await getDocs(blockQuery);
+    console.log("쿼리 결과 문서 수:", snapshot.docs.length);
+
+    const blockedUsers = snapshot.docs.map(doc => {
+      const data = doc.data();
+      console.log("차단 문서 데이터:", { id: doc.id, ...data });
+      return {
+        id: doc.id,
+        ...data,
+      };
+    });
+
+    // 클라이언트에서 시간순으로 정렬
+    blockedUsers.sort((a, b) => {
+      const aTime = a.createdAt?.seconds || 0;
+      const bTime = b.createdAt?.seconds || 0;
+      return bTime - aTime; // 최신순
+    });
+
+    console.log("최종 차단된 사용자 목록:", blockedUsers);
+    return { success: true, blockedUsers };
+  } catch (error) {
+    console.error("차단된 사용자 목록 조회 실패:", error);
+    return {
+      success: false,
+      error: "차단된 사용자 목록을 조회하는데 실패했습니다.",
+    };
+  }
+}
+
+export async function unblockUser(
+  blockerUid: string,
+  blockedUid: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("사용자 차단 해제 시작:", { blockerUid, blockedUid });
+
+    const blocksRef = collection(db, "blocks");
+    const blockQuery = query(
+      blocksRef,
+      where("blockerUid", "==", blockerUid),
+      where("blockedUid", "==", blockedUid)
+    );
+
+    const snapshot = await getDocs(blockQuery);
+
+    if (snapshot.empty) {
+      return { success: false, error: "차단 기록을 찾을 수 없습니다." };
+    }
+
+    // 모든 차단 기록 삭제
+    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+
+    console.log("차단 해제 완료:", snapshot.docs.length, "개 기록 삭제");
+
+    return { success: true };
+  } catch (error) {
+    console.error("사용자 차단 해제 실패:", error);
+    return {
+      success: false,
+      error: "차단 해제 처리 중 오류가 발생했습니다.",
+    };
   }
 }

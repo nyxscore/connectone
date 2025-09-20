@@ -16,12 +16,11 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
 import { Checkbox } from "../ui/Checkbox";
-import { GradeProgressBar } from "../ui/GradeProgressBar";
 import {
   INSTRUMENT_CATEGORIES,
   CONDITION_GRADES,
   SHIPPING_TYPES,
-} from "../../data/constants";
+} from "../../data/constants/index";
 import { X, Upload, Loader2, AlertCircle, Save } from "lucide-react";
 
 interface EditItemModalProps {
@@ -74,9 +73,7 @@ export function EditItemModal({
         setItem(itemData as SellItem);
 
         // 폼에 기존 데이터 설정
-        setValue("brand", itemData.brand);
-        setValue("model", itemData.model);
-        setValue("year", itemData.year);
+        setValue("title", itemData.title);
         setValue("condition", itemData.condition);
         setValue("category", itemData.category);
         setValue("region", itemData.region);
@@ -87,6 +84,14 @@ export function EditItemModal({
           itemData.shippingType as "direct" | "pickup" | "courier"
         );
         setValue("escrowEnabled", itemData.escrowEnabled);
+
+        // shippingTypes 설정
+        if (itemData.shippingTypes && Array.isArray(itemData.shippingTypes)) {
+          setValue("shippingTypes", itemData.shippingTypes);
+        } else if (itemData.shippingType) {
+          // 기존 단일 shippingType을 배열로 변환
+          setValue("shippingTypes", [itemData.shippingType]);
+        }
 
         // 이미지 URL 설정
         if (itemData.images) {
@@ -147,6 +152,12 @@ export function EditItemModal({
         ...data,
         images: finalImageUrls,
         aiTags,
+        // shippingTypes가 배열이 아닌 경우 배열로 변환
+        shippingTypes: Array.isArray(data.shippingTypes)
+          ? data.shippingTypes
+          : data.shippingType
+            ? [data.shippingType]
+            : [],
       };
 
       const result = await updateItem(itemId, user.uid, updateData as any);
@@ -220,48 +231,12 @@ export function EditItemModal({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        브랜드 *
+                        상품명 *
                       </label>
                       <Input
-                        {...register("brand")}
-                        placeholder="예: Gibson, Fender, Yamaha"
-                        error={errors.brand?.message}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        모델명 *
-                      </label>
-                      <Input
-                        {...register("model")}
-                        placeholder="예: Les Paul Standard, Stratocaster"
-                        error={errors.model?.message}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        연식 *
-                      </label>
-                      <Input
-                        type="number"
-                        {...register("year", { valueAsNumber: true })}
-                        placeholder="예: 2020"
-                        min="1900"
-                        max={new Date().getFullYear()}
-                        error={errors.year?.message}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        지역 *
-                      </label>
-                      <Input
-                        {...register("region")}
-                        placeholder="예: 서울특별시, 경기도"
-                        error={errors.region?.message}
+                        {...register("title")}
+                        placeholder="예: Gibson Les Paul Standard"
+                        error={errors.title?.message}
                       />
                     </div>
 
@@ -281,6 +256,17 @@ export function EditItemModal({
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
+                        지역 *
+                      </label>
+                      <Input
+                        {...register("region")}
+                        placeholder="예: 서울특별시, 경기도"
+                        error={errors.region?.message}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         상태 등급 *
                       </label>
                       <Select
@@ -291,22 +277,6 @@ export function EditItemModal({
                         }))}
                         error={errors.condition?.message}
                       />
-                      {watchedCondition && (
-                        <div className="mt-2">
-                          <GradeProgressBar
-                            grade={
-                              watchedCondition as
-                                | "A"
-                                | "B"
-                                | "C"
-                                | "D"
-                                | "E"
-                                | "F"
-                                | "G"
-                            }
-                          />
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -320,15 +290,22 @@ export function EditItemModal({
                   </h3>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      판매가격 (원) *
+                      판매가격 *
                     </label>
-                    <Input
-                      type="number"
-                      {...register("price", { valueAsNumber: true })}
-                      placeholder="예: 500000"
-                      min="0"
-                      error={errors.price?.message}
-                    />
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        {...register("price", { valueAsNumber: true })}
+                        placeholder="예: 500000"
+                        min="0"
+                        step="1000"
+                        className="pr-12 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                        error={errors.price?.message}
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                        원
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -346,22 +323,24 @@ export function EditItemModal({
                       <h4 className="text-sm font-medium text-gray-700 mb-2">
                         현재 이미지
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                         {imageUrls.map((url, index) => (
                           <div key={index} className="relative group">
-                            <img
-                              src={url}
-                              alt={`상품 이미지 ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                            />
+                            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                              <img
+                                src={url}
+                                alt={`상품 이미지 ${index + 1}`}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
                             {/* 삭제 버튼 */}
                             <button
                               type="button"
                               onClick={() => removeExistingImage(index)}
-                              className="absolute -top-2 -right-2 w-6 h-6 bg-gray-600 hover:bg-gray-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-gray-600 hover:bg-gray-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
                               title="이미지 삭제"
                             >
-                              <X className="w-4 h-4" />
+                              <X className="w-3 h-3" />
                             </button>
                           </div>
                         ))}
@@ -398,25 +377,26 @@ export function EditItemModal({
                     {selectedFiles.length > 0 && (
                       <div className="mt-4">
                         <h5 className="text-sm font-medium text-gray-700 mb-2">
-                          선택된 파일
+                          새로 추가할 이미지
                         </h5>
-                        <div className="space-y-1">
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                           {selectedFiles.map((file, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between bg-gray-50 p-2 rounded"
-                            >
-                              <span className="text-sm text-gray-700">
-                                {file.name}
-                              </span>
-                              <Button
+                            <div key={index} className="relative group">
+                              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`새 이미지 ${index + 1}`}
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <button
                                 type="button"
-                                variant="ghost"
-                                size="sm"
                                 onClick={() => removeFile(index)}
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+                                title="이미지 제거"
                               >
-                                <X className="w-4 h-4" />
-                              </Button>
+                                <X className="w-3 h-3" />
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -461,19 +441,34 @@ export function EditItemModal({
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          배송 방법 *
+                          배송 방법 * (여러 개 선택 가능)
                         </label>
-                        <Select
-                          {...register("shippingType")}
-                          options={SHIPPING_TYPES.map(type => ({
-                            value: type.key,
-                            label: type.label,
-                          }))}
-                          error={errors.shippingType?.message}
-                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {SHIPPING_TYPES.map(type => (
+                            <label
+                              key={type.key}
+                              className="flex items-center space-x-2 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                value={type.key}
+                                {...register("shippingTypes")}
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700">
+                                {type.label}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                        {errors.shippingTypes && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.shippingTypes.message}
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center">

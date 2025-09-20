@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useState, useRef, useEffect } from "react";
+// 등급 관련 import 제거 (응답률로 변경)
 
 interface ProfileStatsProps {
   user: UserProfile;
@@ -181,7 +182,8 @@ export function ProfileStats({
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${gradeInfo.bgColor} ${gradeInfo.color} flex-shrink-0`}
               >
-                {gradeInfo.label}
+                <span className="mr-1">{gradeInfo.emoji}</span>
+                {gradeInfo.displayName}
               </span>
             </div>
 
@@ -217,24 +219,15 @@ export function ProfileStats({
 
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900">
-                  {user.grade}
+                  {user.responseRate || 0}%
                 </div>
-                <div className="text-sm text-gray-600">등급</div>
+                <div className="text-sm text-gray-600">응답률</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 등급 설명 */}
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center space-x-2 mb-1">
-            <TrendingUp className="w-4 h-4 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">
-              {gradeInfo.label} 등급
-            </span>
-          </div>
-          <p className="text-sm text-gray-600">{gradeInfo.description}</p>
-        </div>
+        {/* 등급표 모달 제거됨 - 응답률로 변경 */}
       </div>
     </Card>
   );

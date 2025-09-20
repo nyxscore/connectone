@@ -36,12 +36,38 @@ export async function getUserProfile(
     }
 
     const userData = userDoc.data();
+    let profile = {
+      uid: userDoc.id,
+      ...userData,
+      // 응답률이 없으면 기본값 0 설정
+      responseRate: userData.responseRate || 0,
+    } as UserProfile;
+
+    // 응답률이 없거나 오래된 경우 업데이트
+    if (!userData.responseRate || !userData.lastResponseRateUpdate) {
+      try {
+        const { calculateResponseRate } = await import("./responseRate");
+        const responseRate = await calculateResponseRate(uid);
+
+        // 응답률 업데이트
+        const userRef = doc(db, "users", uid);
+        await updateDoc(userRef, {
+          responseRate,
+          lastResponseRateUpdate: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        profile.responseRate = responseRate;
+        console.log("사용자 응답률 자동 업데이트:", { uid, responseRate });
+      } catch (error) {
+        console.error("응답률 계산 실패:", error);
+        // 응답률 계산 실패해도 프로필은 반환
+      }
+    }
+
     return {
       success: true,
-      data: {
-        uid: userDoc.id,
-        ...userData,
-      } as UserProfile,
+      data: profile,
     };
   } catch (error) {
     console.error("사용자 프로필 조회 실패:", error);
@@ -207,46 +233,60 @@ export async function getRecentTrades(
 export function getGradeInfo(grade: string) {
   const gradeInfo = {
     C: {
+      emoji: "🌱",
       label: "Chord",
-      color: "text-gray-600",
-      bgColor: "bg-gray-100",
-      description: "신규 회원",
+      displayName: "Chord 회원",
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+      description: "음악 여행의 시작",
     },
     D: {
+      emoji: "🎵",
       label: "Duo",
+      displayName: "듀오 회원",
       color: "text-sky-600",
       bgColor: "bg-sky-100",
-      description: "거래 시작",
+      description: "함께하는 음악",
     },
     E: {
+      emoji: "🎶",
       label: "Ensemble",
+      displayName: "앙상블 회원",
       color: "text-emerald-600",
       bgColor: "bg-emerald-100",
-      description: "활발한 거래",
+      description: "화합의 멜로디",
     },
     F: {
+      emoji: "🎼",
       label: "Forte",
+      displayName: "포르테 회원",
       color: "text-blue-600",
       bgColor: "bg-blue-100",
-      description: "신뢰할 수 있는 판매자",
+      description: "강렬한 음악",
     },
     G: {
+      emoji: "🎹",
       label: "Grand",
+      displayName: "그랜드 회원",
       color: "text-purple-600",
       bgColor: "bg-purple-100",
-      description: "전문 판매자",
+      description: "웅장한 연주",
     },
     A: {
+      emoji: "⭐",
       label: "Allegro",
+      displayName: "알레그로 회원",
       color: "text-orange-600",
       bgColor: "bg-orange-100",
-      description: "우수 판매자",
+      description: "빠르고 밝은 음악",
     },
     B: {
+      emoji: "👑",
       label: "Bravura",
+      displayName: "브라부라 회원",
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
-      description: "최고 등급",
+      description: "화려한 기교",
     },
   };
 

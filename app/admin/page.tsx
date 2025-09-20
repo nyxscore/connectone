@@ -19,11 +19,41 @@ import {
   Eye,
   EyeOff,
   Tag,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const [isUpdatingResponseRate, setIsUpdatingResponseRate] = useState(false);
+
+  // 응답률 업데이트 함수
+  const handleUpdateResponseRates = async () => {
+    setIsUpdatingResponseRate(true);
+    try {
+      const response = await fetch("/api/admin/update-response-rates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.error || "응답률 업데이트에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("응답률 업데이트 실패:", error);
+      toast.error("응답률 업데이트 중 오류가 발생했습니다.");
+    } finally {
+      setIsUpdatingResponseRate(false);
+    }
+  };
 
   // Mock 데이터 (실제로는 API에서 가져옴)
   const stats = {
@@ -263,6 +293,26 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </Link>
+
+            {/* 응답률 업데이트 */}
+            <Card
+              className="hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={handleUpdateResponseRates}
+            >
+              <CardContent className="p-6 text-center">
+                <RefreshCw
+                  className={`w-12 h-12 text-green-600 mx-auto mb-4 ${isUpdatingResponseRate ? "animate-spin" : ""}`}
+                />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  응답률 업데이트
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {isUpdatingResponseRate
+                    ? "업데이트 중..."
+                    : "전체 사용자 응답률 계산"}
+                </p>
+              </CardContent>
+            </Card>
 
             <Link href="/admin/products">
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">

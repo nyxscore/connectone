@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import { ChatWithDetails } from "../../data/chat/types";
 import { getUserChats } from "../../lib/chat/api";
 import { useAuth } from "../../lib/hooks/useAuth";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { getUserProfile } from "../../lib/profile/api";
+import { getItem } from "../../lib/api/products";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  onSnapshot,
+} from "firebase/firestore";
 import { db } from "../../lib/api/firebase";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -22,77 +30,21 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
   const router = useRouter();
   const [chats, setChats] = useState<ChatWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [lastDoc, setLastDoc] = useState<any>(null);
   const [error, setError] = useState("");
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
-  const loadChats = useCallback(
-    async (isLoadMore = false) => {
-      if (!user) {
-        console.log("ChatList: user가 없어서 로드 중단");
-        return;
-      }
-
-      try {
-        console.log("ChatList: loadChats 시작", {
-          isLoadMore,
-          userUid: user.uid,
-        });
-
-        if (isLoadMore) {
-          setLoadingMore(true);
-        } else {
-          setLoading(true);
-          // 채팅 삭제 후 새로고침이 아닌 경우에만 채팅 목록 초기화
-          if (chats.length === 0) {
-            setChats([]);
-            setLastDoc(null);
-            setHasMore(true);
-          }
-        }
-
-        const result = await getUserChats(user.uid, lastDoc, 20);
-        console.log("ChatList: getUserChats 결과", result);
-
-        if (result.success && result.chats) {
-          // unknown 채팅 필터링
-          const filteredChats = result.chats.filter(
-            chat => chat.itemId !== "unknown" && chat.sellerUid !== "unknown"
-          );
-
-          if (isLoadMore) {
-            setChats(prev => [...prev, ...filteredChats]);
-          } else {
-            setChats(filteredChats);
-          }
-          setLastDoc(result.lastDoc);
-          setHasMore(result.chats.length === 20);
-        } else {
-          setError(result.error || "채팅 목록을 불러오는데 실패했습니다.");
-        }
-      } catch (err) {
-        console.error("채팅 목록 로드 실패:", err);
-        setError("채팅 목록을 불러오는데 실패했습니다.");
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    },
-    [user, lastDoc]
-  );
-
+  // 초기 로딩 상태 설정
   useEffect(() => {
-    console.log("ChatList: useEffect 실행", { user: user?.uid });
-    loadChats();
+    if (user) {
+      setLoading(false);
+    }
   }, [user]);
 
-  // 채팅이 삭제되었을 때 목록 새로고침
+  // 채팅이 삭제되었을 때 목록에서 제거
   useEffect(() => {
     const handleChatDeleted = (event: CustomEvent) => {
       console.log(
-        "ChatList: 채팅 삭제 이벤트 감지 - 목록 새로고침",
+        "ChatList: 채팅 삭제 이벤트 감지 - 목록에서 제거",
         event.detail
       );
       const deletedChatId = event.detail?.chatId;
@@ -103,9 +55,6 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
           prevChats.filter(chat => chat.id !== deletedChatId)
         );
         console.log("ChatList: 삭제된 채팅 제거 완료", deletedChatId);
-      } else {
-        // chatId가 없으면 전체 새로고침
-        loadChats(false);
       }
     };
 
@@ -118,50 +67,187 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
         handleChatDeleted as EventListener
       );
     };
-  }, [loadChats]);
+  }, []);
 
-  // 실시간으로 미읽음 메시지 수 업데이트
+  // 실시간으로 채팅 목록과 미읽음 메시지 수 업데이트
   useEffect(() => {
-    if (!user || chats.length === 0) return;
+    if (!user) return;
 
-    const updateUnreadCounts = async () => {
-      const counts: Record<string, number> = {};
+    console.log("실시간 채팅 구독 시작:", user.uid);
 
-      for (const chat of chats) {
+    // 사용자가 참여한 모든 채팅 구독
+    const chatsRef = collection(db, "chats");
+    const buyerQuery = query(chatsRef, where("buyerUid", "==", user.uid));
+    const sellerQuery = query(chatsRef, where("sellerUid", "==", user.uid));
+
+    let unsubscribers: (() => void)[] = [];
+
+    const updateChatsFromSnapshot = (snapshot: any, isBuyer: boolean) => {
+      console.log(
+        `${isBuyer ? "Buyer" : "Seller"} 채팅 업데이트:`,
+        snapshot.docs.length,
+        "개"
+      );
+
+      const updatedChats: ChatWithDetails[] = [];
+
+      // Promise.all을 사용하여 모든 프로필 정보를 병렬로 가져오기
+      const profilePromises = snapshot.docs.map(async (doc: any) => {
+        const chatData = { ...doc.data(), id: doc.id };
+        const otherUid = isBuyer ? chatData.sellerUid : chatData.buyerUid;
+
         try {
-          const messagesRef = collection(db, "messages");
-          const q = query(messagesRef, where("chatId", "==", chat.id));
+          console.log(`상대방 프로필 정보 가져오기 시작: ${otherUid}`);
+          const [otherUserResult, itemResult] = await Promise.all([
+            getUserProfile(otherUid),
+            getItem(chatData.itemId),
+          ]);
 
-          const snapshot = await getDocs(q);
-          let unreadCount = 0;
+          console.log(`상대방 프로필 정보 결과:`, otherUserResult);
+          console.log(`아이템 정보:`, itemResult);
 
-          snapshot.docs.forEach(doc => {
-            const messageData = doc.data();
-            if (
-              messageData.senderUid !== user.uid &&
-              !messageData.readBy.includes(user.uid)
-            ) {
-              unreadCount++;
+          const otherUser = otherUserResult.success
+            ? otherUserResult.data
+            : null;
+
+          console.log(`상대방 사용자 데이터:`, {
+            uid: otherUid,
+            nickname: otherUser?.nickname,
+            displayName: otherUser?.displayName,
+            photoURL: otherUser?.photoURL,
+            profileImage: otherUser?.profileImage,
+          });
+
+          // 상품 정보 처리 개선
+          let itemInfo = {
+            id: chatData.itemId,
+            title: "상품 정보 없음",
+            price: 0,
+            imageUrl: null,
+          };
+
+          if (itemResult?.success && itemResult?.item) {
+            itemInfo = {
+              id: itemResult.item.id,
+              title: itemResult.item.title || "상품명 없음",
+              price: itemResult.item.price || 0,
+              imageUrl: itemResult.item.images?.[0] || null,
+            };
+          } else {
+            console.warn(`상품 정보를 가져올 수 없음:`, {
+              itemId: chatData.itemId,
+              error: itemResult?.error,
+            });
+          }
+
+          return {
+            ...chatData,
+            otherUser: {
+              uid: otherUid,
+              nickname:
+                otherUser?.nickname || otherUser?.displayName || "알 수 없음",
+              profileImage: otherUser?.photoURL || otherUser?.profileImage,
+            },
+            item: itemInfo,
+            unreadCount: isBuyer
+              ? chatData.buyerUnreadCount || 0
+              : chatData.sellerUnreadCount || 0,
+          };
+        } catch (error) {
+          console.error(`채팅 ${doc.id} 정보 로드 실패:`, error);
+          return {
+            ...chatData,
+            otherUser: {
+              uid: otherUid,
+              nickname: "알 수 없음",
+              profileImage: null,
+            },
+            item: {
+              id: chatData.itemId,
+              title: "상품 정보 없음",
+              price: 0,
+              imageUrl: null,
+            },
+            unreadCount: isBuyer
+              ? chatData.buyerUnreadCount || 0
+              : chatData.sellerUnreadCount || 0,
+          };
+        }
+      });
+
+      // 모든 프로필 정보를 가져온 후 처리
+      Promise.all(profilePromises).then(chatDetails => {
+        console.log(`모든 채팅 데이터 로드 완료:`, chatDetails);
+
+        // 시간순으로 정렬
+        chatDetails.sort((a, b) => {
+          const aTime = a.updatedAt?.seconds || 0;
+          const bTime = b.updatedAt?.seconds || 0;
+          return bTime - aTime;
+        });
+
+        // 채팅 목록 업데이트
+        setChats(prevChats => {
+          const allChats = [...prevChats];
+
+          chatDetails.forEach(updatedChat => {
+            const existingIndex = allChats.findIndex(
+              chat => chat.id === updatedChat.id
+            );
+            if (existingIndex >= 0) {
+              allChats[existingIndex] = updatedChat;
+            } else {
+              allChats.push(updatedChat);
             }
           });
 
-          counts[chat.id] = unreadCount;
-        } catch (error) {
-          console.error(`채팅 ${chat.id} 미읽음 수 계산 실패:`, error);
-          counts[chat.id] = 0;
-        }
-      }
+          // 중복 제거 및 정렬
+          const uniqueChats = allChats.filter(
+            (chat, index, self) =>
+              index === self.findIndex(c => c.id === chat.id)
+          );
 
-      setUnreadCounts(counts);
+          return uniqueChats.sort((a, b) => {
+            const aTime = a.updatedAt?.seconds || 0;
+            const bTime = b.updatedAt?.seconds || 0;
+            return bTime - aTime;
+          });
+        });
+
+        // 미읽음 메시지 수 업데이트
+        const counts: Record<string, number> = {};
+        chatDetails.forEach(chat => {
+          counts[chat.id] = isBuyer
+            ? chat.buyerUnreadCount || 0
+            : chat.sellerUnreadCount || 0;
+        });
+
+        setUnreadCounts(prevCounts => ({
+          ...prevCounts,
+          ...counts,
+        }));
+      });
     };
 
-    updateUnreadCounts();
+    const unsubscribeBuyer = onSnapshot(
+      buyerQuery,
+      snapshot => updateChatsFromSnapshot(snapshot, true),
+      error => console.error("Buyer 채팅 구독 오류:", error)
+    );
 
-    // 5초마다 업데이트
-    const interval = setInterval(updateUnreadCounts, 5000);
+    const unsubscribeSeller = onSnapshot(
+      sellerQuery,
+      snapshot => updateChatsFromSnapshot(snapshot, false),
+      error => console.error("Seller 채팅 구독 오류:", error)
+    );
 
-    return () => clearInterval(interval);
-  }, [user, chats]);
+    unsubscribers.push(unsubscribeBuyer, unsubscribeSeller);
+
+    return () => {
+      console.log("채팅 구독 해제");
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [user]);
 
   const handleChatClick = (chatId: string) => {
     console.log("채팅 클릭:", chatId);
@@ -173,12 +259,6 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
       onChatSelect(chatId);
     } else {
       router.push(`/chat/${chatId}`);
-    }
-  };
-
-  const handleLoadMore = () => {
-    if (!loadingMore && hasMore) {
-      loadChats(true);
     }
   };
 
@@ -281,21 +361,43 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
         return (
           <Card
             key={chat.id}
-            className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+            className="p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition-colors"
             onClick={() => handleChatClick(chat.id)}
           >
-            <div className="flex items-start space-x-3">
+            <div className="flex items-start space-x-2 sm:space-x-3">
               {/* 상대방 프로필 이미지 */}
               <div className="flex-shrink-0">
+                {(() => {
+                  console.log(`프로필 이미지 렌더링:`, {
+                    chatId: chat.id,
+                    nickname: chat.otherUser.nickname,
+                    profileImage: chat.otherUser.profileImage,
+                    hasProfileImage: !!chat.otherUser.profileImage,
+                  });
+                  return null;
+                })()}
                 {chat.otherUser.profileImage ? (
                   <img
                     src={chat.otherUser.profileImage}
                     alt={chat.otherUser.nickname}
-                    className="w-12 h-12 rounded-full object-cover"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
+                    onError={e => {
+                      console.error(
+                        `프로필 이미지 로드 실패:`,
+                        chat.otherUser.profileImage
+                      );
+                      e.currentTarget.style.display = "none";
+                    }}
+                    onLoad={() => {
+                      console.log(
+                        `프로필 이미지 로드 성공:`,
+                        chat.otherUser.profileImage
+                      );
+                    }}
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                    <User className="w-6 h-6 text-gray-500" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                    <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
                   </div>
                 )}
               </div>
@@ -303,29 +405,36 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
               {/* 채팅 정보 */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate">
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
                     {chat.otherUser.nickname}
                   </h3>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
                     {(unreadCounts[chat.id] || 0) > 0 && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 shadow-sm">
+                      <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 shadow-sm">
                         {unreadCounts[chat.id]}
                       </span>
                     )}
                     <span className="text-xs text-gray-500 flex items-center">
                       <Clock className="w-3 h-3 mr-1" />
-                      {formatTime(chat.updatedAt)}
+                      <span className="hidden sm:inline">
+                        {formatTime(chat.updatedAt)}
+                      </span>
+                      <span className="sm:hidden">
+                        {formatTime(chat.updatedAt)
+                          .replace("시간", "시")
+                          .replace("분", "분")}
+                      </span>
                     </span>
                   </div>
                 </div>
 
                 {/* 아이템 정보 */}
-                <div className="flex items-center space-x-2 mb-2">
+                <div className="flex items-center space-x-2 mb-1 sm:mb-2">
                   {chat.item.imageUrl && (
                     <img
                       src={chat.item.imageUrl}
                       alt={chat.item.title}
-                      className="w-8 h-8 rounded object-cover"
+                      className="w-6 h-6 sm:w-8 sm:h-8 rounded object-cover"
                     />
                   )}
                   <div className="flex-1 min-w-0">
@@ -339,7 +448,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
                 </div>
 
                 {/* 마지막 메시지 */}
-                <p className="text-sm text-gray-600 truncate">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
                   {chat.lastMessage}
                 </p>
               </div>
@@ -347,27 +456,6 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
           </Card>
         );
       })}
-
-      {/* 더보기 버튼 */}
-      {hasMore && (
-        <div className="text-center py-4">
-          <Button
-            variant="outline"
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            className="w-full"
-          >
-            {loadingMore ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />더 불러오는
-                중...
-              </>
-            ) : (
-              "더 보기"
-            )}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

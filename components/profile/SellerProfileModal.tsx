@@ -74,7 +74,8 @@ export function SellerProfileModal({
                 <span
                   className={`px-3 py-1 rounded-full text-sm font-medium ${gradeInfo.bgColor} ${gradeInfo.color}`}
                 >
-                  {gradeInfo.label}
+                  <span className="mr-1">{gradeInfo.emoji}</span>
+                  {gradeInfo.displayName}
                 </span>
                 {sellerProfile.region && (
                   <div className="flex items-center text-sm text-gray-600">
@@ -102,9 +103,9 @@ export function SellerProfileModal({
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <div className="text-2xl font-bold text-gray-900">
-                {sellerProfile.grade}
+                {sellerProfile.responseRate || 0}%
               </div>
-              <div className="text-sm text-gray-600">등급</div>
+              <div className="text-sm text-gray-600">응답률</div>
             </div>
           </div>
 
@@ -113,7 +114,8 @@ export function SellerProfileModal({
             <div className="flex items-center space-x-2 mb-2">
               <TrendingUp className="w-4 h-4 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">
-                {gradeInfo.label} 등급
+                <span className="mr-1">{gradeInfo.emoji}</span>
+                {gradeInfo.displayName}
               </span>
             </div>
             <p className="text-sm text-gray-600">{gradeInfo.description}</p>

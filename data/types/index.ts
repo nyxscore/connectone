@@ -57,9 +57,10 @@ export type InstrumentCategory =
   | "현악" // 현악기
   | "관악" // 관악기
   | "타악" // 타악기
-  | "전자" // 전자악기
+  | "국악" // 국악기
+  | "음향" // 음향기기
   | "특수" // 특수악기
-  | "주변기기"; // 주변기기
+  | "용품"; // 기타용품
 
 // 악기 상태 등급
 export type ConditionGrade = "A" | "B" | "C" | "D";
@@ -106,7 +107,8 @@ export interface SellItem {
   images: string[];
   aiTags: string[];
   escrowEnabled: boolean;
-  shippingType: ShippingType;
+  shippingTypes: ShippingType[];
+  parcelPaymentType?: string; // "seller" or "buyer"
   status: "active" | "sold" | "inactive";
   createdAt: any;
   updatedAt: any;

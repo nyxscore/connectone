@@ -3,6 +3,9 @@
 import { useAuth } from "../lib/hooks/useAuth";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { FeatureCards } from "../components/landing/FeatureCards";
+import { FeatureSections } from "../components/landing/FeatureSections";
+import { TypingAnimation } from "../components/ui/TypingAnimation";
 import Link from "next/link";
 import {
   Music,
@@ -16,9 +19,42 @@ import {
   CheckCircle,
   Sparkles,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error("Client-side error:", error);
+      setHasError(true);
+    };
+
+    window.addEventListener("error", handleError);
+    return () => window.removeEventListener("error", handleError);
+  }, []);
+
+  if (hasError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            문제가 발생했습니다
+          </h2>
+          <p className="text-gray-600 mb-4">
+            예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -108,30 +144,30 @@ export default function HomePage() {
                   style={{ animationDuration: "4s" }}
                 ></div>
 
-                {/* 물제비 파동 효과 - 간소화 */}
+                {/* 물제비 파동 효과 - 모바일 최적화 */}
                 <div
-                  className="absolute w-[500px] h-[500px] rounded-full border border-blue-300/15 animate-ping"
+                  className="absolute w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] rounded-full border border-blue-300/15 animate-ping"
                   style={{ animationDuration: "4s", animationDelay: "0s" }}
                 ></div>
                 <div
-                  className="absolute w-[600px] h-[600px] rounded-full border border-purple-300/10 animate-ping"
+                  className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] md:w-[600px] md:h-[600px] rounded-full border border-purple-300/10 animate-ping"
                   style={{ animationDuration: "4s", animationDelay: "2s" }}
                 ></div>
 
-                {/* 흐르는 음악 파동 */}
+                {/* 흐르는 음악 파동 - 모바일 최적화 */}
                 <div
-                  className="absolute w-[450px] h-[450px] rounded-full border-2 border-blue-400/30 animate-spin"
+                  className="absolute w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] rounded-full border-2 border-blue-400/30 animate-spin"
                   style={{ animationDuration: "12s" }}
                 ></div>
                 <div
-                  className="absolute w-[550px] h-[550px] rounded-full border border-purple-400/25 animate-spin"
+                  className="absolute w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[550px] md:h-[550px] rounded-full border border-purple-400/25 animate-spin"
                   style={{
                     animationDuration: "15s",
                     animationDirection: "reverse",
                   }}
                 ></div>
                 <div
-                  className="absolute w-[650px] h-[650px] rounded-full border border-pink-400/20 animate-spin"
+                  className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] md:w-[650px] md:h-[650px] rounded-full border border-pink-400/20 animate-spin"
                   style={{ animationDuration: "18s" }}
                 ></div>
               </div>
@@ -178,52 +214,52 @@ export default function HomePage() {
 
               {/* 메인 로고 텍스트 */}
               <div className="relative z-10">
-                <h1 className="text-8xl md:text-9xl font-bold text-white mb-4">
+                <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-bold text-white mb-2 sm:mb-4">
                   ConnecTone
                 </h1>
-                <div className="text-2xl md:text-3xl text-blue-200 font-light">
+                <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-blue-200 font-light">
                   🎵 Music Marketplace
                 </div>
               </div>
             </div>
 
-            <div className="mt-32">
-              <p className="text-xl md:text-2xl text-blue-100 mb-4 max-w-3xl mx-auto">
+            <div className="mt-16 sm:mt-24 md:mt-32">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-blue-100 mb-3 sm:mb-4 max-w-3xl mx-auto px-4">
                 음악을 사랑하는 사람들을 위한 안전한 중고 악기 거래 플랫폼
               </p>
-              <p className="text-2xl md:text-3xl font-bold text-white mb-8">
+              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-6 sm:mb-8 px-4">
                 안전한 중고 악기 거래 플랫폼
               </p>
 
-              <p className="text-lg text-blue-200 mb-12 max-w-2xl mx-auto">
+              <p className="text-sm sm:text-base md:text-lg text-blue-200 mb-8 sm:mb-12 max-w-2xl mx-auto px-4">
                 AI 감정 시스템과 에스크로 서비스로 믿을 수 있는 거래를
                 경험하세요
               </p>
             </div>
 
             {user ? (
-              <div className="space-y-6 animate-fade-in-up animation-delay-800">
-                <p className="text-xl font-medium text-white">
+              <div className="space-y-4 sm:space-y-6 animate-fade-in-up animation-delay-800 px-4">
+                <p className="text-lg sm:text-xl font-medium text-white text-center">
                   안녕하세요,{" "}
-                  <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-500 bg-clip-text text-transparent font-bold animate-pulse">
+                  <span className="animate-gradient-flow font-bold">
                     {user.nickname}
                   </span>
                   님! 👋
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/sell">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
+                  <Link href="/sell" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
                     >
                       <Music className="w-5 h-5 mr-2" />
                       상품 등록하기
                     </Button>
                   </Link>
-                  <Link href="/list">
+                  <Link href="/list" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
                     >
                       <Search className="w-5 h-5 mr-2" />
                       상품 둘러보기
@@ -232,30 +268,27 @@ export default function HomePage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-6 animate-fade-in-up animation-delay-800">
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/auth/signup">
+              <div className="space-y-4 sm:space-y-6 animate-fade-in-up animation-delay-800 px-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
+                  <Link href="/auth/signup" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
                     >
                       <Users className="w-5 h-5 mr-2" />
                       회원가입
                     </Button>
                   </Link>
-                  <Link href="/auth/login">
+                  <Link href="/auth/login" className="w-full sm:w-auto">
                     <Button
                       variant="outline"
                       size="lg"
-                      className="w-full sm:w-auto border-2 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                      className="w-full border-2 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
                     >
                       로그인
                     </Button>
                   </Link>
                 </div>
-                <p className="text-sm text-gray-500 animate-fade-in animation-delay-1000">
-                  무료로 시작하고, 언제든지 중단할 수 있습니다
-                </p>
               </div>
             )}
           </div>
@@ -273,7 +306,12 @@ export default function HomePage() {
             <div className="inline-block relative">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 relative z-10">
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-                  왜 ConnecTone일까요?
+                  <TypingAnimation
+                    text="왜 ConnecTone일까요?"
+                    speed={150}
+                    delay={1000}
+                    showCursor={true}
+                  />
                 </span>
               </h2>
               {/* Underline Animation */}
@@ -286,82 +324,21 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 animate-fade-in-up animation-delay-200">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                <Sparkles className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                AI 감정 시스템
-              </h3>
-              <p className="text-gray-600">
-                업로드한 이미지를 AI가 분석하여 정확한 상태 등급과 결함을
-                자동으로 감지합니다
-              </p>
-            </Card>
+          <FeatureCards />
+        </div>
+      </section>
 
-            <Card className="p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 animate-fade-in-up animation-delay-400">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                <Shield className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                에스크로 서비스
-              </h3>
-              <p className="text-gray-600">
-                안전한 거래를 위한 중간 보관 서비스로 구매자와 판매자 모두를
-                보호합니다
-              </p>
-            </Card>
+      {/* Feature Details Sections */}
+      <FeatureSections />
 
-            <Card className="p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 animate-fade-in-up animation-delay-600">
-              <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                <Users className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                신뢰도 시스템
-              </h3>
-              <p className="text-gray-600">
-                거래 이력을 바탕으로 한 등급 시스템으로 신뢰할 수 있는 거래
-                상대를 찾으세요
-              </p>
-            </Card>
-
-            <Card className="p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 animate-fade-in-up animation-delay-800">
-              <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                <Heart className="w-8 h-8 text-orange-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">1:1 채팅</h3>
-              <p className="text-gray-600">
-                실시간 채팅으로 구매자와 판매자가 직접 소통하며 거래를 진행할 수
-                있습니다
-              </p>
-            </Card>
-
-            <Card className="p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 animate-fade-in-up animation-delay-1000">
-              <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                <Clock className="w-8 h-8 text-red-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                빠른 거래
-              </h3>
-              <p className="text-gray-600">
-                간편한 등록과 검색으로 원하는 악기를 빠르게 찾고 거래할 수
-                있습니다
-              </p>
-            </Card>
-
-            <Card className="p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 animate-fade-in-up animation-delay-1200">
-              <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                <CheckCircle className="w-8 h-8 text-indigo-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                검증된 상품
-              </h3>
-              <p className="text-gray-600">
-                AI 분석과 수동 검토를 통해 품질이 검증된 상품만을 거래합니다
-              </p>
-            </Card>
-          </div>
+      {/* Logo Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <img
+            src="/ConnecTone_Logo.jpg"
+            alt="ConnecTone Logo"
+            className="w-96 h-96 mx-auto object-contain"
+          />
         </div>
       </section>
 
@@ -413,9 +390,6 @@ export default function HomePage() {
             <div className="flex justify-center space-x-6 text-sm text-gray-400">
               <Link href="/list" className="hover:text-white transition-colors">
                 상품 목록
-              </Link>
-              <Link href="/qa" className="hover:text-white transition-colors">
-                Q&A
               </Link>
               <Link
                 href="/profile"
