@@ -18,6 +18,7 @@ import { TradeList } from "../../components/profile/TradeList";
 import { BlockedUsersModal } from "../../components/profile/BlockedUsersModal";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
 import { EditItemModal } from "../../components/items/EditItemModal";
+import { GradeBenefitsSummary } from "../../components/ui/MemberGradeSystem";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import {
@@ -329,6 +330,23 @@ export default function MyProfilePage() {
             isOwnProfile={true}
             onAvatarUpdate={handleAvatarUpload}
           />
+
+          {/* 회원 등급 정보 */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                나의 회원 등급
+              </h3>
+              <Button
+                onClick={() => router.push("/membership")}
+                size="sm"
+                variant="outline"
+              >
+                등급 혜택 보기
+              </Button>
+            </div>
+            <GradeBenefitsSummary currentGrade={currentUser?.grade} />
+          </Card>
 
           {/* 자기소개 */}
           <ProfileAbout

@@ -112,6 +112,12 @@ export function Header() {
                 )}
               </div>
             </Link>
+            <Link
+              href="/membership"
+              className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium"
+            >
+              회원 등급
+            </Link>
           </nav>
 
           {/* 데스크톱 사용자 메뉴 */}
@@ -202,6 +208,13 @@ export function Header() {
                     </span>
                   )}
                 </div>
+              </Link>
+              <Link
+                href="/membership"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                회원 등급
               </Link>
             </div>
 

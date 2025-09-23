@@ -35,6 +35,7 @@ export interface UserProgress {
 // 사용자 관련 타입
 export interface User {
   id: string;
+  uid: string; // Firebase UID
   email: string;
   phoneNumber?: string;
   nickname: string;
@@ -92,6 +93,15 @@ export interface Product {
   updatedAt: Date;
 }
 
+// AI 처리된 이미지 정보 타입
+export interface AIProcessedImage {
+  imageIndex: number;
+  isAiProcessed: boolean;
+  emotionScore: number;
+  conditionGrade: ConditionGrade;
+  confidence: number;
+}
+
 // 판매글 등록용 타입 (새로운 스키마)
 export interface SellItem {
   id: string;
@@ -106,6 +116,7 @@ export interface SellItem {
   description: string;
   images: string[];
   aiTags: string[];
+  aiProcessedImages?: AIProcessedImage[]; // AI 처리된 이미지 정보
   escrowEnabled: boolean;
   shippingTypes: ShippingType[];
   parcelPaymentType?: string; // "seller" or "buyer"

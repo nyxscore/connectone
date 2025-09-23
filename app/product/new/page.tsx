@@ -7,12 +7,17 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { uploadImages } from "@/lib/api/storage";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { resizeToSquare } from "@/lib/utils/imageResize";
+import { Upload, Brain, Camera, Video } from "lucide-react";
 
 import CategorySelector from "@/components/category/CategorySelector";
 import StepType from "@/components/product/StepType";
 import ProgressBar from "@/components/product/ProgressBar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { CameraCapture } from "@/components/ui/CameraCapture";
+import { AIEmotionAnalysis } from "@/components/ui/AIEmotionAnalysis";
+import { WatermarkImage } from "@/components/ui/WatermarkImage";
 
 interface WizardFormData {
   category: string;
@@ -37,6 +42,23 @@ export default function ProductWizardPage() {
   );
   const [parcelPaymentType, setParcelPaymentType] = useState<string>(""); // "seller" or "buyer"
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // AI 감정 관련 상태
+  const [photoTab, setPhotoTab] = useState<"upload" | "ai-emotion">("upload");
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<{
+    emotionScore: number;
+    conditionGrade: "A" | "B" | "C" | "D";
+    suggestedPrice: number;
+    confidence: number;
+    detectedFeatures: string[];
+    recommendations: string[];
+  } | null>(null);
+  const [isAiImageConfirmed, setIsAiImageConfirmed] = useState(false);
+  const [aiProcessedImages, setAiProcessedImages] = useState<Set<number>>(
+    new Set()
+  );
   const [formData, setFormData] = useState<WizardFormData>({
     category: "",
     tradeType: "",
@@ -104,12 +126,20 @@ export default function ProductWizardPage() {
     setUploadingImages(true);
     try {
       const fileArray = Array.from(files);
-      const imageUrls = await uploadImages(fileArray);
 
-      const updatedImages = [...formData.images, ...fileArray];
+      // 이미지 자동 리사이징 (400x400 정사각형)
+      const resizedFiles = await Promise.all(
+        fileArray.map(file => resizeToSquare(file, 400, 0.8))
+      );
+
+      const imageUrls = await uploadImages(resizedFiles);
+
+      const updatedImages = [...formData.images, ...resizedFiles];
       updateFormData({ images: updatedImages });
 
-      toast.success(`${fileArray.length}개의 이미지가 업로드되었습니다!`);
+      toast.success(
+        `${fileArray.length}개의 이미지가 자동 리사이징되어 업로드되었습니다!`
+      );
     } catch (error) {
       console.error("이미지 업로드 실패:", error);
       toast.error("이미지 업로드에 실패했습니다.");
@@ -196,6 +226,15 @@ export default function ProductWizardPage() {
         }
       });
 
+      // AI 처리된 이미지 정보 생성
+      const aiProcessedImageInfo = Array.from(aiProcessedImages).map(index => ({
+        imageIndex: index,
+        isAiProcessed: true,
+        emotionScore: aiAnalysisResult?.emotionScore || 0,
+        conditionGrade: aiAnalysisResult?.conditionGrade || "A",
+        confidence: aiAnalysisResult?.confidence || 0,
+      }));
+
       const itemData = {
         title: data.productName,
         description: data.description,
@@ -204,6 +243,7 @@ export default function ProductWizardPage() {
         region: "서울시 강남구", // 기본값, 나중에 GPS로 설정
         condition: "A", // 기본값
         images: imageUrls, // 업로드된 이미지 URL들
+        aiProcessedImages: aiProcessedImageInfo, // AI 처리된 이미지 정보
         escrowEnabled: data.escrowEnabled,
         shippingTypes: data.shippingTypes,
         parcelPaymentType: data.parcelPaymentType,
@@ -566,76 +606,303 @@ export default function ProductWizardPage() {
                           상품 사진 * (최소 1장)
                         </label>
 
-                        {/* 업로드된 이미지 미리보기 */}
-                        {formData.images.length > 0 && (
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                            {formData.images.map((file, index) => (
-                              <div key={index} className="relative group">
-                                <img
-                                  src={URL.createObjectURL(file)}
-                                  alt={`상품 이미지 ${index + 1}`}
-                                  className="w-full h-32 object-cover rounded-lg"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => removeImage(index)}
-                                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
-                                >
-                                  ×
-                                </button>
+                        {/* 탭 네비게이션 */}
+                        <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              console.log("상품 사진 탭 클릭");
+                              setPhotoTab("upload");
+                            }}
+                            className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                              photoTab === "upload"
+                                ? "bg-white text-blue-600 shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            상품 사진
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              console.log("AI 감정 탭 클릭");
+                              setPhotoTab("ai-emotion");
+                            }}
+                            className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                              photoTab === "ai-emotion"
+                                ? "bg-white text-blue-600 shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            <Brain className="w-4 h-4 mr-2" />
+                            AI 감정
+                          </button>
+                        </div>
+
+                        {/* 탭 컨텐츠 */}
+                        {photoTab === "upload" && (
+                          <div>
+                            {/* 업로드된 이미지 미리보기 */}
+                            {formData.images.length > 0 && (
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                                {formData.images.map((file, index) => (
+                                  <div key={index} className="relative group">
+                                    <WatermarkImage
+                                      src={URL.createObjectURL(file)}
+                                      alt={`상품 이미지 ${index + 1}`}
+                                      className="w-full h-32 object-contain rounded-lg"
+                                      isAiProcessed={aiProcessedImages.has(
+                                        index
+                                      )}
+                                      showWatermark={true}
+                                    />
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        removeImage(index);
+                                        // AI 처리된 이미지에서도 제거
+                                        setAiProcessedImages(prev => {
+                                          const newSet = new Set(prev);
+                                          newSet.delete(index);
+                                          return newSet;
+                                        });
+                                      }}
+                                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
+
+                            {/* 이미지 업로드 영역 */}
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={e => {
+                                  if (e.target.files) {
+                                    handleImageUpload(e.target.files);
+                                  }
+                                }}
+                                className="hidden"
+                                id="image-upload"
+                              />
+                              <label
+                                htmlFor="image-upload"
+                                className="cursor-pointer flex flex-col items-center"
+                              >
+                                {uploadingImages ? (
+                                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                                ) : (
+                                  <svg
+                                    className="w-8 h-8 text-gray-400 mb-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                    />
+                                  </svg>
+                                )}
+                                <span className="text-sm text-gray-600">
+                                  {uploadingImages
+                                    ? "업로드 중..."
+                                    : "사진을 선택하거나 드래그하세요"}
+                                </span>
+                              </label>
+                            </div>
+
+                            {formData.images.length === 0 && (
+                              <p className="mt-1 text-sm text-red-600">
+                                최소 1장의 사진을 업로드해주세요
+                              </p>
+                            )}
                           </div>
                         )}
 
-                        {/* 이미지 업로드 영역 */}
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={e => {
-                              if (e.target.files) {
-                                handleImageUpload(e.target.files);
-                              }
-                            }}
-                            className="hidden"
-                            id="image-upload"
-                          />
-                          <label
-                            htmlFor="image-upload"
-                            className="cursor-pointer flex flex-col items-center"
-                          >
-                            {uploadingImages ? (
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                        {photoTab === "ai-emotion" && (
+                          <div className="space-y-6">
+                            {(() => {
+                              console.log(
+                                "AI 감정 탭 렌더링됨, capturedImage:",
+                                capturedImage
+                              );
+                              return null;
+                            })()}
+                            {/* AI 감정 촬영 영역 */}
+                            {!capturedImage ? (
+                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                <div className="space-y-4">
+                                  <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <Video className="w-8 h-8 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                      AI 감정 분석 촬영
+                                    </h3>
+                                    <p className="text-gray-600 mb-4">
+                                      실시간으로 상품을 촬영하여 AI가 감정을
+                                      분석합니다
+                                    </p>
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsCameraActive(true)}
+                                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    >
+                                      <Camera className="w-4 h-4 mr-2" />
+                                      촬영 시작
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
                             ) : (
-                              <svg
-                                className="w-8 h-8 text-gray-400 mb-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                />
-                              </svg>
-                            )}
-                            <span className="text-sm text-gray-600">
-                              {uploadingImages
-                                ? "업로드 중..."
-                                : "사진을 선택하거나 드래그하세요"}
-                            </span>
-                          </label>
-                        </div>
+                              <div className="space-y-4">
+                                {/* 촬영된 이미지 미리보기 */}
+                                <div className="relative w-full h-64">
+                                  <img
+                                    src={capturedImage}
+                                    alt="촬영된 상품"
+                                    className="w-full h-64 object-cover rounded-lg"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCapturedImage(null);
+                                      setAiAnalysisResult(null);
+                                    }}
+                                    className="absolute top-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-colors"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
 
-                        {formData.images.length === 0 && (
-                          <p className="mt-1 text-sm text-red-600">
-                            최소 1장의 사진을 업로드해주세요
-                          </p>
+                                {/* AI 분석 결과 */}
+                                <AIEmotionAnalysis
+                                  imageDataUrl={capturedImage}
+                                  onAnalysisComplete={result => {
+                                    setAiAnalysisResult(result);
+                                    setIsAiImageConfirmed(false); // 분석 완료 후 확정 대기 상태
+                                  }}
+                                  onConditionChange={condition => {
+                                    // 상태 등급을 formData에 반영할 수 있음
+                                    console.log(
+                                      "AI 추천 상태 등급:",
+                                      condition
+                                    );
+                                  }}
+                                />
+
+                                {/* AI 이미지 확정 버튼 */}
+                                {aiAnalysisResult && !isAiImageConfirmed && (
+                                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <h4 className="text-sm font-medium text-green-900 mb-1">
+                                          AI 분석 완료!
+                                        </h4>
+                                        <p className="text-sm text-green-700">
+                                          이 이미지를 상품에 추가하시겠습니까?
+                                        </p>
+                                      </div>
+                                      <div className="flex space-x-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setCapturedImage(null);
+                                            setAiAnalysisResult(null);
+                                            setIsAiImageConfirmed(false);
+                                          }}
+                                          className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                                        >
+                                          취소
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            // AI 이미지를 실제로 추가
+                                            const canvas =
+                                              document.createElement("canvas");
+                                            const ctx = canvas.getContext("2d");
+                                            const img = new Image();
+                                            img.onload = () => {
+                                              canvas.width = img.width;
+                                              canvas.height = img.height;
+                                              ctx?.drawImage(img, 0, 0);
+                                              canvas.toBlob(
+                                                blob => {
+                                                  if (blob) {
+                                                    const file = new File(
+                                                      [blob],
+                                                      "ai-captured-image.jpg",
+                                                      { type: "image/jpeg" }
+                                                    );
+                                                    const updatedImages = [
+                                                      ...formData.images,
+                                                      file,
+                                                    ];
+                                                    updateFormData({
+                                                      images: updatedImages,
+                                                    });
+
+                                                    // AI 처리된 이미지로 마킹
+                                                    setAiProcessedImages(
+                                                      prev =>
+                                                        new Set([
+                                                          ...prev,
+                                                          updatedImages.length -
+                                                            1,
+                                                        ])
+                                                    );
+
+                                                    // 상태 초기화
+                                                    setCapturedImage(null);
+                                                    setAiAnalysisResult(null);
+                                                    setIsAiImageConfirmed(
+                                                      false
+                                                    );
+
+                                                    toast.success(
+                                                      "AI 감정 분석된 이미지가 추가되었습니다!"
+                                                    );
+                                                  }
+                                                },
+                                                "image/jpeg",
+                                                0.8
+                                              );
+                                            };
+                                            img.src = capturedImage;
+                                          }}
+                                          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                                        >
+                                          확정 추가
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* 카메라 캡처 모달 */}
+                            <CameraCapture
+                              isActive={isCameraActive}
+                              onCapture={imageDataUrl => {
+                                setCapturedImage(imageDataUrl);
+                                setIsCameraActive(false);
+                              }}
+                              onClose={() => setIsCameraActive(false)}
+                            />
+                          </div>
                         )}
                       </div>
 

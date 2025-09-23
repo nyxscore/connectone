@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { ProtectedRoute } from "../../lib/auth/ProtectedRoute";
 import {
@@ -11,7 +12,6 @@ import {
   SellItemInput,
   InstrumentCategory,
   ConditionGrade,
-  ShippingType,
 } from "../../data/schemas/product";
 import { createItem } from "../../lib/api/products";
 import { Button } from "../../components/ui/Button";
@@ -20,26 +20,24 @@ import { Card } from "../../components/ui/Card";
 import { Checkbox } from "../../components/ui/Checkbox";
 import { AITagSuggestions } from "../../components/ui/AITagSuggestions";
 import { ImageUploadCard } from "../../components/ui/ImageUploadCard";
+import { CameraCapture } from "../../components/ui/CameraCapture";
+import { AIEmotionAnalysis } from "../../components/ui/AIEmotionAnalysis";
 import {
   INSTRUMENT_CATEGORIES,
-  CONDITION_GRADES,
   SHIPPING_TYPES,
 } from "../../data/constants/index";
 import toast from "react-hot-toast";
 import {
   Music,
   Camera,
-  Tag,
-  MapPin,
   Truck,
-  Shield,
   CheckCircle,
   ArrowRight,
   ArrowLeft,
-  Star,
-  DollarSign,
-  Calendar,
   Package,
+  Upload,
+  Brain,
+  Video,
 } from "lucide-react";
 
 const conditions: {
@@ -60,6 +58,18 @@ export default function SellPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [aiTags, setAiTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoTab, setPhotoTab] = useState<"upload" | "ai-emotion">("upload");
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<{
+    emotionScore: number;
+    conditionGrade: "A" | "B" | "C" | "D";
+    suggestedPrice: number;
+    confidence: number;
+    detectedFeatures: string[];
+    recommendations: string[];
+  } | null>(null);
 
   const {
     register,
@@ -440,21 +450,150 @@ export default function SellPage() {
                     상품 이미지를 업로드해주세요
                   </h2>
 
-                  <ImageUploadCard
-                    images={imageUrls}
-                    onImagesChange={setImageUrls}
-                    maxImages={10}
-                  />
+                  {/* 디버깅용 로그 */}
+                  {(() => {
+                    console.log("3단계 렌더링됨, photoTab:", photoTab);
+                    return null;
+                  })()}
 
-                  {/* AI 태그 제안 */}
-                  {imageUrls.length > 0 && (
-                    <div className="mt-6">
-                      <AITagSuggestions
-                        imageUrls={imageUrls}
-                        onTagsChange={setAiTags}
-                        onConditionChange={condition =>
-                          setValue("condition", condition)
-                        }
+                  {/* 탭 네비게이션 */}
+                  <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        console.log("상품 사진 탭 클릭");
+                        setPhotoTab("upload");
+                      }}
+                      className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        photoTab === "upload"
+                          ? "bg-white text-blue-600 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      상품 사진
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        console.log("AI 감정 탭 클릭");
+                        setPhotoTab("ai-emotion");
+                      }}
+                      className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        photoTab === "ai-emotion"
+                          ? "bg-white text-blue-600 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      <Brain className="w-4 h-4 mr-2" />
+                      AI 감정
+                    </button>
+                  </div>
+
+                  {/* 탭 컨텐츠 */}
+                  {photoTab === "upload" && (
+                    <div>
+                      <ImageUploadCard
+                        images={imageUrls}
+                        onImagesChange={setImageUrls}
+                        maxImages={10}
+                      />
+
+                      {/* AI 태그 제안 */}
+                      {imageUrls.length > 0 && (
+                        <div className="mt-6">
+                          <AITagSuggestions
+                            imageUrls={imageUrls}
+                            onTagsChange={setAiTags}
+                            onConditionChange={condition =>
+                              setValue("condition", condition)
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {photoTab === "ai-emotion" && (
+                    <div className="space-y-6">
+                      {(() => {
+                        console.log(
+                          "AI 감정 탭 렌더링됨, capturedImage:",
+                          capturedImage
+                        );
+                        return null;
+                      })()}
+                      {/* AI 감정 촬영 영역 */}
+                      {!capturedImage ? (
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                          <div className="space-y-4">
+                            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Video className="w-8 h-8 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                AI 감정 분석 촬영
+                              </h3>
+                              <p className="text-gray-600 mb-4">
+                                실시간으로 상품을 촬영하여 AI가 감정을
+                                분석합니다
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => setIsCameraActive(true)}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              >
+                                <Camera className="w-4 h-4 mr-2" />
+                                촬영 시작
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {/* 촬영된 이미지 미리보기 */}
+                          <div className="relative w-full h-64">
+                            <Image
+                              src={capturedImage}
+                              alt="촬영된 상품"
+                              fill
+                              className="object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCapturedImage(null);
+                                setAiAnalysisResult(null);
+                              }}
+                              className="absolute top-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-colors"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          {/* AI 분석 결과 */}
+                          <AIEmotionAnalysis
+                            imageDataUrl={capturedImage}
+                            onAnalysisComplete={result => {
+                              setAiAnalysisResult(result);
+                              // 촬영된 이미지를 imageUrls에 추가
+                              setImageUrls(prev => [...prev, capturedImage]);
+                            }}
+                            onConditionChange={condition => {
+                              setValue("condition", condition);
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* 카메라 캡처 모달 */}
+                      <CameraCapture
+                        isActive={isCameraActive}
+                        onCapture={imageDataUrl => {
+                          setCapturedImage(imageDataUrl);
+                          setIsCameraActive(false);
+                        }}
+                        onClose={() => setIsCameraActive(false)}
                       />
                     </div>
                   )}

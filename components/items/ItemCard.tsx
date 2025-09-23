@@ -3,7 +3,8 @@
 import { Card } from "../ui/Card";
 import { SellItem } from "../../data/types";
 import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
-import { MapPin, Calendar } from "lucide-react";
+import { MapPin, Calendar, Brain } from "lucide-react";
+import { WatermarkImage } from "../ui/WatermarkImage";
 // date-fns 제거 - 성능 최적화
 import { useRouter } from "next/navigation";
 
@@ -87,16 +88,29 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
       onClick={handleClick}
     >
       {/* 썸네일 */}
-      <div className="aspect-square bg-gray-200 relative">
+      <div className="aspect-square bg-gray-200 relative overflow-hidden">
         {item.images && item.images.length > 0 ? (
-          <img
+          <WatermarkImage
             src={item.images[0]}
             alt={`${item.brand} ${item.model}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
+            isAiProcessed={
+              item.aiProcessedImages?.some(aiImg => aiImg.imageIndex === 0) ||
+              false
+            }
+            showWatermark={true}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl">
             {getCategoryIcon(item.category)}
+          </div>
+        )}
+
+        {/* AI 감정 라벨 (상품 목록용) */}
+        {item.aiProcessedImages && item.aiProcessedImages.length > 0 && (
+          <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 shadow-lg">
+            <Brain className="w-3 h-3" />
+            <span>AI 감정</span>
           </div>
         )}
 

@@ -392,3 +392,7 @@ export const STATUS_DESCRIPTIONS = {
   cancelled: "거래가 취소되었습니다.",
 };
 
+
+
+
+
