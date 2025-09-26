@@ -171,7 +171,7 @@ export default function ProductWizardPage() {
         return;
       }
 
-      // 이미지 업로드
+      // 이미지 업로드 (판매하기일 때만 필수)
       let imageUrls: string[] = [];
       if (formData.images.length > 0) {
         console.log("이미지 업로드 시작:", formData.images.length, "개 파일");
@@ -204,27 +204,37 @@ export default function ProductWizardPage() {
           setUploadingImages(false);
         }
       } else {
-        console.log("업로드할 이미지가 없습니다.");
+        // 구매하기일 때는 이미지가 없어도 됨
+        if (formData.tradeType === "sell") {
+          console.log("판매하기인데 이미지가 없습니다.");
+          toast.error("상품 사진을 최소 1장 이상 업로드해주세요.");
+          return;
+        } else {
+          console.log("구매하기이므로 이미지가 없어도 됩니다.");
+        }
       }
 
       // 실제 Firestore에 저장
       const { createItem } = await import("@/lib/api/products");
 
-      // shippingTypes를 tradeOptions로 변환
-      const tradeOptions = data.shippingTypes.map(type => {
-        switch (type) {
-          case "direct":
-            return "직거래";
-          case "escrow":
-            return "안전거래";
-          case "parcel":
-            return "택배";
-          case "shipping":
-            return "화물운송";
-          default:
-            return type;
-        }
-      });
+      // shippingTypes를 tradeOptions로 변환 (구매하기일 때는 빈 배열)
+      const tradeOptions =
+        formData.tradeType === "buy"
+          ? []
+          : data.shippingTypes
+              .filter(type => type !== "escrow") // escrow 제외
+              .map(type => {
+                switch (type) {
+                  case "direct":
+                    return "직거래";
+                  case "parcel":
+                    return "택배";
+                  case "shipping":
+                    return "화물운송";
+                  default:
+                    return type;
+                }
+              });
 
       // AI 처리된 이미지 정보 생성
       const aiProcessedImageInfo = Array.from(aiProcessedImages).map(index => ({
@@ -241,14 +251,18 @@ export default function ProductWizardPage() {
         category: data.category,
         price: formData.price, // 로컬 상태의 가격 사용
         region: "서울시 강남구", // 기본값, 나중에 GPS로 설정
-        condition: "A", // 기본값
+        condition: formData.tradeType === "buy" ? "구매" : "A", // 구매하기일 때는 "구매"로 설정
         images: imageUrls, // 업로드된 이미지 URL들
-        aiProcessedImages: aiProcessedImageInfo, // AI 처리된 이미지 정보
-        escrowEnabled: data.escrowEnabled,
-        shippingTypes: data.shippingTypes,
-        parcelPaymentType: data.parcelPaymentType,
+        aiProcessedImages:
+          formData.tradeType === "sell" ? aiProcessedImageInfo : [], // 구매하기일 때는 빈 배열
+        escrowEnabled:
+          formData.tradeType === "sell" ? data.escrowEnabled : false, // 구매하기일 때는 false
+        shippingTypes: formData.tradeType === "sell" ? data.shippingTypes : [], // 구매하기일 때는 빈 배열
+        parcelPaymentType:
+          formData.tradeType === "sell" ? data.parcelPaymentType : "", // 구매하기일 때는 빈 문자열
         sellerUid: user?.uid || "test-user", // 실제 로그인된 사용자 ID
         tradeOptions: tradeOptions,
+        tradeType: formData.tradeType, // 구매/판매 구분을 위해 추가
       };
 
       console.log("저장할 상품 데이터:", itemData);
@@ -262,14 +276,27 @@ export default function ProductWizardPage() {
       const result = await createItem(itemData);
 
       if (result.success) {
-        toast.success("상품이 성공적으로 등록되었습니다!");
+        toast.success(
+          formData.tradeType === "buy"
+            ? "구매글이 성공적으로 등록되었습니다!"
+            : "상품이 성공적으로 등록되었습니다!"
+        );
         router.push("/list");
       } else {
-        toast.error(result.error || "상품 등록에 실패했습니다.");
+        toast.error(
+          result.error ||
+            (formData.tradeType === "buy"
+              ? "구매글 등록에 실패했습니다."
+              : "상품 등록에 실패했습니다.")
+        );
       }
     } catch (error) {
       console.error("상품 등록 오류:", error);
-      toast.error("상품 등록 중 오류가 발생했습니다.");
+      toast.error(
+        formData.tradeType === "buy"
+          ? "구매글 등록 중 오류가 발생했습니다."
+          : "상품 등록 중 오류가 발생했습니다."
+      );
     }
   };
 
@@ -284,7 +311,13 @@ export default function ProductWizardPage() {
 
         {/* Progress Bar */}
         <ProgressBar
-          currentStep={formData.tradeType ? 3 : formData.category ? 2 : 1}
+          currentStep={
+            formData.tradeType && formData.category
+              ? 3
+              : formData.category
+                ? 2
+                : 1
+          }
           totalSteps={3}
         />
 
@@ -329,10 +362,8 @@ export default function ProductWizardPage() {
                 >
                   <div className="border-t border-gray-200 pt-8">
                     <StepType
-                      formData={formData}
-                      updateFormData={updateFormData}
-                      register={register}
-                      errors={errors}
+                      value={formData.tradeType as "sell" | "buy"}
+                      onChange={value => updateFormData({ tradeType: value })}
                       onBack={() => {
                         // 카테고리 선택 단계로 돌아가기
                         updateFormData({
@@ -385,24 +416,37 @@ export default function ProductWizardPage() {
 
                       <div className="text-center">
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                          상품 정보를 입력해주세요
+                          {formData.tradeType === "buy"
+                            ? "구매 정보를 입력해주세요"
+                            : "상품 정보를 입력해주세요"}
                         </h2>
                         <p className="text-gray-600">
-                          상품의 상세 정보를 입력해주세요
+                          {formData.tradeType === "buy"
+                            ? "구매하고 싶은 상품의 정보를 입력해주세요"
+                            : "상품의 상세 정보를 입력해주세요"}
                         </p>
                       </div>
 
                       {/* 상품명 */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          상품명 *
+                          {formData.tradeType === "buy"
+                            ? "글 제목 *"
+                            : "상품명 *"}
                         </label>
                         <input
                           type="text"
                           {...register("productName", {
-                            required: "상품명을 입력해주세요",
+                            required:
+                              formData.tradeType === "buy"
+                                ? "글 제목을 입력해주세요"
+                                : "상품명을 입력해주세요",
                           })}
-                          placeholder="상품명을 입력해주세요"
+                          placeholder={
+                            formData.tradeType === "buy"
+                              ? "예: 아이폰 15 Pro 구매합니다"
+                              : "상품명을 입력해주세요"
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                         {errors.productName && (
@@ -412,10 +456,12 @@ export default function ProductWizardPage() {
                         )}
                       </div>
 
-                      {/* 판매가격 */}
+                      {/* 가격 */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          판매가격 *
+                          {formData.tradeType === "buy"
+                            ? "희망가격 *"
+                            : "판매가격 *"}
                         </label>
                         <div className="relative">
                           <input
@@ -471,451 +517,470 @@ export default function ProductWizardPage() {
                         ) : null}
                       </div>
 
-                      {/* 판매 방법 */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          판매 방법 * (여러 개 선택 가능)
-                        </label>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          {[
-                            { key: "direct", label: "직거래", icon: "🤝" },
-                            { key: "escrow", label: "안전거래", icon: "🛡️" },
-                            { key: "parcel", label: "택배", icon: "📦" },
-                          ].map(type => (
-                            <div key={type.key} className="flex-1">
-                              <label
-                                className="flex items-center justify-between p-4 border-2 border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105"
-                                onClick={() => {
-                                  if (
-                                    type.key === "parcel" &&
-                                    selectedShippingTypes.includes("parcel") &&
-                                    parcelPaymentType
-                                  ) {
-                                    setParcelPaymentType("");
-                                    updateFormData({ parcelPaymentType: "" });
-                                  }
-                                }}
-                              >
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-5 h-5 flex items-center justify-center">
-                                    <svg
-                                      className={`w-4 h-4 ${
-                                        selectedShippingTypes.includes(type.key)
-                                          ? "text-blue-600 block"
-                                          : "text-transparent hidden"
-                                      }`}
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                  </div>
-                                  <span
-                                    className={`text-base ${
-                                      selectedShippingTypes.includes(type.key)
-                                        ? "font-bold text-gray-900"
-                                        : "font-medium text-gray-700"
-                                    }`}
-                                  >
-                                    {type.key === "parcel" &&
-                                    selectedShippingTypes.includes("parcel")
-                                      ? parcelPaymentType === "seller"
-                                        ? "택배 (판매자부담)"
-                                        : "택배 (구매자부담)"
-                                      : type.label}
-                                  </span>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  value={type.key}
-                                  checked={selectedShippingTypes.includes(
-                                    type.key
-                                  )}
-                                  onChange={e => {
-                                    const value = e.target.value;
-                                    if (e.target.checked) {
-                                      const newTypes = [
-                                        ...selectedShippingTypes,
-                                        value,
-                                      ];
-                                      setSelectedShippingTypes(newTypes);
-                                      setValue("shippingTypes", newTypes);
-                                    } else {
-                                      const newTypes =
-                                        selectedShippingTypes.filter(
-                                          t => t !== value
-                                        );
-                                      setSelectedShippingTypes(newTypes);
-                                      setValue("shippingTypes", newTypes);
+                      {/* 판매 방법 - 판매하기일 때만 표시 */}
+                      {formData.tradeType === "sell" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            판매 방법 * (여러 개 선택 가능)
+                          </label>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            {[
+                              { key: "direct", label: "직거래", icon: "🤝" },
+                              { key: "parcel", label: "택배", icon: "📦" },
+                            ].map(type => (
+                              <div key={type.key} className="flex-1">
+                                <label
+                                  className="flex items-center justify-between p-4 border-2 border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105"
+                                  onClick={() => {
+                                    if (
+                                      type.key === "parcel" &&
+                                      selectedShippingTypes.includes(
+                                        "parcel"
+                                      ) &&
+                                      parcelPaymentType
+                                    ) {
+                                      setParcelPaymentType("");
+                                      updateFormData({ parcelPaymentType: "" });
                                     }
                                   }}
-                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 opacity-0 absolute"
-                                />
-                              </label>
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <div className="w-5 h-5 flex items-center justify-center">
+                                      <svg
+                                        className={`w-4 h-4 ${
+                                          selectedShippingTypes.includes(
+                                            type.key
+                                          )
+                                            ? "text-blue-600 block"
+                                            : "text-transparent hidden"
+                                        }`}
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <span
+                                      className={`text-base ${
+                                        selectedShippingTypes.includes(type.key)
+                                          ? "font-bold text-gray-900"
+                                          : "font-medium text-gray-700"
+                                      }`}
+                                    >
+                                      {type.key === "parcel" &&
+                                      selectedShippingTypes.includes("parcel")
+                                        ? parcelPaymentType === "seller"
+                                          ? "택배 (판매자부담)"
+                                          : "택배 (구매자부담)"
+                                        : type.label}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="checkbox"
+                                    value={type.key}
+                                    checked={selectedShippingTypes.includes(
+                                      type.key
+                                    )}
+                                    onChange={e => {
+                                      const value = e.target.value;
+                                      if (e.target.checked) {
+                                        const newTypes = [
+                                          ...selectedShippingTypes,
+                                          value,
+                                        ];
+                                        setSelectedShippingTypes(newTypes);
+                                        setValue("shippingTypes", newTypes);
+                                      } else {
+                                        const newTypes =
+                                          selectedShippingTypes.filter(
+                                            t => t !== value
+                                          );
+                                        setSelectedShippingTypes(newTypes);
+                                        setValue("shippingTypes", newTypes);
+                                      }
+                                    }}
+                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 opacity-0 absolute"
+                                  />
+                                </label>
 
-                              {/* 택배 부담 방식 선택 */}
-                              {type.key === "parcel" &&
-                                selectedShippingTypes.includes("parcel") &&
-                                !parcelPaymentType && (
-                                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <div className="flex gap-2">
+                                {/* 택배 부담 방식 선택 */}
+                                {type.key === "parcel" &&
+                                  selectedShippingTypes.includes("parcel") &&
+                                  !parcelPaymentType && (
+                                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                      <div className="flex gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setParcelPaymentType("seller");
+                                            updateFormData({
+                                              parcelPaymentType: "seller",
+                                            });
+                                          }}
+                                          className="flex-1 p-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-blue-600 border border-blue-300 hover:bg-blue-100"
+                                        >
+                                          판매자 부담
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setParcelPaymentType("buyer");
+                                            updateFormData({
+                                              parcelPaymentType: "buyer",
+                                            });
+                                          }}
+                                          className="flex-1 p-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-blue-600 border border-blue-300 hover:bg-blue-100"
+                                        >
+                                          구매자 부담
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                              </div>
+                            ))}
+                          </div>
+                          {errors.shippingTypes && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {errors.shippingTypes.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 사진 업로드 - 판매하기일 때만 표시 */}
+                      {formData.tradeType === "sell" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            상품 사진 * (최소 1장)
+                          </label>
+
+                          {/* 탭 네비게이션 */}
+                          <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                console.log("상품 사진 탭 클릭");
+                                setPhotoTab("upload");
+                              }}
+                              className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                photoTab === "upload"
+                                  ? "bg-white text-blue-600 shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              상품 사진
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                console.log("AI 감정 탭 클릭");
+                                setPhotoTab("ai-emotion");
+                              }}
+                              className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                photoTab === "ai-emotion"
+                                  ? "bg-white text-blue-600 shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              <Brain className="w-4 h-4 mr-2" />
+                              AI 감정
+                            </button>
+                          </div>
+
+                          {/* 탭 컨텐츠 */}
+                          {photoTab === "upload" && (
+                            <div>
+                              {/* 업로드된 이미지 미리보기 */}
+                              {formData.images.length > 0 && (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                                  {formData.images.map((file, index) => (
+                                    <div key={index} className="relative group">
+                                      <WatermarkImage
+                                        src={URL.createObjectURL(file)}
+                                        alt={`상품 이미지 ${index + 1}`}
+                                        className="w-full h-32 object-contain rounded-lg"
+                                        isAiProcessed={aiProcessedImages.has(
+                                          index
+                                        )}
+                                        showWatermark={true}
+                                      />
+
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          setParcelPaymentType("seller");
-                                          updateFormData({
-                                            parcelPaymentType: "seller",
+                                          removeImage(index);
+                                          // AI 처리된 이미지에서도 제거
+                                          setAiProcessedImages(prev => {
+                                            const newSet = new Set(prev);
+                                            newSet.delete(index);
+                                            return newSet;
                                           });
                                         }}
-                                        className="flex-1 p-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-blue-600 border border-blue-300 hover:bg-blue-100"
+                                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
                                       >
-                                        판매자 부담
+                                        ×
                                       </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* 이미지 업로드 영역 */}
+                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                <input
+                                  ref={fileInputRef}
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  onChange={e => {
+                                    if (e.target.files) {
+                                      handleImageUpload(e.target.files);
+                                    }
+                                  }}
+                                  className="hidden"
+                                  id="image-upload"
+                                />
+                                <label
+                                  htmlFor="image-upload"
+                                  className="cursor-pointer flex flex-col items-center"
+                                >
+                                  {uploadingImages ? (
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                                  ) : (
+                                    <svg
+                                      className="w-8 h-8 text-gray-400 mb-2"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                      />
+                                    </svg>
+                                  )}
+                                  <span className="text-sm text-gray-600">
+                                    {uploadingImages
+                                      ? "업로드 중..."
+                                      : "사진을 선택하거나 드래그하세요"}
+                                  </span>
+                                </label>
+                              </div>
+
+                              {formData.images.length === 0 && (
+                                <p className="mt-1 text-sm text-red-600">
+                                  최소 1장의 사진을 업로드해주세요
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {photoTab === "ai-emotion" && (
+                            <div className="space-y-6">
+                              {(() => {
+                                console.log(
+                                  "AI 감정 탭 렌더링됨, capturedImage:",
+                                  capturedImage
+                                );
+                                return null;
+                              })()}
+                              {/* AI 감정 촬영 영역 */}
+                              {!capturedImage ? (
+                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                  <div className="space-y-4">
+                                    <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                      <Video className="w-8 h-8 text-blue-600" />
+                                    </div>
+                                    <div>
+                                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                        AI 감정 분석 촬영
+                                      </h3>
+                                      <p className="text-gray-600 mb-4">
+                                        실시간으로 상품을 촬영하여 AI가 감정을
+                                        분석합니다
+                                      </p>
                                       <button
                                         type="button"
-                                        onClick={() => {
-                                          setParcelPaymentType("buyer");
-                                          updateFormData({
-                                            parcelPaymentType: "buyer",
-                                          });
-                                        }}
-                                        className="flex-1 p-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-blue-600 border border-blue-300 hover:bg-blue-100"
+                                        onClick={() => setIsCameraActive(true)}
+                                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                       >
-                                        구매자 부담
+                                        <Camera className="w-4 h-4 mr-2" />
+                                        촬영 시작
                                       </button>
                                     </div>
                                   </div>
-                                )}
-                            </div>
-                          ))}
-                        </div>
-                        {errors.shippingTypes && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.shippingTypes.message}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* 사진 업로드 */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          상품 사진 * (최소 1장)
-                        </label>
-
-                        {/* 탭 네비게이션 */}
-                        <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              console.log("상품 사진 탭 클릭");
-                              setPhotoTab("upload");
-                            }}
-                            className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                              photoTab === "upload"
-                                ? "bg-white text-blue-600 shadow-sm"
-                                : "text-gray-500 hover:text-gray-700"
-                            }`}
-                          >
-                            <Upload className="w-4 h-4 mr-2" />
-                            상품 사진
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              console.log("AI 감정 탭 클릭");
-                              setPhotoTab("ai-emotion");
-                            }}
-                            className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                              photoTab === "ai-emotion"
-                                ? "bg-white text-blue-600 shadow-sm"
-                                : "text-gray-500 hover:text-gray-700"
-                            }`}
-                          >
-                            <Brain className="w-4 h-4 mr-2" />
-                            AI 감정
-                          </button>
-                        </div>
-
-                        {/* 탭 컨텐츠 */}
-                        {photoTab === "upload" && (
-                          <div>
-                            {/* 업로드된 이미지 미리보기 */}
-                            {formData.images.length > 0 && (
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                                {formData.images.map((file, index) => (
-                                  <div key={index} className="relative group">
-                                    <WatermarkImage
-                                      src={URL.createObjectURL(file)}
-                                      alt={`상품 이미지 ${index + 1}`}
-                                      className="w-full h-32 object-contain rounded-lg"
-                                      isAiProcessed={aiProcessedImages.has(
-                                        index
-                                      )}
-                                      showWatermark={true}
+                                </div>
+                              ) : (
+                                <div className="space-y-4">
+                                  {/* 촬영된 이미지 미리보기 */}
+                                  <div className="relative w-full h-64">
+                                    <img
+                                      src={capturedImage}
+                                      alt="촬영된 상품"
+                                      className="w-full h-64 object-cover rounded-lg"
                                     />
-
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        removeImage(index);
-                                        // AI 처리된 이미지에서도 제거
-                                        setAiProcessedImages(prev => {
-                                          const newSet = new Set(prev);
-                                          newSet.delete(index);
-                                          return newSet;
-                                        });
+                                        setCapturedImage(null);
+                                        setAiAnalysisResult(null);
                                       }}
-                                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
+                                      className="absolute top-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-colors"
                                     >
-                                      ×
+                                      ✕
                                     </button>
                                   </div>
-                                ))}
-                              </div>
-                            )}
 
-                            {/* 이미지 업로드 영역 */}
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                              <input
-                                ref={fileInputRef}
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                onChange={e => {
-                                  if (e.target.files) {
-                                    handleImageUpload(e.target.files);
-                                  }
-                                }}
-                                className="hidden"
-                                id="image-upload"
-                              />
-                              <label
-                                htmlFor="image-upload"
-                                className="cursor-pointer flex flex-col items-center"
-                              >
-                                {uploadingImages ? (
-                                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-                                ) : (
-                                  <svg
-                                    className="w-8 h-8 text-gray-400 mb-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                    />
-                                  </svg>
-                                )}
-                                <span className="text-sm text-gray-600">
-                                  {uploadingImages
-                                    ? "업로드 중..."
-                                    : "사진을 선택하거나 드래그하세요"}
-                                </span>
-                              </label>
-                            </div>
-
-                            {formData.images.length === 0 && (
-                              <p className="mt-1 text-sm text-red-600">
-                                최소 1장의 사진을 업로드해주세요
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {photoTab === "ai-emotion" && (
-                          <div className="space-y-6">
-                            {(() => {
-                              console.log(
-                                "AI 감정 탭 렌더링됨, capturedImage:",
-                                capturedImage
-                              );
-                              return null;
-                            })()}
-                            {/* AI 감정 촬영 영역 */}
-                            {!capturedImage ? (
-                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                                <div className="space-y-4">
-                                  <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <Video className="w-8 h-8 text-blue-600" />
-                                  </div>
-                                  <div>
-                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                      AI 감정 분석 촬영
-                                    </h3>
-                                    <p className="text-gray-600 mb-4">
-                                      실시간으로 상품을 촬영하여 AI가 감정을
-                                      분석합니다
-                                    </p>
-                                    <button
-                                      type="button"
-                                      onClick={() => setIsCameraActive(true)}
-                                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                    >
-                                      <Camera className="w-4 h-4 mr-2" />
-                                      촬영 시작
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="space-y-4">
-                                {/* 촬영된 이미지 미리보기 */}
-                                <div className="relative w-full h-64">
-                                  <img
-                                    src={capturedImage}
-                                    alt="촬영된 상품"
-                                    className="w-full h-64 object-cover rounded-lg"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setCapturedImage(null);
-                                      setAiAnalysisResult(null);
+                                  {/* AI 분석 결과 */}
+                                  <AIEmotionAnalysis
+                                    imageDataUrl={capturedImage}
+                                    onAnalysisComplete={result => {
+                                      setAiAnalysisResult(result);
+                                      setIsAiImageConfirmed(false); // 분석 완료 후 확정 대기 상태
                                     }}
-                                    className="absolute top-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-colors"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
+                                    onConditionChange={condition => {
+                                      // 상태 등급을 formData에 반영할 수 있음
+                                      console.log(
+                                        "AI 추천 상태 등급:",
+                                        condition
+                                      );
+                                    }}
+                                  />
 
-                                {/* AI 분석 결과 */}
-                                <AIEmotionAnalysis
-                                  imageDataUrl={capturedImage}
-                                  onAnalysisComplete={result => {
-                                    setAiAnalysisResult(result);
-                                    setIsAiImageConfirmed(false); // 분석 완료 후 확정 대기 상태
-                                  }}
-                                  onConditionChange={condition => {
-                                    // 상태 등급을 formData에 반영할 수 있음
-                                    console.log(
-                                      "AI 추천 상태 등급:",
-                                      condition
-                                    );
-                                  }}
-                                />
+                                  {/* AI 이미지 확정 버튼 */}
+                                  {aiAnalysisResult && !isAiImageConfirmed && (
+                                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <h4 className="text-sm font-medium text-green-900 mb-1">
+                                            AI 분석 완료!
+                                          </h4>
+                                          <p className="text-sm text-green-700">
+                                            이 이미지를 상품에 추가하시겠습니까?
+                                          </p>
+                                        </div>
+                                        <div className="flex space-x-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setCapturedImage(null);
+                                              setAiAnalysisResult(null);
+                                              setIsAiImageConfirmed(false);
+                                            }}
+                                            className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                                          >
+                                            취소
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              // AI 이미지를 실제로 추가
+                                              const canvas =
+                                                document.createElement(
+                                                  "canvas"
+                                                );
+                                              const ctx =
+                                                canvas.getContext("2d");
+                                              const img = new Image();
+                                              img.onload = () => {
+                                                canvas.width = img.width;
+                                                canvas.height = img.height;
+                                                ctx?.drawImage(img, 0, 0);
+                                                canvas.toBlob(
+                                                  blob => {
+                                                    if (blob) {
+                                                      const file = new File(
+                                                        [blob],
+                                                        "ai-captured-image.jpg",
+                                                        { type: "image/jpeg" }
+                                                      );
+                                                      const updatedImages = [
+                                                        ...formData.images,
+                                                        file,
+                                                      ];
+                                                      updateFormData({
+                                                        images: updatedImages,
+                                                      });
 
-                                {/* AI 이미지 확정 버튼 */}
-                                {aiAnalysisResult && !isAiImageConfirmed && (
-                                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <h4 className="text-sm font-medium text-green-900 mb-1">
-                                          AI 분석 완료!
-                                        </h4>
-                                        <p className="text-sm text-green-700">
-                                          이 이미지를 상품에 추가하시겠습니까?
-                                        </p>
-                                      </div>
-                                      <div className="flex space-x-2">
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setCapturedImage(null);
-                                            setAiAnalysisResult(null);
-                                            setIsAiImageConfirmed(false);
-                                          }}
-                                          className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                                        >
-                                          취소
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            // AI 이미지를 실제로 추가
-                                            const canvas =
-                                              document.createElement("canvas");
-                                            const ctx = canvas.getContext("2d");
-                                            const img = new Image();
-                                            img.onload = () => {
-                                              canvas.width = img.width;
-                                              canvas.height = img.height;
-                                              ctx?.drawImage(img, 0, 0);
-                                              canvas.toBlob(
-                                                blob => {
-                                                  if (blob) {
-                                                    const file = new File(
-                                                      [blob],
-                                                      "ai-captured-image.jpg",
-                                                      { type: "image/jpeg" }
-                                                    );
-                                                    const updatedImages = [
-                                                      ...formData.images,
-                                                      file,
-                                                    ];
-                                                    updateFormData({
-                                                      images: updatedImages,
-                                                    });
+                                                      // AI 처리된 이미지로 마킹
+                                                      setAiProcessedImages(
+                                                        prev =>
+                                                          new Set([
+                                                            ...prev,
+                                                            updatedImages.length -
+                                                              1,
+                                                          ])
+                                                      );
 
-                                                    // AI 처리된 이미지로 마킹
-                                                    setAiProcessedImages(
-                                                      prev =>
-                                                        new Set([
-                                                          ...prev,
-                                                          updatedImages.length -
-                                                            1,
-                                                        ])
-                                                    );
+                                                      // 상태 초기화
+                                                      setCapturedImage(null);
+                                                      setAiAnalysisResult(null);
+                                                      setIsAiImageConfirmed(
+                                                        false
+                                                      );
 
-                                                    // 상태 초기화
-                                                    setCapturedImage(null);
-                                                    setAiAnalysisResult(null);
-                                                    setIsAiImageConfirmed(
-                                                      false
-                                                    );
-
-                                                    toast.success(
-                                                      "AI 감정 분석된 이미지가 추가되었습니다!"
-                                                    );
-                                                  }
-                                                },
-                                                "image/jpeg",
-                                                0.8
-                                              );
-                                            };
-                                            img.src = capturedImage;
-                                          }}
-                                          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
-                                        >
-                                          확정 추가
-                                        </button>
+                                                      toast.success(
+                                                        "AI 감정 분석된 이미지가 추가되었습니다!"
+                                                      );
+                                                    }
+                                                  },
+                                                  "image/jpeg",
+                                                  0.8
+                                                );
+                                              };
+                                              img.src = capturedImage;
+                                            }}
+                                            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                                          >
+                                            확정 추가
+                                          </button>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                  )}
+                                </div>
+                              )}
 
-                            {/* 카메라 캡처 모달 */}
-                            <CameraCapture
-                              isActive={isCameraActive}
-                              onCapture={imageDataUrl => {
-                                setCapturedImage(imageDataUrl);
-                                setIsCameraActive(false);
-                              }}
-                              onClose={() => setIsCameraActive(false)}
-                            />
-                          </div>
-                        )}
-                      </div>
+                              {/* 카메라 캡처 모달 */}
+                              <CameraCapture
+                                isActive={isCameraActive}
+                                onCapture={imageDataUrl => {
+                                  setCapturedImage(imageDataUrl);
+                                  setIsCameraActive(false);
+                                }}
+                                onClose={() => setIsCameraActive(false)}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                      {/* 판매 내용 */}
+                      {/* 내용 */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          판매 내용 *
+                          {formData.tradeType === "buy"
+                            ? "내용 *"
+                            : "판매 내용 *"}
                         </label>
                         <textarea
                           {...register("description", {
-                            required: "판매 내용을 입력해주세요",
+                            required:
+                              formData.tradeType === "buy"
+                                ? "내용을 입력해주세요"
+                                : "판매 내용을 입력해주세요",
                           })}
-                          placeholder="상품에 대한 자세한 설명을 입력해주세요"
+                          placeholder={
+                            formData.tradeType === "buy"
+                              ? "구매하고 싶은 상품에 대한 자세한 설명을 입력해주세요"
+                              : "상품에 대한 자세한 설명을 입력해주세요"
+                          }
                           rows={4}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
@@ -933,7 +998,9 @@ export default function ProductWizardPage() {
                             type="submit"
                             className="w-full py-4 text-lg font-semibold"
                           >
-                            상품 등록 완료
+                            {formData.tradeType === "buy"
+                              ? "구매글 등록 완료"
+                              : "상품 등록 완료"}
                           </Button>
                         </div>
                       </div>

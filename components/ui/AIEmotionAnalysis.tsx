@@ -107,10 +107,10 @@ export const AIEmotionAnalysis = ({
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
         <div className="animate-spin w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
         <h3 className="text-lg font-medium text-blue-900 mb-2">
-          AI 감정 분석 중...
+          AI 분석 중...
         </h3>
         <p className="text-blue-700 text-sm">
-          상품의 상태와 감정을 분석하고 있습니다. 잠시만 기다려주세요.
+          상품의 상태를 분석하고 있습니다. 잠시만 기다려주세요.
         </p>
       </div>
     );
@@ -136,13 +136,29 @@ export const AIEmotionAnalysis = ({
 
   return (
     <div className="space-y-4">
+      {/* 촬영된 이미지 표시 */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <h4 className="font-medium text-gray-900 mb-3">촬영된 이미지</h4>
+        <div className="relative">
+          <img
+            src={imageDataUrl}
+            alt="AI 감정 분석 이미지"
+            className="w-full max-w-md mx-auto rounded-lg shadow-md"
+          />
+          <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 shadow-lg">
+            <Brain className="w-3 h-3" />
+            <span>AI 감정</span>
+          </div>
+        </div>
+      </div>
+
       {/* 분석 결과 헤더 */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Brain className="w-6 h-6 text-blue-600" />
             <h3 className="text-lg font-semibold text-gray-900">
-              AI 감정 분석 결과
+              AI 분석 결과
             </h3>
           </div>
           <div className="text-sm text-gray-600">

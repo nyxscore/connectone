@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/hooks/useAuth";
 import { getUserItems } from "../../../lib/api/products";
 import { ItemDetailModal } from "../../../components/items/ItemDetailModal";
-import { EditItemModal } from "../../../components/items/EditItemModal";
+import { ItemCard } from "../../../components/items/ItemCard";
+import EditProductModal from "../../../components/product/EditProductModal";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import {
@@ -16,11 +17,8 @@ import {
   Trash2,
   ArrowUp,
   Plus,
-  MapPin,
-  Calendar,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { INSTRUMENT_CATEGORIES } from "../../../data/constants/index";
 
 export default function MyItemsPage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
@@ -161,16 +159,6 @@ export default function MyItemsPage() {
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    const categoryInfo = INSTRUMENT_CATEGORIES.find(c => c.key === category);
-    return categoryInfo?.icon || "🎵";
-  };
-
-  const getCategoryLabel = (category: string) => {
-    const categoryInfo = INSTRUMENT_CATEGORIES.find(c => c.key === category);
-    return categoryInfo?.label || category;
-  };
-
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -224,142 +212,60 @@ export default function MyItemsPage() {
             </Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {myItems.map(item => (
-              <div
-                key={item.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow relative group"
-              >
-                <div className="aspect-square bg-gray-100 overflow-hidden relative">
-                  {item.images && item.images.length > 0 ? (
-                    <img
-                      src={item.images[0]}
-                      alt={item.title}
-                      className="w-full h-full object-cover cursor-pointer"
-                      onClick={() => handleItemClick(item)}
-                    />
-                  ) : (
-                    <div
-                      className="w-full h-full flex items-center justify-center text-gray-400 cursor-pointer"
-                      onClick={() => handleItemClick(item)}
-                    >
-                      이미지 없음
+              <div key={item.id} className="relative group">
+                <ItemCard item={item} onClick={handleItemClick} />
+
+                {/* 점 메뉴 버튼 - ItemCard 위에 오버레이 */}
+                <div className="absolute top-2 right-2 item-menu z-10">
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      setShowItemMenu(
+                        showItemMenu === item.id ? null : item.id
+                      );
+                    }}
+                    className="bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <MoreVertical className="w-4 h-4 text-gray-600" />
+                  </button>
+
+                  {/* 드롭다운 메뉴 */}
+                  {showItemMenu === item.id && (
+                    <div className="absolute top-10 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[120px]">
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleItemEdit(item);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>수정</span>
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleItemBump(item);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                        <span>끌어올리기</span>
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleItemDelete(item);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>삭제</span>
+                      </button>
                     </div>
                   )}
-
-                  {/* 점 메뉴 버튼 */}
-                  <div className="absolute top-2 right-2 item-menu">
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setShowItemMenu(
-                          showItemMenu === item.id ? null : item.id
-                        );
-                      }}
-                      className="bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <MoreVertical className="w-4 h-4 text-gray-600" />
-                    </button>
-
-                    {/* 드롭다운 메뉴 */}
-                    {showItemMenu === item.id && (
-                      <div className="absolute top-10 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleItemEdit(item);
-                          }}
-                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                        >
-                          <Edit className="w-4 h-4" />
-                          <span>수정</span>
-                        </button>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleItemBump(item);
-                          }}
-                          className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
-                        >
-                          <ArrowUp className="w-4 h-4" />
-                          <span>끌어올리기</span>
-                        </button>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleItemDelete(item);
-                          }}
-                          className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          <span>삭제</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-3 sm:p-4">
-                  <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base line-clamp-2">
-                    {item.title || `${item.brand} ${item.model}`}
-                  </h3>
-
-                  <div className="text-base sm:text-lg font-bold text-blue-600 mb-2">
-                    {item.price?.toLocaleString("ko-KR")}원
-                  </div>
-
-                  <div className="flex items-center text-xs sm:text-sm text-gray-600 space-x-2 sm:space-x-4">
-                    <span className="flex items-center">
-                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                      <span className="truncate">{item.region}</span>
-                    </span>
-                    <span className="flex items-center">
-                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                      <span className="truncate">
-                        {formatDate(item.createdAt)}
-                      </span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-2 sm:mt-3">
-                    <span className="text-xs sm:text-sm text-gray-500 truncate">
-                      {getCategoryIcon(item.category)}{" "}
-                      {getCategoryLabel(item.category)}
-                    </span>
-                    <span
-                      className={`text-xs sm:text-sm font-medium px-2 py-1 rounded ${
-                        item.condition === "A"
-                          ? "bg-blue-100 text-blue-800"
-                          : item.condition === "B"
-                            ? "bg-green-100 text-green-800"
-                            : item.condition === "C"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {item.condition}등급
-                    </span>
-                  </div>
-
-                  {/* 상태 표시 */}
-                  <div className="mt-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : item.status === "reserved"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : item.status === "paid_hold"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {item.status === "active" && "판매중"}
-                      {item.status === "reserved" && "예약중"}
-                      {item.status === "paid_hold" && "결제완료"}
-                      {item.status === "sold" && "거래완료"}
-                    </span>
-                  </div>
                 </div>
               </div>
             ))}
@@ -381,14 +287,14 @@ export default function MyItemsPage() {
 
       {/* 상품 수정 모달 */}
       {editingItem && (
-        <EditItemModal
-          itemId={editingItem.id}
+        <EditProductModal
+          productId={editingItem.id}
           isOpen={showEditModal}
           onClose={() => {
             setShowEditModal(false);
             setEditingItem(null);
           }}
-          onItemUpdated={handleEditComplete}
+          onSuccess={handleEditComplete}
         />
       )}
     </div>

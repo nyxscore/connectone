@@ -21,11 +21,7 @@ export default function ListPage() {
     hasMore,
     error,
     filters,
-    sortBy,
-    sortOrder,
     setFilters,
-    setSortBy,
-    setSortOrder,
     loadMore,
     refresh,
     clearError,
@@ -39,7 +35,7 @@ export default function ListPage() {
 
   const handleItemClick = (item: SellItem) => {
     setSelectedItem(item);
-    setShowProductModal(true); // ProductDetailModal 사용
+    setShowProductModal(true); // ProductDetailModal 사용 (결제 기능 포함)
   };
 
   const handleCloseModal = () => {
@@ -87,11 +83,7 @@ export default function ListPage() {
         {/* 검색 및 필터 */}
         <ItemFilters
           filters={filters}
-          sortBy={sortBy}
-          sortOrder={sortOrder}
           onFiltersChange={setFilters}
-          onSortChange={setSortBy}
-          onSortOrderChange={setSortOrder}
           onClearFilters={handleClearFilters}
         />
 
@@ -143,7 +135,7 @@ export default function ListPage() {
         />
       )}
 
-      {/* 새로운 상품 상세 모달 */}
+      {/* 상품 상세 모달 (결제 기능 포함) */}
       <ProductDetailModal
         item={selectedItem}
         isOpen={showProductModal}

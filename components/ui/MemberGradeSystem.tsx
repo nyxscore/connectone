@@ -147,7 +147,7 @@ export const MemberGradeSystem = ({
       <div className="grid gap-4">
         {grades.map(grade => {
           const gradeInfo = GRADE_SYSTEM[grade];
-          const isCurrentGrade = currentGrade === grade;
+          const isCurrentGrade = showCurrentOnly && currentGrade === grade;
 
           return (
             <div

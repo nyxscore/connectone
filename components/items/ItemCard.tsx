@@ -83,10 +83,7 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
   };
 
   return (
-    <Card
-      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={handleClick}
-    >
+    <Card className="overflow-hidden cursor-pointer" onClick={handleClick}>
       {/* 썸네일 */}
       <div className="aspect-square bg-gray-200 relative overflow-hidden">
         {item.images && item.images.length > 0 ? (
@@ -108,9 +105,9 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
 
         {/* AI 감정 라벨 (상품 목록용) */}
         {item.aiProcessedImages && item.aiProcessedImages.length > 0 && (
-          <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 shadow-lg">
+          <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded text-xs font-bold flex items-center space-x-1 shadow-lg">
             <Brain className="w-3 h-3" />
-            <span>AI 감정</span>
+            <span>AI</span>
           </div>
         )}
 
@@ -141,19 +138,6 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
         <div className="flex items-center justify-between mt-2 sm:mt-3">
           <span className="text-xs sm:text-sm text-gray-500 truncate">
             {getCategoryIcon(item.category)} {getCategoryLabel(item.category)}
-          </span>
-          <span
-            className={`text-xs sm:text-sm font-medium px-2 py-1 rounded ${
-              item.condition === "A"
-                ? "bg-blue-100 text-blue-800"
-                : item.condition === "B"
-                  ? "bg-green-100 text-green-800"
-                  : item.condition === "C"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-            }`}
-          >
-            {item.condition}등급
           </span>
         </div>
 

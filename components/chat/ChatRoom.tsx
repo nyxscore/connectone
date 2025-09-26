@@ -94,6 +94,32 @@ export function ChatRoom({ chatId, otherUser, item, onBack }: ChatRoomProps) {
     return formatDistanceToNow(date, { addSuffix: true, locale: ko });
   };
 
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString("ko-KR", {
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
+
+  const formatTimeOnly = (timestamp: any) => {
+    if (!timestamp) return "";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  const isSameDate = (date1: any, date2: any) => {
+    if (!date1 || !date2) return false;
+    const d1 = date1.toDate ? date1.toDate() : new Date(date1);
+    const d2 = date2.toDate ? date2.toDate() : new Date(date2);
+    return d1.toDateString() === d2.toDateString();
+  };
+
   const handleItemClick = () => {
     router.push(`/item/${item.id}`);
   };
@@ -193,54 +219,75 @@ export function ChatRoom({ chatId, otherUser, item, onBack }: ChatRoomProps) {
             <p className="text-sm text-gray-500">첫 메시지를 보내보세요!</p>
           </div>
         ) : (
-          messages.map(message => {
+          messages.map((message, index) => {
             const isOwn = message.senderUid === user?.uid;
             const isRead = message.readBy.length > 1; // 발신자 외에 읽은 사람이 있으면 읽음
 
+            // 이전 메시지와 날짜가 다른지 확인
+            const prevMessage = index > 0 ? messages[index - 1] : null;
+            const showDateSeparator =
+              !prevMessage ||
+              !isSameDate(message.createdAt, prevMessage.createdAt);
+
             return (
-              <div
-                key={message.id}
-                className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    isOwn
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 text-gray-900"
-                  }`}
-                >
-                  {/* 텍스트 메시지 */}
-                  {message.content && (
-                    <p className="text-sm whitespace-pre-wrap">
-                      {message.content}
-                    </p>
-                  )}
-
-                  {/* 이미지 메시지 */}
-                  {message.imageUrl && (
-                    <div className="mt-2">
-                      <img
-                        src={message.imageUrl}
-                        alt="첨부 이미지"
-                        className="max-w-full h-auto rounded"
-                      />
+              <div key={message.id}>
+                {/* 날짜 구분선 */}
+                {showDateSeparator && (
+                  <div className="flex items-center justify-center my-4">
+                    <div className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
+                      {formatDate(message.createdAt)}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* 시간 및 읽음 상태 */}
-                  <div
-                    className={`flex items-center justify-end mt-1 space-x-1 ${
-                      isOwn ? "text-blue-100" : "text-gray-500"
-                    }`}
-                  >
-                    <span className="text-xs">
-                      {formatTime(message.createdAt)}
-                    </span>
-                    {isOwn && (
-                      <span className="text-xs">
-                        {isRead ? "읽음" : "전송됨"}
-                      </span>
-                    )}
+                {/* 메시지 */}
+                <div
+                  className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-1`}
+                >
+                  <div className="flex flex-col max-w-xs lg:max-w-md">
+                    <div
+                      className={`px-4 py-2 rounded-lg ${
+                        isOwn
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      {/* 텍스트 메시지 */}
+                      {message.content && (
+                        <p className="text-sm whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                      )}
+
+                      {/* 이미지 메시지 */}
+                      {message.imageUrl && (
+                        <div className="mt-2">
+                          <img
+                            src={message.imageUrl}
+                            alt="첨부 이미지"
+                            className="max-w-full h-auto rounded"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 시간 및 읽음 상태 - 메시지 버블 밖에 표시 */}
+                    <div
+                      className={`flex items-center mt-1 ${
+                        isOwn ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span className="text-xs text-gray-500">
+                          {formatTimeOnly(message.createdAt)}
+                        </span>
+                        {isOwn && (
+                          <span className="text-xs text-gray-500">
+                            {isRead ? "읽음" : "전송됨"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

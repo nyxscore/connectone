@@ -8,8 +8,6 @@ import { SellItem } from "../data/types";
 
 export interface UseItemsQueryOptions {
   initialFilters?: ItemListFilters;
-  initialSortBy?: "createdAt" | "price";
-  initialSortOrder?: "desc" | "asc";
   limit?: number;
 }
 
@@ -20,11 +18,7 @@ export interface UseItemsQueryReturn {
   hasMore: boolean;
   error: string;
   filters: ItemListFilters;
-  sortBy: "createdAt" | "price";
-  sortOrder: "desc" | "asc";
   setFilters: (filters: ItemListFilters) => void;
-  setSortBy: (sortBy: "createdAt" | "price") => void;
-  setSortOrder: (sortOrder: "desc" | "asc") => void;
   loadMore: () => void;
   refresh: () => void;
   clearError: () => void;
@@ -33,12 +27,7 @@ export interface UseItemsQueryReturn {
 export function useItemsQuery(
   options: UseItemsQueryOptions = {}
 ): UseItemsQueryReturn {
-  const {
-    initialFilters = {},
-    initialSortBy = "createdAt",
-    initialSortOrder = "desc",
-    limit = 20,
-  } = options;
+  const { initialFilters = {}, limit = 20 } = options;
 
   const [items, setItems] = useState<SellItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,8 +36,6 @@ export function useItemsQuery(
   const [lastDoc, setLastDoc] = useState<any>(null);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState<ItemListFilters>(initialFilters);
-  const [sortBy, setSortBy] = useState<"createdAt" | "price">(initialSortBy);
-  const [sortOrder, setSortOrder] = useState<"desc" | "asc">(initialSortOrder);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadItems = useCallback(
@@ -67,8 +54,6 @@ export function useItemsQuery(
         const queryOptions: ItemListOptions = {
           limit,
           lastDoc: reset ? undefined : lastDoc,
-          sortBy,
-          sortOrder,
           filters,
         };
 
@@ -93,13 +78,8 @@ export function useItemsQuery(
         setLoadingMore(false);
       }
     },
-    [filters, sortBy, sortOrder, lastDoc, limit]
+    [filters, lastDoc, limit]
   );
-
-  // 정렬이 변경될 때 즉시 로드
-  useEffect(() => {
-    loadItems(true);
-  }, [sortBy, sortOrder]);
 
   // 필터 변경 시 디바운싱 적용
   useEffect(() => {
@@ -139,14 +119,6 @@ export function useItemsQuery(
     setFilters(newFilters);
   }, []);
 
-  const handleSetSortBy = useCallback((newSortBy: "createdAt" | "price") => {
-    setSortBy(newSortBy);
-  }, []);
-
-  const handleSetSortOrder = useCallback((newSortOrder: "desc" | "asc") => {
-    setSortOrder(newSortOrder);
-  }, []);
-
   return {
     items,
     loading,
@@ -154,11 +126,7 @@ export function useItemsQuery(
     hasMore,
     error,
     filters,
-    sortBy,
-    sortOrder,
     setFilters: handleSetFilters,
-    setSortBy: handleSetSortBy,
-    setSortOrder: handleSetSortOrder,
     loadMore,
     refresh,
     clearError,

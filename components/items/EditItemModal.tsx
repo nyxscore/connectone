@@ -10,7 +10,6 @@ import { getItem, updateItem } from "../../lib/api/products";
 import { uploadImages } from "../../lib/api/storage";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { SellItem } from "../../data/types";
-import { AITagSuggestions } from "../ui/AITagSuggestions";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -74,15 +73,10 @@ export function EditItemModal({
 
         // 폼에 기존 데이터 설정
         setValue("title", itemData.title);
-        setValue("condition", itemData.condition);
         setValue("category", itemData.category);
-        setValue("region", itemData.region);
+        setValue("condition", itemData.condition);
         setValue("price", itemData.price);
         setValue("description", itemData.description);
-        setValue(
-          "shippingType",
-          itemData.shippingType as "direct" | "pickup" | "courier"
-        );
         setValue("escrowEnabled", itemData.escrowEnabled);
 
         // shippingTypes 설정
@@ -125,7 +119,7 @@ export function EditItemModal({
     setImageUrls(prev => prev.filter((_, i) => i !== index));
   };
 
-  const onSubmit = async (data: SellItemInput) => {
+  const onSubmit = async (data: any) => {
     if (!user || !item) return;
 
     setIsSubmitting(true);
@@ -147,17 +141,15 @@ export function EditItemModal({
         }
       }
 
-      // 상품 수정
+      // 상품 수정 데이터 구성
       const updateData = {
         ...data,
         images: finalImageUrls,
         aiTags,
-        // shippingTypes가 배열이 아닌 경우 배열로 변환
-        shippingTypes: Array.isArray(data.shippingTypes)
-          ? data.shippingTypes
-          : data.shippingType
-            ? [data.shippingType]
-            : [],
+        // 기존 필드들 유지
+        region: item.region,
+        brand: item.brand,
+        model: item.model,
       };
 
       const result = await updateItem(itemId, user.uid, updateData as any);
@@ -259,9 +251,9 @@ export function EditItemModal({
                         지역 *
                       </label>
                       <Input
-                        {...register("region")}
-                        placeholder="예: 서울특별시, 경기도"
-                        error={errors.region?.message}
+                        value={item.region}
+                        disabled
+                        className="bg-gray-100"
                       />
                     </div>
 
@@ -405,17 +397,6 @@ export function EditItemModal({
                   </div>
                 </div>
               </Card>
-
-              {/* AI 태그 제안 */}
-              {imageUrls.length > 0 && (
-                <AITagSuggestions
-                  imageUrls={imageUrls}
-                  onTagsChange={setAiTags}
-                  onConditionChange={condition =>
-                    setValue("condition", condition)
-                  }
-                />
-              )}
 
               {/* 상세 정보 */}
               <Card>

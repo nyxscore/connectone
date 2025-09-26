@@ -12,6 +12,18 @@ const convertUserProfileToUser = (
   profile: UserProfile,
   firebaseUser: FirebaseUser
 ): User => {
+  // createdAt, updatedAt 필드가 Firestore Timestamp가 아닐 수도 있어 안전하게 변환
+  const toDateSafe = (value: any): Date => {
+    try {
+      if (!value) return new Date();
+      if (typeof value?.toDate === "function") return value.toDate();
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? new Date() : d;
+    } catch {
+      return new Date();
+    }
+  };
+
   return {
     id: profile.uid,
     uid: profile.uid,
@@ -27,8 +39,8 @@ const convertUserProfileToUser = (
     averageRating: 0, // UserProfile에 없으므로 기본값
     disputeCount: 0, // UserProfile에 없으므로 기본값
     isPhoneVerified: false, // UserProfile에 없으므로 기본값
-    createdAt: profile.createdAt.toDate(),
-    updatedAt: profile.updatedAt.toDate(),
+    createdAt: toDateSafe((profile as any).createdAt),
+    updatedAt: toDateSafe((profile as any).updatedAt),
   };
 };
 

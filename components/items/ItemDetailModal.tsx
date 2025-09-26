@@ -58,6 +58,7 @@ export function ItemDetailModal({
     sellerUid: item?.sellerUid,
     brand: item?.brand,
     model: item?.model,
+    aiProcessedImages: item?.aiProcessedImages,
   });
 
   useEffect(() => {
@@ -132,6 +133,10 @@ export function ItemDetailModal({
         return "택배";
       case "meetup": // meetup도 직거래로 처리
         return "직거래";
+      case "shipping":
+        return "화물운송";
+      case "escrow":
+        return null; // escrow는 표시하지 않음
       default:
         return type;
     }
@@ -185,138 +190,133 @@ export function ItemDetailModal({
 
         {/* 내용 */}
         <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* 왼쪽: 이미지 갤러리 */}
-            <div className="lg:col-span-1">
-              <ItemGallery
-                images={item.images || []}
-                alt={
-                  item.title ||
-                  `${item.brand || ""} ${item.model || ""}`.trim() ||
-                  "상품명 없음"
-                }
-              />
-            </div>
+          <div className="space-y-6">
+            {/* 이미지 갤러리 */}
+            {item.images && item.images.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 shadow-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  상품 이미지
+                </h3>
+                <ItemGallery
+                  images={item.images || []}
+                  alt={
+                    item.title ||
+                    `${item.brand || ""} ${item.model || ""}`.trim() ||
+                    "상품명 없음"
+                  }
+                  aiProcessedImages={item.aiProcessedImages || []}
+                  maxHeight="300px"
+                />
+              </div>
+            )}
 
-            {/* 오른쪽: 상품 정보 */}
-            <div className="lg:col-span-2 space-y-6">
+            {/* 상품 정보 */}
+            <div className="space-y-6">
               {/* 기본 정보 */}
-              <Card>
-                <div className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                          {item.title ||
-                            `${item.brand || ""} ${item.model || ""}`.trim() ||
-                            "상품명 없음"}
-                        </h1>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-1" />
-                            {formatDate(item.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleShare}
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="text-3xl font-bold text-blue-600">
-                      {formatPrice(item.price)}
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <span className="text-sm text-gray-600">
-                        {categoryInfo?.icon} {categoryInfo?.label}
+              <div className="bg-white rounded-2xl p-6 shadow-lg">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                      {item.title ||
+                        `${item.brand || ""} ${item.model || ""}`.trim() ||
+                        "상품명 없음"}
+                    </h1>
+                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      <span className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {formatDate(item.createdAt)}
                       </span>
                     </div>
                   </div>
-                </div>
-              </Card>
-
-              {/* 상세 정보 테이블 */}
-              <Card>
-                <div className="p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    상품 상세 정보
-                  </h2>
-                  <div className="overflow-hidden">
-                    <table className="w-full">
-                      <tbody className="divide-y divide-gray-200">
-                        <tr>
-                          <td className="py-3 px-4 text-sm font-medium text-gray-500 w-1/3">
-                            카테고리
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-900">
-                            {categoryInfo?.icon} {categoryInfo?.label}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 px-4 text-sm font-medium text-gray-500">
-                            상품명
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-900">
-                            {item.title ||
-                              `${item.brand || ""} ${item.model || ""}`.trim() ||
-                              "상품명 없음"}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 px-4 text-sm font-medium text-gray-500">
-                            지역
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-900 flex items-center">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            {item.region}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 px-4 text-sm font-medium text-gray-500">
-                            가격
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-900 font-semibold">
-                            {formatPrice(item.price)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm" onClick={handleShare}>
+                      <Share2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-              </Card>
+
+                <div className="text-3xl font-bold text-blue-600 mb-4">
+                  {formatPrice(item.price)}
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-600">
+                    {categoryInfo?.icon} {categoryInfo?.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* 상세 정보 */}
+              <div className="bg-white rounded-2xl p-6 shadow-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  상품 상세 정보
+                </h3>
+                <div className="space-y-4">
+                  <table className="w-full">
+                    <tbody className="divide-y divide-gray-200">
+                      <tr>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-500 w-1/3">
+                          카테고리
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-900">
+                          {categoryInfo?.icon} {categoryInfo?.label}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-500">
+                          상품명
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-900">
+                          {item.title ||
+                            `${item.brand || ""} ${item.model || ""}`.trim() ||
+                            "상품명 없음"}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-500">
+                          지역
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-900 flex items-center">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {item.region}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-500">
+                          가격
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-900 font-semibold">
+                          {formatPrice(item.price)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
               {/* 상품 설명 */}
               {item.description && (
-                <Card>
-                  <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      상품 설명
-                    </h2>
-                    <div className="prose prose-sm max-w-none">
-                      <p className="text-gray-700 whitespace-pre-wrap">
-                        {item.description}
-                      </p>
-                    </div>
+                <div className="bg-white rounded-2xl p-6 shadow-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    상품 설명
+                  </h3>
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 whitespace-pre-wrap">
+                      {item.description}
+                    </p>
                   </div>
-                </Card>
+                </div>
               )}
 
-              {/* 판매자 카드 */}
-              <Card>
+              {/* 판매자 정보 */}
+              <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <div
-                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => setShowSellerProfileModal(true)}
                 >
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     판매자 정보
-                  </h2>
+                  </h3>
                   <div className="space-y-4">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
@@ -381,28 +381,23 @@ export function ItemDetailModal({
                     </div>
                   </div>
                 </div>
-              </Card>
+              </div>
 
-              {/* 옵션 배지들 */}
+              {/* 배송 방법들 */}
               <div className="flex flex-wrap gap-2">
-                {item.escrowEnabled && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                    <Shield className="w-4 h-4 mr-1" />
-                    안전거래 가능
-                  </span>
-                )}
-                {/* 배송 방법들 */}
                 <div className="flex flex-wrap gap-2">
                   {item.shippingTypes && item.shippingTypes.length > 0 ? (
-                    item.shippingTypes.map((type, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-                      >
-                        <Truck className="w-4 h-4 mr-1" />
-                        {getShippingTypeLabel(type)}
-                      </span>
-                    ))
+                    item.shippingTypes
+                      .filter(type => getShippingTypeLabel(type) !== null)
+                      .map((type, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                        >
+                          <Truck className="w-4 h-4 mr-1" />
+                          {getShippingTypeLabel(type)}
+                        </span>
+                      ))
                   ) : (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                       <Truck className="w-4 h-4 mr-1" />

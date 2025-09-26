@@ -48,7 +48,7 @@ export const WatermarkImage = ({
       ctx.drawImage(img, 0, 0);
 
       // 워터마크 추가
-      const watermarkText = "AI 감정 분석";
+      const watermarkText = "AI";
       const fontSize = Math.max(img.width * 0.03, 12); // 이미지 크기에 비례한 폰트 크기
 
       ctx.font = `bold ${fontSize}px Arial, sans-serif`;
@@ -125,7 +125,7 @@ export const WatermarkImage = ({
       {isAiProcessed && (
         <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 shadow-lg">
           <Brain className="w-3 h-3" />
-          <span>AI 감정</span>
+          <span>AI</span>
         </div>
       )}
     </div>

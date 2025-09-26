@@ -11,21 +11,13 @@ import { Search, Filter, SortAsc, SortDesc, X } from "lucide-react";
 
 interface ItemFiltersProps {
   filters: ItemListFilters;
-  sortBy: "createdAt" | "price";
-  sortOrder: "desc" | "asc";
   onFiltersChange: (filters: ItemListFilters) => void;
-  onSortChange: (sortBy: "createdAt" | "price") => void;
-  onSortOrderChange: (sortOrder: "desc" | "asc") => void;
   onClearFilters: () => void;
 }
 
 export function ItemFilters({
   filters,
-  sortBy,
-  sortOrder,
   onFiltersChange,
-  onSortChange,
-  onSortOrderChange,
   onClearFilters,
 }: ItemFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
@@ -38,15 +30,6 @@ export function ItemFilters({
       ...filters,
       [key]: value || undefined,
     });
-  };
-
-  const handleSortChange = (newSortBy: "createdAt" | "price") => {
-    if (sortBy === newSortBy) {
-      onSortOrderChange(sortOrder === "desc" ? "asc" : "desc");
-    } else {
-      onSortChange(newSortBy);
-      onSortOrderChange("desc");
-    }
   };
 
   const hasActiveFilters = Object.values(filters).some(
@@ -180,33 +163,32 @@ export function ItemFilters({
           </div>
         )}
 
-        {/* 정렬 옵션 */}
-        <div className="flex items-center space-x-4 pt-4 border-t">
-          <span className="text-sm font-medium text-gray-700">정렬:</span>
-          <Button
-            variant={sortBy === "createdAt" ? "primary" : "outline"}
-            size="sm"
-            onClick={() => handleSortChange("createdAt")}
-          >
-            {sortBy === "createdAt" && sortOrder === "desc" ? (
-              <SortDesc className="w-4 h-4 mr-1" />
-            ) : (
-              <SortAsc className="w-4 h-4 mr-1" />
-            )}
-            최신순
-          </Button>
-          <Button
-            variant={sortBy === "price" ? "primary" : "outline"}
-            size="sm"
-            onClick={() => handleSortChange("price")}
-          >
-            {sortBy === "price" && sortOrder === "asc" ? (
-              <SortAsc className="w-4 h-4 mr-1" />
-            ) : (
-              <SortDesc className="w-4 h-4 mr-1" />
-            )}
-            가격순
-          </Button>
+        {/* 카테고리 필터 */}
+        <div className="pt-4 border-t">
+          <span className="text-sm font-medium text-gray-700 mb-3 block">
+            카테고리:
+          </span>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={!filters.category ? "primary" : "outline"}
+              size="sm"
+              onClick={() => handleFilterChange("category", undefined)}
+            >
+              전체
+            </Button>
+            {INSTRUMENT_CATEGORIES.map(category => (
+              <Button
+                key={category.key}
+                variant={
+                  filters.category === category.key ? "primary" : "outline"
+                }
+                size="sm"
+                onClick={() => handleFilterChange("category", category.key)}
+              >
+                {category.icon} {category.label}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
     </Card>

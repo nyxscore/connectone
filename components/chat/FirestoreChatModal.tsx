@@ -297,6 +297,62 @@ export function FirestoreChatModal({
     }
   };
 
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "";
+    let date: Date;
+    if (timestamp.toDate && typeof timestamp.toDate === "function") {
+      date = timestamp.toDate();
+    } else if (timestamp.seconds) {
+      date = new Date(timestamp.seconds * 1000);
+    } else {
+      date = new Date(timestamp);
+    }
+    return date.toLocaleDateString("ko-KR", {
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
+
+  const formatTimeOnly = (timestamp: any) => {
+    if (!timestamp) return "";
+    let date: Date;
+    if (timestamp.toDate && typeof timestamp.toDate === "function") {
+      date = timestamp.toDate();
+    } else if (timestamp.seconds) {
+      date = new Date(timestamp.seconds * 1000);
+    } else {
+      date = new Date(timestamp);
+    }
+    return date.toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  const isSameDate = (date1: any, date2: any) => {
+    if (!date1 || !date2) return false;
+    let d1: Date, d2: Date;
+
+    if (date1.toDate && typeof date1.toDate === "function") {
+      d1 = date1.toDate();
+    } else if (date1.seconds) {
+      d1 = new Date(date1.seconds * 1000);
+    } else {
+      d1 = new Date(date1);
+    }
+
+    if (date2.toDate && typeof date2.toDate === "function") {
+      d2 = date2.toDate();
+    } else if (date2.seconds) {
+      d2 = new Date(date2.seconds * 1000);
+    } else {
+      d2 = new Date(date2);
+    }
+
+    return d1.toDateString() === d2.toDateString();
+  };
+
   const handleDeleteChat = async () => {
     if (!chatData?.chatId || !user?.uid) return;
 
@@ -433,78 +489,65 @@ export function FirestoreChatModal({
               </div>
             </div>
           ) : (
-            messages.map(message => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.senderUid === user?.uid
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    message.senderUid === user?.uid
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-900"
-                  }`}
-                >
-                  {message.imageUrl && (
-                    <img
-                      src={message.imageUrl}
-                      alt="첨부 이미지"
-                      className="w-full h-48 object-cover rounded mb-2"
-                    />
+            messages.map((message, index) => {
+              const isOwn = message.senderUid === user?.uid;
+
+              // 이전 메시지와 날짜가 다른지 확인
+              const prevMessage = index > 0 ? messages[index - 1] : null;
+              const showDateSeparator =
+                !prevMessage ||
+                !isSameDate(message.createdAt, prevMessage.createdAt);
+
+              return (
+                <div key={message.id}>
+                  {/* 날짜 구분선 */}
+                  {showDateSeparator && (
+                    <div className="flex items-center justify-center my-4">
+                      <div className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
+                        {formatDate(message.createdAt)}
+                      </div>
+                    </div>
                   )}
-                  {message.content && (
-                    <p className="text-sm">{message.content}</p>
-                  )}
-                  <p
-                    className={`text-xs mt-1 ${
-                      message.senderUid === user?.uid
-                        ? "text-blue-100"
-                        : "text-gray-500"
-                    }`}
+
+                  {/* 메시지 */}
+                  <div
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-1`}
                   >
-                    {(() => {
-                      try {
-                        let date: Date;
-                        if (
-                          message.createdAt.toDate &&
-                          typeof message.createdAt.toDate === "function"
-                        ) {
-                          date = message.createdAt.toDate();
-                        } else if (message.createdAt.seconds) {
-                          date = new Date(message.createdAt.seconds * 1000);
-                        } else {
-                          date = new Date(message.createdAt);
-                        }
+                    <div className="flex flex-col max-w-xs lg:max-w-md">
+                      <div
+                        className={`px-4 py-2 rounded-lg ${
+                          isOwn
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200 text-gray-900"
+                        }`}
+                      >
+                        {message.imageUrl && (
+                          <img
+                            src={message.imageUrl}
+                            alt="첨부 이미지"
+                            className="w-full h-48 object-cover rounded mb-2"
+                          />
+                        )}
+                        {message.content && (
+                          <p className="text-sm">{message.content}</p>
+                        )}
+                      </div>
 
-                        if (isNaN(date.getTime())) return "방금 전";
-
-                        const now = new Date();
-                        const diffInMs = now.getTime() - date.getTime();
-                        const diffInMinutes = Math.floor(
-                          diffInMs / (1000 * 60)
-                        );
-                        const diffInHours = Math.floor(
-                          diffInMs / (1000 * 60 * 60)
-                        );
-
-                        if (diffInMinutes < 1) return "방금 전";
-                        else if (diffInMinutes < 60)
-                          return `${diffInMinutes}분 전`;
-                        else if (diffInHours < 24)
-                          return `${diffInHours}시간 전`;
-                        else return date.toLocaleDateString("ko-KR");
-                      } catch (error) {
-                        return "방금 전";
-                      }
-                    })()}
-                  </p>
+                      {/* 시간 - 메시지 버블 밖에 표시 */}
+                      <div
+                        className={`flex items-center mt-1 ${
+                          isOwn ? "justify-end" : "justify-start"
+                        }`}
+                      >
+                        <span className="text-xs text-gray-500">
+                          {formatTimeOnly(message.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

@@ -4,14 +4,8 @@ import { motion } from "framer-motion";
 import { ShoppingCart, CreditCard } from "lucide-react";
 
 interface StepTypeProps {
-  formData: {
-    category: string;
-    tradeType: string;
-    productName: string;
-  };
-  updateFormData: (data: { tradeType: "sell" | "buy" }) => void;
-  register: any;
-  errors: any;
+  value: "sell" | "buy";
+  onChange: (value: "sell" | "buy") => void;
   onBack?: () => void;
 }
 
@@ -32,15 +26,9 @@ const TRADE_TYPES = [
   },
 ];
 
-export default function StepType({
-  formData,
-  updateFormData,
-  register,
-  errors,
-  onBack,
-}: StepTypeProps) {
+export default function StepType({ value, onChange, onBack }: StepTypeProps) {
   const handleTypeSelect = (type: "sell" | "buy") => {
-    updateFormData({ tradeType: type });
+    onChange(type);
   };
 
   return (
@@ -80,7 +68,7 @@ export default function StepType({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
         {TRADE_TYPES.map((type, index) => {
-          const isSelected = formData.tradeType === type.key;
+          const isSelected = value === type.key;
           const IconComponent = type.icon;
 
           return (
@@ -125,24 +113,6 @@ export default function StepType({
           );
         })}
       </div>
-
-      {/* 숨겨진 입력 필드 */}
-      <input
-        type="hidden"
-        {...register("tradeType", { required: "거래 유형을 선택해주세요" })}
-        value={formData.tradeType}
-      />
-
-      {/* 에러 메시지 */}
-      {errors.tradeType && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <p className="text-red-600 text-sm">{errors.tradeType.message}</p>
-        </motion.div>
-      )}
     </div>
   );
 }

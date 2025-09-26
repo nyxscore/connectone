@@ -83,7 +83,7 @@ FIREBASE_ADMIN_CLIENT_EMAIL=your_client_email
 
 ### 배포/인프라
 
-- **Vercel** (호스팅)
+- **Firebase Hosting** (호스팅)
 - **Cloudinary** (이미지 CDN)
 - **Sentry** (오류 로깅)
 - **GA4/PostHog** (분석)
@@ -187,28 +187,28 @@ connetone/
 │   ├── images/            # 이미지 파일
 │   ├── manifest.json      # PWA 매니페스트
 │   └── sw.js             # Service Worker
-└── vercel.json           # Vercel 배포 설정
+└── firebase.json         # Firebase 배포 설정
 ```
 
 ## 🚀 배포
 
-### Vercel 배포
+### Firebase 배포
 
-1. **Vercel CLI 설치**
+1. **Firebase CLI 설치**
 
 ```bash
-npm i -g vercel
+npm i -g firebase-tools
 ```
 
 2. **로그인 및 배포**
 
 ```bash
-vercel login
-vercel
+firebase login
+firebase deploy
 ```
 
 3. **환경변수 설정**
-   Vercel 대시보드에서 프로덕션 환경변수를 설정하세요.
+   Firebase 콘솔에서 프로덕션 환경변수를 설정하세요.
 
 ### 환경별 배포
 
@@ -224,14 +224,14 @@ npm run dev
 ```bash
 npm run build
 npm run start
-# 또는 Vercel Preview
+# 또는 Firebase Hosting
 ```
 
 #### 프로덕션 환경
 
 ```bash
-vercel --prod
-# https://connetone.vercel.app
+firebase deploy --only hosting
+# https://connetone.web.app
 ```
 
 ## 🔍 개발 가이드
@@ -266,7 +266,7 @@ chore: 빌드/설정 변경
 ### 오류 로깅
 
 - **Sentry**: 실시간 오류 추적
-- **Vercel Analytics**: 성능 모니터링
+- **Firebase Performance**: 성능 모니터링
 
 ### 사용자 분석
 

@@ -17,8 +17,9 @@ import { ProfileAbout } from "../../components/profile/ProfileAbout";
 import { TradeList } from "../../components/profile/TradeList";
 import { BlockedUsersModal } from "../../components/profile/BlockedUsersModal";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
-import { EditItemModal } from "../../components/items/EditItemModal";
+import EditProductModal from "../../components/product/EditProductModal";
 import { GradeBenefitsSummary } from "../../components/ui/MemberGradeSystem";
+import { GradeBenefitsModal } from "../../components/profile/GradeBenefitsModal";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import {
@@ -51,6 +52,7 @@ export default function MyProfilePage() {
   const [showItemMenu, setShowItemMenu] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [showGradeModal, setShowGradeModal] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !currentUser) {
@@ -186,8 +188,7 @@ export default function MyProfilePage() {
   };
 
   const handleEdit = () => {
-    // ProfileAbout 컴포넌트에서 편집 모드로 전환
-    // 이는 ProfileAbout 컴포넌트 내부에서 처리됨
+    router.push("/profile/edit");
   };
 
   const handleItemClick = (item: any) => {
@@ -338,7 +339,7 @@ export default function MyProfilePage() {
                 나의 회원 등급
               </h3>
               <Button
-                onClick={() => router.push("/membership")}
+                onClick={() => setShowGradeModal(true)}
                 size="sm"
                 variant="outline"
               >
@@ -385,7 +386,7 @@ export default function MyProfilePage() {
                 <p className="text-gray-500 mb-4">등록한 상품이 없습니다.</p>
                 <div className="space-x-3">
                   <Button
-                    onClick={() => router.push("/sell")}
+                    onClick={() => router.push("/product/new")}
                     variant="primary"
                   >
                     첫 상품 등록하기
@@ -496,19 +497,6 @@ export default function MyProfilePage() {
                         {getCategoryIcon(item.category)}{" "}
                         {getCategoryLabel(item.category)}
                       </span>
-                      <span
-                        className={`text-xs font-medium px-2 py-1 rounded ${
-                          item.condition === "A"
-                            ? "bg-blue-100 text-blue-800"
-                            : item.condition === "B"
-                              ? "bg-green-100 text-green-800"
-                              : item.condition === "C"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {item.condition}등급
-                      </span>
                     </div>
                     <div className="mt-2">
                       <span
@@ -585,16 +573,23 @@ export default function MyProfilePage() {
 
       {/* 상품 수정 모달 */}
       {editingItem && (
-        <EditItemModal
-          itemId={editingItem.id}
+        <EditProductModal
+          productId={editingItem.id}
           isOpen={showEditModal}
           onClose={() => {
             setShowEditModal(false);
             setEditingItem(null);
           }}
-          onItemUpdated={handleEditComplete}
+          onSuccess={handleEditComplete}
         />
       )}
+
+      {/* 등급 혜택 모달 */}
+      <GradeBenefitsModal
+        isOpen={showGradeModal}
+        onClose={() => setShowGradeModal(false)}
+        currentGrade={currentUser?.grade}
+      />
     </div>
   );
 }

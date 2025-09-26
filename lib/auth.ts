@@ -134,6 +134,34 @@ export const getUserProfile = async (uid: string): Promise<User | null> => {
   }
 };
 
+// 아이디 중복확인
+export const checkUsernameAvailability = async (
+  username: string
+): Promise<boolean> => {
+  try {
+    // 아이디를 이메일로 변환
+    const email = usernameToEmail(username);
+
+    // Firebase Auth에서 해당 이메일이 이미 존재하는지 확인
+    // createUserWithEmailAndPassword를 시도해보고, 이미 존재하면 false 반환
+    try {
+      // 임시로 사용자 생성을 시도 (실제로는 생성하지 않음)
+      await createUserWithEmailAndPassword(auth, email, "tempPassword123!");
+      // 성공하면 사용 가능 (임시 사용자 삭제)
+      await auth.currentUser?.delete();
+      return true;
+    } catch (error: any) {
+      if (error.code === "auth/email-already-in-use") {
+        return false; // 이미 사용 중
+      }
+      throw error; // 다른 오류는 다시 던짐
+    }
+  } catch (error) {
+    console.error("아이디 중복확인 오류:", error);
+    throw new Error("아이디 중복확인 중 오류가 발생했습니다.");
+  }
+};
+
 // Firebase User를 User 타입으로 변환
 export const mapFirebaseUser = (firebaseUser: FirebaseUser): User => {
   // 이메일에서 아이디 추출

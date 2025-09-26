@@ -35,6 +35,7 @@ import { UserProfile } from "@/data/profile/types";
 import { SellerProfileModal } from "@/components/profile/SellerProfileModal";
 import EditProductModal from "./EditProductModal";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { ItemGallery } from "@/components/items/ItemGallery";
 
 // 마그니파이어 이미지 컴포넌트
 interface MagnifierImageProps {
@@ -48,47 +49,12 @@ const MagnifierImage: React.FC<MagnifierImageProps> = ({
   alt,
   onClick,
 }) => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isHovering, setIsHovering] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-    setMousePosition({ x, y });
-  };
-
-  const handleMouseEnter = () => {
-    setIsHovering(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovering(false);
-  };
-
   return (
-    <div
-      ref={containerRef}
-      className="aspect-square bg-gray-100 magnifier-container"
-      onClick={onClick}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div className="aspect-square bg-gray-100" onClick={onClick}>
       <img
         src={src}
         alt={alt}
-        className="w-full h-full object-cover"
-        style={{
-          transform: isHovering
-            ? `scale(2) translate(${(50 - mousePosition.x) * 0.5}%, ${(50 - mousePosition.y) * 0.5}%)`
-            : "scale(1)",
-          transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
-        }}
+        className="w-full h-full object-cover cursor-pointer"
       />
     </div>
   );
@@ -141,33 +107,33 @@ export default function ProductDetailModal({
   const convertSellItemToProductDetail = (
     sellItem: SellItem
   ): ProductDetail => {
-    // shippingTypes를 tradeOptions로 변환
-    const tradeOptions = sellItem.shippingTypes.map(type => {
-      switch (type) {
-        case "direct":
-          return "직거래";
-        case "pickup":
-          return "직거래";
-        case "courier":
-        case "parcel":
-          // 택배인 경우 parcelPaymentType에 따라 부담 방식 표시
-          if (sellItem.parcelPaymentType === "seller") {
-            return "택배 (판매자부담)";
-          } else if (sellItem.parcelPaymentType === "buyer") {
-            return "택배 (구매자부담)";
-          } else {
-            return "택배";
-          }
-        case "meetup":
-          return "직거래";
-        case "escrow":
-          return "안전거래";
-        case "shipping":
-          return "화물운송";
-        default:
-          return type;
-      }
-    });
+    // shippingTypes를 tradeOptions로 변환 (escrow는 제외)
+    const tradeOptions = sellItem.shippingTypes
+      .filter(type => type !== "escrow") // escrow 제외
+      .map(type => {
+        switch (type) {
+          case "direct":
+            return "직거래";
+          case "pickup":
+            return "직거래";
+          case "courier":
+          case "parcel":
+            // 택배인 경우 parcelPaymentType에 따라 부담 방식 표시
+            if (sellItem.parcelPaymentType === "seller") {
+              return "택배 (판매자부담)";
+            } else if (sellItem.parcelPaymentType === "buyer") {
+              return "택배 (구매자부담)";
+            } else {
+              return "택배";
+            }
+          case "meetup":
+            return "직거래";
+          case "shipping":
+            return "화물운송";
+          default:
+            return type;
+        }
+      });
 
     console.log("SellItem shippingTypes:", sellItem.shippingTypes);
     console.log("변환된 tradeOptions:", tradeOptions);
@@ -186,6 +152,7 @@ export default function ProductDetailModal({
       sellerId: sellItem.sellerUid,
       description: sellItem.description,
       images: sellItem.images,
+      aiProcessedImages: sellItem.aiProcessedImages || [],
       createdAt: sellItem.createdAt,
       updatedAt: sellItem.updatedAt,
     };
@@ -571,25 +538,22 @@ export default function ProductDetailModal({
                   </div>
                 </div>
 
-                {/* 이미지 갤러리 */}
+                {/* 이미지 갤러리 (통일: ItemGallery 사용) */}
                 {product.images && product.images.length > 0 && (
                   <div className="bg-white rounded-2xl p-6 shadow-lg">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       상품 이미지
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {product.images.map((image, index) => (
-                        <MagnifierImage
-                          key={index}
-                          src={image}
-                          alt={`상품 이미지 ${index + 1}`}
-                          onClick={() => {
-                            setSelectedImageIndex(index);
-                            setShowImageModal(true);
-                          }}
-                        />
-                      ))}
-                    </div>
+                    <ItemGallery
+                      images={product.images}
+                      alt={
+                        product.title ||
+                        `${product.brand || ""} ${product.model || ""}`.trim() ||
+                        "상품 이미지"
+                      }
+                      maxHeight="300px"
+                      aiProcessedImages={product.aiProcessedImages || []}
+                    />
                   </div>
                 )}
 

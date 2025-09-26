@@ -20,12 +20,7 @@ Sentry.init({
   },
   integrations: [
     new Sentry.BrowserTracing({
-      tracingOrigins: ["localhost", "connetone.vercel.app", /^\//],
+      tracingOrigins: ["localhost", /^\//],
     }),
   ],
 });
-
-
-
-
-

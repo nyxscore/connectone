@@ -75,6 +75,15 @@ export const productDetailSchema = z.object({
   sellerId: z.string(),
   description: z.string(),
   images: z.array(z.string()).optional().default([]),
+  aiProcessedImages: z
+    .array(
+      z.object({
+        imageIndex: z.number(),
+        emotion: z.string(),
+      })
+    )
+    .optional()
+    .default([]),
   createdAt: z.any(),
   updatedAt: z.any(),
 });

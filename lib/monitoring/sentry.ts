@@ -27,7 +27,6 @@ export function initSentry() {
           // 페이지 로드 성능 추적
           tracingOrigins: [
             "localhost",
-            "connetone.vercel.app",
             /^\//,
           ],
         }),
@@ -120,6 +119,7 @@ export function withSentryErrorBoundary<T extends React.ComponentType<any>>(
     ),
   });
 }
+
 
 
 

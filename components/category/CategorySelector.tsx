@@ -4,11 +4,17 @@ import { useState, useRef, useEffect } from "react";
 import CategoryCards from "./CategoryCards";
 import CategorySearch from "./CategorySearch";
 
+interface CategorySelectorProps {
+  value?: string;
+  onChange?: (category: string) => void;
+  onSelect?: (category: any) => void;
+}
+
 export default function CategorySelector({
+  value,
+  onChange,
   onSelect,
-}: {
-  onSelect: (category: any) => void;
-}) {
+}: CategorySelectorProps) {
   const [selectedTop, setSelectedTop] = useState<any>(null);
   const [selectedItem, setSelectedItem] = useState<string>("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -16,6 +22,9 @@ export default function CategorySelector({
   const handleItemSelect = (item: string) => {
     console.log("CategorySelector: 악기 선택됨", item);
     setSelectedItem(item);
+    if (onChange) {
+      onChange(item);
+    }
   };
 
   // 카테고리 선택 시 검색창 자동 포커스
@@ -68,16 +77,22 @@ export default function CategorySelector({
               </p>
             </div>
             <button
+              type="button"
               className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition font-medium"
               onClick={() => {
                 const categoryData = {
+                  name: selectedItem,
                   categoryPath: [selectedTop?.name, selectedItem].filter(
                     Boolean
                   ),
                   categoryId: `${selectedTop?.id}_${selectedItem.toLowerCase().replace(/\s+/g, "_")}`,
                 };
                 console.log("CategorySelector: onSelect 호출됨", categoryData);
-                onSelect(categoryData);
+                if (onSelect) {
+                  onSelect(categoryData);
+                } else if (onChange) {
+                  onChange(selectedItem);
+                }
               }}
             >
               다음 단계로 →
