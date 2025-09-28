@@ -744,14 +744,23 @@ export default function ProductDetailModal({
                             className="w-full h-12 text-lg font-semibold"
                             disabled={!selectedTradeMethod}
                             onClick={async () => {
-                              if (selectedTradeMethod) {
+                              if (selectedTradeMethod && productId) {
                                 try {
-                                  // 상품 상태를 거래중으로 변경
-                                  const { updateItemStatus } = await import("../../lib/api/products");
-                                  const result = await updateItemStatus(productId, "reserved");
+                                  console.log("상품 상태 변경 시작:", { productId, status: "reserved" });
                                   
+                                  // 상품 상태를 거래중으로 변경
+                                  const { updateItemStatus } = await import(
+                                    "../../lib/api/products"
+                                  );
+                                  const result = await updateItemStatus(
+                                    productId,
+                                    "reserved"
+                                  );
+
                                   if (result.success) {
-                                    toast.success("상품이 거래중으로 변경되었습니다!");
+                                    toast.success(
+                                      "상품이 거래중으로 변경되었습니다!"
+                                    );
                                     // 상품 정보 새로고침
                                     if (onClose) {
                                       onClose();
@@ -759,12 +768,19 @@ export default function ProductDetailModal({
                                     // 페이지 새로고침으로 상태 반영
                                     window.location.reload();
                                   } else {
-                                    toast.error(result.error || "상품 상태 변경에 실패했습니다.");
+                                    toast.error(
+                                      result.error ||
+                                        "상품 상태 변경에 실패했습니다."
+                                    );
                                   }
                                 } catch (error) {
                                   console.error("상품 상태 변경 실패:", error);
-                                  toast.error("상품 상태 변경 중 오류가 발생했습니다.");
+                                  toast.error(
+                                    "상품 상태 변경 중 오류가 발생했습니다."
+                                  );
                                 }
+                              } else if (!productId) {
+                                toast.error("상품 ID를 찾을 수 없습니다.");
                               }
                             }}
                           >

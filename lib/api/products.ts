@@ -167,12 +167,21 @@ export async function updateItemStatus(
   status: "active" | "reserved" | "paid_hold" | "sold" | "inactive"
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log("updateItemStatus 호출:", { itemId, status });
+    
+    if (!itemId) {
+      throw new Error("상품 ID가 필요합니다.");
+    }
+    
     const docRef = doc(db, "items", itemId);
+    console.log("문서 참조 생성:", docRef);
+    
     await updateDoc(docRef, {
       status,
       updatedAt: serverTimestamp(),
     });
-
+    
+    console.log("상품 상태 업데이트 성공");
     return { success: true };
   } catch (error) {
     console.error("아이템 상태 업데이트 실패:", error);
