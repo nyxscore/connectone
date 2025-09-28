@@ -221,6 +221,22 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
 
     // 기본 쿼리: active 상태인 아이템만 조회 (인덱스 없이 작동하도록 단순화)
     let q = query(collection(db, "items"), where("status", "==", "active"));
+    
+    // 디버깅: 모든 상품의 카테고리 확인
+    if (filters.category) {
+      console.log("=== 카테고리 디버깅 시작 ===");
+      const allItemsQuery = query(collection(db, "items"), where("status", "==", "active"));
+      const allItemsSnapshot = await getDocs(allItemsQuery);
+      console.log("전체 상품 개수:", allItemsSnapshot.size);
+      const allCategories = new Set();
+      allItemsSnapshot.forEach(doc => {
+        const data = doc.data();
+        allCategories.add(data.category);
+        console.log("상품 카테고리:", { id: doc.id, category: data.category, title: data.title });
+      });
+      console.log("데이터베이스에 있는 모든 카테고리:", Array.from(allCategories));
+      console.log("=== 카테고리 디버깅 끝 ===");
+    }
 
     // 필터 적용 (서버 사이드) - 복합 인덱스가 필요한 필터는 제거
     if (filters.category) {
