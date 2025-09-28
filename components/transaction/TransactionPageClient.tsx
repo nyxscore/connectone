@@ -356,18 +356,52 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
                         {/* 2단계 - 거래 진행중 (클릭 가능) */}
                         <div 
-                          className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity p-2"
+                          className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity p-2 -m-2"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             console.log("구매중 클릭됨!");
                             setShowStatusModal(true);
                           }}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log("구매중 마우스다운!");
+                          }}
+                          onMouseUp={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log("구매중 마우스업!");
+                          }}
+                          style={{ 
+                            minWidth: '60px',
+                            minHeight: '60px',
+                            zIndex: 10,
+                            position: 'relative'
+                          }}
                         >
-                          <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold mb-2">
+                          <div 
+                            className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold mb-2"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log("원형 버튼 클릭됨!");
+                              setShowStatusModal(true);
+                            }}
+                          >
                             1
                           </div>
-                          <span className="text-xs text-gray-600 text-center">거래 진행중</span>
+                          <span 
+                            className="text-xs text-gray-600 text-center"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log("텍스트 클릭됨!");
+                              setShowStatusModal(true);
+                            }}
+                          >
+                            거래 진행중
+                          </span>
                         </div>
 
                         {/* 연결선 */}
