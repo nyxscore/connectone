@@ -7,6 +7,7 @@ import { getItem } from "../../lib/api/products";
 import { SellItem } from "../../data/types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
+import ProductDetailModal from "../product/ProductDetailModal";
 import {
   ArrowLeft,
   MessageCircle,
@@ -32,6 +33,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
 
   const handleStartChat = () => {
     if (item?.sellerId) {
@@ -73,7 +75,12 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
     if (!date) return "";
     try {
       // ISO 문자열이거나 Date 객체인 경우 처리
-      const dateObj = typeof date === 'string' ? new Date(date) : (date.toDate ? date.toDate() : new Date(date));
+      const dateObj =
+        typeof date === "string"
+          ? new Date(date)
+          : date.toDate
+            ? date.toDate()
+            : new Date(date);
       if (isNaN(dateObj.getTime())) return "";
       return dateObj.toLocaleDateString("ko-KR");
     } catch (error) {
@@ -136,100 +143,69 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 구매한 상품 정보 */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                구매한 상품
-              </h2>
-              <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-orange-100">
-                <Clock className="w-4 h-4 text-orange-600" />
-                <span className="text-sm font-medium text-orange-600">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* 구매한 상품 목록 */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">구매한 상품</h2>
+          
+          {/* 상품 썸네일 카드 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => {
+              setShowProductModal(true);
+            }}>
+              {/* 상품 이미지 */}
+              <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-3 relative">
+                {item.images && item.images.length > 0 ? (
+                  <img
+                    src={item.images[0]}
+                    alt={item.title || `${item.brand} ${item.model}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl text-gray-400">
+                    🎵
+                  </div>
+                )}
+                
+                {/* 거래중 배지 */}
+                <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
                   거래중
-                </span>
-              </div>
-            </div>
-
-            {/* 상품 이미지 */}
-            <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-4">
-              {item.images && item.images.length > 0 ? (
-                <img
-                  src={item.images[0]}
-                  alt={item.title || `${item.brand} ${item.model}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl text-gray-400">
-                  🎵
                 </div>
-              )}
-            </div>
+              </div>
 
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {item.title || `${item.brand} ${item.model}`}
-            </h3>
+              {/* 상품 정보 */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
+                  {item.title || `${item.brand} ${item.model}`}
+                </h3>
+                
+                <div className="text-lg font-bold text-blue-600">
+                  {formatPrice(item.price)}
+                </div>
 
-            <div className="text-2xl font-bold text-blue-600 mb-4">
-              {formatPrice(item.price)}
-            </div>
+                <div className="flex items-center text-xs text-gray-500 space-x-2">
+                  <span className="flex items-center">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    {item.region}
+                  </span>
+                  <span className="flex items-center">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    {formatDate(item.createdAt)}
+                  </span>
+                </div>
 
-            {/* 상품 상세 정보 */}
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3 mb-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">카테고리</p>
-                  <p className="text-sm font-medium text-gray-900">
+                <div className="text-xs text-gray-600">
+                  <span className="bg-gray-100 px-2 py-1 rounded-full">
                     {item.category || "기타"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">브랜드</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {item.brand || "미상"}
-                  </p>
+                  </span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">모델</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {item.model || "미상"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">상태</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {item.condition || "양호"}
-                  </p>
-                </div>
-              </div>
-            </div>
+            </Card>
+          </div>
+        </div>
 
-            <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex items-center">
-                <MapPin className="w-4 h-4 mr-2" />
-                <span>거래 지역: {item.region}</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="w-4 h-4 mr-2" />
-                <span>등록일: {formatDate(item.createdAt)}</span>
-              </div>
-              <div className="flex items-center">
-                <Clock className="w-4 h-4 mr-2" />
-                <span>구매일: {formatDate(new Date())}</span>
-              </div>
-            </div>
-
-            {/* 상품 설명 */}
-            {item.description && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-gray-500 mb-1">상품 설명</p>
-                <p className="text-sm text-gray-700">{item.description}</p>
-              </div>
-            )}
-          </Card>
+        {/* 판매자 정보와 거래 진행 상황 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* 판매자 정보 */}
           <Card className="p-6">
@@ -421,6 +397,15 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
           </div>
         </Card>
       </div>
+
+      {/* 상품 상세 모달 */}
+      {showProductModal && (
+        <ProductDetailModal
+          item={item}
+          isOpen={showProductModal}
+          onClose={() => setShowProductModal(false)}
+        />
+      )}
     </div>
   );
 }

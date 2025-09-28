@@ -55,8 +55,12 @@ export default async function TransactionPage({
     // Firebase Timestamp 객체를 일반 객체로 변환
     const serializedItem = {
       ...result.item,
-      createdAt: result.item.createdAt?.toDate ? result.item.createdAt.toDate().toISOString() : new Date().toISOString(),
-      updatedAt: result.item.updatedAt?.toDate ? result.item.updatedAt.toDate().toISOString() : new Date().toISOString(),
+      createdAt: result.item.createdAt?.toDate
+        ? result.item.createdAt.toDate().toISOString()
+        : new Date().toISOString(),
+      updatedAt: result.item.updatedAt?.toDate
+        ? result.item.updatedAt.toDate().toISOString()
+        : new Date().toISOString(),
     };
 
     return <TransactionPageClient item={serializedItem} />;
