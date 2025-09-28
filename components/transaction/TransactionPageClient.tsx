@@ -300,6 +300,37 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                       </div>
                     </div>
 
+                    {/* 안전 거래 안내 */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                      <h3 className="text-sm font-semibold text-blue-900">안전 거래 안내</h3>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-start space-x-2">
+                          <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs font-medium text-blue-900">거래 전 확인사항</p>
+                            <p className="text-xs text-blue-700">상품 상태와 거래 조건을 정확히 확인하세요.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs font-medium text-blue-900">채팅을 통한 소통</p>
+                            <p className="text-xs text-blue-700">모든 거래 관련 대화는 채팅에서 진행하세요.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs font-medium text-blue-900">안전한 결제</p>
+                            <p className="text-xs text-blue-700">직거래 시 만나서 거래하고, 택배 시 안전거래를 이용하세요.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* 버튼들 */}
                     <div className="pt-4 space-y-3">
                       <Button
@@ -376,48 +407,6 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
           </div>
         </Card>
 
-        {/* 안전 거래 안내 */}
-        <Card className="p-6 mt-6 bg-blue-50 border-blue-200">
-          <h2 className="text-lg font-semibold text-blue-900 mb-4">
-            안전 거래 안내
-          </h2>
-
-          <div className="space-y-3">
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-900">
-                  거래 전 확인사항
-                </p>
-                <p className="text-sm text-blue-700">
-                  상품 상태와 거래 조건을 정확히 확인하세요.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-900">
-                  채팅을 통한 소통
-                </p>
-                <p className="text-sm text-blue-700">
-                  모든 거래 관련 대화는 채팅에서 진행하세요.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-900">안전한 결제</p>
-                <p className="text-sm text-blue-700">
-                  직거래 시 만나서 거래하고, 택배 시 안전거래를 이용하세요.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
       </div>
 
       {/* 상품 상세 모달 */}
