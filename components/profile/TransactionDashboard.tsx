@@ -173,7 +173,7 @@ export function TransactionDashboard() {
               console.log("판매중 카드 클릭됨!");
               if (sellingItems.length > 0) {
                 // 첫 번째 판매중 상품의 거래 관리 페이지로 이동
-                router.push(`/seller-transaction/${sellingItems[0].id}`);
+                router.push(`/seller-transaction?id=${sellingItems[0].id}`);
               } else {
                 console.log("판매중 상품이 없습니다.");
               }
@@ -222,7 +222,7 @@ export function TransactionDashboard() {
               console.log("판매중 통계 카드 클릭됨!");
               if (sellingItems.length > 0) {
                 // 첫 번째 판매중 상품의 거래 관리 페이지로 이동
-                router.push(`/seller-transaction/${sellingItems[0].id}`);
+                router.push(`/seller-transaction?id=${sellingItems[0].id}`);
               } else {
                 console.log("판매중 상품이 없습니다.");
               }
