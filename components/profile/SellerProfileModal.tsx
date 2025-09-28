@@ -235,7 +235,6 @@ export function SellerProfileModal({
             </Card>
           </div>
 
-
           {/* 액션 버튼들 */}
           <div className="space-y-3 pt-4 border-t border-gray-200">
             {onStartChat && (
@@ -271,11 +270,7 @@ export function SellerProfileModal({
                 차단하기
               </Button>
             </div>
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="w-full"
-            >
+            <Button onClick={onClose} variant="outline" className="w-full">
               닫기
             </Button>
           </div>

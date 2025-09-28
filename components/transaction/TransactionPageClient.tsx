@@ -90,6 +90,8 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
         if (result && result.success && result.data) {
           console.log("판매자 프로필 로드 성공:", result.data);
+          console.log("자기소개 내용:", result.data.bio);
+          console.log("전체 프로필 데이터:", JSON.stringify(result.data, null, 2));
           setSellerProfile(result.data);
         } else {
           console.warn(
