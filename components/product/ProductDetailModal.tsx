@@ -76,7 +76,7 @@ export default function ProductDetailModal({
 }: ProductDetailModalProps) {
   const { user } = useAuth();
   const [product, setProduct] = useState<ProductDetail | null>(null);
-  
+
   // item이 있으면 item.id를 productId로 사용
   const actualProductId = productId || item?.id;
   const [seller, setSeller] = useState<SellerInfo | null>(null);
@@ -770,14 +770,15 @@ export default function ProductDetailModal({
                                     );
                                     const result = await updateItemStatus(
                                       actualProductId,
-                                      "reserved"
+                                      "reserved",
+                                      user?.uid
                                     );
 
                                     if (result.success) {
                                       toast.success(
                                         "구매가 완료되었습니다! 거래 관리 페이지로 이동합니다."
                                       );
-                                      
+
                                       // 거래 관리 페이지로 이동
                                       setTimeout(() => {
                                         if (onClose) {
@@ -792,7 +793,10 @@ export default function ProductDetailModal({
                                       );
                                     }
                                   } catch (error) {
-                                    console.error("상품 상태 변경 실패:", error);
+                                    console.error(
+                                      "상품 상태 변경 실패:",
+                                      error
+                                    );
                                     toast.error(
                                       "상품 상태 변경 중 오류가 발생했습니다."
                                     );

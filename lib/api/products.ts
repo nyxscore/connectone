@@ -189,26 +189,16 @@ export async function getReservedItemsBySeller(
   }
 }
 
-// 거래중인 상품 조회 (구매자용 - 찜한 상품 중에서)
+// 거래중인 상품 조회 (구매자용 - 구매한 상품 중에서)
 export async function getReservedItemsForBuyer(
   buyerUid: string
 ): Promise<{ success: boolean; items?: Item[]; error?: string }> {
   try {
-    // 로컬 스토리지에서 찜한 상품 ID 목록 가져오기
-    const wishlistData = localStorage.getItem(`wishlist_${buyerUid}`);
-    if (!wishlistData) {
-      return { success: true, items: [] };
-    }
-
-    const wishlistIds = JSON.parse(wishlistData);
-    if (wishlistIds.length === 0) {
-      return { success: true, items: [] };
-    }
-
-    // 찜한 상품들 중에서 거래중인 상품만 조회
+    // 구매자가 구매한 상품들 중에서 거래중인 상품 조회
+    // buyerId 필드가 있는 상품들을 조회 (구매자가 구매한 상품)
     const q = query(
       collection(db, "items"),
-      where("id", "in", wishlistIds),
+      where("buyerId", "==", buyerUid),
       where("status", "==", "reserved")
     );
     
@@ -232,7 +222,8 @@ export async function getReservedItemsForBuyer(
 // 아이템 상태 업데이트
 export async function updateItemStatus(
   itemId: string,
-  status: "active" | "reserved" | "paid_hold" | "sold" | "inactive"
+  status: "active" | "reserved" | "paid_hold" | "sold" | "inactive",
+  buyerId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     console.log("updateItemStatus 호출:", { itemId, status });
@@ -244,10 +235,17 @@ export async function updateItemStatus(
     const docRef = doc(db, "items", itemId);
     console.log("문서 참조 생성:", docRef);
 
-    await updateDoc(docRef, {
+    const updateData: any = {
       status,
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    // 구매자 ID가 제공된 경우 추가
+    if (buyerId) {
+      updateData.buyerId = buyerId;
+    }
+
+    await updateDoc(docRef, updateData);
 
     console.log("상품 상태 업데이트 성공");
     return { success: true };
