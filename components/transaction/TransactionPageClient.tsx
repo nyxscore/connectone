@@ -40,7 +40,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
   const handleCancelPurchase = async () => {
     if (!item.id) return;
-    
+
     const confirmed = window.confirm("정말 구매를 취소하시겠습니까?");
     if (!confirmed) return;
 
@@ -49,7 +49,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
       // 상품 상태를 다시 active로 변경하고 buyerId 제거
       const { updateItemStatus } = await import("../../lib/api/products");
       const result = await updateItemStatus(item.id, "active");
-      
+
       if (result.success) {
         toast.success("구매가 취소되었습니다.");
         router.push("/profile");
@@ -178,21 +178,29 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">카테고리</p>
-                  <p className="text-sm font-medium text-gray-900">{item.category || "기타"}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {item.category || "기타"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">브랜드</p>
-                  <p className="text-sm font-medium text-gray-900">{item.brand || "미상"}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {item.brand || "미상"}
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">모델</p>
-                  <p className="text-sm font-medium text-gray-900">{item.model || "미상"}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {item.model || "미상"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">상태</p>
-                  <p className="text-sm font-medium text-gray-900">{item.condition || "양호"}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {item.condition || "양호"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -235,7 +243,9 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-900 text-lg">판매자</p>
-                  <p className="text-sm text-gray-500">안전한 거래를 위한 프로필</p>
+                  <p className="text-sm text-gray-500">
+                    안전한 거래를 위한 프로필
+                  </p>
                   <div className="flex items-center space-x-4 mt-2">
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 text-yellow-500" />
@@ -254,21 +264,29 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-500 mb-1">거래 지역</p>
-                    <p className="text-sm font-medium text-gray-900">{item.region}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {item.region}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">응답 시간</p>
-                    <p className="text-sm font-medium text-gray-900">평균 2시간</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      평균 2시간
+                    </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-500 mb-1">가입일</p>
-                    <p className="text-sm font-medium text-gray-900">2024.01.15</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      2024.01.15
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">인증 상태</p>
-                    <p className="text-sm font-medium text-green-600">✓ 인증완료</p>
+                    <p className="text-sm font-medium text-green-600">
+                      ✓ 인증완료
+                    </p>
                   </div>
                 </div>
               </div>
@@ -313,8 +331,10 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
         {/* 거래 진행 상황 */}
         <Card className="p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">거래 진행 상황</h2>
-          
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            거래 진행 상황
+          </h2>
+
           <div className="space-y-4">
             <div className="flex items-center">
               <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">
@@ -323,11 +343,13 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
               <div>
                 <p className="font-medium text-gray-800">거래 시작</p>
                 <p className="text-sm text-gray-600">
-                  {isBuyer ? "상품 구매 요청을 완료했습니다." : "상품 구매 요청을 받았습니다."}
+                  {isBuyer
+                    ? "상품 구매 요청을 완료했습니다."
+                    : "상품 구매 요청을 받았습니다."}
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center">
               <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center mr-3">
                 2
@@ -339,7 +361,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center">
               <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center mr-3">
                 3
@@ -356,30 +378,42 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
         {/* 안전 거래 안내 */}
         <Card className="p-6 mt-6 bg-blue-50 border-blue-200">
-          <h2 className="text-lg font-semibold text-blue-900 mb-4">안전 거래 안내</h2>
-          
+          <h2 className="text-lg font-semibold text-blue-900 mb-4">
+            안전 거래 안내
+          </h2>
+
           <div className="space-y-3">
             <div className="flex items-start space-x-3">
               <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-blue-900">거래 전 확인사항</p>
-                <p className="text-sm text-blue-700">상품 상태와 거래 조건을 정확히 확인하세요.</p>
+                <p className="text-sm font-medium text-blue-900">
+                  거래 전 확인사항
+                </p>
+                <p className="text-sm text-blue-700">
+                  상품 상태와 거래 조건을 정확히 확인하세요.
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-start space-x-3">
               <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-blue-900">채팅을 통한 소통</p>
-                <p className="text-sm text-blue-700">모든 거래 관련 대화는 채팅에서 진행하세요.</p>
+                <p className="text-sm font-medium text-blue-900">
+                  채팅을 통한 소통
+                </p>
+                <p className="text-sm text-blue-700">
+                  모든 거래 관련 대화는 채팅에서 진행하세요.
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-start space-x-3">
               <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-blue-900">안전한 결제</p>
-                <p className="text-sm text-blue-700">직거래 시 만나서 거래하고, 택배 시 안전거래를 이용하세요.</p>
+                <p className="text-sm text-blue-700">
+                  직거래 시 만나서 거래하고, 택배 시 안전거래를 이용하세요.
+                </p>
               </div>
             </div>
           </div>

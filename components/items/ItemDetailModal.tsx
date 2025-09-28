@@ -423,6 +423,22 @@ export function ItemDetailModal({
                 sellerUid={item.sellerUid}
                 buyerUid={user?.uid}
                 currentUserId={user?.uid}
+                onPurchase={async () => {
+                  // 구매하기 클릭 시 상품 상태를 reserved로 변경하고 거래 관리 페이지로 이동
+                  try {
+                    const { updateItemStatus } = await import("../../lib/api/products");
+                    const result = await updateItemStatus(item.id, "reserved", user?.uid);
+                    
+                    if (result.success) {
+                      // 거래 관리 페이지로 이동
+                      window.location.href = `/transaction/${item.id}`;
+                    } else {
+                      console.error("상품 상태 변경 실패:", result.error);
+                    }
+                  } catch (error) {
+                    console.error("구매 처리 실패:", error);
+                  }
+                }}
                 onLogisticsQuote={handleLogisticsQuote}
               />
             </div>
