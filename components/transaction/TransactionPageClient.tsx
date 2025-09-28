@@ -20,6 +20,7 @@ import {
   CheckCircle,
   Clock,
   X,
+  Star,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -71,7 +72,8 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
   const formatDate = (date: any) => {
     if (!date) return "";
     try {
-      const dateObj = date.toDate ? date.toDate() : new Date(date);
+      // ISO 문자열이거나 Date 객체인 경우 처리
+      const dateObj = typeof date === 'string' ? new Date(date) : (date.toDate ? date.toDate() : new Date(date));
       if (isNaN(dateObj.getTime())) return "";
       return dateObj.toLocaleDateString("ko-KR");
     } catch (error) {

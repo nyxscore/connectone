@@ -112,10 +112,6 @@ const nextConfig = {
 
   // 출력 설정
   output: "export",
-  
-  // 동적 라우트를 정적 생성에서 제외
-  trailingSlash: false,
-  skipTrailingSlashRedirect: true,
 
   // 트레일링 슬래시
   trailingSlash: false,
