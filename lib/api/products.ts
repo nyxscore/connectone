@@ -296,15 +296,15 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       filters = {},
     } = options;
 
-    // 기본 쿼리: active와 reserved 상태인 아이템 조회 (거래중 상품도 표시)
-    let q = query(collection(db, "items"), where("status", "in", ["active", "reserved"]));
+    // 기본 쿼리: active, reserved, sold 상태인 아이템 조회 (거래중, 판매완료 상품도 표시)
+    let q = query(collection(db, "items"), where("status", "in", ["active", "reserved", "sold"]));
 
     // 디버깅: 모든 상품의 카테고리 확인 (개발 중에만)
     if (filters.category && process.env.NODE_ENV === "development") {
       console.log("=== 카테고리 디버깅 시작 ===");
       const allItemsQuery = query(
         collection(db, "items"),
-        where("status", "in", ["active", "reserved"])
+        where("status", "in", ["active", "reserved", "sold"])
       );
       const allItemsSnapshot = await getDocs(allItemsQuery);
       console.log("전체 상품 개수:", allItemsSnapshot.size);

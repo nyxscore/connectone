@@ -85,7 +85,7 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
   return (
     <Card className="overflow-hidden cursor-pointer" onClick={handleClick}>
       {/* 썸네일 */}
-      <div className="aspect-square bg-gray-200 relative overflow-hidden">
+      <div className={`aspect-square bg-gray-200 relative overflow-hidden ${item.status === "sold" ? "grayscale" : ""}`}>
         {item.images && item.images.length > 0 ? (
           <WatermarkImage
             src={item.images[0]}
@@ -115,6 +115,13 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
         {item.status === "reserved" && (
           <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-orange-500 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold shadow-lg">
             거래중
+          </div>
+        )}
+
+        {/* 판매완료 상태 표시 */}
+        {item.status === "sold" && (
+          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-gray-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold shadow-lg">
+            판매완료
           </div>
         )}
 
