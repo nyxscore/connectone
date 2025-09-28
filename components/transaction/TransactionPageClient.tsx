@@ -300,6 +300,43 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                       </div>
                     </div>
 
+                    {/* 거래 진행 상황 */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">거래 진행 상황</h3>
+                      
+                      <div className="flex items-center justify-between">
+                        {/* 1단계 - 거래 시작 */}
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold mb-2">
+                            1
+                          </div>
+                          <span className="text-xs text-gray-600 text-center">거래 시작</span>
+                        </div>
+
+                        {/* 연결선 */}
+                        <div className="flex-1 h-0.5 bg-gray-300 mx-2"></div>
+
+                        {/* 2단계 - 거래 진행중 */}
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold mb-2">
+                            2
+                          </div>
+                          <span className="text-xs text-gray-600 text-center">거래 진행중</span>
+                        </div>
+
+                        {/* 연결선 */}
+                        <div className="flex-1 h-0.5 bg-gray-300 mx-2"></div>
+
+                        {/* 3단계 - 거래 완료 */}
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center text-sm font-bold mb-2">
+                            3
+                          </div>
+                          <span className="text-xs text-gray-600 text-center">거래 완료</span>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* 안전 거래 안내 */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
                       <h3 className="text-sm font-semibold text-blue-900">안전 거래 안내</h3>
@@ -360,52 +397,6 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
           </div>
         </div>
 
-        {/* 거래 진행 상황 */}
-        <Card className="p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            거래 진행 상황
-          </h2>
-
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">
-                1
-              </div>
-              <div>
-                <p className="font-medium text-gray-800">거래 시작</p>
-                <p className="text-sm text-gray-600">
-                  {isBuyer
-                    ? "상품 구매 요청을 완료했습니다."
-                    : "상품 구매 요청을 받았습니다."}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center mr-3">
-                2
-              </div>
-              <div>
-                <p className="font-medium text-gray-800">거래 진행중</p>
-                <p className="text-sm text-gray-600">
-                  채팅을 통해 거래를 협의 중입니다.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center mr-3">
-                3
-              </div>
-              <div>
-                <p className="font-medium text-gray-800">거래 완료</p>
-                <p className="text-sm text-gray-600">
-                  아직 거래가 완료되지 않았습니다.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
 
       </div>
 
