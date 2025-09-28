@@ -94,6 +94,17 @@ export default function ProductDetailModal({
   // 본인 상품인지 확인
   const isOwnItem = user && product && user.uid === product.sellerId;
 
+  // 찜한 상품 상태 초기화
+  useEffect(() => {
+    if (user?.uid && product?.id) {
+      const wishlistKey = `wishlist_${user.uid}`;
+      const existingWishlist = JSON.parse(
+        localStorage.getItem(wishlistKey) || "[]"
+      );
+      setIsLiked(existingWishlist.includes(product.id));
+    }
+  }, [user?.uid, product?.id]);
+
   // 디버깅 로그
   console.log("ProductDetailModal 디버깅:", {
     user: user ? { uid: user.uid, nickname: user.nickname } : null,
@@ -668,7 +679,45 @@ export default function ProductDetailModal({
                             <button
                               className="flex-1 p-3 border border-gray-300 rounded-xl hover:bg-gray-50 flex items-center justify-center space-x-2"
                               onClick={() => {
-                                setIsLiked(!isLiked);
+                                const newLikedState = !isLiked;
+                                setIsLiked(newLikedState);
+
+                                // 로컬 스토리지에 찜한 상품 저장/제거
+                                if (user?.uid) {
+                                  const wishlistKey = `wishlist_${user.uid}`;
+                                  const existingWishlist = JSON.parse(
+                                    localStorage.getItem(wishlistKey) || "[]"
+                                  );
+
+                                  if (newLikedState) {
+                                    // 찜하기 추가
+                                    if (
+                                      !existingWishlist.includes(product.id)
+                                    ) {
+                                      existingWishlist.push(product.id);
+                                      localStorage.setItem(
+                                        wishlistKey,
+                                        JSON.stringify(existingWishlist)
+                                      );
+                                      toast.success(
+                                        "찜 목록에 추가되었습니다!"
+                                      );
+                                    }
+                                  } else {
+                                    // 찜하기 제거
+                                    const updatedWishlist =
+                                      existingWishlist.filter(
+                                        (id: string) => id !== product.id
+                                      );
+                                    localStorage.setItem(
+                                      wishlistKey,
+                                      JSON.stringify(updatedWishlist)
+                                    );
+                                    toast.success(
+                                      "찜 목록에서 제거되었습니다!"
+                                    );
+                                  }
+                                }
                               }}
                             >
                               <Heart

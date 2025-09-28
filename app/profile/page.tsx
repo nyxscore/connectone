@@ -15,6 +15,7 @@ import { ProfileHeader } from "../../components/profile/ProfileHeader";
 import { ProfileStats } from "../../components/profile/ProfileStats";
 import { ProfileAbout } from "../../components/profile/ProfileAbout";
 import { TradeList } from "../../components/profile/TradeList";
+import { WishlistItems } from "../../components/profile/WishlistItems";
 import { BlockedUsersModal } from "../../components/profile/BlockedUsersModal";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
 import EditProductModal from "../../components/product/EditProductModal";
@@ -521,6 +522,9 @@ export default function MyProfilePage() {
               </div>
             )}
           </Card>
+
+          {/* 찜한 상품 */}
+          {currentUser?.uid && <WishlistItems userId={currentUser.uid} />}
 
           {/* 차단된 사용자 관리 */}
           <Card className="p-6">
