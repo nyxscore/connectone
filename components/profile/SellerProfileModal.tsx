@@ -230,7 +230,7 @@ export function SellerProfileModal({
                 <h4 className="font-semibold text-gray-900">자기소개</h4>
               </div>
               <div className="text-sm text-gray-700 leading-relaxed">
-                {sellerProfile.bio || "자기소개가 없습니다."}
+                {sellerProfile.bio || sellerProfile.about || sellerProfile.description || "자기소개가 없습니다."}
               </div>
             </Card>
           </div>
@@ -250,7 +250,8 @@ export function SellerProfileModal({
               <Button
                 onClick={() => {
                   // 신고하기 기능
-                  console.log("신고하기 클릭됨");
+                  console.log("신고하기 클릭됨:", sellerProfile?.uid);
+                  alert("신고하기 기능이 곧 추가될 예정입니다.");
                 }}
                 variant="outline"
                 className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
@@ -261,7 +262,8 @@ export function SellerProfileModal({
               <Button
                 onClick={() => {
                   // 차단하기 기능
-                  console.log("차단하기 클릭됨");
+                  console.log("차단하기 클릭됨:", sellerProfile?.uid);
+                  alert("차단하기 기능이 곧 추가될 예정입니다.");
                 }}
                 variant="outline"
                 className="flex-1 border-gray-300 text-gray-600 hover:bg-gray-50"

@@ -90,8 +90,15 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
         if (result && result.success && result.data) {
           console.log("판매자 프로필 로드 성공:", result.data);
-          console.log("자기소개 내용:", result.data.bio);
-          console.log("전체 프로필 데이터:", JSON.stringify(result.data, null, 2));
+          console.log("자기소개 내용 (bio):", result.data.bio);
+          console.log("자기소개 내용 (about):", result.data.about);
+          console.log("자기소개 내용 (description):", result.data.description);
+          console.log("닉네임:", result.data.nickname);
+          console.log("등급:", result.data.grade);
+          console.log(
+            "전체 프로필 데이터:",
+            JSON.stringify(result.data, null, 2)
+          );
           setSellerProfile(result.data);
         } else {
           console.warn(
@@ -404,7 +411,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                     <div className="space-y-4">
                       {/* 프로필 */}
                       <div className="flex items-center space-x-3">
-                        <div 
+                        <div
                           className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => {
                             console.log("판매자 프로필 클릭됨!");
