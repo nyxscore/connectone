@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../lib/hooks/useAuth";
-import { getItem } from "../../lib/api/products";
+import { getItem, getReservedItemsForBuyer } from "../../lib/api/products";
 import { SellItem } from "../../data/types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -39,6 +39,8 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
   const [sellerProfile, setSellerProfile] = useState<UserProfile | null>(null);
   const [sellerLoading, setSellerLoading] = useState(true);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [buyingItems, setBuyingItems] = useState<SellItem[]>([]);
+  const [buyingItemsLoading, setBuyingItemsLoading] = useState(true);
 
   // 판매자 정보 가져오기
   useEffect(() => {
@@ -74,6 +76,33 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
     fetchSellerProfile();
   }, [item?.sellerUid]);
+
+  // 구매중인 모든 상품 가져오기
+  useEffect(() => {
+    const fetchBuyingItems = async () => {
+      if (!user?.uid) return;
+
+      try {
+        setBuyingItemsLoading(true);
+        const result = await getReservedItemsForBuyer(user.uid);
+        
+        if (result.success && result.items) {
+          console.log("구매중 상품들:", result.items);
+          setBuyingItems(result.items);
+        } else {
+          console.log("구매중 상품이 없습니다.");
+          setBuyingItems([]);
+        }
+      } catch (error) {
+        console.error("구매중 상품 로드 실패:", error);
+        setBuyingItems([]);
+      } finally {
+        setBuyingItemsLoading(false);
+      }
+    };
+
+    fetchBuyingItems();
+  }, [user?.uid]);
 
   const handleStartChat = () => {
     if (item?.sellerUid) {
@@ -184,68 +213,147 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* 구매한 상품과 판매자 정보 */}
+        {/* 구매중인 상품들 */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">구매한 상품</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">구매중인 상품 ({buyingItems.length}개)</h2>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 상품 썸네일 카드 */}
-            <div className="lg:col-span-1">
-              <Card
-                className="p-4 hover:shadow-lg transition-shadow cursor-pointer group"
-                onClick={() => {
-                  setShowProductModal(true);
-                }}
-              >
-                {/* 상품 이미지 */}
-                <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-3 relative">
-                  {item.images && item.images.length > 0 ? (
-                    <img
-                      src={item.images[0]}
-                      alt={item.title || `${item.brand} ${item.model}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl text-gray-400">
-                      🎵
-                    </div>
-                  )}
-
-                  {/* 거래중 배지 */}
-                  <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
-                    거래중
-                  </div>
-                </div>
-
-                {/* 상품 정보 */}
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {item.title || `${item.brand} ${item.model}`}
-                  </h3>
-
-                  <div className="text-lg font-bold text-blue-600">
-                    {formatPrice(item.price)}
-                  </div>
-
-                  <div className="flex items-center text-xs text-gray-500 space-x-2">
-                    <span className="flex items-center">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {item.region}
-                    </span>
-                    <span className="flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {formatDate(item.createdAt)}
-                    </span>
-                  </div>
-
-                  <div className="text-xs text-gray-600">
-                    <span className="bg-gray-100 px-2 py-1 rounded-full">
-                      {item.category || "기타"}
-                    </span>
-                  </div>
-                </div>
-              </Card>
+          {buyingItemsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-500 mr-2" />
+              <span className="text-gray-600">구매중인 상품을 불러오는 중...</span>
             </div>
+          ) : buyingItems.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-400 text-6xl mb-4">🛒</div>
+              <p className="text-gray-600">구매중인 상품이 없습니다.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {buyingItems.map((buyingItem) => (
+                <Card
+                  key={buyingItem.id}
+                  className="p-3 hover:shadow-lg transition-shadow cursor-pointer group"
+                  onClick={() => {
+                    // 해당 상품의 상세 모달 열기
+                    setShowProductModal(true);
+                  }}
+                >
+                  {/* 상품 이미지 */}
+                  <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-3 relative">
+                    {buyingItem.images && buyingItem.images.length > 0 ? (
+                      <img
+                        src={buyingItem.images[0]}
+                        alt={buyingItem.title || `${buyingItem.brand} ${buyingItem.model}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl text-gray-400">
+                        🎵
+                      </div>
+                    )}
+
+                    {/* 거래중 배지 */}
+                    <div className="absolute top-1 right-1 bg-orange-500 text-white px-1.5 py-0.5 rounded text-xs font-bold shadow-lg">
+                      거래중
+                    </div>
+                  </div>
+
+                  {/* 상품 정보 */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      {buyingItem.title || `${buyingItem.brand} ${buyingItem.model}`}
+                    </h3>
+
+                    <div className="text-base font-bold text-blue-600">
+                      {formatPrice(buyingItem.price)}
+                    </div>
+
+                    <div className="flex items-center text-xs text-gray-500 space-x-2">
+                      <span className="flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {buyingItem.region}
+                      </span>
+                      <span className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {formatDate(buyingItem.createdAt)}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-gray-600">
+                      <span className="bg-gray-100 px-2 py-1 rounded-full">
+                        {buyingItem.category || "기타"}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 선택된 상품의 판매자 정보 */}
+        {item && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">선택된 상품의 판매자 정보</h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 상품 썸네일 카드 */}
+              <div className="lg:col-span-1">
+                <Card
+                  className="p-4 hover:shadow-lg transition-shadow cursor-pointer group"
+                  onClick={() => {
+                    setShowProductModal(true);
+                  }}
+                >
+                  {/* 상품 이미지 */}
+                  <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-3 relative">
+                    {item.images && item.images.length > 0 ? (
+                      <img
+                        src={item.images[0]}
+                        alt={item.title || `${item.brand} ${item.model}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-4xl text-gray-400">
+                        🎵
+                      </div>
+                    )}
+
+                    {/* 거래중 배지 */}
+                    <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
+                      거래중
+                    </div>
+                  </div>
+
+                  {/* 상품 정보 */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      {item.title || `${item.brand} ${item.model}`}
+                    </h3>
+
+                    <div className="text-lg font-bold text-blue-600">
+                      {formatPrice(item.price)}
+                    </div>
+
+                    <div className="flex items-center text-xs text-gray-500 space-x-2">
+                      <span className="flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {item.region}
+                      </span>
+                      <span className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {formatDate(item.createdAt)}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-gray-600">
+                      <span className="bg-gray-100 px-2 py-1 rounded-full">
+                        {item.category || "기타"}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
 
             {/* 판매자 정보 */}
             <div className="lg:col-span-1">
