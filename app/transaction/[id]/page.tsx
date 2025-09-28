@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+
+// generateStaticParams 함수 추가 (Next.js 정적 생성 요구사항)
+export async function generateStaticParams() {
+  // 동적 라우트이므로 빈 배열 반환
+  return [];
+}
 import { useAuth } from "../../../lib/hooks/useAuth";
 import { getItem } from "../../../lib/api/products";
 import { SellItem } from "../../../data/types";
