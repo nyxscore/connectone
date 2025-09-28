@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { getItem, getReservedItemsBySeller } from "../../lib/api/products";
+import { getOrCreateChat } from "../../lib/chat/api";
 import { SellItem } from "../../data/types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import ProductDetailModal from "../product/ProductDetailModal";
 import { SellerProfileModal } from "../profile/SellerProfileModal";
+import { EnhancedChatModal } from "../chat/EnhancedChatModal";
 import { getUserProfile } from "../../lib/profile/api";
 import { UserProfile } from "../../data/profile/types";
 import {
@@ -32,7 +34,9 @@ interface SellerTransactionPageClientProps {
   item: SellItem;
 }
 
-export function SellerTransactionPageClient({ item }: SellerTransactionPageClientProps) {
+export function SellerTransactionPageClient({
+  item,
+}: SellerTransactionPageClientProps) {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -44,6 +48,7 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
   const [sellingItemsLoading, setSellingItemsLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<SellItem | null>(null);
   const [showBuyerProfileModal, setShowBuyerProfileModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   // 판매중인 모든 상품 가져오기
   useEffect(() => {
@@ -72,7 +77,7 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
     fetchSellingItems();
   }, [user?.uid]);
 
-  // 구매자 정보 가져오기 (선택된 상품 기준)
+  // 프로필 정보 가져오기 (선택된 상품 기준)
   useEffect(() => {
     const fetchBuyerProfile = async () => {
       const targetItem = selectedItem || item;
@@ -117,12 +122,37 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
     fetchBuyerProfile();
   }, [selectedItem?.buyerId, item?.buyerId]);
 
-  const handleStartChat = () => {
+  const handleStartChat = async () => {
     const targetItem = selectedItem || item;
-    if (targetItem?.buyerId) {
-      router.push(
-        `/chat?userId=${targetItem.buyerId}&itemId=${targetItem.id}`
+    if (!targetItem?.buyerId || !user?.uid) {
+      console.log("채팅 시작 불가: buyerId 또는 user.uid가 없습니다.");
+      return;
+    }
+
+    try {
+      console.log("채팅 생성 시작:", {
+        itemId: targetItem.id,
+        buyerUid: targetItem.buyerId,
+        sellerUid: user.uid,
+      });
+
+      const result = await getOrCreateChat(
+        targetItem.id,
+        targetItem.buyerId,
+        user.uid
       );
+
+      if (result.success && result.chatId) {
+        console.log("채팅 생성 성공:", result.chatId);
+        // 채팅 모달 열기
+        setShowChatModal(true);
+      } else {
+        console.error("채팅 생성 실패:", result.error);
+        toast.error("채팅을 시작할 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("채팅 시작 중 오류:", error);
+      toast.error("채팅을 시작하는 중 오류가 발생했습니다.");
     }
   };
 
@@ -142,7 +172,8 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
   const formatDate = (date: any) => {
     if (!date) return "";
     try {
-      const dateObj = typeof date === "string" ? new Date(date) : new Date(date);
+      const dateObj =
+        typeof date === "string" ? new Date(date) : new Date(date);
       if (isNaN(dateObj.getTime())) return "";
       return dateObj.toLocaleDateString("ko-KR");
     } catch (error) {
@@ -172,9 +203,7 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
           <p className="text-gray-600 mb-4">
             거래 관리 페이지를 이용하려면 로그인해주세요.
           </p>
-          <Button onClick={() => router.push("/auth/login")}>
-            로그인하기
-          </Button>
+          <Button onClick={() => router.push("/auth/login")}>로그인하기</Button>
         </div>
       </div>
     );
@@ -288,11 +317,11 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
           )}
         </div>
 
-        {/* 선택된 상품의 구매자 정보 */}
+        {/* 선택된 상품의 프로필 */}
         {selectedItem && (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              선택된 상품의 구매자 정보
+              선택된 상품의 프로필
             </h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -338,7 +367,7 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
                 </div>
               </div>
 
-              {/* 구매자 정보 */}
+              {/* 프로필 정보 */}
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
                   <div
@@ -348,24 +377,16 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
                       setShowBuyerProfileModal(true);
                     }}
                   >
-                    {buyerProfile?.profileImage ||
-                    buyerProfile?.photoURL ? (
+                    {buyerProfile?.profileImage || buyerProfile?.photoURL ? (
                       <img
-                        src={
-                          buyerProfile.profileImage ||
-                          buyerProfile.photoURL
-                        }
+                        src={buyerProfile.profileImage || buyerProfile.photoURL}
                         alt={buyerProfile?.nickname || "구매자"}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <span className="text-white text-xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 w-full h-full flex items-center justify-center">
-                        {buyerProfile?.nickname
-                          ?.charAt(0)
-                          ?.toUpperCase() ||
-                          buyerProfile?.username
-                            ?.charAt(0)
-                            ?.toUpperCase() ||
+                        {buyerProfile?.nickname?.charAt(0)?.toUpperCase() ||
+                          buyerProfile?.username?.charAt(0)?.toUpperCase() ||
                           selectedItem.buyerId?.charAt(0)?.toUpperCase() ||
                           "B"}
                       </span>
@@ -405,7 +426,7 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
                   <div className="flex items-center space-x-2">
                     <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
                     <span className="text-sm text-gray-600">
-                      구매자 정보를 불러오는 중...
+                      프로필 정보를 불러오는 중...
                     </span>
                   </div>
                 ) : buyerProfile ? (
@@ -431,13 +452,15 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
                   </div>
                 ) : (
                   <div className="text-sm text-gray-500">
-                    구매자 정보를 불러올 수 없습니다.
+                    프로필 정보를 불러올 수 없습니다.
                   </div>
                 )}
 
                 {/* 거래 진행 상황 */}
                 <div className="space-y-4 pt-4 border-t border-gray-200">
-                  <h4 className="text-sm font-medium text-gray-700">거래 진행 상황</h4>
+                  <h4 className="text-sm font-medium text-gray-700">
+                    거래 진행 상황
+                  </h4>
                   <div className="flex items-center justify-between">
                     {/* 거래 시작 */}
                     <div className="flex flex-col items-center">
@@ -446,10 +469,10 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
                       </div>
                       <span className="text-xs text-gray-600">거래 시작</span>
                     </div>
-                    
+
                     {/* 연결선 */}
                     <div className="flex-1 h-0.5 bg-gray-300 mx-2"></div>
-                    
+
                     {/* 거래 진행중 */}
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm mb-1">
@@ -457,10 +480,10 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
                       </div>
                       <span className="text-xs text-gray-600">거래 진행중</span>
                     </div>
-                    
+
                     {/* 연결선 */}
                     <div className="flex-1 h-0.5 bg-gray-300 mx-2"></div>
-                    
+
                     {/* 거래 완료 */}
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white font-bold text-sm mb-1">
@@ -473,27 +496,42 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
 
                 {/* 안전 거래 안내 */}
                 <div className="space-y-3 pt-4 border-t border-gray-200">
-                  <h4 className="text-sm font-medium text-gray-700">안전 거래 안내</h4>
+                  <h4 className="text-sm font-medium text-gray-700">
+                    안전 거래 안내
+                  </h4>
                   <div className="space-y-2">
                     <div className="flex items-start space-x-2">
                       <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <div>
-                        <div className="text-xs font-medium text-gray-700">거래 전 확인사항</div>
-                        <div className="text-xs text-gray-600">상품 상태와 거래 조건을 정확히 확인하세요.</div>
+                        <div className="text-xs font-medium text-gray-700">
+                          거래 전 확인사항
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          상품 상태와 거래 조건을 정확히 확인하세요.
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-start space-x-2">
                       <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <div>
-                        <div className="text-xs font-medium text-gray-700">채팅을 통한 소통</div>
-                        <div className="text-xs text-gray-600">모든 거래 관련 대화는 채팅에서 진행하세요.</div>
+                        <div className="text-xs font-medium text-gray-700">
+                          채팅을 통한 소통
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          모든 거래 관련 대화는 채팅에서 진행하세요.
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-start space-x-2">
                       <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <div>
-                        <div className="text-xs font-medium text-gray-700">안전한 결제</div>
-                        <div className="text-xs text-gray-600">직거래 시 만나서 거래하고, 택배 시 안전거래를 이용하세요.</div>
+                        <div className="text-xs font-medium text-gray-700">
+                          안전한 결제
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          직거래 시 만나서 거래하고, 택배 시 안전거래를
+                          이용하세요.
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -535,8 +573,17 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
           sellerProfile={buyerProfile}
           isOpen={showBuyerProfileModal}
           onClose={() => setShowBuyerProfileModal(false)}
-          onStartChat={handleStartChat}
+          itemId={selectedItem?.id || item?.id}
         />
+
+        {/* 채팅 모달 */}
+        {showChatModal && selectedItem && (
+          <EnhancedChatModal
+            isOpen={showChatModal}
+            onClose={() => setShowChatModal(false)}
+            chatId={`${selectedItem.buyerId}_${user?.uid}_${selectedItem.id}`}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { ChatList } from "../../components/chat/ChatList";
-import { FirestoreChatModal } from "../../components/chat/FirestoreChatModal";
+import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal";
 import { ProtectedRoute } from "../../lib/auth/ProtectedRoute";
 import { MessageCircle, Plus, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ChatPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
 
@@ -20,6 +21,16 @@ export default function ChatPage() {
     selectedChatId,
     showChatModal,
   });
+
+  // URL에서 chatId를 가져와서 자동으로 채팅 모달 열기
+  useEffect(() => {
+    const chatId = searchParams.get("chatId");
+    if (chatId && user) {
+      console.log("URL에서 chatId 발견:", chatId);
+      setSelectedChatId(chatId);
+      setShowChatModal(true);
+    }
+  }, [searchParams, user]);
 
   const handleChatSelect = (chatId: string) => {
     console.log("ChatPage: handleChatSelect 호출됨", { chatId });
@@ -89,7 +100,7 @@ export default function ChatPage() {
 
       {/* 채팅 모달 */}
       {selectedChatId && (
-        <FirestoreChatModal
+        <EnhancedChatModal
           isOpen={showChatModal}
           onClose={handleCloseModal}
           chatId={selectedChatId}

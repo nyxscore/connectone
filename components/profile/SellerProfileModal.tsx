@@ -18,12 +18,17 @@ import {
   Clock,
 } from "lucide-react";
 import { UserProfile } from "../../data/profile/types";
+import { getOrCreateChat } from "../../lib/chat/api";
+import { useAuth } from "../../lib/hooks/useAuth";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface SellerProfileModalProps {
   sellerProfile: UserProfile | null;
   isOpen: boolean;
   onClose: () => void;
   onStartChat?: () => void;
+  itemId?: string;
 }
 
 export function SellerProfileModal({
@@ -31,8 +36,48 @@ export function SellerProfileModal({
   isOpen,
   onClose,
   onStartChat,
+  itemId,
 }: SellerProfileModalProps) {
+  const { user } = useAuth();
+  const router = useRouter();
+
   if (!isOpen || !sellerProfile) return null;
+
+  const handleStartChat = async () => {
+    if (!user?.uid || !sellerProfile?.uid) {
+      console.log(
+        "채팅 시작 불가: user.uid 또는 sellerProfile.uid가 없습니다."
+      );
+      return;
+    }
+
+    try {
+      console.log("채팅 생성 시작:", {
+        itemId: itemId || "unknown",
+        buyerUid: user.uid,
+        sellerUid: sellerProfile.uid,
+      });
+
+      const result = await getOrCreateChat(
+        itemId || "unknown",
+        user.uid,
+        sellerProfile.uid
+      );
+
+      if (result.success && result.chatId) {
+        console.log("채팅 생성 성공:", result.chatId);
+        // 채팅 페이지로 이동
+        router.push(`/chat?chatId=${result.chatId}`);
+        onClose(); // 모달 닫기
+      } else {
+        console.error("채팅 생성 실패:", result.error);
+        toast.error("채팅을 시작할 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("채팅 시작 중 오류:", error);
+      toast.error("채팅을 시작하는 중 오류가 발생했습니다.");
+    }
+  };
 
   const formatDate = (date: any) => {
     if (!date) return "";
@@ -72,7 +117,7 @@ export function SellerProfileModal({
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">판매자 프로필</h2>
+          <h2 className="text-xl font-semibold text-gray-900">프로필</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -240,15 +285,13 @@ export function SellerProfileModal({
 
           {/* 액션 버튼들 */}
           <div className="space-y-3 pt-4 border-t border-gray-200">
-            {onStartChat && (
-              <Button
-                onClick={onStartChat}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                채팅하기
-              </Button>
-            )}
+            <Button
+              onClick={handleStartChat}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              <MessageCircle className="w-5 h-5 mr-2" />
+              채팅하기
+            </Button>
             <div className="flex space-x-2">
               <Button
                 onClick={() => {

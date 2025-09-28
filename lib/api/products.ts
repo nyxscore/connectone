@@ -26,6 +26,16 @@ export interface Item extends SellItemInput {
   updatedAt: any;
 }
 
+export interface ItemApplication {
+  id: string;
+  itemId: string;
+  buyerUid: string;
+  sellerUid: string;
+  status: "pending" | "approved" | "rejected";
+  appliedAt: any;
+  processedAt?: any;
+}
+
 // 아이템 생성
 export async function createItem(
   itemData: SellItemInput & {
@@ -597,6 +607,197 @@ export async function updateItem(
       success: false,
       error:
         error instanceof Error ? error.message : "상품 수정에 실패했습니다.",
+    };
+  }
+}
+
+// 상품 신청하기
+export async function applyForItem(
+  itemId: string,
+  buyerUid: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("상품 신청 시작:", { itemId, buyerUid });
+
+    // 상품 정보 가져오기
+    const itemResult = await getItem(itemId);
+    if (!itemResult.success || !itemResult.item) {
+      return { success: false, error: "상품을 찾을 수 없습니다." };
+    }
+
+    const item = itemResult.item;
+
+    // 이미 거래중이거나 판매완료된 상품인지 확인
+    if (item.status !== "active") {
+      return {
+        success: false,
+        error: "이미 거래중이거나 판매완료된 상품입니다.",
+      };
+    }
+
+    // 판매자가 자신의 상품에 신청하는 것 방지
+    if (item.sellerUid === buyerUid) {
+      return { success: false, error: "자신의 상품에는 신청할 수 없습니다." };
+    }
+
+    // 이미 신청한 적이 있는지 확인
+    const existingApplicationQuery = query(
+      collection(db, "itemApplications"),
+      where("itemId", "==", itemId),
+      where("buyerUid", "==", buyerUid)
+    );
+    const existingApplicationSnapshot = await getDocs(existingApplicationQuery);
+
+    if (!existingApplicationSnapshot.empty) {
+      return { success: false, error: "이미 구매신청한 상품입니다." };
+    }
+
+    // 신청 데이터 생성
+    const applicationData = {
+      itemId,
+      buyerUid,
+      sellerUid: item.sellerUid,
+      status: "pending",
+      appliedAt: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(
+      collection(db, "itemApplications"),
+      applicationData
+    );
+    console.log("상품 신청 완료:", docRef.id);
+
+    return { success: true };
+  } catch (error) {
+    console.error("상품 신청 실패:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "구매신청에 실패했습니다.",
+    };
+  }
+}
+
+// 상품 신청자 목록 가져오기 (판매자용)
+export async function getItemApplications(itemId: string): Promise<{
+  success: boolean;
+  applications?: ItemApplication[];
+  error?: string;
+}> {
+  try {
+    console.log("구매신청자 목록 조회:", itemId);
+
+    const applicationsQuery = query(
+      collection(db, "itemApplications"),
+      where("itemId", "==", itemId),
+      where("status", "==", "pending"),
+      orderBy("appliedAt", "asc")
+    );
+
+    const snapshot = await getDocs(applicationsQuery);
+    const applications: ItemApplication[] = [];
+
+    snapshot.forEach(doc => {
+      applications.push({ id: doc.id, ...doc.data() } as ItemApplication);
+    });
+
+    console.log("구매신청자 목록:", applications.length, "명");
+    return { success: true, applications };
+  } catch (error) {
+    console.error("구매신청자 목록 조회 실패:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "구매신청자 목록을 불러오는데 실패했습니다.",
+    };
+  }
+}
+
+// 신청 승인하기
+export async function approveApplication(
+  applicationId: string,
+  itemId: string,
+  buyerUid: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("구매신청 승인 시작:", { applicationId, itemId, buyerUid });
+
+    // 상품 상태를 reserved로 변경하고 buyerId 설정
+    const itemRef = doc(db, "items", itemId);
+    await updateDoc(itemRef, {
+      status: "reserved",
+      buyerId: buyerUid,
+      updatedAt: serverTimestamp(),
+    });
+
+    // 승인된 신청 상태 업데이트
+    const applicationRef = doc(db, "itemApplications", applicationId);
+    await updateDoc(applicationRef, {
+      status: "approved",
+      processedAt: serverTimestamp(),
+    });
+
+    // 다른 모든 신청들을 거부 처리
+    const otherApplicationsQuery = query(
+      collection(db, "itemApplications"),
+      where("itemId", "==", itemId),
+      where("status", "==", "pending")
+    );
+    const otherApplicationsSnapshot = await getDocs(otherApplicationsQuery);
+
+    const rejectPromises = otherApplicationsSnapshot.docs.map(doc => {
+      if (doc.id !== applicationId) {
+        return updateDoc(doc.ref, {
+          status: "rejected",
+          processedAt: serverTimestamp(),
+        });
+      }
+    });
+
+    await Promise.all(rejectPromises);
+
+    console.log("구매신청 승인 완료");
+    return { success: true };
+  } catch (error) {
+    console.error("구매신청 승인 실패:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "승인 처리에 실패했습니다.",
+    };
+  }
+}
+
+// 사용자의 신청 상태 확인
+export async function getUserApplicationStatus(
+  itemId: string,
+  buyerUid: string
+): Promise<{ success: boolean; status?: string; error?: string }> {
+  try {
+    const applicationQuery = query(
+      collection(db, "itemApplications"),
+      where("itemId", "==", itemId),
+      where("buyerUid", "==", buyerUid)
+    );
+
+    const snapshot = await getDocs(applicationQuery);
+
+    if (snapshot.empty) {
+      return { success: true, status: "none" };
+    }
+
+    const application = snapshot.docs[0].data() as ItemApplication;
+    return { success: true, status: application.status };
+  } catch (error) {
+    console.error("구매신청 상태 확인 실패:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "구매신청 상태를 확인하는데 실패했습니다.",
     };
   }
 }

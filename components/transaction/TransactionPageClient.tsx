@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { getItem, getReservedItemsForBuyer } from "../../lib/api/products";
+import { getOrCreateChat } from "../../lib/chat/api";
 import { SellItem } from "../../data/types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import ProductDetailModal from "../product/ProductDetailModal";
 import { SellerProfileModal } from "../profile/SellerProfileModal";
+import { EnhancedChatModal } from "../chat/EnhancedChatModal";
 import { getUserProfile } from "../../lib/profile/api";
 import { UserProfile } from "../../data/profile/types";
 import {
@@ -44,6 +46,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
   const [buyingItemsLoading, setBuyingItemsLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<SellItem | null>(null);
   const [showSellerProfileModal, setShowSellerProfileModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   // 구매중인 모든 상품 가져오기
   useEffect(() => {
@@ -72,7 +75,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
     fetchBuyingItems();
   }, [user?.uid]);
 
-  // 판매자 정보 가져오기 (선택된 상품 기준)
+  // 프로필 정보 가져오기 (선택된 상품 기준)
   useEffect(() => {
     const fetchSellerProfile = async () => {
       const targetItem = selectedItem || item;
@@ -117,12 +120,37 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
     fetchSellerProfile();
   }, [selectedItem?.sellerUid, item?.sellerUid]);
 
-  const handleStartChat = () => {
+  const handleStartChat = async () => {
     const targetItem = selectedItem || item;
-    if (targetItem?.sellerUid) {
-      router.push(
-        `/chat?itemId=${targetItem.id}&sellerId=${targetItem.sellerUid}`
+    if (!targetItem?.sellerUid || !user?.uid) {
+      console.log("채팅 시작 불가: sellerUid 또는 user.uid가 없습니다.");
+      return;
+    }
+
+    try {
+      console.log("채팅 생성 시작:", {
+        itemId: targetItem.id,
+        buyerUid: user.uid,
+        sellerUid: targetItem.sellerUid,
+      });
+
+      const result = await getOrCreateChat(
+        targetItem.id,
+        user.uid,
+        targetItem.sellerUid
       );
+
+      if (result.success && result.chatId) {
+        console.log("채팅 생성 성공:", result.chatId);
+        // 채팅 모달 열기
+        setShowChatModal(true);
+      } else {
+        console.error("채팅 생성 실패:", result.error);
+        toast.error("채팅을 시작할 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("채팅 시작 중 오류:", error);
+      toast.error("채팅을 시작하는 중 오류가 발생했습니다.");
     }
   };
 
@@ -323,11 +351,11 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
           )}
         </div>
 
-        {/* 선택된 상품의 판매자 정보 */}
+        {/* 선택된 상품의 프로필 */}
         {selectedItem && (
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              선택된 상품의 판매자 정보
+              선택된 상품의 프로필
             </h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -393,18 +421,18 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                 </Card>
               </div>
 
-              {/* 판매자 정보 */}
+              {/* 프로필 정보 */}
               <div className="lg:col-span-1">
                 <Card className="p-6 h-full">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    판매자 정보
+                    프로필
                   </h2>
 
                   {sellerLoading ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="w-6 h-6 animate-spin text-blue-500 mr-2" />
                       <span className="text-gray-600">
-                        판매자 정보를 불러오는 중...
+                        프로필 정보를 불러오는 중...
                       </span>
                     </div>
                   ) : (
@@ -666,7 +694,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
         sellerProfile={sellerProfile}
         isOpen={showSellerProfileModal}
         onClose={() => setShowSellerProfileModal(false)}
-        onStartChat={handleStartChat}
+        itemId={selectedItem?.id || item?.id}
       />
 
       {/* 거래 상태 모달 */}
@@ -754,6 +782,15 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 채팅 모달 */}
+      {showChatModal && selectedItem && (
+        <EnhancedChatModal
+          isOpen={showChatModal}
+          onClose={() => setShowChatModal(false)}
+          chatId={`${user?.uid}_${selectedItem.sellerUid}_${selectedItem.id}`}
+        />
       )}
     </div>
   );

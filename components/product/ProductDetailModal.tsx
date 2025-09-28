@@ -37,6 +37,8 @@ import { SellerProfileModal } from "@/components/profile/SellerProfileModal";
 import EditProductModal from "./EditProductModal";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ItemGallery } from "@/components/items/ItemGallery";
+import { ItemApplicationButton } from "@/components/items/ItemApplicationButton";
+import { ItemApplicationsList } from "@/components/items/ItemApplicationsList";
 
 // 마그니파이어 이미지 컴포넌트
 interface MagnifierImageProps {
@@ -79,10 +81,10 @@ export default function ProductDetailModal({
 
   // item이 있으면 item.id를 productId로 사용
   const actualProductId = productId || item?.id;
-  
+
   // 현재 사용자가 구매자인지 확인
   const isBuyer = user?.uid && item?.buyerId && user.uid === item.buyerId;
-  
+
   const [seller, setSeller] = useState<SellerInfo | null>(null);
   const [sellerProfile, setSellerProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -98,6 +100,7 @@ export default function ProductDetailModal({
   const [showChatModal, setShowChatModal] = useState(false);
   const [showSellerProfileModal, setShowSellerProfileModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showApplications, setShowApplications] = useState(false);
 
   // 본인 상품인지 확인
   const isOwnItem = user && product && user.uid === product.sellerId;
@@ -420,7 +423,7 @@ export default function ProductDetailModal({
 
   const handleCancelPurchase = async () => {
     if (!actualProductId) return;
-    
+
     const confirmed = window.confirm("정말 구매를 취소하시겠습니까?");
     if (!confirmed) return;
 
@@ -429,7 +432,7 @@ export default function ProductDetailModal({
       // 상품 상태를 다시 active로 변경하고 buyerId 제거
       const { updateItemStatus } = await import("../../lib/api/products");
       const result = await updateItemStatus(actualProductId, "active");
-      
+
       if (result.success) {
         toast.success("구매가 취소되었습니다.");
         onClose();
@@ -687,7 +690,7 @@ export default function ProductDetailModal({
                     {/* 액션 버튼들 */}
                     <div className="space-y-3 pt-4">
                       {isOwnItem ? (
-                        // 본인 상품일 때 - 수정하기, 삭제하기 버튼
+                        // 본인 상품일 때 - 수정하기, 삭제하기, 구매신청자 목록 버튼
                         <div className="space-y-3">
                           <Button
                             className="w-full h-12 text-lg font-semibold"
@@ -698,6 +701,34 @@ export default function ProductDetailModal({
                             <Edit className="w-5 h-5 mr-2" />
                             수정하기
                           </Button>
+
+                          {/* 구매신청자 목록 버튼 */}
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              setShowApplications(!showApplications)
+                            }
+                            className="w-full"
+                          >
+                            <User className="w-5 h-5 mr-2" />
+                            {showApplications
+                              ? "구매신청자 목록 닫기"
+                              : "구매신청자 목록 보기"}
+                          </Button>
+
+                          {/* 구매신청자 목록 */}
+                          {showApplications && (
+                            <div className="mt-4">
+                              <ItemApplicationsList
+                                itemId={actualProductId || ""}
+                                onApplicationApproved={() => {
+                                  toast.success("구매신청이 승인되었습니다!");
+                                  setShowApplications(false);
+                                }}
+                              />
+                            </div>
+                          )}
+
                           <Button
                             variant="destructive"
                             className="w-full h-12 text-lg font-semibold"
@@ -775,83 +806,34 @@ export default function ProductDetailModal({
                               </span>
                             </button>
                           </div>
-                        {/* 상품 상태에 따른 버튼 표시 */}
-                        {product?.status === "reserved" ? (
-                          <div className="w-full h-12 bg-orange-100 border border-orange-300 rounded-xl flex items-center justify-center">
-                            <Clock className="w-5 h-5 mr-2 text-orange-600" />
-                            <span className="text-lg font-semibold text-orange-600">
-                              거래중
-                            </span>
-                          </div>
-                        ) : isBuyer ? (
-                          // 구매자일 때는 구매취소 버튼 표시
-                          <Button
-                            className="w-full h-12 text-lg font-semibold bg-red-600 hover:bg-red-700 text-white"
-                            onClick={handleCancelPurchase}
-                            disabled={loading}
-                          >
-                            <X className="w-5 h-5 mr-2" />
-                            {loading ? "취소 중..." : "구매취소"}
-                          </Button>
-                        ) : (
-                          // 일반 사용자일 때는 구매하기 버튼 표시
-                          <Button
-                            className="w-full h-12 text-lg font-semibold"
-                            disabled={!selectedTradeMethod}
-                            onClick={async () => {
-                              if (selectedTradeMethod && actualProductId) {
-                                try {
-                                  console.log("상품 상태 변경 시작:", {
-                                    productId: actualProductId,
-                                    status: "reserved",
-                                  });
-
-                                  // 상품 상태를 거래중으로 변경
-                                  const { updateItemStatus } = await import(
-                                    "../../lib/api/products"
-                                  );
-                                  const result = await updateItemStatus(
-                                    actualProductId,
-                                    "reserved",
-                                    user?.uid
-                                  );
-
-                                  if (result.success) {
-                                    toast.success(
-                                      "구매가 완료되었습니다! 거래 관리 페이지로 이동합니다."
-                                    );
-
-                                    // 거래 관리 페이지로 이동
-                                    setTimeout(() => {
-                                      if (onClose) {
-                                        onClose();
-                                      }
-                                      window.location.href = `/transaction/${actualProductId}`;
-                                    }, 1500);
-                                  } else {
-                                    toast.error(
-                                      result.error ||
-                                        "상품 상태 변경에 실패했습니다."
-                                    );
-                                  }
-                                } catch (error) {
-                                  console.error(
-                                    "상품 상태 변경 실패:",
-                                    error
-                                  );
-                                  toast.error(
-                                    "상품 상태 변경 중 오류가 발생했습니다."
-                                  );
-                                }
-                              } else if (!actualProductId) {
-                                toast.error("상품 ID를 찾을 수 없습니다.");
-                              }
-                            }}
-                          >
-                            <CreditCard className="w-5 h-5 mr-2" />
-                            구매하기
-                          </Button>
-                        )}
+                          {/* 상품 상태에 따른 버튼 표시 */}
+                          {product?.status === "reserved" ? (
+                            <div className="w-full h-12 bg-orange-100 border border-orange-300 rounded-xl flex items-center justify-center">
+                              <Clock className="w-5 h-5 mr-2 text-orange-600" />
+                              <span className="text-lg font-semibold text-orange-600">
+                                거래중
+                              </span>
+                            </div>
+                          ) : isBuyer ? (
+                            // 구매자일 때는 구매취소 버튼 표시
+                            <Button
+                              className="w-full h-12 text-lg font-semibold bg-red-600 hover:bg-red-700 text-white"
+                              onClick={handleCancelPurchase}
+                              disabled={loading}
+                            >
+                              <X className="w-5 h-5 mr-2" />
+                              {loading ? "취소 중..." : "구매취소"}
+                            </Button>
+                          ) : (
+                            // 일반 사용자일 때는 신청하기 버튼 표시
+                            <ItemApplicationButton
+                              itemId={actualProductId || ""}
+                              sellerUid={product?.sellerId || ""}
+                              onApplicationChange={() => {
+                                // 신청 상태 변경 시 필요한 로직
+                              }}
+                            />
+                          )}
                         </>
                       )}
                     </div>
