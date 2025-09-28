@@ -435,6 +435,70 @@ export function SellerTransactionPageClient({ item }: SellerTransactionPageClien
                   </div>
                 )}
 
+                {/* 거래 진행 상황 */}
+                <div className="space-y-4 pt-4 border-t border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700">거래 진행 상황</h4>
+                  <div className="flex items-center justify-between">
+                    {/* 거래 시작 */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm mb-1">
+                        1
+                      </div>
+                      <span className="text-xs text-gray-600">거래 시작</span>
+                    </div>
+                    
+                    {/* 연결선 */}
+                    <div className="flex-1 h-0.5 bg-gray-300 mx-2"></div>
+                    
+                    {/* 거래 진행중 */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm mb-1">
+                        1
+                      </div>
+                      <span className="text-xs text-gray-600">거래 진행중</span>
+                    </div>
+                    
+                    {/* 연결선 */}
+                    <div className="flex-1 h-0.5 bg-gray-300 mx-2"></div>
+                    
+                    {/* 거래 완료 */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white font-bold text-sm mb-1">
+                        3
+                      </div>
+                      <span className="text-xs text-gray-600">거래 완료</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 안전 거래 안내 */}
+                <div className="space-y-3 pt-4 border-t border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700">안전 거래 안내</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-start space-x-2">
+                      <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div className="text-xs font-medium text-gray-700">거래 전 확인사항</div>
+                        <div className="text-xs text-gray-600">상품 상태와 거래 조건을 정확히 확인하세요.</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div className="text-xs font-medium text-gray-700">채팅을 통한 소통</div>
+                        <div className="text-xs text-gray-600">모든 거래 관련 대화는 채팅에서 진행하세요.</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div className="text-xs font-medium text-gray-700">안전한 결제</div>
+                        <div className="text-xs text-gray-600">직거래 시 만나서 거래하고, 택배 시 안전거래를 이용하세요.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* 액션 버튼들 */}
                 <div className="space-y-2 pt-4 border-t border-gray-200">
                   <Button

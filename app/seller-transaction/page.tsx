@@ -24,7 +24,7 @@ export default function SellerTransactionPage() {
 
       try {
         const result = await getItem(itemId);
-        
+
         if (!result.success || !result.item) {
           setError("상품을 찾을 수 없습니다.");
           return;
@@ -35,8 +35,12 @@ export default function SellerTransactionPage() {
         // 데이터 직렬화 (Firebase Timestamp를 ISO string으로 변환)
         const serializedItem = {
           ...itemData,
-          createdAt: itemData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-          updatedAt: itemData.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          createdAt:
+            itemData.createdAt?.toDate?.()?.toISOString() ||
+            new Date().toISOString(),
+          updatedAt:
+            itemData.updatedAt?.toDate?.()?.toISOString() ||
+            new Date().toISOString(),
         };
 
         setItem(serializedItem);

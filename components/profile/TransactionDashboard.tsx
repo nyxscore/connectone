@@ -67,7 +67,7 @@ export function TransactionDashboard() {
       const buyingInProgress = buyingResult.success
         ? buyingResult.items?.length || 0
         : 0;
-      
+
       // 구매중 상품 목록 저장 (클릭 시 이동용)
       if (buyingResult.success && buyingResult.items) {
         setBuyingItems(buyingResult.items);
@@ -281,7 +281,7 @@ export function TransactionDashboard() {
           <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
 
           {/* 구매중 */}
-          <div 
+          <div
             className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => {
               console.log("구매중 카드 클릭됨!");
@@ -330,7 +330,7 @@ export function TransactionDashboard() {
             </div>
             <div className="text-sm text-gray-600">등록 물품</div>
           </div>
-          <div 
+          <div
             className="text-center p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
             onClick={() => {
               console.log("구매중 통계 카드 클릭됨!");
