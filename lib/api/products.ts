@@ -221,27 +221,33 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
 
     // 기본 쿼리: active 상태인 아이템만 조회 (인덱스 없이 작동하도록 단순화)
     let q = query(collection(db, "items"), where("status", "==", "active"));
-    
-    // 디버깅: 모든 상품의 카테고리 확인
-    if (filters.category) {
+
+    // 디버깅: 모든 상품의 카테고리 확인 (개발 중에만)
+    if (filters.category && process.env.NODE_ENV === 'development') {
       console.log("=== 카테고리 디버깅 시작 ===");
-      const allItemsQuery = query(collection(db, "items"), where("status", "==", "active"));
+      const allItemsQuery = query(
+        collection(db, "items"),
+        where("status", "==", "active")
+      );
       const allItemsSnapshot = await getDocs(allItemsQuery);
       console.log("전체 상품 개수:", allItemsSnapshot.size);
       const allCategories = new Set();
       allItemsSnapshot.forEach(doc => {
         const data = doc.data();
         allCategories.add(data.category);
-        console.log("상품 카테고리:", { id: doc.id, category: data.category, title: data.title });
       });
-      console.log("데이터베이스에 있는 모든 카테고리:", Array.from(allCategories));
+      console.log(
+        "데이터베이스에 있는 모든 카테고리:",
+        Array.from(allCategories)
+      );
       console.log("=== 카테고리 디버깅 끝 ===");
     }
 
     // 필터 적용 (서버 사이드) - 복합 인덱스가 필요한 필터는 제거
     if (filters.category) {
       console.log("카테고리 필터 적용:", filters.category);
-      q = query(q, where("category", "==", filters.category));
+      // 카테고리 필터링은 클라이언트 사이드에서 처리 (서브카테고리 지원)
+      // q = query(q, where("category", "==", filters.category));
     }
     if (filters.region) {
       q = query(q, where("region", "==", filters.region));
@@ -273,7 +279,6 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     console.log("쿼리 결과 개수:", querySnapshot.size);
     querySnapshot.forEach(doc => {
       const itemData = { id: doc.id, ...doc.data() } as Item;
-      console.log("상품 데이터:", { id: itemData.id, category: itemData.category, title: itemData.title });
       items.push(itemData);
     });
 
@@ -289,6 +294,17 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     // 거래 가능 필터링
     if (filters.available) {
       items = items.filter(item => item.status === "active");
+    }
+
+    // 카테고리 필터링 (클라이언트 사이드 - 서브카테고리 지원)
+    if (filters.category) {
+      console.log("클라이언트 사이드 카테고리 필터링:", filters.category);
+      items = items.filter(item => {
+        // 정확히 일치하거나 해당 카테고리로 시작하는 경우
+        return item.category === filters.category || 
+               item.category?.startsWith(filters.category + " >");
+      });
+      console.log("카테고리 필터링 후 상품 개수:", items.length);
     }
 
     // 키워드 필터링
