@@ -54,11 +54,6 @@ export default function CategoryCards({
                 <div className="font-semibold text-xs sm:text-sm leading-tight text-center">
                   {cat.name}
                 </div>
-                {isSelected && (
-                  <div className="text-xs text-blue-600 font-medium">
-                    선택됨 ✓
-                  </div>
-                )}
               </div>
             </motion.button>
           );
