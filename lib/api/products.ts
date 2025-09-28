@@ -296,15 +296,15 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       filters = {},
     } = options;
 
-    // 기본 쿼리: active 상태인 아이템만 조회 (인덱스 없이 작동하도록 단순화)
-    let q = query(collection(db, "items"), where("status", "==", "active"));
+    // 기본 쿼리: active와 reserved 상태인 아이템 조회 (거래중 상품도 표시)
+    let q = query(collection(db, "items"), where("status", "in", ["active", "reserved"]));
 
     // 디버깅: 모든 상품의 카테고리 확인 (개발 중에만)
     if (filters.category && process.env.NODE_ENV === "development") {
       console.log("=== 카테고리 디버깅 시작 ===");
       const allItemsQuery = query(
         collection(db, "items"),
-        where("status", "==", "active")
+        where("status", "in", ["active", "reserved"])
       );
       const allItemsSnapshot = await getDocs(allItemsQuery);
       console.log("전체 상품 개수:", allItemsSnapshot.size);
@@ -368,7 +368,7 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       items = items.filter(item => item.price <= filters.maxPrice!);
     }
 
-    // 거래 가능 필터링
+    // 거래 가능 필터링 (체크되면 active 상태만 표시)
     if (filters.available) {
       items = items.filter(item => item.status === "active");
     }

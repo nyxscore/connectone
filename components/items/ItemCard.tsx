@@ -111,6 +111,13 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
           </div>
         )}
 
+        {/* 거래중 상태 표시 */}
+        {item.status === "reserved" && (
+          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-orange-500 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold shadow-lg">
+            거래중
+          </div>
+        )}
+
         {/* 옵션 배지들 - 사진 위에서 제거하고 깔끔하게 */}
       </div>
 
