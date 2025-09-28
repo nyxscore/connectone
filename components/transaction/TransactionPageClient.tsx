@@ -42,23 +42,23 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
   // 판매자 정보 가져오기
   useEffect(() => {
     const fetchSellerProfile = async () => {
-      if (!item?.sellerId) {
+      if (!item?.sellerUid) {
         console.log("판매자 ID가 없습니다:", item);
         return;
       }
       
-      console.log("판매자 프로필 로드 시작:", item.sellerId);
+      console.log("판매자 프로필 로드 시작:", item.sellerUid);
       
       try {
         setSellerLoading(true);
-        const result = await getUserProfile(item.sellerId);
+        const result = await getUserProfile(item.sellerUid);
         console.log("판매자 프로필 API 결과:", result);
         
         if (result && result.success && result.data) {
           console.log("판매자 프로필 로드 성공:", result.data);
           setSellerProfile(result.data);
         } else {
-          console.warn("판매자 프로필을 찾을 수 없습니다:", item.sellerId, result);
+          console.warn("판매자 프로필을 찾을 수 없습니다:", item.sellerUid, result);
         }
       } catch (error) {
         console.error("판매자 프로필 로드 실패:", error);
@@ -68,11 +68,11 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
     };
 
     fetchSellerProfile();
-  }, [item?.sellerId]);
+  }, [item?.sellerUid]);
 
   const handleStartChat = () => {
-    if (item?.sellerId) {
-      router.push(`/chat?itemId=${item.id}&sellerId=${item.sellerId}`);
+    if (item?.sellerUid) {
+      router.push(`/chat?itemId=${item.id}&sellerId=${item.sellerUid}`);
     }
   };
 
@@ -256,7 +256,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                     {/* 프로필 */}
                     <div className="flex items-center space-x-3">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
-                        {sellerProfile?.nickname?.charAt(0)?.toUpperCase() || sellerProfile?.username?.charAt(0)?.toUpperCase() || item.sellerId?.charAt(0)?.toUpperCase() || "S"}
+                        {sellerProfile?.nickname?.charAt(0)?.toUpperCase() || sellerProfile?.username?.charAt(0)?.toUpperCase() || item.sellerUid?.charAt(0)?.toUpperCase() || "S"}
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-gray-900 text-lg">{sellerProfile?.nickname || "판매자"}</p>
