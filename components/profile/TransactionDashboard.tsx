@@ -118,9 +118,6 @@ export function TransactionDashboard() {
       {/* 거래 현황 헤더 */}
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">거래 현황</h2>
-          <p className="text-gray-600">
-            판매와 구매 진행 상황을 한눈에 확인하세요
-          </p>
         </div>
 
           {/* 판매 현황 */}
