@@ -751,7 +751,7 @@ export default function ProductDetailModal({
                             }}
                           >
                             <CreditCard className="w-5 h-5 mr-2" />
-                            결제하기
+                            구매하기
                           </Button>
                         </>
                       )}

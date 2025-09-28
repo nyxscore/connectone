@@ -301,11 +301,14 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       console.log("클라이언트 사이드 카테고리 필터링:", filters.category);
       items = items.filter(item => {
         // 정확히 일치하거나 해당 카테고리로 시작하는 경우
-        const categoryMatch = item.category === filters.category ||
+        const categoryMatch =
+          item.category === filters.category ||
           item.category?.startsWith(filters.category + "기 >") ||
           item.category?.startsWith(filters.category + " >");
-        
-        console.log(`상품 ${item.id}: category="${item.category}", filter="${filters.category}", match=${categoryMatch}`);
+
+        console.log(
+          `상품 ${item.id}: category="${item.category}", filter="${filters.category}", match=${categoryMatch}`
+        );
         return categoryMatch;
       });
       console.log("카테고리 필터링 후 상품 개수:", items.length);
