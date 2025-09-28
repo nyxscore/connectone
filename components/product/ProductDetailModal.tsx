@@ -75,6 +75,9 @@ export default function ProductDetailModal({
 }: ProductDetailModalProps) {
   const { user } = useAuth();
   const [product, setProduct] = useState<ProductDetail | null>(null);
+  
+  // item이 있으면 item.id를 productId로 사용
+  const actualProductId = productId || item?.id;
   const [seller, setSeller] = useState<SellerInfo | null>(null);
   const [sellerProfile, setSellerProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -744,16 +747,19 @@ export default function ProductDetailModal({
                             className="w-full h-12 text-lg font-semibold"
                             disabled={!selectedTradeMethod}
                             onClick={async () => {
-                              if (selectedTradeMethod && productId) {
+                              if (selectedTradeMethod && actualProductId) {
                                 try {
-                                  console.log("상품 상태 변경 시작:", { productId, status: "reserved" });
-                                  
+                                  console.log("상품 상태 변경 시작:", {
+                                    productId: actualProductId,
+                                    status: "reserved",
+                                  });
+
                                   // 상품 상태를 거래중으로 변경
                                   const { updateItemStatus } = await import(
                                     "../../lib/api/products"
                                   );
                                   const result = await updateItemStatus(
-                                    productId,
+                                    actualProductId,
                                     "reserved"
                                   );
 
@@ -779,7 +785,7 @@ export default function ProductDetailModal({
                                     "상품 상태 변경 중 오류가 발생했습니다."
                                   );
                                 }
-                              } else if (!productId) {
+                              } else if (!actualProductId) {
                                 toast.error("상품 ID를 찾을 수 없습니다.");
                               }
                             }}
