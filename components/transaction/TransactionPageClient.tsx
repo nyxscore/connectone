@@ -42,15 +42,23 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
   // 판매자 정보 가져오기
   useEffect(() => {
     const fetchSellerProfile = async () => {
-      if (!item?.sellerId) return;
+      if (!item?.sellerId) {
+        console.log("판매자 ID가 없습니다:", item);
+        return;
+      }
+      
+      console.log("판매자 프로필 로드 시작:", item.sellerId);
       
       try {
         setSellerLoading(true);
         const result = await getUserProfile(item.sellerId);
+        console.log("판매자 프로필 API 결과:", result);
+        
         if (result && result.success && result.data) {
+          console.log("판매자 프로필 로드 성공:", result.data);
           setSellerProfile(result.data);
         } else {
-          console.warn("판매자 프로필을 찾을 수 없습니다:", item.sellerId);
+          console.warn("판매자 프로필을 찾을 수 없습니다:", item.sellerId, result);
         }
       } catch (error) {
         console.error("판매자 프로필 로드 실패:", error);
@@ -243,24 +251,24 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                     <Loader2 className="w-6 h-6 animate-spin text-blue-500 mr-2" />
                     <span className="text-gray-600">판매자 정보를 불러오는 중...</span>
                   </div>
-                ) : sellerProfile ? (
+                ) : (
                   <div className="space-y-4">
                     {/* 프로필 */}
                     <div className="flex items-center space-x-3">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
-                        {sellerProfile.nickname?.charAt(0)?.toUpperCase() || sellerProfile.username?.charAt(0)?.toUpperCase() || "S"}
+                        {sellerProfile?.nickname?.charAt(0)?.toUpperCase() || sellerProfile?.username?.charAt(0)?.toUpperCase() || item.sellerId?.charAt(0)?.toUpperCase() || "S"}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900 text-lg">{sellerProfile.nickname || "판매자"}</p>
-                        <p className="text-sm text-gray-500">{sellerProfile.region || "지역 미설정"}</p>
+                        <p className="font-medium text-gray-900 text-lg">{sellerProfile?.nickname || "판매자"}</p>
+                        <p className="text-sm text-gray-500">{sellerProfile?.region || item.region || "지역 미설정"}</p>
                         <div className="flex items-center space-x-4 mt-2">
                           <div className="flex items-center space-x-1">
                             <Star className="w-4 h-4 text-yellow-500" />
-                            <span className="text-sm text-gray-600">{sellerProfile.averageRating?.toFixed(1) || "0.0"}</span>
+                            <span className="text-sm text-gray-600">{sellerProfile?.averageRating?.toFixed(1) || "0.0"}</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <CheckCircle className="w-4 h-4 text-green-500" />
-                            <span className="text-sm text-gray-600">거래 {sellerProfile.tradesCount || 0}회</span>
+                            <span className="text-sm text-gray-600">거래 {sellerProfile?.tradesCount || 0}회</span>
                           </div>
                         </div>
                       </div>
@@ -271,24 +279,24 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-xs text-gray-500 mb-1">거래 지역</p>
-                          <p className="text-sm font-medium text-gray-900">{sellerProfile.region || "미설정"}</p>
+                          <p className="text-sm font-medium text-gray-900">{sellerProfile?.region || item.region || "미설정"}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 mb-1">등급</p>
-                          <p className="text-sm font-medium text-gray-900">{sellerProfile.grade || "Bronze"}</p>
+                          <p className="text-sm font-medium text-gray-900">{sellerProfile?.grade || "Bronze"}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-xs text-gray-500 mb-1">가입일</p>
                           <p className="text-sm font-medium text-gray-900">
-                            {sellerProfile.createdAt ? new Date(sellerProfile.createdAt).toLocaleDateString("ko-KR") : "미상"}
+                            {sellerProfile?.createdAt ? new Date(sellerProfile.createdAt).toLocaleDateString("ko-KR") : "미상"}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 mb-1">인증 상태</p>
                           <p className="text-sm font-medium text-green-600">
-                            {sellerProfile.isPhoneVerified ? "✓ 인증완료" : "미인증"}
+                            {sellerProfile?.isPhoneVerified ? "✓ 인증완료" : "미인증"}
                           </p>
                         </div>
                       </div>
@@ -328,11 +336,6 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                         </Button>
                       )}
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">판매자 정보를 불러올 수 없습니다.</p>
                   </div>
                 )}
               </Card>
