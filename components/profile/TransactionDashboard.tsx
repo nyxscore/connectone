@@ -40,6 +40,7 @@ export function TransactionDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<string>("all");
 
   useEffect(() => {
     if (user?.uid) {
@@ -113,9 +114,129 @@ export function TransactionDashboard() {
     );
   }
 
+  const filterOptions = [
+    { key: "all", label: "전체", type: "all" },
+    { key: "selling_registered", label: "판매 등록", type: "selling" },
+    { key: "selling_inProgress", label: "판매중", type: "selling" },
+    { key: "selling_completed", label: "판매 완료", type: "selling" },
+    { key: "selling_cancelled", label: "취소 대기", type: "selling" },
+    { key: "buying_registered", label: "구매 등록", type: "buying" },
+    { key: "buying_inProgress", label: "구매중", type: "buying" },
+    { key: "buying_completed", label: "구매 완료", type: "buying" },
+    { key: "buying_cancelled", label: "취소 요청", type: "buying" },
+  ];
+
+  const getFilterCount = (filterKey: string) => {
+    switch (filterKey) {
+      case "selling_registered":
+        return stats.selling.registered;
+      case "selling_inProgress":
+        return stats.selling.inProgress;
+      case "selling_completed":
+        return stats.selling.completed;
+      case "selling_cancelled":
+        return stats.selling.cancelled;
+      case "buying_registered":
+        return stats.buying.registered;
+      case "buying_inProgress":
+        return stats.buying.inProgress;
+      case "buying_completed":
+        return stats.buying.completed;
+      case "buying_cancelled":
+        return stats.buying.cancelled;
+      default:
+        return 0;
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* 거래 현황 헤더 */}
+    <div className="flex gap-6">
+      {/* 사이드바 필터 */}
+      <div className="w-64 flex-shrink-0">
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">거래 현황</h3>
+          
+          {/* 판매 섹션 */}
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+              <TrendingUp className="w-4 h-4 mr-2 text-blue-600" />
+              판매
+            </h4>
+            <div className="space-y-2">
+              {filterOptions.filter(option => option.type === "selling").map(option => (
+                <button
+                  key={option.key}
+                  onClick={() => setSelectedFilter(option.key)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                    selectedFilter === option.key
+                      ? "bg-blue-100 text-blue-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>{option.label}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      getFilterCount(option.key) > 0 
+                        ? "bg-red-100 text-red-600" 
+                        : "bg-gray-100 text-gray-500"
+                    }`}>
+                      {getFilterCount(option.key)}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 구매 섹션 */}
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+              <ShoppingCart className="w-4 h-4 mr-2 text-pink-600" />
+              구매
+            </h4>
+            <div className="space-y-2">
+              {filterOptions.filter(option => option.type === "buying").map(option => (
+                <button
+                  key={option.key}
+                  onClick={() => setSelectedFilter(option.key)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                    selectedFilter === option.key
+                      ? "bg-pink-100 text-pink-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>{option.label}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      getFilterCount(option.key) > 0 
+                        ? "bg-red-100 text-red-600" 
+                        : "bg-gray-100 text-gray-500"
+                    }`}>
+                      {getFilterCount(option.key)}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 전체 보기 */}
+          <button
+            onClick={() => setSelectedFilter("all")}
+            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+              selectedFilter === "all"
+                ? "bg-gray-100 text-gray-700 font-medium"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            전체 보기
+          </button>
+        </Card>
+      </div>
+
+      {/* 메인 콘텐츠 */}
+      <div className="flex-1 space-y-6">
+        {/* 거래 현황 헤더 */}
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">거래 현황</h2>
         </div>
@@ -318,7 +439,8 @@ export function TransactionDashboard() {
         <div className="mt-4 text-gray-600">
           <p>프리미엄 기능을 이용하여 더 많은 혜택을 받아보세요!</p>
         </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
