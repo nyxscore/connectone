@@ -1,154 +1,276 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
+import {
+  X,
+  Star,
+  MapPin,
+  Calendar,
+  CheckCircle,
+  MessageCircle,
+  Phone,
+  Mail,
+  Shield,
+  Award,
+  TrendingUp,
+  Clock,
+} from "lucide-react";
 import { UserProfile } from "../../data/profile/types";
-import { getGradeInfo } from "../../lib/profile/api";
-import { formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
-import { X, MapPin, Calendar, Star, TrendingUp, User } from "lucide-react";
 
 interface SellerProfileModalProps {
+  sellerProfile: UserProfile | null;
   isOpen: boolean;
   onClose: () => void;
-  sellerProfile: UserProfile | null;
+  onStartChat?: () => void;
 }
 
 export function SellerProfileModal({
+  sellerProfile,
   isOpen,
   onClose,
-  sellerProfile,
+  onStartChat,
 }: SellerProfileModalProps) {
   if (!isOpen || !sellerProfile) return null;
 
-  const gradeInfo = getGradeInfo(sellerProfile.grade);
-
   const formatDate = (date: any) => {
     if (!date) return "";
-    const dateObj = date.toDate ? date.toDate() : new Date(date);
-    return formatDistanceToNow(dateObj, { addSuffix: true, locale: ko });
+    try {
+      const dateObj =
+        typeof date === "string"
+          ? new Date(date)
+          : date.toDate
+            ? date.toDate()
+            : new Date(date);
+      if (isNaN(dateObj.getTime())) return "";
+      return dateObj.toLocaleDateString("ko-KR");
+    } catch (error) {
+      return "";
+    }
+  };
+
+  const getGradeColor = (grade: string) => {
+    switch (grade?.toLowerCase()) {
+      case "bronze":
+        return "text-orange-600 bg-orange-100";
+      case "silver":
+        return "text-gray-600 bg-gray-100";
+      case "gold":
+        return "text-yellow-600 bg-yellow-100";
+      case "platinum":
+        return "text-blue-600 bg-blue-100";
+      case "diamond":
+        return "text-purple-600 bg-purple-100";
+      default:
+        return "text-gray-600 bg-gray-100";
+    }
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">판매자 프로필</h2>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <X className="w-5 h-5" />
-          </Button>
+            <X className="w-6 h-6" />
+          </button>
         </div>
 
-        {/* 프로필 내용 */}
-        <div className="p-6">
-          {/* 기본 정보 */}
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-              {sellerProfile.photoURL ? (
+        <div className="p-6 space-y-6">
+          {/* 프로필 기본 정보 */}
+          <div className="flex items-start space-x-4">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0">
+              {sellerProfile.profileImage || sellerProfile.photoURL ? (
                 <img
-                  src={sellerProfile.photoURL}
-                  alt={sellerProfile.nickname}
+                  src={sellerProfile.profileImage || sellerProfile.photoURL}
+                  alt={sellerProfile.nickname || "판매자"}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User className="w-8 h-8 text-gray-400" />
+                <span className="text-white text-2xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 w-full h-full flex items-center justify-center">
+                  {sellerProfile.nickname?.charAt(0)?.toUpperCase() ||
+                    sellerProfile.username?.charAt(0)?.toUpperCase() ||
+                    "S"}
+                </span>
               )}
             </div>
-            <div className="flex-1">
-              <h3 className="text-2xl font-bold text-gray-900">
-                {sellerProfile.nickname}
-              </h3>
-              <div className="flex items-center space-x-3 mt-2">
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-3 mb-2">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {sellerProfile.nickname || "판매자"}
+                </h3>
                 <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${gradeInfo.bgColor} ${gradeInfo.color}`}
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${getGradeColor(
+                    sellerProfile.grade || "Bronze"
+                  )}`}
                 >
-                  <span className="mr-1">{gradeInfo.emoji}</span>
-                  {gradeInfo.displayName}
+                  {sellerProfile.grade || "Bronze"}
                 </span>
-                {sellerProfile.region && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {sellerProfile.region}
-                  </div>
-                )}
+              </div>
+
+              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                <div className="flex items-center space-x-1">
+                  <MapPin className="w-4 h-4" />
+                  <span>{sellerProfile.region || "지역 미설정"}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    {sellerProfile.createdAt
+                      ? formatDate(sellerProfile.createdAt)
+                      : "가입일 미상"}
+                  </span>
+                </div>
+              </div>
+
+              {/* 평점 및 거래 통계 */}
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-1">
+                  <Star className="w-5 h-5 text-yellow-500" />
+                  <span className="text-lg font-semibold text-gray-900">
+                    {sellerProfile.averageRating?.toFixed(1) || "0.0"}
+                  </span>
+                  <span className="text-sm text-gray-500">/ 5.0</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span className="text-lg font-semibold text-gray-900">
+                    거래 {sellerProfile.tradesCount || 0}회
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <TrendingUp className="w-5 h-5 text-blue-500" />
+                  <span className="text-lg font-semibold text-gray-900">
+                    응답률 {sellerProfile.responseRate || 0}%
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* 활동 통계 */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900">
-                {sellerProfile.tradesCount}
+          {/* 인증 상태 */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3">인증 상태</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    sellerProfile.isPhoneVerified
+                      ? "bg-green-100 text-green-600"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  <Phone className="w-4 h-4" />
+                </div>
+                <span className="text-sm text-gray-700">
+                  {sellerProfile.isPhoneVerified ? "휴대폰 인증완료" : "휴대폰 미인증"}
+                </span>
               </div>
-              <div className="text-sm text-gray-600">총 거래</div>
-            </div>
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900">
-                {sellerProfile.reviewsCount}
+              <div className="flex items-center space-x-2">
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    sellerProfile.isEmailVerified
+                      ? "bg-green-100 text-green-600"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  <Mail className="w-4 h-4" />
+                </div>
+                <span className="text-sm text-gray-700">
+                  {sellerProfile.isEmailVerified ? "이메일 인증완료" : "이메일 미인증"}
+                </span>
               </div>
-              <div className="text-sm text-gray-600">받은 후기</div>
-            </div>
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900">
-                {sellerProfile.responseRate || 0}%
-              </div>
-              <div className="text-sm text-gray-600">응답률</div>
             </div>
           </div>
 
-          {/* 등급 설명 */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">
-                <span className="mr-1">{gradeInfo.emoji}</span>
-                {gradeInfo.displayName}
-              </span>
-            </div>
-            <p className="text-sm text-gray-600">{gradeInfo.description}</p>
+          {/* 거래 통계 상세 */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Award className="w-5 h-5 text-blue-500" />
+                <h4 className="font-semibold text-gray-900">거래 성과</h4>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">총 거래 횟수</span>
+                  <span className="font-medium">{sellerProfile.tradesCount || 0}회</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">평균 평점</span>
+                  <span className="font-medium">
+                    {sellerProfile.averageRating?.toFixed(1) || "0.0"}점
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">응답률</span>
+                  <span className="font-medium">{sellerProfile.responseRate || 0}%</span>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Clock className="w-5 h-5 text-green-500" />
+                <h4 className="font-semibold text-gray-900">활동 정보</h4>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">가입일</span>
+                  <span className="font-medium">
+                    {sellerProfile.createdAt
+                      ? formatDate(sellerProfile.createdAt)
+                      : "미상"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">마지막 활동</span>
+                  <span className="font-medium">
+                    {sellerProfile.lastLoginAt
+                      ? formatDate(sellerProfile.lastLoginAt)
+                      : "미상"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">등급</span>
+                  <span className="font-medium">{sellerProfile.grade || "Bronze"}</span>
+                </div>
+              </div>
+            </Card>
           </div>
 
-          {/* 가입일 */}
-          <div className="flex items-center text-sm text-gray-600 mb-4">
-            <Calendar className="w-4 h-4 mr-2" />
-            <span>{formatDate(sellerProfile.createdAt)} 가입</span>
-          </div>
-
-          {/* 자기소개 */}
-          {sellerProfile.introShort && (
-            <div className="mb-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
-                한 줄 소개
-              </h4>
-              <p className="text-sm text-gray-600">
-                {sellerProfile.introShort}
-              </p>
+          {/* 소개 */}
+          {sellerProfile.bio && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">소개</h4>
+              <p className="text-gray-700 leading-relaxed">{sellerProfile.bio}</p>
             </div>
           )}
 
-          {sellerProfile.introLong && (
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
-                자기소개
-              </h4>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                {sellerProfile.introLong}
-              </p>
-            </div>
-          )}
+          {/* 액션 버튼들 */}
+          <div className="flex space-x-3 pt-4 border-t border-gray-200">
+            {onStartChat && (
+              <Button
+                onClick={onStartChat}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <MessageCircle className="w-5 h-5 mr-2" />
+                채팅하기
+              </Button>
+            )}
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="flex-1"
+            >
+              닫기
+            </Button>
+          </div>
         </div>
       </div>
     </div>
