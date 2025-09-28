@@ -10,7 +10,21 @@ import {
 
 // Next.js 정적 생성 요구사항
 export async function generateStaticParams() {
-  // 동적 라우트이므로 빈 배열 반환
+  try {
+    // 실제 상품 ID들을 가져와서 정적 생성
+    const { getItemList } = await import("../../../lib/api/products");
+    const result = await getItemList({ limit: 100 }); // 최대 100개 상품
+    
+    if (result.success && result.items) {
+      return result.items.map(item => ({
+        id: item.id,
+      }));
+    }
+  } catch (error) {
+    console.error("generateStaticParams 에러:", error);
+  }
+  
+  // 에러 시 빈 배열 반환
   return [];
 }
 
