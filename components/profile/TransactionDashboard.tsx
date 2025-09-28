@@ -16,6 +16,7 @@ import {
   getReservedItemsForBuyer,
 } from "../../lib/api/products";
 import { SellItem } from "../../data/types";
+import { useRouter } from "next/navigation";
 
 interface TransactionStats {
   selling: {
@@ -34,12 +35,14 @@ interface TransactionStats {
 
 export function TransactionDashboard() {
   const { user } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState<TransactionStats>({
     selling: { registered: 0, inProgress: 0, completed: 0, cancelled: 0 },
     buying: { registered: 0, inProgress: 0, completed: 0, cancelled: 0 },
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [buyingItems, setBuyingItems] = useState<SellItem[]>([]);
 
   useEffect(() => {
     if (user?.uid) {
@@ -63,6 +66,11 @@ export function TransactionDashboard() {
       const buyingInProgress = buyingResult.success
         ? buyingResult.items?.length || 0
         : 0;
+      
+      // 구매중 상품 목록 저장 (클릭 시 이동용)
+      if (buyingResult.success && buyingResult.items) {
+        setBuyingItems(buyingResult.items);
+      }
 
       // TODO: 실제 데이터베이스에서 다른 상태들도 조회해야 함
       // 지금은 임시 데이터로 표시
@@ -245,7 +253,18 @@ export function TransactionDashboard() {
           <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
 
           {/* 구매중 */}
-          <div className="flex flex-col items-center">
+          <div 
+            className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => {
+              console.log("구매중 카드 클릭됨!");
+              if (buyingItems.length > 0) {
+                // 첫 번째 구매중 상품의 거래 관리 페이지로 이동
+                router.push(`/transaction/${buyingItems[0].id}`);
+              } else {
+                console.log("구매중 상품이 없습니다.");
+              }
+            }}
+          >
             <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold mb-2">
               {stats.buying.inProgress}
             </div>
@@ -283,7 +302,18 @@ export function TransactionDashboard() {
             </div>
             <div className="text-sm text-gray-600">등록 물품</div>
           </div>
-          <div className="text-center p-3 bg-orange-50 rounded-lg">
+          <div 
+            className="text-center p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+            onClick={() => {
+              console.log("구매중 통계 카드 클릭됨!");
+              if (buyingItems.length > 0) {
+                // 첫 번째 구매중 상품의 거래 관리 페이지로 이동
+                router.push(`/transaction/${buyingItems[0].id}`);
+              } else {
+                console.log("구매중 상품이 없습니다.");
+              }
+            }}
+          >
             <div className="text-2xl font-bold text-orange-600">
               {stats.buying.inProgress}
             </div>
