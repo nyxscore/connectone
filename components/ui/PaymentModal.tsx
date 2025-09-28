@@ -249,7 +249,7 @@ export function PaymentModal({
                 disabled={!cardNumber || !expiryDate || !cvv || !cardholderName}
                 className="flex-1"
               >
-                결제하기
+                구매하기
               </Button>
             </div>
           </div>
@@ -322,12 +322,3 @@ export function PaymentModal({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-

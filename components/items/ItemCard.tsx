@@ -103,51 +103,51 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
           </div>
         )}
 
-        {/* AI 감정 라벨 (상품 목록용) */}
+        {/* AI 감정 라벨 (상품 목록용) - 2열에 맞게 조정 */}
         {item.aiProcessedImages && item.aiProcessedImages.length > 0 && (
-          <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded text-xs font-bold flex items-center space-x-1 shadow-lg">
-            <Brain className="w-3 h-3" />
-            <span>AI</span>
+          <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold flex items-center space-x-0.5 sm:space-x-1 shadow-lg">
+            <Brain className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+            <span className="text-xs">AI</span>
           </div>
         )}
 
         {/* 옵션 배지들 - 사진 위에서 제거하고 깔끔하게 */}
       </div>
 
-      {/* 상품 정보 */}
-      <div className="p-3 sm:p-4">
-        <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base line-clamp-2">
+      {/* 상품 정보 - 2열 레이아웃 최적화 */}
+      <div className="p-2 sm:p-3 md:p-4">
+        <h3 className="font-semibold text-gray-900 mb-1 text-xs sm:text-sm md:text-base line-clamp-2 leading-tight">
           {item.title || `${item.brand} ${item.model}`}
         </h3>
 
-        <div className="text-base sm:text-lg font-bold text-blue-600 mb-2">
+        <div className="text-sm sm:text-base md:text-lg font-bold text-blue-600 mb-1 sm:mb-2">
           {formatPrice(item.price)}
         </div>
 
-        <div className="flex items-center text-xs sm:text-sm text-gray-600 space-x-2 sm:space-x-4">
-          <span className="flex items-center">
-            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+        <div className="flex items-center text-xs text-gray-600 space-x-1 sm:space-x-2">
+          <span className="flex items-center min-w-0">
+            <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
             <span className="truncate">{item.region}</span>
           </span>
-          <span className="flex items-center">
-            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+          <span className="flex items-center min-w-0">
+            <Calendar className="w-3 h-3 mr-1 flex-shrink-0" />
             <span className="truncate">{formatDate(item.createdAt)}</span>
           </span>
         </div>
 
-        <div className="flex items-center justify-between mt-2 sm:mt-3">
-          <span className="text-xs sm:text-sm text-gray-500 truncate">
+        <div className="flex items-center justify-between mt-1 sm:mt-2">
+          <span className="text-xs text-gray-500 truncate">
             {getCategoryIcon(item.category)} {getCategoryLabel(item.category)}
           </span>
         </div>
 
-        {/* 판매방법 표시 */}
+        {/* 판매방법 표시 - 모든 거래 방식 표시 */}
         {item.shippingTypes && item.shippingTypes.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
+          <div className="flex flex-wrap gap-1 mt-1 sm:mt-2">
             {item.shippingTypes.map((type, index) => (
               <span
                 key={index}
-                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
+                className="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded-full whitespace-nowrap"
               >
                 {getShippingTypeLabel(type)}
               </span>

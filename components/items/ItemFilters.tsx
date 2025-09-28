@@ -5,6 +5,7 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
+import { PriceRangeSlider } from "../ui/PriceRangeSlider";
 import { ItemListFilters } from "../../lib/api/products";
 import { INSTRUMENT_CATEGORIES, REGIONS } from "../../data/constants/index";
 import { Search, Filter, SortAsc, SortDesc, X } from "lucide-react";
@@ -13,14 +14,24 @@ interface ItemFiltersProps {
   filters: ItemListFilters;
   onFiltersChange: (filters: ItemListFilters) => void;
   onClearFilters: () => void;
+  showFilters?: boolean;
+  onToggleFilters?: (show: boolean) => void;
 }
 
 export function ItemFilters({
   filters,
   onFiltersChange,
   onClearFilters,
+  showFilters = false,
+  onToggleFilters,
 }: ItemFiltersProps) {
-  const [showFilters, setShowFilters] = useState(false);
+  const [internalShowFilters, setInternalShowFilters] = useState(showFilters);
+
+  // 외부에서 showFilters가 제공되면 그것을 사용, 아니면 내부 상태 사용
+  const isFiltersOpen = onToggleFilters ? showFilters : internalShowFilters;
+  const setFiltersOpen = onToggleFilters
+    ? onToggleFilters
+    : setInternalShowFilters;
 
   const handleFilterChange = (
     key: keyof ItemListFilters,
@@ -53,9 +64,9 @@ export function ItemFilters({
             </div>
           </div>
           <Button
-            onClick={() => setShowFilters(!showFilters)}
+            onClick={() => setFiltersOpen(!isFiltersOpen)}
             variant="outline"
-            className={`${showFilters ? "bg-gray-100" : ""} w-full sm:w-auto`}
+            className={`${isFiltersOpen ? "bg-gray-100" : ""} w-full sm:w-auto`}
           >
             <Filter className="w-4 h-4 mr-2" />
             필터
@@ -71,84 +82,67 @@ export function ItemFilters({
           </Button>
         </div>
 
-        {/* 필터 옵션들 */}
-        {showFilters && (
-          <div className="space-y-4 pt-4 border-t">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  카테고리
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={filters.category || ""}
-                  onChange={e => handleFilterChange("category", e.target.value)}
-                >
-                  <option value="">전체</option>
-                  {INSTRUMENT_CATEGORIES.map(category => (
-                    <option key={category.key} value={category.key}>
-                      {category.icon} {category.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  지역
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={filters.region || ""}
-                  onChange={e => handleFilterChange("region", e.target.value)}
-                >
-                  <option value="">전체</option>
-                  {REGIONS.map(region => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  최소 가격
-                </label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={filters.minPrice || ""}
+        {/* 필터 옵션들 - 세로 정렬 */}
+        {isFiltersOpen && (
+          <div className="pt-4 border-t">
+            {/* 거래 가능 섹션 */}
+            <div className="py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="available"
+                  checked={filters.available || false}
                   onChange={e =>
-                    handleFilterChange(
-                      "minPrice",
-                      e.target.value ? Number(e.target.value) : undefined
-                    )
+                    handleFilterChange("available", e.target.checked)
                   }
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  최대 가격
+                <label
+                  htmlFor="available"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  거래 가능
                 </label>
-                <Input
-                  type="number"
-                  placeholder="무제한"
-                  value={filters.maxPrice || ""}
-                  onChange={e =>
-                    handleFilterChange(
-                      "maxPrice",
-                      e.target.value ? Number(e.target.value) : undefined
-                    )
-                  }
-                />
               </div>
+            </div>
+
+            {/* 지역 섹션 */}
+            <div className="py-4 border-b border-gray-200">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                지역
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={filters.region || ""}
+                onChange={e => handleFilterChange("region", e.target.value)}
+              >
+                <option value="">전체</option>
+                {REGIONS.map(region => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 가격 범위 섹션 */}
+            <div className="py-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                가격 범위
+              </label>
+              <PriceRangeSlider
+                minPrice={filters.minPrice}
+                maxPrice={filters.maxPrice}
+                onPriceChange={(min, max) => {
+                  handleFilterChange("minPrice", min);
+                  handleFilterChange("maxPrice", max);
+                }}
+              />
             </div>
 
             {/* 필터 초기화 버튼 */}
             {hasActiveFilters && (
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-4">
                 <Button
                   onClick={onClearFilters}
                   variant="outline"
@@ -163,19 +157,23 @@ export function ItemFilters({
           </div>
         )}
 
-        {/* 카테고리 필터 */}
+        {/* 카테고리 필터 - 심플한 버튼 형태 */}
         <div className="pt-4 border-t">
           <span className="text-sm font-medium text-gray-700 mb-3 block">
-            카테고리:
+            카테고리
           </span>
           <div className="flex flex-wrap gap-2">
+            {/* 전체 버튼 */}
             <Button
               variant={!filters.category ? "primary" : "outline"}
               size="sm"
               onClick={() => handleFilterChange("category", undefined)}
+              className="text-xs sm:text-sm"
             >
               전체
             </Button>
+
+            {/* 카테고리 버튼들 */}
             {INSTRUMENT_CATEGORIES.map(category => (
               <Button
                 key={category.key}
@@ -184,8 +182,9 @@ export function ItemFilters({
                 }
                 size="sm"
                 onClick={() => handleFilterChange("category", category.key)}
+                className="text-xs sm:text-sm"
               >
-                {category.icon} {category.label}
+                {category.label}
               </Button>
             ))}
           </div>

@@ -155,7 +155,7 @@ export function MessageInput({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex items-end space-x-2">
+      <form onSubmit={handleSubmit} className="flex items-center space-x-3">
         {/* 파일 선택 버튼 */}
         <Button
           type="button"
@@ -163,9 +163,9 @@ export function MessageInput({
           size="sm"
           onClick={openFileDialog}
           disabled={isSending || isUploading}
-          className="flex-shrink-0"
+          className="flex-shrink-0 h-10 w-10 p-0 flex items-center justify-center"
         >
-          <Image className="w-4 h-4" />
+          <Image className="w-5 h-5" />
         </Button>
 
         {/* 메시지 입력 */}
@@ -177,7 +177,7 @@ export function MessageInput({
             onKeyPress={handleKeyPress}
             placeholder="메시지를 입력하세요..."
             disabled={isSending || isUploading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             rows={1}
             style={{ minHeight: "40px", maxHeight: "120px" }}
           />
@@ -192,12 +192,12 @@ export function MessageInput({
             isSending ||
             isUploading
           }
-          className="flex-shrink-0"
+          className="flex-shrink-0 h-10 w-10 p-0 flex items-center justify-center"
         >
           {isSending || isUploading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <Send className="w-4 h-4" />
+            <Send className="w-5 h-5" />
           )}
         </Button>
       </form>

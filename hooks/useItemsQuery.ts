@@ -15,6 +15,7 @@ export interface UseItemsQueryReturn {
   items: SellItem[];
   loading: boolean;
   loadingMore: boolean;
+  filtering: boolean;
   hasMore: boolean;
   error: string;
   filters: ItemListFilters;
@@ -32,6 +33,7 @@ export function useItemsQuery(
   const [items, setItems] = useState<SellItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [filtering, setFiltering] = useState(false); // 필터링 중 상태 추가
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState<any>(null);
   const [error, setError] = useState("");
@@ -39,10 +41,14 @@ export function useItemsQuery(
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadItems = useCallback(
-    async (reset = false) => {
+    async (reset = false, isFilterChange = false) => {
       try {
         if (reset) {
-          setLoading(true);
+          if (isFilterChange) {
+            setFiltering(true); // 필터 변경 시에는 filtering 상태 사용
+          } else {
+            setLoading(true); // 초기 로딩이나 새로고침 시에만 loading 상태 사용
+          }
           setItems([]);
           setLastDoc(null);
           setHasMore(true);
@@ -76,6 +82,7 @@ export function useItemsQuery(
       } finally {
         setLoading(false);
         setLoadingMore(false);
+        setFiltering(false);
       }
     },
     [filters, lastDoc, limit]
@@ -88,10 +95,10 @@ export function useItemsQuery(
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // 500ms 후에 검색 실행
+    // 200ms 후에 검색 실행 (즉각 반응)
     debounceTimeoutRef.current = setTimeout(() => {
-      loadItems(true);
-    }, 500);
+      loadItems(true, true); // 필터 변경임을 표시
+    }, 200);
 
     // 컴포넌트 언마운트 시 타이머 정리
     return () => {
@@ -123,6 +130,7 @@ export function useItemsQuery(
     items,
     loading,
     loadingMore,
+    filtering,
     hasMore,
     error,
     filters,

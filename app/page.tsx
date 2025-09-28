@@ -127,155 +127,155 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           <div className="text-center">
             <div className="flex items-center justify-center mb-6 relative">
-              {/* 로고 배경 그라데이션 원형 */}
+              {/* 로고 배경 그라데이션 원형 - 모바일 최적화 */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-[500px] h-[500px] rounded-full bg-gradient-radial from-white via-white/50 to-transparent"></div>
+                <div className="w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] rounded-full bg-gradient-radial from-white via-white/50 to-transparent"></div>
               </div>
 
-              {/* 배경 애니메이션 효과 */}
+              {/* 배경 애니메이션 효과 - 모바일 최적화 */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-96 h-96 rounded-full bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-pink-400/20 animate-pulse"></div>
+                <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-full bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-pink-400/20 animate-pulse"></div>
                 <div
-                  className="absolute w-80 h-80 rounded-full bg-gradient-to-r from-purple-400/15 via-pink-400/15 to-blue-400/15 animate-spin"
+                  className="absolute w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 lg:w-80 lg:h-80 rounded-full bg-gradient-to-r from-purple-400/15 via-pink-400/15 to-blue-400/15 animate-spin"
                   style={{ animationDuration: "8s" }}
                 ></div>
                 <div
-                  className="absolute w-64 h-64 rounded-full bg-gradient-to-r from-pink-400/10 via-blue-400/10 to-purple-400/10 animate-pulse"
+                  className="absolute w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-64 lg:h-64 rounded-full bg-gradient-to-r from-pink-400/10 via-blue-400/10 to-purple-400/10 animate-pulse"
                   style={{ animationDuration: "4s" }}
                 ></div>
 
                 {/* 물제비 파동 효과 - 모바일 최적화 */}
                 <div
-                  className="absolute w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] rounded-full border border-blue-300/15 animate-ping"
+                  className="absolute w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] rounded-full border border-blue-300/15 animate-ping"
                   style={{ animationDuration: "4s", animationDelay: "0s" }}
                 ></div>
                 <div
-                  className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] md:w-[600px] md:h-[600px] rounded-full border border-purple-300/10 animate-ping"
+                  className="absolute w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] lg:w-[600px] lg:h-[600px] rounded-full border border-purple-300/10 animate-ping"
                   style={{ animationDuration: "4s", animationDelay: "2s" }}
                 ></div>
 
                 {/* 흐르는 음악 파동 - 모바일 최적화 */}
                 <div
-                  className="absolute w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] rounded-full border-2 border-blue-400/30 animate-spin"
+                  className="absolute w-[150px] h-[150px] sm:w-[250px] sm:h-[250px] md:w-[350px] md:h-[350px] lg:w-[450px] lg:h-[450px] rounded-full border-2 border-blue-400/30 animate-spin"
                   style={{ animationDuration: "12s" }}
                 ></div>
                 <div
-                  className="absolute w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[550px] md:h-[550px] rounded-full border border-purple-400/25 animate-spin"
+                  className="absolute w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] lg:w-[550px] lg:h-[550px] rounded-full border border-purple-400/25 animate-spin"
                   style={{
                     animationDuration: "15s",
                     animationDirection: "reverse",
                   }}
                 ></div>
                 <div
-                  className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] md:w-[650px] md:h-[650px] rounded-full border border-pink-400/20 animate-spin"
+                  className="absolute w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] lg:w-[650px] lg:h-[650px] rounded-full border border-pink-400/20 animate-spin"
                   style={{ animationDuration: "18s" }}
                 ></div>
               </div>
 
-              {/* 음표 애니메이션 */}
+              {/* 음표 애니메이션 - 모바일 최적화 */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div
-                  className="absolute -top-8 -left-8 text-2xl text-blue-400/30 animate-bounce"
+                  className="absolute -top-4 sm:-top-6 md:-top-8 -left-4 sm:-left-6 md:-left-8 text-lg sm:text-xl md:text-2xl text-blue-400/30 animate-bounce"
                   style={{ animationDelay: "0s" }}
                 >
                   ♪
                 </div>
                 <div
-                  className="absolute -top-4 -right-12 text-xl text-purple-400/30 animate-bounce"
+                  className="absolute -top-2 sm:-top-3 md:-top-4 -right-6 sm:-right-8 md:-right-12 text-base sm:text-lg md:text-xl text-purple-400/30 animate-bounce"
                   style={{ animationDelay: "1s" }}
                 >
                   ♫
                 </div>
                 <div
-                  className="absolute top-8 -left-16 text-lg text-pink-400/30 animate-bounce"
+                  className="absolute top-4 sm:top-6 md:top-8 -left-8 sm:-left-12 md:-left-16 text-sm sm:text-base md:text-lg text-pink-400/30 animate-bounce"
                   style={{ animationDelay: "2s" }}
                 >
                   ♪
                 </div>
                 <div
-                  className="absolute top-4 -right-8 text-xl text-blue-400/30 animate-bounce"
+                  className="absolute top-2 sm:top-3 md:top-4 -right-4 sm:-right-6 md:-right-8 text-base sm:text-lg md:text-xl text-blue-400/30 animate-bounce"
                   style={{ animationDelay: "3s" }}
                 >
                   ♫
                 </div>
                 <div
-                  className="absolute -bottom-4 -left-12 text-lg text-purple-400/30 animate-bounce"
+                  className="absolute -bottom-2 sm:-bottom-3 md:-bottom-4 -left-6 sm:-left-8 md:-left-12 text-sm sm:text-base md:text-lg text-purple-400/30 animate-bounce"
                   style={{ animationDelay: "4s" }}
                 >
                   ♪
                 </div>
                 <div
-                  className="absolute -bottom-8 -right-16 text-2xl text-pink-400/30 animate-bounce"
+                  className="absolute -bottom-4 sm:-bottom-6 md:-bottom-8 -right-8 sm:-right-12 md:-right-16 text-lg sm:text-xl md:text-2xl text-pink-400/30 animate-bounce"
                   style={{ animationDelay: "5s" }}
                 >
                   ♫
                 </div>
               </div>
 
-              {/* 메인 로고 텍스트 */}
+              {/* 메인 로고 텍스트 - 모바일 최적화 */}
               <div className="relative z-10">
-                <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-bold text-white mb-2 sm:mb-4">
+                <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold text-white mb-1 sm:mb-2 md:mb-4 leading-tight">
                   ConnecTone
                 </h1>
-                <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-blue-200 font-light">
-                  🎵 Music Marketplace
+                <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-white font-medium">
+                  커넥톤
                 </div>
               </div>
             </div>
 
-            <div className="mt-16 sm:mt-24 md:mt-32">
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-blue-100 mb-3 sm:mb-4 max-w-3xl mx-auto px-4">
-                음악을 사랑하는 사람들을 위한 안전한 중고 악기 거래 플랫폼
-              </p>
-              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-6 sm:mb-8 px-4">
-                안전한 중고 악기 거래 플랫폼
+            <div className="mt-12 sm:mt-16 md:mt-24 lg:mt-32">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-blue-100 mb-3 sm:mb-4 max-w-3xl mx-auto px-4 leading-relaxed">
+                음악을 사랑하는 사람들을 위한
+                <br />
+                안전한 중고 거래
               </p>
 
-              <p className="text-sm sm:text-base md:text-lg text-blue-200 mb-8 sm:mb-12 max-w-2xl mx-auto px-4">
-                AI 감정 시스템과 에스크로 서비스로 믿을 수 있는 거래를
-                경험하세요
+              <p className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto px-4 leading-relaxed">
+                AI 감정 시스템과 에스크로 서비스로
+                <br className="sm:hidden" />
+                믿을 수 있는 거래를 경험하세요
               </p>
             </div>
 
             {user ? (
-              <div className="space-y-4 sm:space-y-6 animate-fade-in-up animation-delay-800 px-4">
-                <p className="text-lg sm:text-xl font-medium text-white text-center">
+              <div className="space-y-3 sm:space-y-4 md:space-y-6 animate-fade-in-up animation-delay-800 px-4">
+                <p className="text-base sm:text-lg md:text-xl font-medium text-white text-center leading-relaxed">
                   안녕하세요,{" "}
                   <span className="animate-gradient-flow font-bold">
                     {user.nickname}
                   </span>
                   님! 👋
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 justify-center max-w-sm sm:max-w-md md:max-w-none mx-auto">
                   <Link href="/sell" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                      className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
                     >
-                      <Music className="w-5 h-5 mr-2" />
+                      <Music className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       상품 등록하기
                     </Button>
                   </Link>
                   <Link href="/list" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                      className="w-full text-sm sm:text-base bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
                     >
-                      <Search className="w-5 h-5 mr-2" />
+                      <Search className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       상품 둘러보기
                     </Button>
                   </Link>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 sm:space-y-6 animate-fade-in-up animation-delay-800 px-4">
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
+              <div className="space-y-3 sm:space-y-4 md:space-y-6 animate-fade-in-up animation-delay-800 px-4">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 justify-center max-w-sm sm:max-w-md md:max-w-none mx-auto">
                   <Link href="/auth/signup" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                      className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
                     >
-                      <Users className="w-5 h-5 mr-2" />
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       회원가입
                     </Button>
                   </Link>
@@ -283,7 +283,7 @@ export default function HomePage() {
                     <Button
                       variant="outline"
                       size="lg"
-                      className="w-full border-2 transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                      className="w-full text-sm sm:text-base border-2 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
                     >
                       로그인
                     </Button>

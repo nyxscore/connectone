@@ -13,11 +13,13 @@ export default function ListPage() {
   const [selectedItem, setSelectedItem] = useState<SellItem | null>(null);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const {
     items,
     loading,
     loadingMore,
+    filtering,
     hasMore,
     error,
     filters,
@@ -85,6 +87,8 @@ export default function ListPage() {
           filters={filters}
           onFiltersChange={setFilters}
           onClearFilters={handleClearFilters}
+          showFilters={showFilters}
+          onToggleFilters={setShowFilters}
         />
 
         {/* 상품 목록 */}
@@ -93,7 +97,7 @@ export default function ListPage() {
             <p className="text-red-600 mb-4">{error}</p>
             <Button onClick={refresh}>다시 시도</Button>
           </div>
-        ) : items.length === 0 ? (
+        ) : items.length === 0 && !filtering ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎵</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -102,10 +106,22 @@ export default function ListPage() {
             <p className="text-gray-600">다른 검색 조건을 시도해보세요.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {items.map(item => (
-              <ItemCard key={item.id} item={item} onClick={handleItemClick} />
-            ))}
+          <div className="relative">
+            {/* 필터링 중 오버레이 */}
+            {filtering && (
+              <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                <div className="bg-white rounded-lg shadow-lg px-4 py-2 flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-gray-600">필터링 중...</span>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+              {items.map(item => (
+                <ItemCard key={item.id} item={item} onClick={handleItemClick} />
+              ))}
+            </div>
           </div>
         )}
 

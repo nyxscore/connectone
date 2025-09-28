@@ -120,13 +120,26 @@ export function Header() {
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
             ) : user ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700">
-                  안녕하세요, {user.nickname}님
-                </span>
-                <Link href="/profile">
-                  <Button variant="outline" size="sm">
-                    프로필
-                  </Button>
+                <Link
+                  href="/profile"
+                  className="flex items-center space-x-2 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                    {user.photoURL || user.profileImage ? (
+                      <img
+                        src={user.photoURL || user.profileImage}
+                        alt={user.nickname}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-medium text-gray-600">
+                        {user.nickname?.charAt(0)?.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {user.nickname}
+                  </span>
                 </Link>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   로그아웃
@@ -171,9 +184,66 @@ export function Header() {
           </div>
         </div>
 
-        {/* 모바일 메뉴 */}
+        {/* 모바일 메뉴 - 프로필 우선 배치 */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 bg-white">
+            {/* 사용자 프로필 섹션 - 맨 위로 이동 */}
+            <div className="px-4 py-4 border-b border-gray-200">
+              {loading ? (
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                </div>
+              ) : user ? (
+                <div className="space-y-3">
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-3 transition-colors"
+                  >
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                      {user.photoURL || user.profileImage ? (
+                        <img
+                          src={user.photoURL || user.profileImage}
+                          alt={user.nickname}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xl font-medium text-gray-600">
+                          {user.nickname?.charAt(0)?.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-base font-medium text-gray-700">
+                        {user.nickname}
+                      </div>
+                      <div className="text-sm text-gray-500">프로필 보기</div>
+                    </div>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Button variant="ghost" size="sm" className="w-full">
+                      로그인
+                    </Button>
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Button size="sm" className="w-full">
+                      회원가입
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* 메뉴 항목들 */}
             <div className="px-2 pt-2 pb-3 space-y-1">
               <Link
                 href="/list"
@@ -205,60 +275,22 @@ export function Header() {
               </Link>
             </div>
 
-            {/* 모바일 사용자 메뉴 */}
-            <div className="pt-4 pb-3 border-t border-gray-200">
-              {loading ? (
-                <div className="flex justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                </div>
-              ) : user ? (
-                <div className="px-4 space-y-3">
-                  <div className="text-sm text-gray-700">
-                    안녕하세요, {user.nickname}님
-                  </div>
-                  <div className="space-y-2">
-                    <Link
-                      href="/profile"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <Button variant="outline" size="sm" className="w-full">
-                        프로필
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        handleLogout();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full"
-                    >
-                      로그아웃
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="px-4 space-y-2">
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Button variant="ghost" size="sm" className="w-full">
-                      로그인
-                    </Button>
-                  </Link>
-                  <Link
-                    href="/auth/signup"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Button size="sm" className="w-full">
-                      회원가입
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </div>
+            {/* 로그아웃 버튼 (로그인한 사용자만) */}
+            {user && (
+              <div className="px-4 py-3 border-t border-gray-200">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    handleLogout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  로그아웃
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

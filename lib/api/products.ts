@@ -193,6 +193,7 @@ export interface ItemListFilters {
   region?: string;
   minPrice?: number;
   maxPrice?: number;
+  available?: boolean;
 }
 
 export interface ItemListOptions {
@@ -249,7 +250,7 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     q = query(q, limit(fetchLimit));
 
     const querySnapshot = await getDocs(q);
-    const items: Item[] = [];
+    let items: Item[] = [];
     let newLastDoc: any = null;
 
     querySnapshot.forEach(doc => {
@@ -264,6 +265,11 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     }
     if (filters.maxPrice !== undefined) {
       items = items.filter(item => item.price <= filters.maxPrice!);
+    }
+
+    // 거래 가능 필터링
+    if (filters.available) {
+      items = items.filter(item => item.status === "active");
     }
 
     // 키워드 필터링

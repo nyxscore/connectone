@@ -218,7 +218,7 @@ export function PurchaseCTA({
       case "active":
         return {
           primaryButton: {
-            text: escrowEnabled ? "안전결제로 구매" : "구매하기",
+            text: escrowEnabled ? "안전구매하기" : "구매하기",
             icon: escrowEnabled ? Shield : ShoppingCart,
             variant: "primary" as const,
             disabled: false,
