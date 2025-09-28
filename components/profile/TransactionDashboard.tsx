@@ -7,15 +7,11 @@ import {
   Loader2,
   AlertCircle,
   TrendingUp,
-  ShoppingCart,
   CheckCircle,
-  Clock,
-  XCircle,
 } from "lucide-react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import {
   getReservedItemsBySeller,
-  getReservedItemsForBuyer,
 } from "../../lib/api/products";
 import { SellItem } from "../../data/types";
 
@@ -60,12 +56,6 @@ export function TransactionDashboard() {
         ? sellingResult.items?.length || 0
         : 0;
 
-      // 구매자용 거래중 상품 조회
-      const buyingResult = await getReservedItemsForBuyer(user!.uid);
-      const buyingInProgress = buyingResult.success
-        ? buyingResult.items?.length || 0
-        : 0;
-
       // TODO: 실제 데이터베이스에서 다른 상태들도 조회해야 함
       // 지금은 임시 데이터로 표시
       setStats({
@@ -77,7 +67,7 @@ export function TransactionDashboard() {
         },
         buying: {
           registered: 0,
-          inProgress: buyingInProgress,
+          inProgress: 0,
           completed: 0,
           cancelled: 0,
         },
@@ -118,19 +108,19 @@ export function TransactionDashboard() {
   return (
     <div className="space-y-6">
       {/* 거래 현황 헤더 */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">거래 현황</h2>
-        <p className="text-gray-600">
-          판매와 구매 진행 상황을 한눈에 확인하세요
-        </p>
-      </div>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">거래 현황</h2>
+          <p className="text-gray-600">
+            판매 진행 상황을 한눈에 확인하세요
+          </p>
+        </div>
 
-      {/* 판매 현황 */}
+          {/* 판매 현황 */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
             <TrendingUp className="w-6 h-6 text-blue-600" />
-            <h3 className="text-xl font-semibold text-gray-900">팝니다</h3>
+            <h3 className="text-xl font-semibold text-gray-900">판매중</h3>
           </div>
         </div>
 
@@ -217,97 +207,6 @@ export function TransactionDashboard() {
         </div>
       </Card>
 
-      {/* 구매 현황 */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-2">
-            <ShoppingCart className="w-6 h-6 text-pink-600" />
-            <h3 className="text-xl font-semibold text-gray-900">삽니다</h3>
-          </div>
-        </div>
-
-        {/* 구매 플로우 차트 */}
-        <div className="flex items-center justify-between mb-4">
-          {/* 시작 */}
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 bg-pink-600 rounded-full flex items-center justify-center text-white font-bold text-lg mb-2">
-              구매
-            </div>
-          </div>
-
-          {/* 연결선 */}
-          <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
-
-          {/* 구매 등록 */}
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold mb-2">
-              {stats.buying.registered}
-            </div>
-            <span className="text-sm text-gray-600">구매 등록</span>
-          </div>
-
-          {/* 연결선 */}
-          <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
-
-          {/* 구매중 */}
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold mb-2">
-              {stats.buying.inProgress}
-            </div>
-            <span className="text-sm text-gray-600">구매중</span>
-          </div>
-
-          {/* 연결선 */}
-          <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
-
-          {/* 구매 완료 */}
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold mb-2">
-              {stats.buying.completed}
-            </div>
-            <span className="text-sm text-gray-600">구매 완료</span>
-          </div>
-
-          {/* 연결선 */}
-          <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
-
-          {/* 취소 요청 */}
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold mb-2">
-              {stats.buying.cancelled}
-            </div>
-            <span className="text-sm text-gray-600">취소 요청</span>
-          </div>
-        </div>
-
-        {/* 구매 통계 요약 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          <div className="text-center p-3 bg-pink-50 rounded-lg">
-            <div className="text-2xl font-bold text-pink-600">
-              {stats.buying.registered}
-            </div>
-            <div className="text-sm text-gray-600">등록 물품</div>
-          </div>
-          <div className="text-center p-3 bg-orange-50 rounded-lg">
-            <div className="text-2xl font-bold text-orange-600">
-              {stats.buying.inProgress}
-            </div>
-            <div className="text-sm text-gray-600">구매중</div>
-          </div>
-          <div className="text-center p-3 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">
-              {stats.buying.completed}
-            </div>
-            <div className="text-sm text-gray-600">구매 완료</div>
-          </div>
-          <div className="text-center p-3 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">
-              {stats.buying.cancelled}
-            </div>
-            <div className="text-sm text-gray-600">취소 요청</div>
-          </div>
-        </div>
-      </Card>
 
       {/* 유료서비스 섹션 */}
       <Card className="p-6">
