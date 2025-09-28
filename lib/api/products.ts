@@ -223,7 +223,7 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     let q = query(collection(db, "items"), where("status", "==", "active"));
 
     // 디버깅: 모든 상품의 카테고리 확인 (개발 중에만)
-    if (filters.category && process.env.NODE_ENV === 'development') {
+    if (filters.category && process.env.NODE_ENV === "development") {
       console.log("=== 카테고리 디버깅 시작 ===");
       const allItemsQuery = query(
         collection(db, "items"),
@@ -301,8 +301,12 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       console.log("클라이언트 사이드 카테고리 필터링:", filters.category);
       items = items.filter(item => {
         // 정확히 일치하거나 해당 카테고리로 시작하는 경우
-        return item.category === filters.category || 
-               item.category?.startsWith(filters.category + " >");
+        const categoryMatch = item.category === filters.category ||
+          item.category?.startsWith(filters.category + "기 >") ||
+          item.category?.startsWith(filters.category + " >");
+        
+        console.log(`상품 ${item.id}: category="${item.category}", filter="${filters.category}", match=${categoryMatch}`);
+        return categoryMatch;
       });
       console.log("카테고리 필터링 후 상품 개수:", items.length);
     }
