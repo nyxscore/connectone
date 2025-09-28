@@ -38,6 +38,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
   const [showProductModal, setShowProductModal] = useState(false);
   const [sellerProfile, setSellerProfile] = useState<UserProfile | null>(null);
   const [sellerLoading, setSellerLoading] = useState(true);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   // 판매자 정보 가져오기
   useEffect(() => {
@@ -46,19 +47,23 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
         console.log("판매자 ID가 없습니다:", item);
         return;
       }
-      
+
       console.log("판매자 프로필 로드 시작:", item.sellerUid);
-      
+
       try {
         setSellerLoading(true);
         const result = await getUserProfile(item.sellerUid);
         console.log("판매자 프로필 API 결과:", result);
-        
+
         if (result && result.success && result.data) {
           console.log("판매자 프로필 로드 성공:", result.data);
           setSellerProfile(result.data);
         } else {
-          console.warn("판매자 프로필을 찾을 수 없습니다:", item.sellerUid, result);
+          console.warn(
+            "판매자 프로필을 찾을 수 없습니다:",
+            item.sellerUid,
+            result
+          );
         }
       } catch (error) {
         console.error("판매자 프로필 로드 실패:", error);
@@ -182,13 +187,16 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
         {/* 구매한 상품과 판매자 정보 */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">구매한 상품</h2>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* 상품 썸네일 카드 */}
             <div className="lg:col-span-1">
-              <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => {
-                setShowProductModal(true);
-              }}>
+              <Card
+                className="p-4 hover:shadow-lg transition-shadow cursor-pointer group"
+                onClick={() => {
+                  setShowProductModal(true);
+                }}
+              >
                 {/* 상품 이미지 */}
                 <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-3 relative">
                   {item.images && item.images.length > 0 ? (
@@ -202,7 +210,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                       🎵
                     </div>
                   )}
-                  
+
                   {/* 거래중 배지 */}
                   <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
                     거래중
@@ -214,7 +222,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                   <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
                     {item.title || `${item.brand} ${item.model}`}
                   </h3>
-                  
+
                   <div className="text-lg font-bold text-blue-600">
                     {formatPrice(item.price)}
                   </div>
@@ -249,36 +257,60 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                 {sellerLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-blue-500 mr-2" />
-                    <span className="text-gray-600">판매자 정보를 불러오는 중...</span>
+                    <span className="text-gray-600">
+                      판매자 정보를 불러오는 중...
+                    </span>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {/* 프로필 */}
                     <div className="flex items-center space-x-3">
                       <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                        {sellerProfile?.profileImage || sellerProfile?.photoURL ? (
-                          <img 
-                            src={sellerProfile.profileImage || sellerProfile.photoURL} 
-                            alt={sellerProfile?.nickname || "판매자"} 
+                        {sellerProfile?.profileImage ||
+                        sellerProfile?.photoURL ? (
+                          <img
+                            src={
+                              sellerProfile.profileImage ||
+                              sellerProfile.photoURL
+                            }
+                            alt={sellerProfile?.nickname || "판매자"}
                             className="w-full h-full object-cover"
                           />
                         ) : (
                           <span className="text-white text-xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 w-full h-full flex items-center justify-center">
-                            {sellerProfile?.nickname?.charAt(0)?.toUpperCase() || sellerProfile?.username?.charAt(0)?.toUpperCase() || item.sellerUid?.charAt(0)?.toUpperCase() || "S"}
+                            {sellerProfile?.nickname
+                              ?.charAt(0)
+                              ?.toUpperCase() ||
+                              sellerProfile?.username
+                                ?.charAt(0)
+                                ?.toUpperCase() ||
+                              item.sellerUid?.charAt(0)?.toUpperCase() ||
+                              "S"}
                           </span>
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900 text-lg">{sellerProfile?.nickname || "판매자"}</p>
-                        <p className="text-sm text-gray-500">{sellerProfile?.region || item.region || "지역 미설정"}</p>
+                        <p className="font-medium text-gray-900 text-lg">
+                          {sellerProfile?.nickname || "판매자"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {sellerProfile?.region ||
+                            item.region ||
+                            "지역 미설정"}
+                        </p>
                         <div className="flex items-center space-x-4 mt-2">
                           <div className="flex items-center space-x-1">
                             <Star className="w-4 h-4 text-yellow-500" />
-                            <span className="text-sm text-gray-600">{sellerProfile?.averageRating?.toFixed(1) || "0.0"}</span>
+                            <span className="text-sm text-gray-600">
+                              {sellerProfile?.averageRating?.toFixed(1) ||
+                                "0.0"}
+                            </span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <CheckCircle className="w-4 h-4 text-green-500" />
-                            <span className="text-sm text-gray-600">거래 {sellerProfile?.tradesCount || 0}회</span>
+                            <span className="text-sm text-gray-600">
+                              거래 {sellerProfile?.tradesCount || 0}회
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -289,12 +321,18 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-xs text-gray-500 mb-1">등급</p>
-                          <p className="text-sm font-medium text-gray-900">{sellerProfile?.grade || "Bronze"}</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {sellerProfile?.grade || "Bronze"}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">인증 상태</p>
+                          <p className="text-xs text-gray-500 mb-1">
+                            인증 상태
+                          </p>
                           <p className="text-sm font-medium text-green-600">
-                            {sellerProfile?.isPhoneVerified ? "✓ 인증완료" : "미인증"}
+                            {sellerProfile?.isPhoneVerified
+                              ? "✓ 인증완료"
+                              : "미인증"}
                           </p>
                         </div>
                       </div>
@@ -302,29 +340,37 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
                     {/* 거래 진행 상황 */}
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4">거래 진행 상황</h3>
-                      
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                        거래 진행 상황
+                      </h3>
+
                       <div className="flex items-center justify-between">
                         {/* 1단계 - 거래 시작 */}
                         <div className="flex flex-col items-center">
                           <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold mb-2">
                             1
                           </div>
-                          <span className="text-xs text-gray-600 text-center">거래 시작</span>
+                          <span className="text-xs text-gray-600 text-center">
+                            거래 시작
+                          </span>
                         </div>
 
                         {/* 연결선 */}
                         <div className="flex-1 h-0.5 bg-gray-300 mx-2"></div>
 
                         {/* 2단계 - 거래 진행중 */}
-                        <div className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity" onClick={() => {
-                          // 현재 거래 관리 페이지로 이동 (이미 현재 페이지이므로 새로고침)
-                          window.location.reload();
-                        }}>
+                        <div
+                          className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => {
+                            setShowStatusModal(true);
+                          }}
+                        >
                           <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold mb-2">
                             1
                           </div>
-                          <span className="text-xs text-gray-600 text-center">거래 진행중</span>
+                          <span className="text-xs text-gray-600 text-center">
+                            거래 진행중
+                          </span>
                         </div>
 
                         {/* 연결선 */}
@@ -335,37 +381,54 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                           <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center text-sm font-bold mb-2">
                             3
                           </div>
-                          <span className="text-xs text-gray-600 text-center">거래 완료</span>
+                          <span className="text-xs text-gray-600 text-center">
+                            거래 완료
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     {/* 안전 거래 안내 */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-                      <h3 className="text-sm font-semibold text-blue-900">안전 거래 안내</h3>
-                      
+                      <h3 className="text-sm font-semibold text-blue-900">
+                        안전 거래 안내
+                      </h3>
+
                       <div className="space-y-2">
                         <div className="flex items-start space-x-2">
                           <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                           <div>
-                            <p className="text-xs font-medium text-blue-900">거래 전 확인사항</p>
-                            <p className="text-xs text-blue-700">상품 상태와 거래 조건을 정확히 확인하세요.</p>
+                            <p className="text-xs font-medium text-blue-900">
+                              거래 전 확인사항
+                            </p>
+                            <p className="text-xs text-blue-700">
+                              상품 상태와 거래 조건을 정확히 확인하세요.
+                            </p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-start space-x-2">
                           <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                           <div>
-                            <p className="text-xs font-medium text-blue-900">채팅을 통한 소통</p>
-                            <p className="text-xs text-blue-700">모든 거래 관련 대화는 채팅에서 진행하세요.</p>
+                            <p className="text-xs font-medium text-blue-900">
+                              채팅을 통한 소통
+                            </p>
+                            <p className="text-xs text-blue-700">
+                              모든 거래 관련 대화는 채팅에서 진행하세요.
+                            </p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-start space-x-2">
                           <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                           <div>
-                            <p className="text-xs font-medium text-blue-900">안전한 결제</p>
-                            <p className="text-xs text-blue-700">직거래 시 만나서 거래하고, 택배 시 안전거래를 이용하세요.</p>
+                            <p className="text-xs font-medium text-blue-900">
+                              안전한 결제
+                            </p>
+                            <p className="text-xs text-blue-700">
+                              직거래 시 만나서 거래하고, 택배 시 안전거래를
+                              이용하세요.
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -399,8 +462,6 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
             </div>
           </div>
         </div>
-
-
       </div>
 
       {/* 상품 상세 모달 */}
@@ -410,6 +471,83 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
           isOpen={showProductModal}
           onClose={() => setShowProductModal(false)}
         />
+      )}
+
+      {/* 거래 상태 모달 */}
+      {showStatusModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">거래 상태</h3>
+              <button
+                onClick={() => setShowStatusModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">
+                    1
+                  </div>
+                  <div>
+                    <p className="font-medium text-orange-900">거래 진행중</p>
+                    <p className="text-sm text-orange-700">현재 1개의 상품이 거래 진행 중입니다.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-2">상품 정보</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">상품명:</span>
+                    <span className="font-medium">{item.title || `${item.brand} ${item.model}`}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">가격:</span>
+                    <span className="font-medium text-blue-600">{formatPrice(item.price)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">판매자:</span>
+                    <span className="font-medium">{sellerProfile?.nickname || "판매자"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">거래 지역:</span>
+                    <span className="font-medium">{item.region}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 mb-2">다음 단계</h4>
+                <p className="text-sm text-blue-700">
+                  판매자와 채팅을 통해 거래를 협의하고, 만나서 거래하거나 택배로 상품을 받으세요.
+                </p>
+              </div>
+
+              <div className="flex space-x-3">
+                <Button
+                  onClick={handleStartChat}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  판매자와 채팅하기
+                </Button>
+                <Button
+                  onClick={() => setShowStatusModal(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  닫기
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
