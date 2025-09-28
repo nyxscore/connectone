@@ -41,6 +41,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [buyingItems, setBuyingItems] = useState<SellItem[]>([]);
   const [buyingItemsLoading, setBuyingItemsLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<SellItem | null>(null);
 
   // 구매중인 모든 상품 가져오기
   useEffect(() => {
@@ -69,19 +70,20 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
     fetchBuyingItems();
   }, [user?.uid]);
 
-  // 판매자 정보 가져오기
+  // 판매자 정보 가져오기 (선택된 상품 기준)
   useEffect(() => {
     const fetchSellerProfile = async () => {
-      if (!item?.sellerUid) {
-        console.log("판매자 ID가 없습니다:", item);
+      const targetItem = selectedItem || item;
+      if (!targetItem?.sellerUid) {
+        console.log("판매자 ID가 없습니다:", targetItem);
         return;
       }
 
-      console.log("판매자 프로필 로드 시작:", item.sellerUid);
+      console.log("판매자 프로필 로드 시작:", targetItem.sellerUid);
 
       try {
         setSellerLoading(true);
-        const result = await getUserProfile(item.sellerUid);
+        const result = await getUserProfile(targetItem.sellerUid);
         console.log("판매자 프로필 API 결과:", result);
 
         if (result && result.success && result.data) {
@@ -90,7 +92,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
         } else {
           console.warn(
             "판매자 프로필을 찾을 수 없습니다:",
-            item.sellerUid,
+            targetItem.sellerUid,
             result
           );
         }
@@ -102,16 +104,18 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
     };
 
     fetchSellerProfile();
-  }, [item?.sellerUid]);
+  }, [selectedItem?.sellerUid, item?.sellerUid]);
 
   const handleStartChat = () => {
-    if (item?.sellerUid) {
-      router.push(`/chat?itemId=${item.id}&sellerId=${item.sellerUid}`);
+    const targetItem = selectedItem || item;
+    if (targetItem?.sellerUid) {
+      router.push(`/chat?itemId=${targetItem.id}&sellerId=${targetItem.sellerUid}`);
     }
   };
 
   const handleCancelPurchase = async () => {
-    if (!item.id) return;
+    const targetItem = selectedItem || item;
+    if (!targetItem?.id) return;
     
     const confirmed = window.confirm("정말 구매를 취소하시겠습니까?");
     if (!confirmed) return;
@@ -120,10 +124,13 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
       setLoading(true);
       // 상품 상태를 다시 active로 변경하고 buyerId 제거
       const { updateItemStatus } = await import("../../lib/api/products");
-      const result = await updateItemStatus(item.id, "active");
+      const result = await updateItemStatus(targetItem.id, "active");
       
       if (result.success) {
         toast.success("구매가 취소되었습니다.");
+        // 선택된 상품을 목록에서 제거
+        setBuyingItems(prev => prev.filter(item => item.id !== targetItem.id));
+        setSelectedItem(null);
         router.push("/profile");
       } else {
         toast.error("구매 취소에 실패했습니다.");
@@ -231,10 +238,13 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
               {buyingItems.map((buyingItem) => (
                 <Card
                   key={buyingItem.id}
-                  className="p-3 hover:shadow-lg transition-shadow cursor-pointer group"
+                  className={`p-3 hover:shadow-lg transition-shadow cursor-pointer group ${
+                    selectedItem?.id === buyingItem.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                  }`}
                   onClick={() => {
-                    // 해당 상품의 상세 모달 열기
-                    setShowProductModal(true);
+                    // 해당 상품을 선택
+                    setSelectedItem(buyingItem);
+                    console.log("상품 선택됨:", buyingItem);
                   }}
                 >
                   {/* 상품 이미지 */}
@@ -291,7 +301,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
         </div>
 
         {/* 선택된 상품의 판매자 정보 */}
-        {item && (
+        {selectedItem && (
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">선택된 상품의 판매자 정보</h2>
 
@@ -306,10 +316,10 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                 >
                   {/* 상품 이미지 */}
                   <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-3 relative">
-                    {item.images && item.images.length > 0 ? (
+                    {selectedItem.images && selectedItem.images.length > 0 ? (
                       <img
-                        src={item.images[0]}
-                        alt={item.title || `${item.brand} ${item.model}`}
+                        src={selectedItem.images[0]}
+                        alt={selectedItem.title || `${selectedItem.brand} ${selectedItem.model}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                       />
                     ) : (
@@ -327,27 +337,27 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                   {/* 상품 정보 */}
                   <div className="space-y-2">
                     <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
-                      {item.title || `${item.brand} ${item.model}`}
+                      {selectedItem.title || `${selectedItem.brand} ${selectedItem.model}`}
                     </h3>
 
                     <div className="text-lg font-bold text-blue-600">
-                      {formatPrice(item.price)}
+                      {formatPrice(selectedItem.price)}
                     </div>
 
                     <div className="flex items-center text-xs text-gray-500 space-x-2">
                       <span className="flex items-center">
                         <MapPin className="w-3 h-3 mr-1" />
-                        {item.region}
+                        {selectedItem.region}
                       </span>
                       <span className="flex items-center">
                         <Calendar className="w-3 h-3 mr-1" />
-                        {formatDate(item.createdAt)}
+                        {formatDate(selectedItem.createdAt)}
                       </span>
                     </div>
 
                     <div className="text-xs text-gray-600">
                       <span className="bg-gray-100 px-2 py-1 rounded-full">
-                        {item.category || "기타"}
+                        {selectedItem.category || "기타"}
                       </span>
                     </div>
                   </div>
@@ -385,7 +395,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                         </div>
                         <div className="flex-1">
                           <p className="font-medium text-gray-900 text-lg">{sellerProfile?.nickname || "판매자"}</p>
-                          <p className="text-sm text-gray-500">{sellerProfile?.region || item.region || "지역 미설정"}</p>
+                          <p className="text-sm text-gray-500">{sellerProfile?.region || selectedItem?.region || "지역 미설정"}</p>
                           <div className="flex items-center space-x-4 mt-2">
                             <div className="flex items-center space-x-1">
                               <Star className="w-4 h-4 text-yellow-500" />
@@ -535,7 +545,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                           <span>판매자와 채팅하기</span>
                         </Button>
 
-                        {user?.uid === item.buyerId && (
+                        {user?.uid === selectedItem?.buyerId && (
                           <Button
                             onClick={handleCancelPurchase}
                             variant="outline"
@@ -557,9 +567,9 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
       </div>
 
       {/* 상품 상세 모달 */}
-      {showProductModal && (
+      {showProductModal && selectedItem && (
         <ProductDetailModal
-          item={item}
+          item={selectedItem}
           isOpen={showProductModal}
           onClose={() => setShowProductModal(false)}
         />
@@ -597,11 +607,11 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">상품명:</span>
-                    <span className="font-medium">{item.title || `${item.brand} ${item.model}`}</span>
+                    <span className="font-medium">{selectedItem?.title || `${selectedItem?.brand} ${selectedItem?.model}`}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">가격:</span>
-                    <span className="font-medium text-blue-600">{formatPrice(item.price)}</span>
+                    <span className="font-medium text-blue-600">{selectedItem ? formatPrice(selectedItem.price) : "0원"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">판매자:</span>
@@ -609,7 +619,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">거래 지역:</span>
-                    <span className="font-medium">{item.region}</span>
+                    <span className="font-medium">{selectedItem?.region}</span>
                   </div>
                 </div>
               </div>
