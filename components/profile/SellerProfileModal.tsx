@@ -230,7 +230,10 @@ export function SellerProfileModal({
                 <h4 className="font-semibold text-gray-900">자기소개</h4>
               </div>
               <div className="text-sm text-gray-700 leading-relaxed">
-                {sellerProfile.bio || sellerProfile.about || sellerProfile.description || "자기소개가 없습니다."}
+                {sellerProfile.bio ||
+                  sellerProfile.about ||
+                  sellerProfile.description ||
+                  "자기소개가 없습니다."}
               </div>
             </Card>
           </div>

@@ -167,19 +167,26 @@ export async function getReservedItemsBySeller(
   sellerUid: string
 ): Promise<{ success: boolean; items?: Item[]; error?: string }> {
   try {
+    console.log("getReservedItemsBySeller 호출:", sellerUid);
+    
     const q = query(
       collection(db, "items"),
-      where("sellerId", "==", sellerUid),
+      where("sellerUid", "==", sellerUid),
       where("status", "==", "reserved")
     );
 
     const querySnapshot = await getDocs(q);
     const items: Item[] = [];
 
+    console.log("거래중 상품 쿼리 결과:", querySnapshot.docs.length, "개");
+
     querySnapshot.forEach(doc => {
-      items.push({ id: doc.id, ...doc.data() } as Item);
+      const data = doc.data();
+      console.log("거래중 상품 데이터:", doc.id, data);
+      items.push({ id: doc.id, ...data } as Item);
     });
 
+    console.log("최종 거래중 상품 목록:", items);
     return { success: true, items };
   } catch (error) {
     console.error("거래중 상품 조회 실패:", error);
