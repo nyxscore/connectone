@@ -21,7 +21,7 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
       onClick(item);
     } else {
       // 상품 상세 페이지로 이동
-      router.push(`/product/${item.id}`);
+      router.push(`/item/${item.id}`);
     }
   };
 

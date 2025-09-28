@@ -59,10 +59,10 @@ export default function WishlistPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <WishlistItems
           userId={user.uid}
-          onItemClick={(item) => {
-            // 상품 상세 페이지로 이동
-            router.push(`/product/${item.id}`);
-          }}
+            onItemClick={item => {
+              // 상품 상세 페이지로 이동
+              router.push(`/item/${item.id}`);
+            }}
           showMoreButton={false}
         />
       </div>
