@@ -8,6 +8,14 @@ import {
   Calendar,
   AlertTriangle,
   Shield,
+  MessageCircle,
+  MapPin,
+  CheckCircle,
+  Phone,
+  Mail,
+  Award,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import { UserProfile } from "../../data/profile/types";
 
@@ -52,11 +60,11 @@ export function SellerProfileModal({
             ? date.toDate()
             : new Date(date);
       if (isNaN(dateObj.getTime())) return "";
-      
+
       const now = new Date();
       const diffTime = Math.abs(now.getTime() - dateObj.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays === 1) return "1일 전 가입";
       return `${diffDays}일 전 가입`;
     } catch (error) {
@@ -108,50 +116,92 @@ export function SellerProfileModal({
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
               <Star className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">회원 등급</span>
+              <span className="text-sm font-medium text-gray-700">
+                회원 등급
+              </span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">
                 {sellerProfile.grade || "C"}등급
               </span>
               <span className="text-sm text-gray-600">
-                {sellerProfile.grade === "Bronze" ? "Chord" : 
-                 sellerProfile.grade === "Silver" ? "Melody" :
-                 sellerProfile.grade === "Gold" ? "Harmony" :
-                 sellerProfile.grade === "Platinum" ? "Symphony" :
-                 sellerProfile.grade === "Diamond" ? "Concert" : "Chord"}
+                {sellerProfile.grade === "Bronze"
+                  ? "Chord"
+                  : sellerProfile.grade === "Silver"
+                    ? "Melody"
+                    : sellerProfile.grade === "Gold"
+                      ? "Harmony"
+                      : sellerProfile.grade === "Platinum"
+                        ? "Symphony"
+                        : sellerProfile.grade === "Diamond"
+                          ? "Concert"
+                          : "Chord"}
               </span>
             </div>
           </div>
 
-          {/* 활동 통계 */}
+
+          {/* 자기소개 */}
           <div className="bg-gray-50 rounded-lg p-3">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">활동 통계</h4>
-            <div className="flex space-x-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {sellerProfile.tradesCount || 0}
-                </div>
-                <div className="text-xs text-gray-600">거래 완료</div>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">
+              자기소개
+            </h4>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {sellerProfile.bio || "자기소개가 없습니다."}
+            </p>
+          </div>
+
+          {/* 인증 상태 */}
+          <div className="bg-gray-50 rounded-lg p-3">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">
+              인증 상태
+            </h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">이메일</span>
+                <span className={`text-sm font-medium ${
+                  sellerProfile.isEmailVerified ? "text-green-600" : "text-red-500"
+                }`}>
+                  {sellerProfile.isEmailVerified ? "인증완료" : "미인증"}
+                </span>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {sellerProfile.averageRating ? Math.round(sellerProfile.averageRating) : 0}
-                </div>
-                <div className="text-xs text-gray-600">리뷰</div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">연락처</span>
+                <span className={`text-sm font-medium ${
+                  sellerProfile.isPhoneVerified ? "text-green-600" : "text-red-500"
+                }`}>
+                  {sellerProfile.isPhoneVerified ? "인증완료" : "미인증"}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* 자기소개 */}
-          {sellerProfile.bio && (
-            <div className="bg-gray-50 rounded-lg p-3">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">자기소개</h4>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                {sellerProfile.bio}
-              </p>
+          {/* 활동 기록 */}
+          <div className="bg-gray-50 rounded-lg p-3">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">
+              활동 기록
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">거래 완료</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {sellerProfile.tradesCount || 0}건
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">평균 평점</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {sellerProfile.averageRating?.toFixed(1) || "0.0"}점
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">응답률</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {sellerProfile.responseRate || 0}%
+                </span>
+              </div>
             </div>
-          )}
+          </div>
 
           {/* 가입일 */}
           <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -165,6 +215,15 @@ export function SellerProfileModal({
 
           {/* 액션 버튼들 */}
           <div className="space-y-2 pt-4 border-t border-gray-200">
+            {onStartChat && (
+              <Button
+                onClick={onStartChat}
+                className="w-full bg-blue-600 hover:bg-blue-700 mb-2"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                채팅하기
+              </Button>
+            )}
             <div className="flex space-x-2">
               <Button
                 onClick={() => {
