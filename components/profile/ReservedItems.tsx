@@ -86,18 +86,20 @@ export function ReservedItems({ userId, isSeller = false }: ReservedItemsProps) 
   }
 
   if (reservedItems.length === 0) {
+    // 구매자용일 때는 빈 상태 카드를 표시하지 않음
+    if (!isSeller) {
+      return null;
+    }
+    
     return (
       <Card className="p-6">
         <div className="text-center py-12">
           <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {isSeller ? "거래중인 상품이 없습니다" : "거래중인 찜한 상품이 없습니다"}
+            거래중인 상품이 없습니다
           </h3>
           <p className="text-gray-600">
-            {isSeller 
-              ? "아직 거래가 진행 중인 상품이 없습니다." 
-              : "찜한 상품 중에서 거래가 진행 중인 상품이 없습니다."
-            }
+            아직 거래가 진행 중인 상품이 없습니다.
           </p>
         </div>
       </Card>
