@@ -136,11 +136,19 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 상품 정보 */}
+          {/* 구매한 상품 정보 */}
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              상품 정보
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                구매한 상품
+              </h2>
+              <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-orange-100">
+                <Clock className="w-4 h-4 text-orange-600" />
+                <span className="text-sm font-medium text-orange-600">
+                  거래중
+                </span>
+              </div>
+            </div>
 
             {/* 상품 이미지 */}
             <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-4">
@@ -165,16 +173,52 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
               {formatPrice(item.price)}
             </div>
 
+            {/* 상품 상세 정보 */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3 mb-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">카테고리</p>
+                  <p className="text-sm font-medium text-gray-900">{item.category || "기타"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">브랜드</p>
+                  <p className="text-sm font-medium text-gray-900">{item.brand || "미상"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">모델</p>
+                  <p className="text-sm font-medium text-gray-900">{item.model || "미상"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">상태</p>
+                  <p className="text-sm font-medium text-gray-900">{item.condition || "양호"}</p>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2" />
-                <span>{item.region}</span>
+                <span>거래 지역: {item.region}</span>
               </div>
               <div className="flex items-center">
                 <Calendar className="w-4 h-4 mr-2" />
                 <span>등록일: {formatDate(item.createdAt)}</span>
               </div>
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 mr-2" />
+                <span>구매일: {formatDate(new Date())}</span>
+              </div>
             </div>
+
+            {/* 상품 설명 */}
+            {item.description && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1">상품 설명</p>
+                <p className="text-sm text-gray-700">{item.description}</p>
+              </div>
+            )}
           </Card>
 
           {/* 판매자 정보 */}
@@ -186,12 +230,46 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
             <div className="space-y-4">
               {/* 프로필 */}
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                  <User className="w-6 h-6 text-gray-500" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
+                  {item.sellerId?.charAt(0)?.toUpperCase() || "S"}
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">판매자</p>
-                  <p className="text-sm text-gray-500">판매자 프로필</p>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900 text-lg">판매자</p>
+                  <p className="text-sm text-gray-500">안전한 거래를 위한 프로필</p>
+                  <div className="flex items-center space-x-4 mt-2">
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-4 h-4 text-yellow-500" />
+                      <span className="text-sm text-gray-600">평점 4.8</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span className="text-sm text-gray-600">거래 15회</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 판매자 상세 정보 */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">거래 지역</p>
+                    <p className="text-sm font-medium text-gray-900">{item.region}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">응답 시간</p>
+                    <p className="text-sm font-medium text-gray-900">평균 2시간</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">가입일</p>
+                    <p className="text-sm font-medium text-gray-900">2024.01.15</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">인증 상태</p>
+                    <p className="text-sm font-medium text-green-600">✓ 인증완료</p>
+                  </div>
                 </div>
               </div>
 
@@ -211,10 +289,10 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
               <div className="pt-4 space-y-3">
                 <Button
                   onClick={handleStartChat}
-                  className="w-full flex items-center justify-center space-x-2"
+                  className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700"
                 >
                   <MessageCircle className="w-5 h-5" />
-                  <span>채팅하기</span>
+                  <span>판매자와 채팅하기</span>
                 </Button>
 
                 {isBuyer && (
@@ -232,6 +310,80 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
             </div>
           </Card>
         </div>
+
+        {/* 거래 진행 상황 */}
+        <Card className="p-6 mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">거래 진행 상황</h2>
+          
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">
+                1
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">거래 시작</p>
+                <p className="text-sm text-gray-600">
+                  {isBuyer ? "상품 구매 요청을 완료했습니다." : "상품 구매 요청을 받았습니다."}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center mr-3">
+                2
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">거래 진행중</p>
+                <p className="text-sm text-gray-600">
+                  채팅을 통해 거래를 협의 중입니다.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center mr-3">
+                3
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">거래 완료</p>
+                <p className="text-sm text-gray-600">
+                  아직 거래가 완료되지 않았습니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* 안전 거래 안내 */}
+        <Card className="p-6 mt-6 bg-blue-50 border-blue-200">
+          <h2 className="text-lg font-semibold text-blue-900 mb-4">안전 거래 안내</h2>
+          
+          <div className="space-y-3">
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">거래 전 확인사항</p>
+                <p className="text-sm text-blue-700">상품 상태와 거래 조건을 정확히 확인하세요.</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">채팅을 통한 소통</p>
+                <p className="text-sm text-blue-700">모든 거래 관련 대화는 채팅에서 진행하세요.</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">안전한 결제</p>
+                <p className="text-sm text-blue-700">직거래 시 만나서 거래하고, 택배 시 안전거래를 이용하세요.</p>
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
     </div>
   );
