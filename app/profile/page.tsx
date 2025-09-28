@@ -529,7 +529,15 @@ export default function MyProfilePage() {
           </Card>
 
           {/* 찜한 상품 */}
-          {currentUser?.uid && <WishlistItems userId={currentUser.uid} />}
+          {currentUser?.uid && (
+            <WishlistItems 
+              userId={currentUser.uid} 
+              onItemClick={(item) => {
+                // 상품 상세 페이지로 이동
+                router.push(`/product/${item.id}`);
+              }}
+            />
+          )}
 
           {/* 거래중인 상품 (판매자용) */}
           {currentUser?.uid && (
