@@ -765,14 +765,21 @@ export default function ProductDetailModal({
 
                                   if (result.success) {
                                     toast.success(
-                                      "상품이 거래중으로 변경되었습니다!"
+                                      "상품이 거래중으로 변경되었습니다! 채팅으로 거래를 진행하세요."
                                     );
-                                    // 상품 정보 새로고침
-                                    if (onClose) {
-                                      onClose();
-                                    }
-                                    // 페이지 새로고침으로 상태 반영
-                                    window.location.reload();
+                                    
+                                    // 채팅으로 이동
+                                    setTimeout(() => {
+                                      if (product?.sellerId) {
+                                        window.location.href = `/chat?itemId=${actualProductId}&sellerId=${product.sellerId}`;
+                                      } else {
+                                        // 상품 정보 새로고침
+                                        if (onClose) {
+                                          onClose();
+                                        }
+                                        window.location.reload();
+                                      }
+                                    }, 1500);
                                   } else {
                                     toast.error(
                                       result.error ||

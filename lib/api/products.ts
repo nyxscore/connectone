@@ -161,6 +161,74 @@ export async function getUserItems(
   }
 }
 
+// 거래중인 상품 조회 (판매자용)
+export async function getReservedItemsBySeller(
+  sellerUid: string
+): Promise<{ success: boolean; items?: Item[]; error?: string }> {
+  try {
+    const q = query(
+      collection(db, "items"),
+      where("sellerId", "==", sellerUid),
+      where("status", "==", "reserved")
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const items: Item[] = [];
+    
+    querySnapshot.forEach(doc => {
+      items.push({ id: doc.id, ...doc.data() } as Item);
+    });
+    
+    return { success: true, items };
+  } catch (error) {
+    console.error("거래중 상품 조회 실패:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "거래중 상품 조회에 실패했습니다.",
+    };
+  }
+}
+
+// 거래중인 상품 조회 (구매자용 - 찜한 상품 중에서)
+export async function getReservedItemsForBuyer(
+  buyerUid: string
+): Promise<{ success: boolean; items?: Item[]; error?: string }> {
+  try {
+    // 로컬 스토리지에서 찜한 상품 ID 목록 가져오기
+    const wishlistData = localStorage.getItem(`wishlist_${buyerUid}`);
+    if (!wishlistData) {
+      return { success: true, items: [] };
+    }
+
+    const wishlistIds = JSON.parse(wishlistData);
+    if (wishlistIds.length === 0) {
+      return { success: true, items: [] };
+    }
+
+    // 찜한 상품들 중에서 거래중인 상품만 조회
+    const q = query(
+      collection(db, "items"),
+      where("id", "in", wishlistIds),
+      where("status", "==", "reserved")
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const items: Item[] = [];
+    
+    querySnapshot.forEach(doc => {
+      items.push({ id: doc.id, ...doc.data() } as Item);
+    });
+    
+    return { success: true, items };
+  } catch (error) {
+    console.error("구매자 거래중 상품 조회 실패:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "거래중 상품 조회에 실패했습니다.",
+    };
+  }
+}
+
 // 아이템 상태 업데이트
 export async function updateItemStatus(
   itemId: string,

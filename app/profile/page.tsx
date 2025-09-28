@@ -16,6 +16,7 @@ import { ProfileStats } from "../../components/profile/ProfileStats";
 import { ProfileAbout } from "../../components/profile/ProfileAbout";
 import { TradeList } from "../../components/profile/TradeList";
 import { WishlistItems } from "../../components/profile/WishlistItems";
+import { ReservedItems } from "../../components/profile/ReservedItems";
 import { BlockedUsersModal } from "../../components/profile/BlockedUsersModal";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
 import EditProductModal from "../../components/product/EditProductModal";
@@ -525,6 +526,16 @@ export default function MyProfilePage() {
 
           {/* 찜한 상품 */}
           {currentUser?.uid && <WishlistItems userId={currentUser.uid} />}
+
+          {/* 거래중인 상품 (판매자용) */}
+          {currentUser?.uid && (
+            <ReservedItems userId={currentUser.uid} isSeller={true} />
+          )}
+
+          {/* 거래중인 찜한 상품 (구매자용) */}
+          {currentUser?.uid && (
+            <ReservedItems userId={currentUser.uid} isSeller={false} />
+          )}
 
           {/* 차단된 사용자 관리 */}
           <Card className="p-6">
