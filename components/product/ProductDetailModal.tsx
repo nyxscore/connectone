@@ -18,6 +18,7 @@ import {
   User,
   Star,
   Edit,
+  Clock,
   Trash2,
 } from "lucide-react";
 import { getProductDetail, getSellerInfo } from "@/lib/api/product-detail";
@@ -743,58 +744,68 @@ export default function ProductDetailModal({
                               </span>
                             </button>
                           </div>
-                          <Button
-                            className="w-full h-12 text-lg font-semibold"
-                            disabled={!selectedTradeMethod}
-                            onClick={async () => {
-                              if (selectedTradeMethod && actualProductId) {
-                                try {
-                                  console.log("상품 상태 변경 시작:", {
-                                    productId: actualProductId,
-                                    status: "reserved",
-                                  });
+                          {/* 상품 상태에 따른 버튼 표시 */}
+                          {product?.status === "reserved" ? (
+                            <div className="w-full h-12 bg-orange-100 border border-orange-300 rounded-xl flex items-center justify-center">
+                              <Clock className="w-5 h-5 mr-2 text-orange-600" />
+                              <span className="text-lg font-semibold text-orange-600">
+                                거래중
+                              </span>
+                            </div>
+                          ) : (
+                            <Button
+                              className="w-full h-12 text-lg font-semibold"
+                              disabled={!selectedTradeMethod}
+                              onClick={async () => {
+                                if (selectedTradeMethod && actualProductId) {
+                                  try {
+                                    console.log("상품 상태 변경 시작:", {
+                                      productId: actualProductId,
+                                      status: "reserved",
+                                    });
 
-                                  // 상품 상태를 거래중으로 변경
-                                  const { updateItemStatus } = await import(
-                                    "../../lib/api/products"
-                                  );
-                                  const result = await updateItemStatus(
-                                    actualProductId,
-                                    "reserved"
-                                  );
-
-                                  if (result.success) {
-                                    toast.success(
-                                      "구매가 완료되었습니다! 거래 관리 페이지로 이동합니다."
+                                    // 상품 상태를 거래중으로 변경
+                                    const { updateItemStatus } = await import(
+                                      "../../lib/api/products"
                                     );
-                                    
-                                    // 거래 관리 페이지로 이동
-                                    setTimeout(() => {
-                                      if (onClose) {
-                                        onClose();
-                                      }
-                                      window.location.href = `/transaction/${actualProductId}`;
-                                    }, 1500);
-                                  } else {
+                                    const result = await updateItemStatus(
+                                      actualProductId,
+                                      "reserved"
+                                    );
+
+                                    if (result.success) {
+                                      toast.success(
+                                        "구매가 완료되었습니다! 거래 관리 페이지로 이동합니다."
+                                      );
+                                      
+                                      // 거래 관리 페이지로 이동
+                                      setTimeout(() => {
+                                        if (onClose) {
+                                          onClose();
+                                        }
+                                        window.location.href = `/transaction/${actualProductId}`;
+                                      }, 1500);
+                                    } else {
+                                      toast.error(
+                                        result.error ||
+                                          "상품 상태 변경에 실패했습니다."
+                                      );
+                                    }
+                                  } catch (error) {
+                                    console.error("상품 상태 변경 실패:", error);
                                     toast.error(
-                                      result.error ||
-                                        "상품 상태 변경에 실패했습니다."
+                                      "상품 상태 변경 중 오류가 발생했습니다."
                                     );
                                   }
-                                } catch (error) {
-                                  console.error("상품 상태 변경 실패:", error);
-                                  toast.error(
-                                    "상품 상태 변경 중 오류가 발생했습니다."
-                                  );
+                                } else if (!actualProductId) {
+                                  toast.error("상품 ID를 찾을 수 없습니다.");
                                 }
-                              } else if (!actualProductId) {
-                                toast.error("상품 ID를 찾을 수 없습니다.");
-                              }
-                            }}
-                          >
-                            <CreditCard className="w-5 h-5 mr-2" />
-                            구매하기
-                          </Button>
+                              }}
+                            >
+                              <CreditCard className="w-5 h-5 mr-2" />
+                              구매하기
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>

@@ -116,11 +116,11 @@ export function TransactionDashboard() {
   return (
     <div className="space-y-6">
       {/* 거래 현황 헤더 */}
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">거래 현황</h2>
-        </div>
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">거래 현황</h2>
+      </div>
 
-          {/* 판매 현황 */}
+      {/* 판매 현황 */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
@@ -318,7 +318,7 @@ export function TransactionDashboard() {
         <div className="mt-4 text-gray-600">
           <p>프리미엄 기능을 이용하여 더 많은 혜택을 받아보세요!</p>
         </div>
-        </Card>
-      </div>
-    );
-  }
+      </Card>
+    </div>
+  );
+}
