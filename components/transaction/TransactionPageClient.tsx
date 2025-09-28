@@ -255,8 +255,18 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                   <div className="space-y-4">
                     {/* 프로필 */}
                     <div className="flex items-center space-x-3">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
-                        {sellerProfile?.nickname?.charAt(0)?.toUpperCase() || sellerProfile?.username?.charAt(0)?.toUpperCase() || item.sellerUid?.charAt(0)?.toUpperCase() || "S"}
+                      <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                        {sellerProfile?.profileImage || sellerProfile?.photoURL ? (
+                          <img 
+                            src={sellerProfile.profileImage || sellerProfile.photoURL} 
+                            alt={sellerProfile?.nickname || "판매자"} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white text-xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 w-full h-full flex items-center justify-center">
+                            {sellerProfile?.nickname?.charAt(0)?.toUpperCase() || sellerProfile?.username?.charAt(0)?.toUpperCase() || item.sellerUid?.charAt(0)?.toUpperCase() || "S"}
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-gray-900 text-lg">{sellerProfile?.nickname || "판매자"}</p>
@@ -278,20 +288,8 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                     <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">거래 지역</p>
-                          <p className="text-sm font-medium text-gray-900">{sellerProfile?.region || item.region || "미설정"}</p>
-                        </div>
-                        <div>
                           <p className="text-xs text-gray-500 mb-1">등급</p>
                           <p className="text-sm font-medium text-gray-900">{sellerProfile?.grade || "Bronze"}</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">가입일</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {sellerProfile?.createdAt ? new Date(sellerProfile.createdAt).toLocaleDateString("ko-KR") : "미상"}
-                          </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 mb-1">인증 상태</p>
@@ -299,18 +297,6 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                             {sellerProfile?.isPhoneVerified ? "✓ 인증완료" : "미인증"}
                           </p>
                         </div>
-                      </div>
-                    </div>
-
-                    {/* 연락처 정보 */}
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Phone className="w-4 h-4 mr-2" />
-                        <span>연락처 정보는 채팅에서 확인하세요</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Mail className="w-4 h-4 mr-2" />
-                        <span>이메일 정보는 채팅에서 확인하세요</span>
                       </div>
                     </div>
 
