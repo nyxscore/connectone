@@ -156,7 +156,9 @@ export function SellerProfileModal({
 
           {/* 인증 상태 */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-lg font-semibold text-gray-900 mb-3">인증 상태</h4>
+            <h4 className="text-lg font-semibold text-gray-900 mb-3">
+              인증 상태
+            </h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center space-x-2">
                 <div
@@ -169,7 +171,9 @@ export function SellerProfileModal({
                   <Phone className="w-4 h-4" />
                 </div>
                 <span className="text-sm text-gray-700">
-                  {sellerProfile.isPhoneVerified ? "휴대폰 인증완료" : "휴대폰 미인증"}
+                  {sellerProfile.isPhoneVerified
+                    ? "휴대폰 인증완료"
+                    : "휴대폰 미인증"}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
@@ -183,7 +187,9 @@ export function SellerProfileModal({
                   <Mail className="w-4 h-4" />
                 </div>
                 <span className="text-sm text-gray-700">
-                  {sellerProfile.isEmailVerified ? "이메일 인증완료" : "이메일 미인증"}
+                  {sellerProfile.isEmailVerified
+                    ? "이메일 인증완료"
+                    : "이메일 미인증"}
                 </span>
               </div>
             </div>
@@ -194,12 +200,14 @@ export function SellerProfileModal({
             <Card className="p-4">
               <div className="flex items-center space-x-2 mb-2">
                 <Award className="w-5 h-5 text-blue-500" />
-                <h4 className="font-semibold text-gray-900">거래 성과</h4>
+                <h4 className="font-semibold text-gray-900">거래 내역</h4>
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">총 거래 횟수</span>
-                  <span className="font-medium">{sellerProfile.tradesCount || 0}회</span>
+                  <span className="font-medium">
+                    {sellerProfile.tradesCount || 0}회
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">평균 평점</span>
@@ -209,7 +217,9 @@ export function SellerProfileModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">응답률</span>
-                  <span className="font-medium">{sellerProfile.responseRate || 0}%</span>
+                  <span className="font-medium">
+                    {sellerProfile.responseRate || 0}%
+                  </span>
                 </div>
               </div>
             </Card>
@@ -217,40 +227,14 @@ export function SellerProfileModal({
             <Card className="p-4">
               <div className="flex items-center space-x-2 mb-2">
                 <Clock className="w-5 h-5 text-green-500" />
-                <h4 className="font-semibold text-gray-900">활동 정보</h4>
+                <h4 className="font-semibold text-gray-900">자기소개</h4>
               </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">가입일</span>
-                  <span className="font-medium">
-                    {sellerProfile.createdAt
-                      ? formatDate(sellerProfile.createdAt)
-                      : "미상"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">마지막 활동</span>
-                  <span className="font-medium">
-                    {sellerProfile.lastLoginAt
-                      ? formatDate(sellerProfile.lastLoginAt)
-                      : "미상"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">등급</span>
-                  <span className="font-medium">{sellerProfile.grade || "Bronze"}</span>
-                </div>
+              <div className="text-sm text-gray-700 leading-relaxed">
+                {sellerProfile.bio || "자기소개가 없습니다."}
               </div>
             </Card>
           </div>
 
-          {/* 소개 */}
-          {sellerProfile.bio && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">소개</h4>
-              <p className="text-gray-700 leading-relaxed">{sellerProfile.bio}</p>
-            </div>
-          )}
 
           {/* 액션 버튼들 */}
           <div className="flex space-x-3 pt-4 border-t border-gray-200">
@@ -263,11 +247,7 @@ export function SellerProfileModal({
                 채팅하기
               </Button>
             )}
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="flex-1"
-            >
+            <Button onClick={onClose} variant="outline" className="flex-1">
               닫기
             </Button>
           </div>
