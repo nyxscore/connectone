@@ -743,10 +743,28 @@ export default function ProductDetailModal({
                           <Button
                             className="w-full h-12 text-lg font-semibold"
                             disabled={!selectedTradeMethod}
-                            onClick={() => {
+                            onClick={async () => {
                               if (selectedTradeMethod) {
-                                // 결제 페이지로 이동 (query parameter로 거래 방식 전달)
-                                window.location.href = `/checkout?productId=${productId}&tradeMethod=${selectedTradeMethod}&quantity=${quantity}`;
+                                try {
+                                  // 상품 상태를 거래중으로 변경
+                                  const { updateItemStatus } = await import("../../lib/api/products");
+                                  const result = await updateItemStatus(productId, "reserved");
+                                  
+                                  if (result.success) {
+                                    toast.success("상품이 거래중으로 변경되었습니다!");
+                                    // 상품 정보 새로고침
+                                    if (onClose) {
+                                      onClose();
+                                    }
+                                    // 페이지 새로고침으로 상태 반영
+                                    window.location.reload();
+                                  } else {
+                                    toast.error(result.error || "상품 상태 변경에 실패했습니다.");
+                                  }
+                                } catch (error) {
+                                  console.error("상품 상태 변경 실패:", error);
+                                  toast.error("상품 상태 변경 중 오류가 발생했습니다.");
+                                }
                               }
                             }}
                           >

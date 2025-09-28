@@ -164,7 +164,7 @@ export async function getUserItems(
 // 아이템 상태 업데이트
 export async function updateItemStatus(
   itemId: string,
-  status: "active" | "sold" | "inactive"
+  status: "active" | "reserved" | "paid_hold" | "sold" | "inactive"
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const docRef = doc(db, "items", itemId);
