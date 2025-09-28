@@ -360,8 +360,11 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
 
                         {/* 2단계 - 거래 진행중 */}
                         <div
-                          className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => {
+                          className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity p-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log("구매중 클릭됨!");
                             setShowStatusModal(true);
                           }}
                         >
@@ -486,7 +489,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <div className="flex items-center space-x-3">
@@ -495,7 +498,9 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                   </div>
                   <div>
                     <p className="font-medium text-orange-900">거래 진행중</p>
-                    <p className="text-sm text-orange-700">현재 1개의 상품이 거래 진행 중입니다.</p>
+                    <p className="text-sm text-orange-700">
+                      현재 1개의 상품이 거래 진행 중입니다.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -505,15 +510,21 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">상품명:</span>
-                    <span className="font-medium">{item.title || `${item.brand} ${item.model}`}</span>
+                    <span className="font-medium">
+                      {item.title || `${item.brand} ${item.model}`}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">가격:</span>
-                    <span className="font-medium text-blue-600">{formatPrice(item.price)}</span>
+                    <span className="font-medium text-blue-600">
+                      {formatPrice(item.price)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">판매자:</span>
-                    <span className="font-medium">{sellerProfile?.nickname || "판매자"}</span>
+                    <span className="font-medium">
+                      {sellerProfile?.nickname || "판매자"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">거래 지역:</span>
@@ -525,7 +536,8 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
               <div className="bg-blue-50 rounded-lg p-4">
                 <h4 className="font-medium text-blue-900 mb-2">다음 단계</h4>
                 <p className="text-sm text-blue-700">
-                  판매자와 채팅을 통해 거래를 협의하고, 만나서 거래하거나 택배로 상품을 받으세요.
+                  판매자와 채팅을 통해 거래를 협의하고, 만나서 거래하거나 택배로
+                  상품을 받으세요.
                 </p>
               </div>
 
