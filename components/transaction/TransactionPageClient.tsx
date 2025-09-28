@@ -337,7 +337,6 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                       </div>
                     </div>
 
-
                     {/* 안전 거래 안내 */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
                       <h3 className="text-sm font-semibold text-blue-900">
@@ -422,7 +421,6 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
           onClose={() => setShowProductModal(false)}
         />
       )}
-
     </div>
   );
 }

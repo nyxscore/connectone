@@ -552,10 +552,6 @@ export default function MyProfilePage() {
             <ReservedItems userId={currentUser.uid} isSeller={true} />
           )}
 
-          {/* 거래중인 찜한 상품 (구매자용) */}
-          {currentUser?.uid && (
-            <ReservedItems userId={currentUser.uid} isSeller={false} />
-          )}
 
           {/* 차단된 사용자 관리 */}
           <Card className="p-6">
