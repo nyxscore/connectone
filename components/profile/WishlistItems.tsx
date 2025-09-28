@@ -11,9 +11,10 @@ import { getItem } from "../../lib/api/products";
 interface WishlistItemsProps {
   userId: string;
   onItemClick?: (item: SellItem) => void;
+  showMoreButton?: boolean;
 }
 
-export function WishlistItems({ userId, onItemClick }: WishlistItemsProps) {
+export function WishlistItems({ userId, onItemClick, showMoreButton = true }: WishlistItemsProps) {
   const [wishlistItems, setWishlistItems] = useState<SellItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -30,7 +31,7 @@ export function WishlistItems({ userId, onItemClick }: WishlistItemsProps) {
       // 로컬 스토리지에서 찜한 상품 ID 목록 가져오기
       const wishlistData = localStorage.getItem(`wishlist_${userId}`);
       console.log("찜한 상품 데이터:", wishlistData);
-      
+
       if (!wishlistData) {
         console.log("찜한 상품 데이터가 없습니다.");
         setWishlistItems([]);
@@ -39,7 +40,7 @@ export function WishlistItems({ userId, onItemClick }: WishlistItemsProps) {
 
       const wishlistIds = JSON.parse(wishlistData);
       console.log("찜한 상품 ID 목록:", wishlistIds);
-      
+
       if (wishlistIds.length === 0) {
         console.log("찜한 상품이 없습니다.");
         setWishlistItems([]);
@@ -139,13 +140,15 @@ export function WishlistItems({ userId, onItemClick }: WishlistItemsProps) {
             찜한 상품 ({wishlistItems.length}개)
           </h2>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => (window.location.href = "/profile/wishlist")}
-        >
-          더보기
-        </Button>
+        {showMoreButton && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => (window.location.href = "/profile/wishlist")}
+          >
+            더보기
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

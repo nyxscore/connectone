@@ -31,9 +31,7 @@ export default function WishlistPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">로그인이 필요합니다.</p>
-          <Button onClick={() => router.push("/auth/login")}>
-            로그인하기
-          </Button>
+          <Button onClick={() => router.push("/auth/login")}>로그인하기</Button>
         </div>
       </div>
     );
@@ -56,9 +54,7 @@ export default function WishlistPage() {
             </Button>
             <div className="flex items-center space-x-2">
               <Heart className="w-6 h-6 text-red-500" />
-              <h1 className="text-xl font-semibold text-gray-900">
-                찜한 상품
-              </h1>
+              <h1 className="text-xl font-semibold text-gray-900">찜한 상품</h1>
             </div>
           </div>
         </div>
@@ -69,6 +65,7 @@ export default function WishlistPage() {
         <WishlistItems 
           userId={user.uid} 
           onItemClick={setSelectedItem}
+          showMoreButton={false}
         />
       </div>
 
