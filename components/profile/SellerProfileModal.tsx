@@ -112,89 +112,93 @@ export function SellerProfileModal({
             </p>
           </div>
 
-          {/* 회원 등급 */}
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <Star className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">
-                회원 등급
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">
-                {sellerProfile.grade || "C"}등급
-              </span>
-              <span className="text-sm text-gray-600">
-                {sellerProfile.grade === "Bronze"
-                  ? "Chord"
-                  : sellerProfile.grade === "Silver"
-                    ? "Melody"
-                    : sellerProfile.grade === "Gold"
-                      ? "Harmony"
-                      : sellerProfile.grade === "Platinum"
-                        ? "Symphony"
-                        : sellerProfile.grade === "Diamond"
-                          ? "Concert"
-                          : "Chord"}
-              </span>
-            </div>
-          </div>
 
 
-          {/* 자기소개 */}
-          <div className="bg-gray-50 rounded-lg p-3">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">
-              자기소개
-            </h4>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {sellerProfile.bio || "자기소개가 없습니다."}
-            </p>
+          {/* 평점 및 통계 */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">평점 및 통계</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {sellerProfile.averageRating?.toFixed(1) || "0.0"}
+                </div>
+                <div className="text-xs text-gray-600">평균 평점</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {sellerProfile.tradesCount || 0}
+                </div>
+                <div className="text-xs text-gray-600">거래 횟수</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">
+                  {sellerProfile.responseRate || 0}%
+                </div>
+                <div className="text-xs text-gray-600">응답률</div>
+              </div>
+            </div>
           </div>
 
           {/* 인증 상태 */}
-          <div className="bg-gray-50 rounded-lg p-3">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">
-              인증 상태
-            </h4>
-            <div className="space-y-2">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">인증 상태</h4>
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">이메일</span>
-                <span className={`text-sm font-medium ${
-                  sellerProfile.isEmailVerified ? "text-green-600" : "text-red-500"
-                }`}>
-                  {sellerProfile.isEmailVerified ? "인증완료" : "미인증"}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm text-gray-700">휴대폰 인증</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  {sellerProfile.isPhoneVerified ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <X className="w-4 h-4 text-red-500" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    sellerProfile.isPhoneVerified ? "text-green-600" : "text-red-500"
+                  }`}>
+                    {sellerProfile.isPhoneVerified ? "완료" : "미완료"}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">연락처</span>
-                <span className={`text-sm font-medium ${
-                  sellerProfile.isPhoneVerified ? "text-green-600" : "text-red-500"
-                }`}>
-                  {sellerProfile.isPhoneVerified ? "인증완료" : "미인증"}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <Mail className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm text-gray-700">이메일 인증</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  {sellerProfile.isEmailVerified ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <X className="w-4 h-4 text-red-500" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    sellerProfile.isEmailVerified ? "text-green-600" : "text-red-500"
+                  }`}>
+                    {sellerProfile.isEmailVerified ? "완료" : "미완료"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* 활동 기록 */}
-          <div className="bg-gray-50 rounded-lg p-3">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">
-              활동 기록
-            </h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">거래 완료</span>
+          {/* 거래 성과 */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">거래 성과</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">총 거래 횟수</span>
                 <span className="text-sm font-medium text-gray-900">
                   {sellerProfile.tradesCount || 0}건
                 </span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between">
                 <span className="text-sm text-gray-600">평균 평점</span>
                 <span className="text-sm font-medium text-gray-900">
                   {sellerProfile.averageRating?.toFixed(1) || "0.0"}점
                 </span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between">
                 <span className="text-sm text-gray-600">응답률</span>
                 <span className="text-sm font-medium text-gray-900">
                   {sellerProfile.responseRate || 0}%
@@ -203,15 +207,48 @@ export function SellerProfileModal({
             </div>
           </div>
 
-          {/* 가입일 */}
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Calendar className="w-4 h-4" />
-            <span>
-              {sellerProfile.createdAt
-                ? getDaysAgo(sellerProfile.createdAt)
-                : "가입일 미상"}
-            </span>
+          {/* 활동 정보 */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">활동 정보</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">가입일</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {sellerProfile.createdAt
+                    ? getDaysAgo(sellerProfile.createdAt)
+                    : "미상"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">등급</span>
+                <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                  sellerProfile.grade === "Bronze" ? "bg-orange-100 text-orange-700" :
+                  sellerProfile.grade === "Silver" ? "bg-gray-100 text-gray-700" :
+                  sellerProfile.grade === "Gold" ? "bg-yellow-100 text-yellow-700" :
+                  sellerProfile.grade === "Platinum" ? "bg-blue-100 text-blue-700" :
+                  sellerProfile.grade === "Diamond" ? "bg-purple-100 text-purple-700" :
+                  "bg-gray-100 text-gray-700"
+                }`}>
+                  {sellerProfile.grade === "Bronze" ? "Chord" :
+                   sellerProfile.grade === "Silver" ? "Melody" :
+                   sellerProfile.grade === "Gold" ? "Harmony" :
+                   sellerProfile.grade === "Platinum" ? "Symphony" :
+                   sellerProfile.grade === "Diamond" ? "Concert" : "Chord"}
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* 소개글 */}
+          {sellerProfile.bio && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">소개글</h4>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {sellerProfile.bio}
+              </p>
+            </div>
+          )}
+
 
           {/* 액션 버튼들 */}
           <div className="space-y-2 pt-4 border-t border-gray-200">
