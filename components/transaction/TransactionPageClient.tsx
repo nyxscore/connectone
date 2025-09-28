@@ -8,6 +8,8 @@ import { SellItem } from "../../data/types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import ProductDetailModal from "../product/ProductDetailModal";
+import { getUserProfile } from "../../lib/profile/api";
+import { UserProfile } from "../../data/profile/types";
 import {
   ArrowLeft,
   MessageCircle,
@@ -34,6 +36,31 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
   const { user, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [sellerProfile, setSellerProfile] = useState<UserProfile | null>(null);
+  const [sellerLoading, setSellerLoading] = useState(true);
+
+  // 판매자 정보 가져오기
+  useEffect(() => {
+    const fetchSellerProfile = async () => {
+      if (!item?.sellerId) return;
+      
+      try {
+        setSellerLoading(true);
+        const result = await getUserProfile(item.sellerId);
+        if (result && result.success && result.data) {
+          setSellerProfile(result.data);
+        } else {
+          console.warn("판매자 프로필을 찾을 수 없습니다:", item.sellerId);
+        }
+      } catch (error) {
+        console.error("판매자 프로필 로드 실패:", error);
+      } finally {
+        setSellerLoading(false);
+      }
+    };
+
+    fetchSellerProfile();
+  }, [item?.sellerId]);
 
   const handleStartChat = () => {
     if (item?.sellerId) {
@@ -144,167 +171,173 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* 구매한 상품 목록 */}
+        {/* 구매한 상품과 판매자 정보 */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">구매한 상품</h2>
           
-          {/* 상품 썸네일 카드 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => {
-              setShowProductModal(true);
-            }}>
-              {/* 상품 이미지 */}
-              <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-3 relative">
-                {item.images && item.images.length > 0 ? (
-                  <img
-                    src={item.images[0]}
-                    alt={item.title || `${item.brand} ${item.model}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl text-gray-400">
-                    🎵
-                  </div>
-                )}
-                
-                {/* 거래중 배지 */}
-                <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
-                  거래중
-                </div>
-              </div>
-
-              {/* 상품 정보 */}
-              <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
-                  {item.title || `${item.brand} ${item.model}`}
-                </h3>
-                
-                <div className="text-lg font-bold text-blue-600">
-                  {formatPrice(item.price)}
-                </div>
-
-                <div className="flex items-center text-xs text-gray-500 space-x-2">
-                  <span className="flex items-center">
-                    <MapPin className="w-3 h-3 mr-1" />
-                    {item.region}
-                  </span>
-                  <span className="flex items-center">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    {formatDate(item.createdAt)}
-                  </span>
-                </div>
-
-                <div className="text-xs text-gray-600">
-                  <span className="bg-gray-100 px-2 py-1 rounded-full">
-                    {item.category || "기타"}
-                  </span>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-
-        {/* 판매자 정보와 거래 진행 상황 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/* 판매자 정보 */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              판매자 정보
-            </h2>
-
-            <div className="space-y-4">
-              {/* 프로필 */}
-              <div className="flex items-center space-x-3">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
-                  {item.sellerId?.charAt(0)?.toUpperCase() || "S"}
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900 text-lg">판매자</p>
-                  <p className="text-sm text-gray-500">
-                    안전한 거래를 위한 프로필
-                  </p>
-                  <div className="flex items-center space-x-4 mt-2">
-                    <div className="flex items-center space-x-1">
-                      <Star className="w-4 h-4 text-yellow-500" />
-                      <span className="text-sm text-gray-600">평점 4.8</span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* 상품 썸네일 카드 */}
+            <div className="lg:col-span-2">
+              <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => {
+                setShowProductModal(true);
+              }}>
+                {/* 상품 이미지 */}
+                <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-3 relative">
+                  {item.images && item.images.length > 0 ? (
+                    <img
+                      src={item.images[0]}
+                      alt={item.title || `${item.brand} ${item.model}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl text-gray-400">
+                      🎵
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-gray-600">거래 15회</span>
-                    </div>
+                  )}
+                  
+                  {/* 거래중 배지 */}
+                  <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
+                    거래중
                   </div>
                 </div>
-              </div>
 
-              {/* 판매자 상세 정보 */}
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">거래 지역</p>
-                    <p className="text-sm font-medium text-gray-900">
+                {/* 상품 정보 */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {item.title || `${item.brand} ${item.model}`}
+                  </h3>
+                  
+                  <div className="text-lg font-bold text-blue-600">
+                    {formatPrice(item.price)}
+                  </div>
+
+                  <div className="flex items-center text-xs text-gray-500 space-x-2">
+                    <span className="flex items-center">
+                      <MapPin className="w-3 h-3 mr-1" />
                       {item.region}
-                    </p>
+                    </span>
+                    <span className="flex items-center">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      {formatDate(item.createdAt)}
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">응답 시간</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      평균 2시간
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">가입일</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      2024.01.15
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">인증 상태</p>
-                    <p className="text-sm font-medium text-green-600">
-                      ✓ 인증완료
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              {/* 연락처 정보 */}
-              <div className="space-y-2">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Phone className="w-4 h-4 mr-2" />
-                  <span>연락처 정보는 채팅에서 확인하세요</span>
+                  <div className="text-xs text-gray-600">
+                    <span className="bg-gray-100 px-2 py-1 rounded-full">
+                      {item.category || "기타"}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Mail className="w-4 h-4 mr-2" />
-                  <span>이메일 정보는 채팅에서 확인하세요</span>
-                </div>
-              </div>
-
-              {/* 버튼들 */}
-              <div className="pt-4 space-y-3">
-                <Button
-                  onClick={handleStartChat}
-                  className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span>판매자와 채팅하기</span>
-                </Button>
-
-                {isBuyer && (
-                  <Button
-                    onClick={handleCancelPurchase}
-                    variant="outline"
-                    className="w-full flex items-center justify-center space-x-2 text-red-600 border-red-300 hover:bg-red-50"
-                    disabled={loading}
-                  >
-                    <X className="w-5 h-5" />
-                    <span>{loading ? "취소 중..." : "구매취소"}</span>
-                  </Button>
-                )}
-              </div>
+              </Card>
             </div>
-          </Card>
+
+            {/* 판매자 정보 */}
+            <div className="lg:col-span-1">
+              <Card className="p-6 h-full">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  판매자 정보
+                </h2>
+
+                {sellerLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-500 mr-2" />
+                    <span className="text-gray-600">판매자 정보를 불러오는 중...</span>
+                  </div>
+                ) : sellerProfile ? (
+                  <div className="space-y-4">
+                    {/* 프로필 */}
+                    <div className="flex items-center space-x-3">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
+                        {sellerProfile.nickname?.charAt(0)?.toUpperCase() || sellerProfile.username?.charAt(0)?.toUpperCase() || "S"}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900 text-lg">{sellerProfile.nickname || "판매자"}</p>
+                        <p className="text-sm text-gray-500">{sellerProfile.region || "지역 미설정"}</p>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <div className="flex items-center space-x-1">
+                            <Star className="w-4 h-4 text-yellow-500" />
+                            <span className="text-sm text-gray-600">{sellerProfile.averageRating?.toFixed(1) || "0.0"}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <span className="text-sm text-gray-600">거래 {sellerProfile.tradesCount || 0}회</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 판매자 상세 정보 */}
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">거래 지역</p>
+                          <p className="text-sm font-medium text-gray-900">{sellerProfile.region || "미설정"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">등급</p>
+                          <p className="text-sm font-medium text-gray-900">{sellerProfile.grade || "Bronze"}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">가입일</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {sellerProfile.createdAt ? new Date(sellerProfile.createdAt).toLocaleDateString("ko-KR") : "미상"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">인증 상태</p>
+                          <p className="text-sm font-medium text-green-600">
+                            {sellerProfile.isPhoneVerified ? "✓ 인증완료" : "미인증"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 연락처 정보 */}
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Phone className="w-4 h-4 mr-2" />
+                        <span>연락처 정보는 채팅에서 확인하세요</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Mail className="w-4 h-4 mr-2" />
+                        <span>이메일 정보는 채팅에서 확인하세요</span>
+                      </div>
+                    </div>
+
+                    {/* 버튼들 */}
+                    <div className="pt-4 space-y-3">
+                      <Button
+                        onClick={handleStartChat}
+                        className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        <span>판매자와 채팅하기</span>
+                      </Button>
+
+                      {isBuyer && (
+                        <Button
+                          onClick={handleCancelPurchase}
+                          variant="outline"
+                          className="w-full flex items-center justify-center space-x-2 text-red-600 border-red-300 hover:bg-red-50"
+                          disabled={loading}
+                        >
+                          <X className="w-5 h-5" />
+                          <span>{loading ? "취소 중..." : "구매취소"}</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">판매자 정보를 불러올 수 없습니다.</p>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
         </div>
 
         {/* 거래 진행 상황 */}
