@@ -237,17 +237,45 @@ export function SellerProfileModal({
 
 
           {/* 액션 버튼들 */}
-          <div className="flex space-x-3 pt-4 border-t border-gray-200">
+          <div className="space-y-3 pt-4 border-t border-gray-200">
             {onStartChat && (
               <Button
                 onClick={onStartChat}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 <MessageCircle className="w-5 h-5 mr-2" />
                 채팅하기
               </Button>
             )}
-            <Button onClick={onClose} variant="outline" className="flex-1">
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => {
+                  // 신고하기 기능
+                  console.log("신고하기 클릭됨");
+                }}
+                variant="outline"
+                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+              >
+                <Shield className="w-4 h-4 mr-1" />
+                신고하기
+              </Button>
+              <Button
+                onClick={() => {
+                  // 차단하기 기능
+                  console.log("차단하기 클릭됨");
+                }}
+                variant="outline"
+                className="flex-1 border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
+                <X className="w-4 h-4 mr-1" />
+                차단하기
+              </Button>
+            </div>
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="w-full"
+            >
               닫기
             </Button>
           </div>
