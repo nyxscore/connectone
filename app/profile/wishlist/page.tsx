@@ -62,8 +62,8 @@ export default function WishlistPage() {
 
       {/* 찜한 상품 목록 */}
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <WishlistItems 
-          userId={user.uid} 
+        <WishlistItems
+          userId={user.uid}
           onItemClick={setSelectedItem}
           showMoreButton={false}
         />

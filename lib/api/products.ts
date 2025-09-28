@@ -224,6 +224,7 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
 
     // 필터 적용 (서버 사이드) - 복합 인덱스가 필요한 필터는 제거
     if (filters.category) {
+      console.log("카테고리 필터 적용:", filters.category);
       q = query(q, where("category", "==", filters.category));
     }
     if (filters.region) {
@@ -253,8 +254,10 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     let items: Item[] = [];
     let newLastDoc: any = null;
 
+    console.log("쿼리 결과 개수:", querySnapshot.size);
     querySnapshot.forEach(doc => {
       const itemData = { id: doc.id, ...doc.data() } as Item;
+      console.log("상품 데이터:", { id: itemData.id, category: itemData.category, title: itemData.title });
       items.push(itemData);
     });
 

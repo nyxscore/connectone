@@ -14,7 +14,11 @@ interface WishlistItemsProps {
   showMoreButton?: boolean;
 }
 
-export function WishlistItems({ userId, onItemClick, showMoreButton = true }: WishlistItemsProps) {
+export function WishlistItems({
+  userId,
+  onItemClick,
+  showMoreButton = true,
+}: WishlistItemsProps) {
   const [wishlistItems, setWishlistItems] = useState<SellItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
