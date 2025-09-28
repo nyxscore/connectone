@@ -8,6 +8,14 @@ import {
   Calendar,
   AlertTriangle,
   Shield,
+  MessageCircle,
+  MapPin,
+  CheckCircle,
+  Phone,
+  Mail,
+  Award,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import { UserProfile } from "../../data/profile/types";
 
@@ -144,14 +152,12 @@ export function SellerProfileModal({
           </div>
 
           {/* 자기소개 */}
-          {sellerProfile.bio && (
-            <div className="bg-gray-50 rounded-lg p-3">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">자기소개</h4>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                {sellerProfile.bio}
-              </p>
-            </div>
-          )}
+          <div className="bg-gray-50 rounded-lg p-3">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">자기소개</h4>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {sellerProfile.bio || "자기소개가 없습니다."}
+            </p>
+          </div>
 
           {/* 가입일 */}
           <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -163,8 +169,77 @@ export function SellerProfileModal({
             </span>
           </div>
 
+          {/* 상세 정보 (접을 수 있는 섹션) */}
+          <details className="bg-gray-50 rounded-lg p-3">
+            <summary className="text-sm font-medium text-gray-700 cursor-pointer">
+              상세 정보 보기
+            </summary>
+            <div className="mt-3 space-y-3">
+              {/* 인증 상태 */}
+              <div>
+                <h5 className="text-xs font-medium text-gray-600 mb-2">인증 상태</h5>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                        sellerProfile.isPhoneVerified
+                          ? "bg-green-100 text-green-600"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      <Phone className="w-3 h-3" />
+                    </div>
+                    <span className="text-xs text-gray-700">
+                      {sellerProfile.isPhoneVerified ? "휴대폰 인증완료" : "휴대폰 미인증"}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                        sellerProfile.isEmailVerified
+                          ? "bg-green-100 text-green-600"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      <Mail className="w-3 h-3" />
+                    </div>
+                    <span className="text-xs text-gray-700">
+                      {sellerProfile.isEmailVerified ? "이메일 인증완료" : "이메일 미인증"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 거래 통계 상세 */}
+              <div>
+                <h5 className="text-xs font-medium text-gray-600 mb-2">거래 통계</h5>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">평균 평점</span>
+                    <span className="font-medium">
+                      {sellerProfile.averageRating?.toFixed(1) || "0.0"}점
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">응답률</span>
+                    <span className="font-medium">{sellerProfile.responseRate || 0}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+
           {/* 액션 버튼들 */}
           <div className="space-y-2 pt-4 border-t border-gray-200">
+            {onStartChat && (
+              <Button
+                onClick={onStartChat}
+                className="w-full bg-blue-600 hover:bg-blue-700 mb-2"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                채팅하기
+              </Button>
+            )}
             <div className="flex space-x-2">
               <Button
                 onClick={() => {
