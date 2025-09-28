@@ -17,6 +17,7 @@ import { ProfileAbout } from "../../components/profile/ProfileAbout";
 import { TradeList } from "../../components/profile/TradeList";
 import { WishlistItems } from "../../components/profile/WishlistItems";
 import { ReservedItems } from "../../components/profile/ReservedItems";
+import { TransactionDashboard } from "../../components/profile/TransactionDashboard";
 import { BlockedUsersModal } from "../../components/profile/BlockedUsersModal";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
 import EditProductModal from "../../components/product/EditProductModal";
@@ -333,6 +334,9 @@ export default function MyProfilePage() {
             isOwnProfile={true}
             onAvatarUpdate={handleAvatarUpload}
           />
+
+          {/* 거래 현황 대시보드 */}
+          <TransactionDashboard />
 
           {/* 회원 등급 정보 */}
           <Card className="p-6">

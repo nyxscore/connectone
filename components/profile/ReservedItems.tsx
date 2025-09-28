@@ -6,7 +6,10 @@ import { Button } from "../ui/Button";
 import { ItemCard } from "../items/ItemCard";
 import { MessageCircle, Loader2, AlertCircle, ShoppingBag } from "lucide-react";
 import { SellItem } from "../../data/types";
-import { getReservedItemsBySeller, getReservedItemsForBuyer } from "../../lib/api/products";
+import {
+  getReservedItemsBySeller,
+  getReservedItemsForBuyer,
+} from "../../lib/api/products";
 import { useAuth } from "../../lib/hooks/useAuth";
 
 interface ReservedItemsProps {
@@ -14,7 +17,10 @@ interface ReservedItemsProps {
   isSeller?: boolean; // 판매자용인지 구매자용인지
 }
 
-export function ReservedItems({ userId, isSeller = false }: ReservedItemsProps) {
+export function ReservedItems({
+  userId,
+  isSeller = false,
+}: ReservedItemsProps) {
   const { user } = useAuth();
   const [reservedItems, setReservedItems] = useState<SellItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,11 +34,11 @@ export function ReservedItems({ userId, isSeller = false }: ReservedItemsProps) 
     try {
       setLoading(true);
       setError("");
-      
-      const result = isSeller 
+
+      const result = isSeller
         ? await getReservedItemsBySeller(userId)
         : await getReservedItemsForBuyer(userId);
-      
+
       if (result.success && result.items) {
         setReservedItems(result.items);
       } else {
@@ -50,7 +56,7 @@ export function ReservedItems({ userId, isSeller = false }: ReservedItemsProps) 
     // 채팅 모달 열기 또는 채팅 페이지로 이동
     if (user?.uid) {
       // 채팅 모달 열기 로직 (기존 채팅 시스템 사용)
-      const chatModal = document.getElementById('chat-modal');
+      const chatModal = document.getElementById("chat-modal");
       if (chatModal) {
         chatModal.click();
       } else {
@@ -65,7 +71,9 @@ export function ReservedItems({ userId, isSeller = false }: ReservedItemsProps) 
       <Card className="p-6">
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">거래중 상품을 불러오는 중...</span>
+          <span className="ml-2 text-gray-600">
+            거래중 상품을 불러오는 중...
+          </span>
         </div>
       </Card>
     );
@@ -90,7 +98,7 @@ export function ReservedItems({ userId, isSeller = false }: ReservedItemsProps) 
     if (!isSeller) {
       return null;
     }
-    
+
     return (
       <Card className="p-6">
         <div className="text-center py-12">
@@ -112,7 +120,8 @@ export function ReservedItems({ userId, isSeller = false }: ReservedItemsProps) 
         <div className="flex items-center space-x-2">
           <ShoppingBag className="w-5 h-5 text-orange-500" />
           <h2 className="text-xl font-semibold text-gray-900">
-            {isSeller ? "거래중인 상품" : "거래중인 찜한 상품"} ({reservedItems.length}개)
+            {isSeller ? "거래중인 상품" : "거래중인 찜한 상품"} (
+            {reservedItems.length}개)
           </h2>
         </div>
       </div>
@@ -120,16 +129,16 @@ export function ReservedItems({ userId, isSeller = false }: ReservedItemsProps) 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {reservedItems.map(item => (
           <div key={item.id} className="relative group">
-            <ItemCard 
-              item={item} 
+            <ItemCard
+              item={item}
               onClick={() => {}} // 상품 클릭 시 상세 모달 열기 등
             />
-            
+
             {/* 거래중 상태 표시 */}
             <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold">
               거래중
             </div>
-            
+
             {/* 채팅하기 버튼 */}
             <div className="absolute bottom-2 right-2">
               <Button
