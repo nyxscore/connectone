@@ -2,12 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-
-// generateStaticParams 함수 추가 (Next.js 정적 생성 요구사항)
-export async function generateStaticParams() {
-  // 동적 라우트이므로 빈 배열 반환
-  return [];
-}
 import { useAuth } from "../../../lib/hooks/useAuth";
 import { getItem } from "../../../lib/api/products";
 import { SellItem } from "../../../data/types";
@@ -91,32 +85,6 @@ export default function TransactionPage() {
     }
   };
 
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case "reserved":
-        return {
-          text: "거래중",
-          color: "text-orange-600",
-          bgColor: "bg-orange-100",
-          icon: Clock
-        };
-      case "sold":
-        return {
-          text: "판매완료",
-          color: "text-green-600",
-          bgColor: "bg-green-100",
-          icon: CheckCircle
-        };
-      default:
-        return {
-          text: "거래중",
-          color: "text-orange-600",
-          bgColor: "bg-orange-100",
-          icon: Clock
-        };
-    }
-  };
-
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -152,10 +120,7 @@ export default function TransactionPage() {
     );
   }
 
-  const statusInfo = getStatusInfo(item.status);
-  const StatusIcon = statusInfo.icon;
   const isBuyer = user?.uid !== item.sellerId;
-  const isSeller = user?.uid === item.sellerId;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -177,10 +142,10 @@ export default function TransactionPage() {
                 {isBuyer ? "구매한 상품" : "판매한 상품"}
               </h1>
             </div>
-            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full ${statusInfo.bgColor}`}>
-              <StatusIcon className={`w-4 h-4 ${statusInfo.color}`} />
-              <span className={`text-sm font-medium ${statusInfo.color}`}>
-                {statusInfo.text}
+            <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-orange-100">
+              <Clock className="w-4 h-4 text-orange-600" />
+              <span className="text-sm font-medium text-orange-600">
+                거래중
               </span>
             </div>
           </div>
@@ -196,12 +161,10 @@ export default function TransactionPage() {
             {/* 상품 이미지 */}
             <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-4">
               {item.images && item.images.length > 0 ? (
-                <WatermarkImage
+                <img
                   src={item.images[0]}
                   alt={item.title || `${item.brand} ${item.model}`}
                   className="w-full h-full object-cover"
-                  isAiProcessed={item.aiProcessedImages?.some(aiImg => aiImg.imageIndex === 0) || false}
-                  showWatermark={true}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-4xl text-gray-400">
@@ -230,29 +193,19 @@ export default function TransactionPage() {
             </div>
           </Card>
 
-          {/* 거래 상대방 정보 */}
+          {/* 판매자 정보 */}
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {isBuyer ? "판매자 정보" : "구매자 정보"}
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">판매자 정보</h2>
 
             <div className="space-y-4">
               {/* 프로필 */}
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                  {isBuyer ? (
-                    <User className="w-6 h-6 text-gray-500" />
-                  ) : (
-                    <User className="w-6 h-6 text-gray-500" />
-                  )}
+                  <User className="w-6 h-6 text-gray-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">
-                    {isBuyer ? "판매자" : "구매자"}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {isBuyer ? "판매자 프로필" : "구매자 프로필"}
-                  </p>
+                  <p className="font-medium text-gray-900">판매자</p>
+                  <p className="text-sm text-gray-500">판매자 프로필</p>
                 </div>
               </div>
 
@@ -275,61 +228,12 @@ export default function TransactionPage() {
                   className="w-full flex items-center justify-center space-x-2"
                 >
                   <MessageCircle className="w-5 h-5" />
-                  <span>
-                    {isBuyer ? "판매자와 채팅하기" : "구매자와 채팅하기"}
-                  </span>
+                  <span>채팅하기</span>
                 </Button>
               </div>
             </div>
           </Card>
         </div>
-
-        {/* 거래 진행 상황 */}
-        <Card className="p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">거래 진행 상황</h2>
-          
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">거래 시작</p>
-                <p className="text-sm text-gray-500">
-                  {isBuyer ? "구매 요청이 완료되었습니다" : "구매 요청을 받았습니다"}
-                </p>
-              </div>
-            </div>
-
-            {item.status === "reserved" && (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-orange-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">거래 진행중</p>
-                  <p className="text-sm text-gray-500">
-                    채팅을 통해 거래를 진행하세요
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {item.status === "sold" && (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">거래 완료</p>
-                  <p className="text-sm text-gray-500">
-                    거래가 성공적으로 완료되었습니다
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
       </div>
     </div>
   );

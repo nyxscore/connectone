@@ -171,20 +171,23 @@ export async function getReservedItemsBySeller(
       where("sellerId", "==", sellerUid),
       where("status", "==", "reserved")
     );
-    
+
     const querySnapshot = await getDocs(q);
     const items: Item[] = [];
-    
+
     querySnapshot.forEach(doc => {
       items.push({ id: doc.id, ...doc.data() } as Item);
     });
-    
+
     return { success: true, items };
   } catch (error) {
     console.error("거래중 상품 조회 실패:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "거래중 상품 조회에 실패했습니다.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "거래중 상품 조회에 실패했습니다.",
     };
   }
 }
@@ -201,20 +204,23 @@ export async function getReservedItemsForBuyer(
       where("buyerId", "==", buyerUid),
       where("status", "==", "reserved")
     );
-    
+
     const querySnapshot = await getDocs(q);
     const items: Item[] = [];
-    
+
     querySnapshot.forEach(doc => {
       items.push({ id: doc.id, ...doc.data() } as Item);
     });
-    
+
     return { success: true, items };
   } catch (error) {
     console.error("구매자 거래중 상품 조회 실패:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "거래중 상품 조회에 실패했습니다.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "거래중 상품 조회에 실패했습니다.",
     };
   }
 }
@@ -295,7 +301,10 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     } = options;
 
     // 기본 쿼리: active, reserved, sold 상태인 아이템 조회 (거래중, 판매완료 상품도 표시)
-    let q = query(collection(db, "items"), where("status", "in", ["active", "reserved", "sold"]));
+    let q = query(
+      collection(db, "items"),
+      where("status", "in", ["active", "reserved", "sold"])
+    );
 
     // 디버깅: 모든 상품의 카테고리 확인 (개발 중에만)
     if (filters.category && process.env.NODE_ENV === "development") {
