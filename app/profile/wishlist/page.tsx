@@ -1,14 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "../../../lib/hooks/useAuth";
 import { WishlistItems } from "../../../components/profile/WishlistItems";
+import ProductDetailModal from "../../../components/product/ProductDetailModal";
 import { Button } from "../../../components/ui/Button";
 import { ArrowLeft, Heart } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { SellItem } from "../../../data/types";
 
 export default function WishlistPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [selectedItem, setSelectedItem] = useState<SellItem | null>(null);
+  const [showProductModal, setShowProductModal] = useState(false);
 
   if (authLoading) {
     return (
@@ -59,13 +64,26 @@ export default function WishlistPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <WishlistItems
           userId={user.uid}
-            onItemClick={item => {
-              // 상품 상세 페이지로 이동
-              router.push(`/item/${item.id}`);
-            }}
+          onItemClick={item => {
+            // 상품 상세 모달 열기
+            setSelectedItem(item);
+            setShowProductModal(true);
+          }}
           showMoreButton={false}
         />
       </div>
+
+      {/* 상품 상세 모달 */}
+      {selectedItem && (
+        <ProductDetailModal
+          item={selectedItem}
+          isOpen={showProductModal}
+          onClose={() => {
+            setShowProductModal(false);
+            setSelectedItem(null);
+          }}
+        />
+      )}
     </div>
   );
 }

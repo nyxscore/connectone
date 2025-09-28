@@ -20,6 +20,7 @@ import { ReservedItems } from "../../components/profile/ReservedItems";
 import { TransactionDashboard } from "../../components/profile/TransactionDashboard";
 import { BlockedUsersModal } from "../../components/profile/BlockedUsersModal";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
+import ProductDetailModal from "../../components/product/ProductDetailModal";
 import EditProductModal from "../../components/product/EditProductModal";
 import { GradeBenefitsSummary } from "../../components/ui/MemberGradeSystem";
 import { GradeBenefitsModal } from "../../components/profile/GradeBenefitsModal";
@@ -56,6 +57,7 @@ export default function MyProfilePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showGradeModal, setShowGradeModal] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !currentUser) {
@@ -233,6 +235,11 @@ export default function MyProfilePage() {
     setEditingItem(null);
     // 상품 목록 새로고침
     loadMyItems();
+  };
+
+  const handleCloseProductModal = () => {
+    setShowProductModal(false);
+    setSelectedItem(null);
   };
 
   const formatDate = (date: any) => {
@@ -533,8 +540,9 @@ export default function MyProfilePage() {
             <WishlistItems
               userId={currentUser.uid}
               onItemClick={item => {
-                // 상품 상세 페이지로 이동
-                router.push(`/item/${item.id}`);
+                // 상품 상세 모달 열기
+                setSelectedItem(item);
+                setShowProductModal(true);
               }}
             />
           )}
@@ -608,6 +616,15 @@ export default function MyProfilePage() {
             setEditingItem(null);
           }}
           onSuccess={handleEditComplete}
+        />
+      )}
+
+      {/* 상품 상세 모달 */}
+      {selectedItem && (
+        <ProductDetailModal
+          item={selectedItem}
+          isOpen={showProductModal}
+          onClose={handleCloseProductModal}
         />
       )}
 
