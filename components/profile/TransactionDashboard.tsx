@@ -220,7 +220,7 @@ export function TransactionDashboard() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
             <ShoppingCart className="w-6 h-6 text-pink-600" />
-            <h3 className="text-xl font-semibold text-gray-900">삽니다</h3>
+            <h3 className="text-xl font-semibold text-gray-900">구매중</h3>
           </div>
         </div>
 
