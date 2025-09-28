@@ -10,9 +10,10 @@ import { getItem } from "../../lib/api/products";
 
 interface WishlistItemsProps {
   userId: string;
+  onItemClick?: (item: SellItem) => void;
 }
 
-export function WishlistItems({ userId }: WishlistItemsProps) {
+export function WishlistItems({ userId, onItemClick }: WishlistItemsProps) {
   const [wishlistItems, setWishlistItems] = useState<SellItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -141,9 +142,9 @@ export function WishlistItems({ userId }: WishlistItemsProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => (window.location.href = "/list")}
+          onClick={() => (window.location.href = "/profile/wishlist")}
         >
-          더 둘러보기
+          더보기
         </Button>
       </div>
 
@@ -152,7 +153,7 @@ export function WishlistItems({ userId }: WishlistItemsProps) {
           <div key={item.id} className="relative group">
             <ItemCard
               item={item}
-              onClick={() => {}} // 상품 클릭 시 상세 모달 열기 등
+              onClick={onItemClick || (() => {})} // 상품 클릭 시 상세 모달 열기 등
             />
             <button
               onClick={() => removeFromWishlist(item.id)}
