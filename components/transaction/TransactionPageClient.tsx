@@ -317,9 +317,12 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                         <div className="flex-1 h-0.5 bg-gray-300 mx-2"></div>
 
                         {/* 2단계 - 거래 진행중 */}
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity" onClick={() => {
+                          // 현재 거래 관리 페이지로 이동 (이미 현재 페이지이므로 새로고침)
+                          window.location.reload();
+                        }}>
                           <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold mb-2">
-                            2
+                            1
                           </div>
                           <span className="text-xs text-gray-600 text-center">거래 진행중</span>
                         </div>
