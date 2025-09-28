@@ -3,9 +3,20 @@
 import { useState, useEffect } from "react";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { Loader2, AlertCircle, TrendingUp, ShoppingCart, CheckCircle, Clock, XCircle } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  TrendingUp,
+  ShoppingCart,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from "lucide-react";
 import { useAuth } from "../../lib/hooks/useAuth";
-import { getReservedItemsBySeller, getReservedItemsForBuyer } from "../../lib/api/products";
+import {
+  getReservedItemsBySeller,
+  getReservedItemsForBuyer,
+} from "../../lib/api/products";
 import { SellItem } from "../../data/types";
 
 interface TransactionStats {
@@ -27,7 +38,7 @@ export function TransactionDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<TransactionStats>({
     selling: { registered: 0, inProgress: 0, completed: 0, cancelled: 0 },
-    buying: { registered: 0, inProgress: 0, completed: 0, cancelled: 0 }
+    buying: { registered: 0, inProgress: 0, completed: 0, cancelled: 0 },
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -45,11 +56,15 @@ export function TransactionDashboard() {
 
       // 판매자용 거래중 상품 조회
       const sellingResult = await getReservedItemsBySeller(user!.uid);
-      const sellingInProgress = sellingResult.success ? sellingResult.items?.length || 0 : 0;
+      const sellingInProgress = sellingResult.success
+        ? sellingResult.items?.length || 0
+        : 0;
 
       // 구매자용 거래중 상품 조회
       const buyingResult = await getReservedItemsForBuyer(user!.uid);
-      const buyingInProgress = buyingResult.success ? buyingResult.items?.length || 0 : 0;
+      const buyingInProgress = buyingResult.success
+        ? buyingResult.items?.length || 0
+        : 0;
 
       // TODO: 실제 데이터베이스에서 다른 상태들도 조회해야 함
       // 지금은 임시 데이터로 표시
@@ -57,15 +72,15 @@ export function TransactionDashboard() {
         selling: {
           registered: 0, // 등록된 상품 수
           inProgress: sellingInProgress,
-          completed: 6, // 완료된 거래 수 (임시)
-          cancelled: 0
+          completed: 0, // 완료된 거래 수 (실제 데이터로 변경 필요)
+          cancelled: 0,
         },
         buying: {
           registered: 0,
           inProgress: buyingInProgress,
           completed: 0,
-          cancelled: 0
-        }
+          cancelled: 0,
+        },
       });
     } catch (error) {
       console.error("거래 현황 로드 실패:", error);
@@ -105,7 +120,9 @@ export function TransactionDashboard() {
       {/* 거래 현황 헤더 */}
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">거래 현황</h2>
-        <p className="text-gray-600">판매와 구매 진행 상황을 한눈에 확인하세요</p>
+        <p className="text-gray-600">
+          판매와 구매 진행 상황을 한눈에 확인하세요
+        </p>
       </div>
 
       {/* 판매 현황 */}
@@ -174,19 +191,27 @@ export function TransactionDashboard() {
         {/* 판매 통계 요약 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{stats.selling.registered}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.selling.registered}
+            </div>
             <div className="text-sm text-gray-600">등록 물품</div>
           </div>
           <div className="text-center p-3 bg-orange-50 rounded-lg">
-            <div className="text-2xl font-bold text-orange-600">{stats.selling.inProgress}</div>
+            <div className="text-2xl font-bold text-orange-600">
+              {stats.selling.inProgress}
+            </div>
             <div className="text-sm text-gray-600">판매중</div>
           </div>
           <div className="text-center p-3 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{stats.selling.completed}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.selling.completed}
+            </div>
             <div className="text-sm text-gray-600">판매 완료</div>
           </div>
           <div className="text-center p-3 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">{stats.selling.cancelled}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {stats.selling.cancelled}
+            </div>
             <div className="text-sm text-gray-600">취소 대기</div>
           </div>
         </div>
@@ -258,19 +283,27 @@ export function TransactionDashboard() {
         {/* 구매 통계 요약 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div className="text-center p-3 bg-pink-50 rounded-lg">
-            <div className="text-2xl font-bold text-pink-600">{stats.buying.registered}</div>
+            <div className="text-2xl font-bold text-pink-600">
+              {stats.buying.registered}
+            </div>
             <div className="text-sm text-gray-600">등록 물품</div>
           </div>
           <div className="text-center p-3 bg-orange-50 rounded-lg">
-            <div className="text-2xl font-bold text-orange-600">{stats.buying.inProgress}</div>
+            <div className="text-2xl font-bold text-orange-600">
+              {stats.buying.inProgress}
+            </div>
             <div className="text-sm text-gray-600">구매중</div>
           </div>
           <div className="text-center p-3 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{stats.buying.completed}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.buying.completed}
+            </div>
             <div className="text-sm text-gray-600">구매 완료</div>
           </div>
           <div className="text-center p-3 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">{stats.buying.cancelled}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {stats.buying.cancelled}
+            </div>
             <div className="text-sm text-gray-600">취소 요청</div>
           </div>
         </div>
