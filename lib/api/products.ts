@@ -198,6 +198,8 @@ export async function getReservedItemsForBuyer(
   buyerUid: string
 ): Promise<{ success: boolean; items?: Item[]; error?: string }> {
   try {
+    console.log("getReservedItemsForBuyer 호출:", { buyerUid });
+    
     // 구매자가 구매한 상품들 중에서 거래중인 상품 조회
     // buyerId 필드가 있는 상품들을 조회 (구매자가 구매한 상품)
     const q = query(
@@ -209,10 +211,21 @@ export async function getReservedItemsForBuyer(
     const querySnapshot = await getDocs(q);
     const items: Item[] = [];
 
+    console.log("구매자 거래중 상품 쿼리 결과:", querySnapshot.size, "개");
+
     querySnapshot.forEach(doc => {
-      items.push({ id: doc.id, ...doc.data() } as Item);
+      const itemData = doc.data();
+      console.log("구매자 거래중 상품:", {
+        id: doc.id,
+        title: itemData.title,
+        buyerId: itemData.buyerId,
+        status: itemData.status,
+        sellerId: itemData.sellerId
+      });
+      items.push({ id: doc.id, ...itemData } as Item);
     });
 
+    console.log("구매자 거래중 상품 최종 결과:", items.length, "개");
     return { success: true, items };
   } catch (error) {
     console.error("구매자 거래중 상품 조회 실패:", error);
@@ -250,11 +263,14 @@ export async function updateItemStatus(
     // 구매자 ID가 제공된 경우 추가, active로 변경 시 buyerId 제거
     if (buyerId) {
       updateData.buyerId = buyerId;
+      console.log("buyerId 추가:", buyerId);
     } else if (status === "active") {
       // active로 변경할 때는 buyerId 필드를 제거
       updateData.buyerId = deleteField();
+      console.log("buyerId 제거");
     }
 
+    console.log("업데이트할 데이터:", updateData);
     await updateDoc(docRef, updateData);
 
     console.log("상품 상태 업데이트 성공");
