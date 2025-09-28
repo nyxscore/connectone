@@ -43,6 +43,7 @@ export function TransactionDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [buyingItems, setBuyingItems] = useState<SellItem[]>([]);
+  const [sellingItems, setSellingItems] = useState<SellItem[]>([]);
 
   useEffect(() => {
     if (user?.uid) {
@@ -70,6 +71,11 @@ export function TransactionDashboard() {
       // 구매중 상품 목록 저장 (클릭 시 이동용)
       if (buyingResult.success && buyingResult.items) {
         setBuyingItems(buyingResult.items);
+      }
+
+      // 판매중 상품 목록 저장 (클릭 시 이동용)
+      if (sellingResult.success && sellingResult.items) {
+        setSellingItems(sellingResult.items);
       }
 
       // TODO: 실제 데이터베이스에서 다른 상태들도 조회해야 함
@@ -161,7 +167,18 @@ export function TransactionDashboard() {
           <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
 
           {/* 판매중 */}
-          <div className="flex flex-col items-center">
+          <div
+            className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => {
+              console.log("판매중 카드 클릭됨!");
+              if (sellingItems.length > 0) {
+                // 첫 번째 판매중 상품의 거래 관리 페이지로 이동
+                router.push(`/seller-transaction/${sellingItems[0].id}`);
+              } else {
+                console.log("판매중 상품이 없습니다.");
+              }
+            }}
+          >
             <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold mb-2">
               {stats.selling.inProgress}
             </div>
@@ -199,7 +216,18 @@ export function TransactionDashboard() {
             </div>
             <div className="text-sm text-gray-600">등록 물품</div>
           </div>
-          <div className="text-center p-3 bg-orange-50 rounded-lg">
+          <div
+            className="text-center p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+            onClick={() => {
+              console.log("판매중 통계 카드 클릭됨!");
+              if (sellingItems.length > 0) {
+                // 첫 번째 판매중 상품의 거래 관리 페이지로 이동
+                router.push(`/seller-transaction/${sellingItems[0].id}`);
+              } else {
+                console.log("판매중 상품이 없습니다.");
+              }
+            }}
+          >
             <div className="text-2xl font-bold text-orange-600">
               {stats.selling.inProgress}
             </div>

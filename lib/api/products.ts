@@ -168,7 +168,7 @@ export async function getReservedItemsBySeller(
 ): Promise<{ success: boolean; items?: Item[]; error?: string }> {
   try {
     console.log("getReservedItemsBySeller 호출:", sellerUid);
-    
+
     const q = query(
       collection(db, "items"),
       where("sellerUid", "==", sellerUid),
@@ -206,7 +206,7 @@ export async function getReservedItemsForBuyer(
 ): Promise<{ success: boolean; items?: Item[]; error?: string }> {
   try {
     console.log("getReservedItemsForBuyer 호출:", { buyerUid });
-    
+
     // 구매자가 구매한 상품들 중에서 거래중인 상품 조회
     // buyerId 필드가 있는 상품들을 조회 (구매자가 구매한 상품)
     const q = query(
@@ -227,7 +227,7 @@ export async function getReservedItemsForBuyer(
         title: itemData.title,
         buyerId: itemData.buyerId,
         status: itemData.status,
-        sellerId: itemData.sellerId
+        sellerId: itemData.sellerId,
       });
       items.push({ id: doc.id, ...itemData } as Item);
     });
