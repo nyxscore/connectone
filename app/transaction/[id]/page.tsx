@@ -7,18 +7,19 @@ import { getItem } from "../../../lib/api/products";
 import { SellItem } from "../../../data/types";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
-import { 
-  ArrowLeft, 
-  MessageCircle, 
-  User, 
-  MapPin, 
-  Calendar, 
+import {
+  ArrowLeft,
+  MessageCircle,
+  User,
+  MapPin,
+  Calendar,
   Phone,
   Mail,
   Loader2,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  X,
 } from "lucide-react";
 import { WatermarkImage } from "../../../components/ui/WatermarkImage";
 import toast from "react-hot-toast";
@@ -67,6 +68,29 @@ export default function TransactionPage() {
   const handleStartChat = () => {
     if (item?.sellerId) {
       router.push(`/chat?itemId=${item.id}&sellerId=${item.sellerId}`);
+    }
+  };
+
+  const handleCancelPurchase = async () => {
+    if (!item) return;
+    
+    const confirmed = window.confirm("정말 구매를 취소하시겠습니까?");
+    if (!confirmed) return;
+
+    try {
+      // 상품 상태를 다시 active로 변경하고 buyerId 제거
+      const { updateItemStatus } = await import("../../../lib/api/products");
+      const result = await updateItemStatus(item.id, "active");
+      
+      if (result.success) {
+        toast.success("구매가 취소되었습니다.");
+        router.push("/profile"); // 프로필 페이지로 이동
+      } else {
+        toast.error("구매 취소에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("구매 취소 실패:", error);
+      toast.error("구매 취소 중 오류가 발생했습니다.");
     }
   };
 
@@ -156,8 +180,10 @@ export default function TransactionPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* 상품 정보 */}
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">상품 정보</h2>
-            
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              상품 정보
+            </h2>
+
             {/* 상품 이미지 */}
             <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden mb-4">
               {item.images && item.images.length > 0 ? (
@@ -176,7 +202,7 @@ export default function TransactionPage() {
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               {item.title || `${item.brand} ${item.model}`}
             </h3>
-            
+
             <div className="text-2xl font-bold text-blue-600 mb-4">
               {formatPrice(item.price)}
             </div>
@@ -195,7 +221,9 @@ export default function TransactionPage() {
 
           {/* 판매자 정보 */}
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">판매자 정보</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              판매자 정보
+            </h2>
 
             <div className="space-y-4">
               {/* 프로필 */}
@@ -221,8 +249,8 @@ export default function TransactionPage() {
                 </div>
               </div>
 
-              {/* 채팅하기 버튼 */}
-              <div className="pt-4">
+              {/* 버튼들 */}
+              <div className="pt-4 space-y-3">
                 <Button
                   onClick={handleStartChat}
                   className="w-full flex items-center justify-center space-x-2"
@@ -230,6 +258,17 @@ export default function TransactionPage() {
                   <MessageCircle className="w-5 h-5" />
                   <span>채팅하기</span>
                 </Button>
+                
+                {isBuyer && (
+                  <Button
+                    onClick={handleCancelPurchase}
+                    variant="outline"
+                    className="w-full flex items-center justify-center space-x-2 text-red-600 border-red-300 hover:bg-red-50"
+                  >
+                    <X className="w-5 h-5" />
+                    <span>구매취소</span>
+                  </Button>
+                )}
               </div>
             </div>
           </Card>

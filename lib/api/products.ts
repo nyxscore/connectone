@@ -12,6 +12,7 @@ import {
   limit,
   startAfter,
   getDocs,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { SellItemInput } from "../../data/schemas/product";
@@ -246,9 +247,12 @@ export async function updateItemStatus(
       updatedAt: serverTimestamp(),
     };
 
-    // 구매자 ID가 제공된 경우 추가
+    // 구매자 ID가 제공된 경우 추가, active로 변경 시 buyerId 제거
     if (buyerId) {
       updateData.buyerId = buyerId;
+    } else if (status === "active") {
+      // active로 변경할 때는 buyerId 필드를 제거
+      updateData.buyerId = deleteField();
     }
 
     await updateDoc(docRef, updateData);
