@@ -17,6 +17,16 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
   const router = useRouter();
 
   const handleClick = () => {
+    if (item.status === "reserved") {
+      alert("거래중인 상품입니다.");
+      return;
+    }
+
+    if (item.status === "sold") {
+      alert("판매완료된 상품입니다.");
+      return;
+    }
+
     if (onClick) {
       onClick(item);
     } else {
@@ -82,10 +92,17 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
     }
   };
 
+  const isSold = item.status === "sold";
+
   return (
-    <Card className="overflow-hidden cursor-pointer" onClick={handleClick}>
+    <Card
+      className={`overflow-hidden ${isSold ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+      onClick={isSold ? undefined : handleClick}
+    >
       {/* 썸네일 */}
-      <div className={`aspect-square bg-gray-200 relative overflow-hidden ${item.status === "sold" ? "grayscale" : ""}`}>
+      <div
+        className={`aspect-square bg-gray-200 relative overflow-hidden ${isSold ? "grayscale" : ""}`}
+      >
         {item.images && item.images.length > 0 ? (
           <WatermarkImage
             src={item.images[0]}

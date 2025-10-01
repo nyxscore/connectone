@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -32,6 +32,7 @@ import {
   AlertCircle,
   MessageCircle,
   Trash2,
+  Package,
 } from "lucide-react";
 // date-fns 제거 - 간단한 시간 표시로 변경
 import toast from "react-hot-toast";
@@ -73,6 +74,7 @@ export function FirestoreChatModal({
   const [showOtherProfileModal, setShowOtherProfileModal] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -80,6 +82,11 @@ export function FirestoreChatModal({
       loadChatData();
     }
   }, [isOpen, user, itemId, sellerUid, chatId]);
+
+  // 메시지 변경 시 스크롤을 맨 아래로
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
     if (chatData?.chatId) {
@@ -399,37 +406,27 @@ export function FirestoreChatModal({
               <ArrowLeft className="w-5 h-5" />
             </Button>
             {chatData && (
-              <div
-                className="flex items-center space-x-3 cursor-pointer"
-                onClick={() => {
-                  console.log("상대방 프로필 클릭:", chatData.otherUser);
-                  setShowOtherProfileModal(true);
-                }}
-              >
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                  {(() => {
-                    console.log("헤더에서 상대방 정보:", {
-                      nickname: chatData.otherUser.nickname,
-                      profileImage: chatData.otherUser.profileImage,
-                      hasProfileImage: !!chatData.otherUser.profileImage,
-                    });
-                    return null;
-                  })()}
-                  {chatData.otherUser.profileImage ? (
+              <div className="flex items-center space-x-3">
+                {/* 상품 썸네일 */}
+                <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
+                  {chatData.item.imageUrl ? (
                     <img
-                      src={chatData.otherUser.profileImage}
-                      alt={chatData.otherUser.nickname}
-                      className="w-10 h-10 rounded-full object-cover"
+                      src={chatData.item.imageUrl}
+                      alt={chatData.item.title}
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <User className="w-5 h-5 text-gray-500" />
+                    <Package className="w-5 h-5 text-gray-500" />
                   )}
                 </div>
+                {/* 상품명 */}
                 <div>
                   <h3 className="font-semibold text-gray-900">
-                    {chatData.otherUser.nickname}
+                    {chatData.item.title}
                   </h3>
-                  <p className="text-sm text-gray-500">{chatData.item.title}</p>
+                  <p className="text-sm text-gray-500">
+                    {chatData.item.price.toLocaleString()}원
+                  </p>
                 </div>
               </div>
             )}
@@ -549,6 +546,8 @@ export function FirestoreChatModal({
               );
             })
           )}
+          {/* 스크롤 타겟 */}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* 메시지 입력 */}

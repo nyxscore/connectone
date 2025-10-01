@@ -59,7 +59,7 @@ export async function createItem(
           username: itemData.sellerUid,
           nickname: "사용자",
           region: "서울시 강남구",
-          grade: "Bronze",
+          grade: "E",
           tradesCount: 0,
           reviewsCount: 0,
           createdAt: serverTimestamp(),

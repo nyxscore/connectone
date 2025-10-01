@@ -5,24 +5,23 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../lib/hooks/useAuth";
 import {
   getUserProfile,
-  getRecentTrades,
   uploadAvatar,
   updateUserProfile,
 } from "../../lib/profile/api";
 import { getUserItems } from "../../lib/api/products";
-import { UserProfile, TradeItem } from "../../data/profile/types";
+import { UserProfile } from "../../data/profile/types";
 import { ProfileHeader } from "../../components/profile/ProfileHeader";
 import { ProfileStats } from "../../components/profile/ProfileStats";
 import { ProfileAbout } from "../../components/profile/ProfileAbout";
-import { TradeList } from "../../components/profile/TradeList";
 import { WishlistItems } from "../../components/profile/WishlistItems";
-import { ReservedItems } from "../../components/profile/ReservedItems";
-import { TransactionDashboard } from "../../components/profile/TransactionDashboard";
+import { ItemCard } from "../../components/items/ItemCard";
 import { BlockedUsersModal } from "../../components/profile/BlockedUsersModal";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
 import ProductDetailModal from "../../components/product/ProductDetailModal";
-import EditProductModal from "../../components/product/EditProductModal";
-import { GradeBenefitsSummary } from "../../components/ui/MemberGradeSystem";
+import {
+  MemberGradeSystem,
+  GradeBenefitsSummary,
+} from "../../components/ui/MemberGradeSystem";
 import { GradeBenefitsModal } from "../../components/profile/GradeBenefitsModal";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
@@ -30,12 +29,11 @@ import {
   Loader2,
   AlertCircle,
   Shield,
-  MoreVertical,
-  Edit,
-  Trash2,
-  ArrowUp,
+  Lock,
   MapPin,
-  Calendar,
+  Smartphone,
+  Mail,
+  Edit2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
@@ -44,18 +42,13 @@ export default function MyProfilePage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [trades, setTrades] = useState<TradeItem[]>([]);
   const [myItems, setMyItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tradesLoading, setTradesLoading] = useState(true);
   const [itemsLoading, setItemsLoading] = useState(true);
   const [error, setError] = useState("");
   const [showBlockedUsers, setShowBlockedUsers] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showItemModal, setShowItemModal] = useState(false);
-  const [showItemMenu, setShowItemMenu] = useState<string | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
 
@@ -67,27 +60,11 @@ export default function MyProfilePage() {
 
     if (currentUser) {
       loadProfile();
-      loadTrades();
       loadMyItems();
     }
   }, [currentUser, authLoading, router]);
 
   // 외부 클릭 시 메뉴 닫기
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showItemMenu) {
-        const target = event.target as Element;
-        if (!target.closest(".item-menu")) {
-          setShowItemMenu(null);
-        }
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showItemMenu]);
 
   const loadProfile = async () => {
     if (!currentUser) return;
@@ -106,23 +83,6 @@ export default function MyProfilePage() {
       setError("프로필을 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadTrades = async () => {
-    if (!currentUser) return;
-
-    try {
-      setTradesLoading(true);
-      const result = await getRecentTrades(currentUser.uid, 5);
-
-      if (result.success && result.data) {
-        setTrades(result.data);
-      }
-    } catch (err) {
-      console.error("거래 내역 로드 실패:", err);
-    } finally {
-      setTradesLoading(false);
     }
   };
 
@@ -201,42 +161,6 @@ export default function MyProfilePage() {
     setShowItemModal(true);
   };
 
-  const handleItemEdit = (item: any) => {
-    setShowItemMenu(null);
-    setEditingItem(item);
-    setShowEditModal(true);
-  };
-
-  const handleItemDelete = async (item: any) => {
-    setShowItemMenu(null);
-
-    if (window.confirm("정말로 이 상품을 삭제하시겠습니까?")) {
-      try {
-        // 상품 삭제 API 호출
-        const { deleteItem } = await import("../../lib/api/products");
-        const result = await deleteItem(item.id, currentUser?.uid || "");
-
-        if (result.success) {
-          toast.success("상품이 삭제되었습니다.");
-          // 상품 목록 새로고침
-          loadMyItems();
-        } else {
-          toast.error(result.error || "상품 삭제에 실패했습니다.");
-        }
-      } catch (error) {
-        console.error("상품 삭제 실패:", error);
-        toast.error("상품 삭제 중 오류가 발생했습니다.");
-      }
-    }
-  };
-
-  const handleEditComplete = () => {
-    setShowEditModal(false);
-    setEditingItem(null);
-    // 상품 목록 새로고침
-    loadMyItems();
-  };
-
   const handleCloseProductModal = () => {
     setShowProductModal(false);
     setSelectedItem(null);
@@ -273,29 +197,6 @@ export default function MyProfilePage() {
   const getCategoryLabel = (category: string) => {
     const categoryInfo = INSTRUMENT_CATEGORIES.find(c => c.key === category);
     return categoryInfo?.label || category;
-  };
-
-  const handleItemBump = async (item: any) => {
-    setShowItemMenu(null);
-
-    try {
-      // 상품 끌어올리기 API 호출
-      const { updateItem } = await import("../../lib/api/products");
-      const result = await updateItem(item.id, currentUser?.uid || "", {
-        updatedAt: new Date(),
-      });
-
-      if (result.success) {
-        toast.success("상품이 끌어올려졌습니다!");
-        // 상품 목록 새로고침
-        loadMyItems();
-      } else {
-        toast.error(result.error || "끌어올리기에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("끌어올리기 실패:", error);
-      toast.error("끌어올리기 중 오류가 발생했습니다.");
-    }
   };
 
   if (authLoading || loading) {
@@ -342,9 +243,6 @@ export default function MyProfilePage() {
             onAvatarUpdate={handleAvatarUpload}
           />
 
-          {/* 거래 현황 대시보드 */}
-          <TransactionDashboard />
-
           {/* 회원 등급 정보 */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -359,7 +257,7 @@ export default function MyProfilePage() {
                 등급 혜택 보기
               </Button>
             </div>
-            <GradeBenefitsSummary currentGrade={currentUser?.grade} />
+            <MemberGradeSystem currentGrade={currentUser?.grade} />
           </Card>
 
           {/* 자기소개 */}
@@ -369,189 +267,83 @@ export default function MyProfilePage() {
             onUpdate={handleProfileUpdate}
           />
 
-          {/* 최근 거래 */}
-          <TradeList trades={trades} loading={tradesLoading} />
-
-          {/* 내가 등록한 상품 */}
+          {/* 계정 설정 */}
           <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                내가 등록한 상품
-              </h3>
-              <Button
-                onClick={() => router.push("/profile/items")}
-                size="sm"
-                variant="outline"
-              >
-                전체 보기
-              </Button>
-            </div>
-
-            {itemsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-                <span className="ml-2 text-gray-600">
-                  상품을 불러오는 중...
-                </span>
-              </div>
-            ) : myItems.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">등록한 상품이 없습니다.</p>
-                <div className="space-x-3">
-                  <Button
-                    onClick={() => router.push("/product/new")}
-                    variant="primary"
-                  >
-                    첫 상품 등록하기
-                  </Button>
-                  <Button
-                    onClick={() => router.push("/profile/items")}
-                    variant="outline"
-                  >
-                    전체 보기
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {myItems.map(item => (
-                  <div
-                    key={item.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow relative"
-                  >
-                    <div className="aspect-square bg-gray-100 rounded-lg mb-3 overflow-hidden relative group">
-                      {item.images && item.images.length > 0 ? (
-                        <img
-                          src={item.images[0]}
-                          alt={item.title}
-                          className="w-full h-full object-cover cursor-pointer"
-                          onClick={() => handleItemClick(item)}
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center text-gray-400 cursor-pointer"
-                          onClick={() => handleItemClick(item)}
-                        >
-                          이미지 없음
-                        </div>
-                      )}
-
-                      {/* 점 메뉴 버튼 */}
-                      <div className="absolute top-2 right-2 item-menu">
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            setShowItemMenu(
-                              showItemMenu === item.id ? null : item.id
-                            );
-                          }}
-                          className="bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreVertical className="w-4 h-4 text-gray-600" />
-                        </button>
-
-                        {/* 드롭다운 메뉴 */}
-                        {showItemMenu === item.id && (
-                          <div className="absolute top-10 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleItemEdit(item);
-                              }}
-                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                            >
-                              <Edit className="w-4 h-4" />
-                              <span>수정</span>
-                            </button>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleItemBump(item);
-                              }}
-                              className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
-                            >
-                              <ArrowUp className="w-4 h-4" />
-                              <span>끌어올리기</span>
-                            </button>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleItemDelete(item);
-                              }}
-                              className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span>삭제</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <h4 className="font-semibold text-gray-900 mb-1 text-sm line-clamp-2">
-                      {item.title || `${item.brand} ${item.model}`}
-                    </h4>
-                    <p className="text-base font-bold text-blue-600 mb-2">
-                      {item.price?.toLocaleString("ko-KR")}원
-                    </p>
-                    <div className="flex items-center text-xs text-gray-600 space-x-2 mb-2">
-                      <span className="flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        <span className="truncate">{item.region}</span>
-                      </span>
-                      <span className="flex items-center">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        <span className="truncate">
-                          {formatDate(item.createdAt)}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500 truncate">
-                        {getCategoryIcon(item.category)}{" "}
-                        {getCategoryLabel(item.category)}
-                      </span>
-                    </div>
-                    <div className="mt-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          item.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : item.status === "reserved"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : item.status === "paid_hold"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {item.status === "active" && "판매중"}
-                        {item.status === "reserved" && "예약중"}
-                        {item.status === "paid_hold" && "결제완료"}
-                        {item.status === "sold" && "거래완료"}
-                      </span>
-                    </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              계정 설정
+            </h3>
+            <div className="space-y-3">
+              {/* 이메일 */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Mail className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">이메일</p>
+                    <p className="text-sm text-gray-600">{profile.email}</p>
                   </div>
-                ))}
+                </div>
+                <span className="text-xs text-gray-400">변경 불가</span>
               </div>
-            )}
+
+              {/* 비밀번호 */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
+                <div className="flex items-center space-x-3">
+                  <Lock className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      비밀번호
+                    </p>
+                    <p className="text-sm text-gray-600">••••••••</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="ghost">
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* 지역 */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
+                <div className="flex items-center space-x-3">
+                  <MapPin className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      거래 지역
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {profile.region || "설정되지 않음"}
+                    </p>
+                  </div>
+                </div>
+                <Button size="sm" variant="ghost" onClick={handleEdit}>
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* 핸드폰 인증 */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Smartphone className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      핸드폰 인증
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {profile.phoneVerified
+                        ? `인증완료 ${profile.phoneNumber || ""}`
+                        : "인증되지 않음"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant={profile.phoneVerified ? "outline" : "primary"}
+                  onClick={() => toast.info("핸드폰 인증 기능은 준비중입니다.")}
+                >
+                  {profile.phoneVerified ? "변경" : "인증하기"}
+                </Button>
+              </div>
+            </div>
           </Card>
-
-          {/* 찜한 상품 */}
-          {currentUser?.uid && (
-            <WishlistItems
-              userId={currentUser.uid}
-              onItemClick={item => {
-                // 상품 상세 모달 열기
-                setSelectedItem(item);
-                setShowProductModal(true);
-              }}
-            />
-          )}
-
-          {/* 거래중인 상품 (판매자용) */}
-          {currentUser?.uid && (
-            <ReservedItems userId={currentUser.uid} isSeller={true} />
-          )}
-
 
           {/* 차단된 사용자 관리 */}
           <Card className="p-6">
@@ -599,19 +391,6 @@ export default function MyProfilePage() {
             setShowItemModal(false);
             setSelectedItem(null);
           }}
-        />
-      )}
-
-      {/* 상품 수정 모달 */}
-      {editingItem && (
-        <EditProductModal
-          productId={editingItem.id}
-          isOpen={showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setEditingItem(null);
-          }}
-          onSuccess={handleEditComplete}
         />
       )}
 

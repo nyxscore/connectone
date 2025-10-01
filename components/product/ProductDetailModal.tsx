@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import {
   MapPin,
@@ -20,6 +21,8 @@ import {
   Edit,
   Clock,
   Trash2,
+  Shield,
+  ShoppingCart,
 } from "lucide-react";
 import { getProductDetail, getSellerInfo } from "@/lib/api/product-detail";
 import { ProductDetail, SellerInfo, TradeOption } from "@/data/schemas/product";
@@ -33,12 +36,10 @@ import { Card } from "@/components/ui/Card";
 import { FirestoreChatModal } from "@/components/chat/FirestoreChatModal";
 import { getUserProfile } from "@/lib/profile/api";
 import { UserProfile } from "@/data/profile/types";
-import { SellerProfileModal } from "@/components/profile/SellerProfileModal";
+import { OtherUserProfileModal } from "@/components/chat/OtherUserProfileModal";
 import EditProductModal from "./EditProductModal";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ItemGallery } from "@/components/items/ItemGallery";
-import { ItemApplicationButton } from "@/components/items/ItemApplicationButton";
-import { ItemApplicationsList } from "@/components/items/ItemApplicationsList";
 
 // 마그니파이어 이미지 컴포넌트
 interface MagnifierImageProps {
@@ -77,6 +78,7 @@ export default function ProductDetailModal({
   onClose,
 }: ProductDetailModalProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [product, setProduct] = useState<ProductDetail | null>(null);
 
   // item이 있으면 item.id를 productId로 사용
@@ -93,6 +95,7 @@ export default function ProductDetailModal({
   // 거래 방식 및 구매 관련 상태
   const [selectedTradeMethod, setSelectedTradeMethod] =
     useState<TradeOption | null>(null);
+  const [buyerEscrowEnabled, setBuyerEscrowEnabled] = useState(false); // 구매자 안전거래 선택 여부
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -100,7 +103,6 @@ export default function ProductDetailModal({
   const [showChatModal, setShowChatModal] = useState(false);
   const [showSellerProfileModal, setShowSellerProfileModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showApplications, setShowApplications] = useState(false);
 
   // 본인 상품인지 확인
   const isOwnItem = user && product && user.uid === product.sellerId;
@@ -155,6 +157,14 @@ export default function ProductDetailModal({
           default:
             return type;
         }
+      })
+      .sort((a, b) => {
+        // 직거래를 맨 위로, 택배를 그 다음으로
+        if (a === "직거래") return -1;
+        if (b === "직거래") return 1;
+        if (a.includes("택배")) return -1;
+        if (b.includes("택배")) return 1;
+        return 0;
       });
 
     console.log("SellItem shippingTypes:", sellItem.shippingTypes);
@@ -177,6 +187,7 @@ export default function ProductDetailModal({
       aiProcessedImages: sellItem.aiProcessedImages || [],
       createdAt: sellItem.createdAt,
       updatedAt: sellItem.updatedAt,
+      escrowEnabled: sellItem.escrowEnabled || false, // 안전거래 옵션 추가
     };
   };
 
@@ -222,7 +233,7 @@ export default function ProductDetailModal({
                     username: item.sellerUid,
                     nickname: "사용자",
                     region: "서울시 강남구",
-                    grade: "Bronze",
+                    grade: "E",
                     tradesCount: 0,
                     reviewsCount: 0,
                     createdAt: new Date(),
@@ -310,7 +321,7 @@ export default function ProductDetailModal({
                     username: productResult.product.sellerId,
                     nickname: "사용자",
                     region: "서울시 강남구",
-                    grade: "Bronze",
+                    grade: "E",
                     tradesCount: 0,
                     reviewsCount: 0,
                     createdAt: new Date(),
@@ -374,12 +385,16 @@ export default function ProductDetailModal({
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
-      case "Gold":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "Silver":
+      case "A":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "B":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      case "C":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "D":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "E":
         return "bg-gray-100 text-gray-800 border-gray-200";
-      case "Bronze":
-        return "bg-orange-100 text-orange-800 border-orange-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -387,14 +402,18 @@ export default function ProductDetailModal({
 
   const getGradeIcon = (grade: string) => {
     switch (grade) {
-      case "Gold":
-        return "🥇";
-      case "Silver":
-        return "🥈";
-      case "Bronze":
-        return "🥉";
+      case "A":
+        return "🎸";
+      case "B":
+        return "🎹";
+      case "C":
+        return "🎼";
+      case "D":
+        return "🎵";
+      case "E":
+        return "🥁";
       default:
-        return "🏅";
+        return "🥁";
     }
   };
 
@@ -443,6 +462,34 @@ export default function ProductDetailModal({
     } catch (error) {
       console.error("구매 취소 실패:", error);
       toast.error("구매 취소 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartChat = async () => {
+    if (!product || !user) return;
+
+    try {
+      setLoading(true);
+
+      // 채팅 생성 및 이동 로직
+      const { createChat } = await import("../../lib/chat/api");
+      const chatResult = await createChat(
+        product.sellerUid,
+        user.uid,
+        product.id
+      );
+
+      if (chatResult.success && chatResult.chatId) {
+        // 채팅 페이지로 이동
+        window.location.href = `/chat?chatId=${chatResult.chatId}`;
+      } else {
+        toast.error("채팅을 시작할 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("채팅 시작 실패:", error);
+      toast.error("채팅 시작 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -631,39 +678,92 @@ export default function ProductDetailModal({
                       product.tradeOptions
                     )}
                     {product.tradeOptions.map(option => (
-                      <label
-                        key={option}
-                        className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                          selectedTradeMethod === option
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="tradeMethod"
-                          value={option}
-                          checked={selectedTradeMethod === option}
-                          onChange={e =>
-                            setSelectedTradeMethod(
-                              e.target.value as TradeOption
-                            )
-                          }
-                          className="sr-only"
-                        />
-                        <div
-                          className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
+                      <div key={option}>
+                        <label
+                          className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${
                             selectedTradeMethod === option
-                              ? "border-blue-500 bg-blue-500"
-                              : "border-gray-300"
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 hover:border-gray-300"
                           }`}
                         >
-                          {selectedTradeMethod === option && (
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          <input
+                            type="radio"
+                            name="tradeMethod"
+                            value={option}
+                            checked={selectedTradeMethod === option}
+                            onChange={e =>
+                              setSelectedTradeMethod(
+                                e.target.value as TradeOption
+                              )
+                            }
+                            className="sr-only"
+                          />
+                          <div
+                            className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
+                              selectedTradeMethod === option
+                                ? "border-blue-500 bg-blue-500"
+                                : "border-gray-300"
+                            }`}
+                          >
+                            {selectedTradeMethod === option && (
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            )}
+                          </div>
+                          <span className="font-medium">{option}</span>
+                        </label>
+
+                        {/* 택배 선택 시 안전거래 옵션 표시 */}
+                        {selectedTradeMethod === option &&
+                          option.includes("택배") &&
+                          product?.escrowEnabled && (
+                            <div
+                              className={`mt-3 flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                                buyerEscrowEnabled
+                                  ? "border-green-500 bg-green-50"
+                                  : "border-green-200 bg-green-50 hover:border-green-300"
+                              }`}
+                              onClick={() =>
+                                setBuyerEscrowEnabled(!buyerEscrowEnabled)
+                              }
+                            >
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center ${
+                                  buyerEscrowEnabled
+                                    ? "border-green-500 bg-green-500"
+                                    : "border-green-300 bg-white"
+                                }`}
+                              >
+                                {buyerEscrowEnabled && (
+                                  <svg
+                                    className="w-3 h-3 text-white"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium text-green-800">
+                                    안전거래
+                                  </span>
+                                  <span className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                    ⭐ 추천
+                                  </span>
+                                </div>
+                                <p className="text-xs text-green-700 mt-1">
+                                  거래금액이 보호되며, 상품 수령 후에 판매자에게
+                                  입금됩니다
+                                </p>
+                              </div>
+                            </div>
                           )}
-                        </div>
-                        <span className="font-medium">{option}</span>
-                      </label>
+                      </div>
                     ))}
                   </div>
                 </Card>
@@ -679,11 +779,50 @@ export default function ProductDetailModal({
 
                     {/* 총 금액 */}
                     <div className="pt-4 border-t border-gray-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-semibold">총 금액</span>
-                        <span className="text-2xl font-bold text-blue-600">
-                          {formatPrice(product.price)}원
-                        </span>
+                      <div className="space-y-2">
+                        {/* 상품 금액 */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">
+                            상품 금액
+                          </span>
+                          <span className="text-base font-medium">
+                            {formatPrice(product.price)}원
+                          </span>
+                        </div>
+
+                        {/* 안전거래 수수료 - 택배 선택 + 안전거래 체크 시에만 */}
+                        {selectedTradeMethod?.includes("택배") &&
+                          product?.escrowEnabled &&
+                          buyerEscrowEnabled && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">
+                                안전거래 수수료 (1.9%)
+                              </span>
+                              <span className="text-base font-medium text-red-600">
+                                +
+                                {Math.round(
+                                  product.price * 0.019
+                                ).toLocaleString()}
+                                원
+                              </span>
+                            </div>
+                          )}
+
+                        {/* 총 금액 */}
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                          <span className="text-lg font-semibold">총 금액</span>
+                          <span className="text-2xl font-bold text-blue-600">
+                            {selectedTradeMethod?.includes("택배") &&
+                            product?.escrowEnabled &&
+                            buyerEscrowEnabled
+                              ? formatPrice(
+                                  product.price +
+                                    Math.round(product.price * 0.019)
+                                )
+                              : formatPrice(product.price)}
+                            원
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -701,33 +840,6 @@ export default function ProductDetailModal({
                             <Edit className="w-5 h-5 mr-2" />
                             수정하기
                           </Button>
-
-                          {/* 구매신청자 목록 버튼 */}
-                          <Button
-                            variant="outline"
-                            onClick={() =>
-                              setShowApplications(!showApplications)
-                            }
-                            className="w-full"
-                          >
-                            <User className="w-5 h-5 mr-2" />
-                            {showApplications
-                              ? "구매신청자 목록 닫기"
-                              : "구매신청자 목록 보기"}
-                          </Button>
-
-                          {/* 구매신청자 목록 */}
-                          {showApplications && (
-                            <div className="mt-4">
-                              <ItemApplicationsList
-                                itemId={actualProductId || ""}
-                                onApplicationApproved={() => {
-                                  toast.success("구매신청이 승인되었습니다!");
-                                  setShowApplications(false);
-                                }}
-                              />
-                            </div>
-                          )}
 
                           <Button
                             variant="destructive"
@@ -794,14 +906,30 @@ export default function ProductDetailModal({
                               </span>
                             </button>
                             <button
-                              className="flex-1 p-3 border border-gray-300 rounded-xl hover:bg-gray-50 flex items-center justify-center space-x-2"
+                              className={`flex-1 p-3 rounded-xl flex items-center justify-center space-x-2 ${
+                                selectedTradeMethod === "직거래"
+                                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                  : "border border-gray-300 hover:bg-gray-50"
+                              }`}
                               onClick={() => {
                                 // 채팅 기능 - 채팅 모달 열기
                                 setShowChatModal(true);
                               }}
                             >
-                              <MessageCircle className="w-5 h-5 text-gray-600" />
-                              <span className="text-sm font-medium text-gray-700">
+                              <MessageCircle
+                                className={`w-5 h-5 ${
+                                  selectedTradeMethod === "직거래"
+                                    ? "text-white"
+                                    : "text-gray-600"
+                                }`}
+                              />
+                              <span
+                                className={`text-sm font-medium ${
+                                  selectedTradeMethod === "직거래"
+                                    ? "text-white"
+                                    : "text-gray-700"
+                                }`}
+                              >
                                 채팅하기
                               </span>
                             </button>
@@ -825,14 +953,26 @@ export default function ProductDetailModal({
                               {loading ? "취소 중..." : "구매취소"}
                             </Button>
                           ) : (
-                            // 일반 사용자일 때는 신청하기 버튼 표시
-                            <ItemApplicationButton
-                              itemId={actualProductId || ""}
-                              sellerUid={product?.sellerId || ""}
-                              onApplicationChange={() => {
-                                // 신청 상태 변경 시 필요한 로직
-                              }}
-                            />
+                            // 일반 사용자일 때는 구매 옵션 표시
+                            <div className="space-y-3">
+                              {/* 안전거래를 선택했을 때만 결제 버튼 표시 */}
+                              {buyerEscrowEnabled &&
+                                selectedTradeMethod?.includes("택배") && (
+                                  <Button
+                                    onClick={() => {
+                                      // 안전거래로 구매
+                                      router.push(
+                                        `/payment?itemId=${product?.id}&escrow=true`
+                                      );
+                                    }}
+                                    className="w-full h-12 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
+                                    disabled={loading}
+                                  >
+                                    <ShoppingCart className="w-5 h-5 mr-2" />
+                                    {loading ? "로딩 중..." : "결제하기"}
+                                  </Button>
+                                )}
+                            </div>
                           )}
                         </>
                       )}
@@ -892,10 +1032,12 @@ export default function ProductDetailModal({
 
       {/* 판매자 프로필 모달 */}
       {sellerProfile && (
-        <SellerProfileModal
+        <OtherUserProfileModal
           isOpen={showSellerProfileModal}
           onClose={() => setShowSellerProfileModal(false)}
-          sellerProfile={sellerProfile}
+          userUid={sellerProfile.uid}
+          userNickname={sellerProfile.nickname || "사용자"}
+          userProfileImage={sellerProfile.profileImage}
         />
       )}
 

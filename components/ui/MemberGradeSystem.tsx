@@ -124,148 +124,113 @@ interface MemberGradeSystemProps {
   showCurrentOnly?: boolean;
 }
 
-export const MemberGradeSystem = ({
-  currentGrade,
-  showCurrentOnly = false,
-}: MemberGradeSystemProps) => {
-  const grades =
-    showCurrentOnly && currentGrade
-      ? [currentGrade]
-      : (Object.keys(GRADE_SYSTEM) as UserGrade[]);
+export function MemberGradeSystem({ currentGrade }: MemberGradeSystemProps) {
+  if (!currentGrade) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">등급 정보를 불러올 수 없습니다.</p>
+      </div>
+    );
+  }
+
+  const info = GRADE_SYSTEM[currentGrade];
 
   return (
-    <div className="space-y-4">
-      <div className="text-center mb-8">
+    <div className={`p-4 rounded-lg border-2 ${info.bgColor} border-gray-200`}>
+      <div className="flex items-center gap-8">
+        {/* 왼쪽: 등급 정보 */}
+        <div className="flex items-center space-x-4 flex-shrink-0">
+          <div className="text-4xl">{info.emoji}</div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <h3 className={`text-xl font-bold ${info.color}`}>{info.name}</h3>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                현재 등급
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 mt-1">{info.condition}</p>
+          </div>
+        </div>
+
+        {/* 오른쪽: 주요 혜택 (처음 3개만) */}
+        <div className="hidden md:block flex-1">
+          <ul className="space-y-1">
+            {info.benefits.slice(0, 3).map((benefit, index) => (
+              <li
+                key={index}
+                className="text-sm text-gray-700 flex items-center"
+              >
+                <span className="text-green-500 mr-2">✓</span>
+                {benefit}
+              </li>
+            ))}
+            {info.benefits.length > 3 && (
+              <li className="text-xs text-gray-500 ml-4">
+                +{info.benefits.length - 3}개 추가 혜택
+              </li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function GradeBenefitsSummary() {
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          ConnecTone 회원 등급 시스템
+          회원 등급 시스템
         </h2>
         <p className="text-gray-600">
-          악기 거래를 통해 더 많은 혜택을 받아보세요!
+          Chord 테마의 등급 시스템으로 신뢰할 수 있는 거래를 만들어보세요!
         </p>
       </div>
 
-      <div className="grid gap-4">
-        {grades.map(grade => {
-          const gradeInfo = GRADE_SYSTEM[grade];
-          const isCurrentGrade = showCurrentOnly && currentGrade === grade;
-
-          return (
-            <div
-              key={grade}
-              className={`rounded-lg border-2 p-6 transition-all ${
-                isCurrentGrade
-                  ? "border-blue-500 bg-blue-50 shadow-lg"
-                  : "border-gray-200 bg-white hover:shadow-md"
-              }`}
-            >
-              <div className="flex items-start space-x-4">
-                {/* 이모지 */}
-                <div className="flex-shrink-0">
-                  <div
-                    className={`w-16 h-16 rounded-full ${gradeInfo.bgColor} flex items-center justify-center text-3xl`}
-                  >
-                    {gradeInfo.emoji}
-                  </div>
-                </div>
-
-                {/* 회원 등급 */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className={`text-xl font-bold ${gradeInfo.color}`}>
-                      {gradeInfo.name}
-                    </h3>
-                    {isCurrentGrade && (
-                      <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-full">
-                        현재 등급
-                      </span>
-                    )}
-                  </div>
-
-                  {/* 등급 조건 */}
-                  <div className="mb-3">
-                    <span className="text-sm font-medium text-gray-700">
-                      등급 조건:
-                    </span>
-                    <span className="ml-2 text-sm text-gray-600">
-                      {gradeInfo.condition}
-                    </span>
-                  </div>
-
-                  {/* 등급 혜택 */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">
-                      등급 혜택:
-                    </h4>
-                    <ul className="space-y-1">
-                      {gradeInfo.benefits.map((benefit, index) => (
-                        <li key={index} className="flex items-start space-x-2">
-                          <span className="text-green-500 mt-1">✓</span>
-                          <span className="text-sm text-gray-600">
-                            {benefit}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Object.entries(GRADE_SYSTEM).map(([grade, info]) => (
+          <div
+            key={grade}
+            className={`p-6 rounded-lg border-2 ${info.bgColor} border-gray-200 hover:border-gray-300 transition-colors`}
+          >
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">{info.emoji}</div>
+              <h3 className={`text-xl font-bold ${info.color}`}>{info.name}</h3>
+              <p className="text-sm text-gray-600 mt-1">{info.condition}</p>
             </div>
-          );
-        })}
-      </div>
 
-      {!showCurrentOnly && (
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-medium text-gray-900 mb-2">등급 상승 안내</h4>
-          <p className="text-sm text-gray-600">
-            • 등급은 악기 거래 누적금액을 기준으로 자동으로 상승됩니다.
-            <br />
-            • 등급 혜택은 등급 상승 즉시 적용됩니다.
-            <br />• 거래 내역은 마이페이지에서 확인하실 수 있습니다.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// 등급별 혜택 요약 컴포넌트
-export const GradeBenefitsSummary = ({
-  currentGrade,
-}: {
-  currentGrade?: UserGrade;
-}) => {
-  if (!currentGrade) return null;
-
-  const gradeInfo = GRADE_SYSTEM[currentGrade];
-
-  return (
-    <div
-      className={`p-4 rounded-lg ${gradeInfo.bgColor} border border-gray-200`}
-    >
-      <div className="flex items-center space-x-3 mb-3">
-        <div className="text-2xl">{gradeInfo.emoji}</div>
-        <div>
-          <h3 className={`font-bold ${gradeInfo.color}`}>
-            {gradeInfo.name} 회원
-          </h3>
-          <p className="text-sm text-gray-600">{gradeInfo.condition}</p>
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        {gradeInfo.benefits.slice(0, 3).map((benefit, index) => (
-          <div key={index} className="flex items-center space-x-2">
-            <span className="text-green-500 text-xs">✓</span>
-            <span className="text-sm text-gray-700">{benefit}</span>
+            <div className="space-y-2">
+              <h4 className="font-semibold text-gray-900 text-sm">
+                주요 혜택:
+              </h4>
+              <ul className="space-y-1">
+                {info.benefits.slice(0, 3).map((benefit, index) => (
+                  <li
+                    key={index}
+                    className="text-sm text-gray-600 flex items-start"
+                  >
+                    <span className="text-green-500 mr-2">✓</span>
+                    {benefit}
+                  </li>
+                ))}
+                {info.benefits.length > 3 && (
+                  <li className="text-xs text-gray-500">
+                    +{info.benefits.length - 3}개 추가 혜택
+                  </li>
+                )}
+              </ul>
+            </div>
           </div>
         ))}
-        {gradeInfo.benefits.length > 3 && (
-          <p className="text-xs text-gray-500">
-            +{gradeInfo.benefits.length - 3}개 추가 혜택
-          </p>
-        )}
+      </div>
+
+      <div className="text-center">
+        <p className="text-sm text-gray-500">
+          등급은 거래 누적금액, 평점, 분쟁 없음 등을 종합적으로 평가하여
+          결정됩니다.
+        </p>
       </div>
     </div>
   );
-};
+}

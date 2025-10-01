@@ -269,8 +269,8 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="space-y-3 sm:space-y-4 md:space-y-6 animate-fade-in-up animation-delay-800 px-4">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 justify-center max-w-sm sm:max-w-md md:max-w-none mx-auto">
-                  <Link href="/auth/signup" className="w-full sm:w-auto">
+                <div className="flex flex-col gap-3 sm:gap-4 justify-center max-w-sm mx-auto">
+                  <Link href="/auth/signup" className="w-full">
                     <Button
                       size="lg"
                       className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
@@ -279,7 +279,7 @@ export default function HomePage() {
                       회원가입
                     </Button>
                   </Link>
-                  <Link href="/auth/login" className="w-full sm:w-auto">
+                  <Link href="/auth/login" className="w-full">
                     <Button
                       variant="outline"
                       size="lg"
@@ -353,11 +353,11 @@ export default function HomePage() {
           </p>
 
           {!user && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col gap-4 justify-center max-w-sm mx-auto">
               <Link href="/auth/signup">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto bg-white text-blue-600 hover:bg-gray-100"
+                  className="w-full bg-white text-blue-600 hover:bg-gray-100"
                 >
                   무료로 시작하기
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -366,7 +366,7 @@ export default function HomePage() {
               <Link href="/list">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto bg-white text-blue-600 hover:bg-gray-100 font-semibold"
+                  className="w-full bg-white text-blue-600 hover:bg-gray-100 font-semibold"
                 >
                   상품 둘러보기
                 </Button>

@@ -278,7 +278,7 @@ export function SellerTransactionPageClient({
                     )}
 
                     {/* 거래중 배지 */}
-                    <div className="absolute top-1 right-1 bg-orange-500 text-white px-1.5 py-0.5 rounded text-xs font-bold shadow-lg">
+                    <div className="absolute bottom-1 right-1 bg-orange-500 text-white px-1.5 py-0.5 rounded text-xs font-bold shadow-lg">
                       거래중
                     </div>
                   </div>
@@ -405,16 +405,16 @@ export function SellerTransactionPageClient({
                         {buyerProfile?.grade || "C"}등급
                       </span>
                       <span className="text-xs text-gray-500">
-                        {buyerProfile?.grade === "Bronze"
-                          ? "Chord"
-                          : buyerProfile?.grade === "Silver"
-                            ? "Melody"
-                            : buyerProfile?.grade === "Gold"
-                              ? "Harmony"
-                              : buyerProfile?.grade === "Platinum"
-                                ? "Symphony"
-                                : buyerProfile?.grade === "Diamond"
-                                  ? "Concert"
+                        {buyerProfile?.grade === "A"
+                          ? "Allegro"
+                          : buyerProfile?.grade === "B"
+                            ? "Bravura"
+                            : buyerProfile?.grade === "C"
+                              ? "Chord"
+                              : buyerProfile?.grade === "D"
+                                ? "Duo"
+                                : buyerProfile?.grade === "E"
+                                  ? "Ensemble"
                                   : "Chord"}
                       </span>
                     </div>

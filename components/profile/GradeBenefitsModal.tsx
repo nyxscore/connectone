@@ -95,10 +95,11 @@ export function GradeBenefitsModal({
             </div>
 
             {/* 등급 시스템 */}
-            <MemberGradeSystem
-              currentGrade={currentGrade}
-              showCurrentOnly={!!selectedGrade}
-            />
+            {selectedGrade ? (
+              <MemberGradeSystem currentGrade={selectedGrade} />
+            ) : (
+              <GradeBenefitsSummary />
+            )}
 
             {/* 등급 상승 가이드 */}
             <div className="grid md:grid-cols-3 gap-4 mt-8">

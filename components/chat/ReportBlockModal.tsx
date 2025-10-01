@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { reportUser, blockUser } from "../../lib/chat/api";
@@ -14,15 +14,14 @@ interface ReportBlockModalProps {
   reportedUid: string;
   reportedNickname: string;
   onBlocked?: () => void;
+  initialTab?: "report" | "block";
 }
 
 const reportReasons = [
-  "스팸 또는 광고",
+  "스팸/광고",
   "부적절한 언어 사용",
-  "사기 또는 거짓 정보",
-  "괴롭힘 또는 협박",
-  "성적 내용",
-  "폭력적 내용",
+  "사기/피싱",
+  "성희롱/성추행",
   "기타",
 ];
 
@@ -32,12 +31,18 @@ export function ReportBlockModal({
   reportedUid,
   reportedNickname,
   onBlocked,
+  initialTab = "report",
 }: ReportBlockModalProps) {
   const { user } = useAuth();
   const [selectedReason, setSelectedReason] = useState("");
   const [description, setDescription] = useState("");
   const [isReporting, setIsReporting] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
+  const [activeTab, setActiveTab] = useState<"report" | "block">(initialTab);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   if (!isOpen) return null;
 
@@ -114,82 +119,97 @@ export function ReportBlockModal({
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-900">
-            {reportedNickname}님 신고/차단
+            {activeTab === "report" ? "신고하기" : "차단하기"}
           </h3>
           <Button variant="ghost" size="sm" onClick={onClose} className="p-2">
             <X className="w-5 h-5" />
           </Button>
         </div>
 
-        {/* 신고 섹션 */}
-        <div className="p-4 border-b">
-          <div className="flex items-center space-x-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-            <h4 className="font-medium text-gray-900">신고하기</h4>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                신고 사유
-              </label>
-              <select
-                value={selectedReason}
-                onChange={e => setSelectedReason(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">사유를 선택해주세요</option>
-                {reportReasons.map(reason => (
-                  <option key={reason} value={reason}>
-                    {reason}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                상세 설명 (선택사항)
-              </label>
-              <textarea
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                placeholder="신고 사유에 대한 자세한 설명을 입력해주세요"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-20 resize-none"
-              />
-            </div>
-
-            <Button
-              onClick={handleReport}
-              disabled={isReporting || !selectedReason}
-              className="w-full bg-red-600 hover:bg-red-700 text-white"
-            >
-              {isReporting ? "신고 중..." : "신고하기"}
-            </Button>
-          </div>
+        {/* 탭 버튼 */}
+        <div className="flex border-b">
+          <button
+            onClick={() => setActiveTab("report")}
+            className={`flex-1 p-4 text-center font-medium transition-colors ${
+              activeTab === "report"
+                ? "text-red-600 border-b-2 border-red-600 bg-red-50"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <AlertTriangle className="w-5 h-5 mx-auto mb-1" />
+            신고하기
+          </button>
+          <button
+            onClick={() => setActiveTab("block")}
+            className={`flex-1 p-4 text-center font-medium transition-colors ${
+              activeTab === "block"
+                ? "text-gray-600 border-b-2 border-gray-600 bg-gray-50"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <X className="w-5 h-5 mx-auto mb-1" />
+            차단하기
+          </button>
         </div>
+
+        {/* 신고 섹션 */}
+        {activeTab === "report" && (
+          <div className="p-4">
+            <p className="text-sm text-gray-600 mb-4">
+              신고 사유를 선택해주세요.
+            </p>
+
+            <div className="space-y-2">
+              {reportReasons.map(reason => (
+                <button
+                  key={reason}
+                  onClick={() => setSelectedReason(reason)}
+                  className={`w-full p-3 text-left rounded-lg border-2 transition-all ${
+                    selectedReason === reason
+                      ? "border-red-500 bg-red-50 text-red-700"
+                      : "border-gray-200 hover:border-gray-300 text-gray-700"
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4">
+              <Button
+                onClick={handleReport}
+                disabled={isReporting || !selectedReason}
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isReporting ? "신고 중..." : "신고하기"}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* 차단 섹션 */}
-        <div className="p-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <Shield className="w-5 h-5 text-orange-500" />
-            <h4 className="font-medium text-gray-900">차단하기</h4>
+        {activeTab === "block" && (
+          <div className="p-4">
+            <div className="flex items-center space-x-2 mb-4">
+              <X className="w-5 h-5 text-gray-500" />
+              <h4 className="font-medium text-gray-900">차단하기</h4>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              차단하면 {reportedNickname}님과의 모든 채팅이 삭제되며, 더 이상
+              메시지를 주고받을 수 없습니다.
+            </p>
+
+            <Button
+              onClick={handleBlock}
+              disabled={isBlocking}
+              variant="outline"
+              className="w-full border-gray-300 text-gray-600 hover:bg-gray-50"
+            >
+              {isBlocking ? "차단 중..." : "차단하기"}
+            </Button>
           </div>
-
-          <p className="text-sm text-gray-600 mb-4">
-            차단하면 {reportedNickname}님과의 모든 채팅이 삭제되며, 더 이상
-            메시지를 주고받을 수 없습니다.
-          </p>
-
-          <Button
-            onClick={handleBlock}
-            disabled={isBlocking}
-            variant="outline"
-            className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
-          >
-            {isBlocking ? "차단 중..." : "차단하기"}
-          </Button>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -90,7 +90,7 @@ export async function getSellerInfo(sellerId: string): Promise<{
     const seller: SellerInfo = {
       id: sellerDoc.id,
       displayName: sellerData.displayName || "알 수 없음",
-      grade: sellerData.grade || "Bronze",
+      grade: sellerData.grade || "E",
       phoneVerified: sellerData.phoneVerified || false,
       idVerified: sellerData.idVerified || false,
       bankVerified: sellerData.bankVerified || false,

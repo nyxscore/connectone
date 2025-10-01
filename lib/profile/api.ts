@@ -41,6 +41,9 @@ export async function getUserProfile(
       ...userData,
       // 응답률이 없으면 기본값 0 설정
       responseRate: userData.responseRate || 0,
+      // 자기소개 필드들 명시적으로 포함
+      introShort: userData.introShort || "",
+      introLong: userData.introLong || "",
     } as UserProfile;
 
     // 응답률이 없거나 오래된 경우 업데이트
@@ -229,13 +232,13 @@ export async function getRecentTrades(
   }
 }
 
-// 사용자 등급 정보 가져오기
+// 사용자 등급 정보 가져오기 (Chord 테마)
 export function getGradeInfo(grade: string) {
   const gradeInfo = {
     C: {
       emoji: "🌱",
       label: "Chord",
-      displayName: "Chord 회원",
+      displayName: "Chord",
       color: "text-green-600",
       bgColor: "bg-green-100",
       description: "음악 여행의 시작",
@@ -243,47 +246,47 @@ export function getGradeInfo(grade: string) {
     D: {
       emoji: "🎵",
       label: "Duo",
-      displayName: "듀오 회원",
+      displayName: "Duo",
       color: "text-sky-600",
       bgColor: "bg-sky-100",
       description: "함께하는 음악",
     },
     E: {
-      emoji: "🎶",
+      emoji: "🎼",
       label: "Ensemble",
-      displayName: "앙상블 회원",
+      displayName: "Ensemble",
       color: "text-emerald-600",
       bgColor: "bg-emerald-100",
       description: "화합의 멜로디",
     },
     F: {
-      emoji: "🎼",
+      emoji: "🎹",
       label: "Forte",
-      displayName: "포르테 회원",
+      displayName: "Forte",
       color: "text-blue-600",
       bgColor: "bg-blue-100",
       description: "강렬한 음악",
     },
     G: {
-      emoji: "🎹",
+      emoji: "🎺",
       label: "Grand",
-      displayName: "그랜드 회원",
+      displayName: "Grand",
       color: "text-purple-600",
       bgColor: "bg-purple-100",
       description: "웅장한 연주",
     },
     A: {
-      emoji: "⭐",
+      emoji: "🎸",
       label: "Allegro",
-      displayName: "알레그로 회원",
+      displayName: "Allegro",
       color: "text-orange-600",
       bgColor: "bg-orange-100",
       description: "빠르고 밝은 음악",
     },
     B: {
-      emoji: "👑",
+      emoji: "🎻",
       label: "Bravura",
-      displayName: "브라부라 회원",
+      displayName: "Bravura",
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
       description: "화려한 기교",

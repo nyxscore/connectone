@@ -41,6 +41,7 @@ export default function ProductWizardPage() {
     []
   );
   const [parcelPaymentType, setParcelPaymentType] = useState<string>(""); // "seller" or "buyer"
+  const [escrowEnabled, setEscrowEnabled] = useState<boolean>(false); // 안전거래 옵션
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // AI 감정 관련 상태
@@ -643,6 +644,75 @@ export default function ProductWizardPage() {
                               </div>
                             ))}
                           </div>
+
+                          {/* 안전거래 옵션 - 택배 선택 시에만 표시 */}
+                          {selectedShippingTypes.includes("parcel") && (
+                            <div
+                              className={`mt-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] ${
+                                escrowEnabled
+                                  ? "border-green-500 ring-4 ring-green-200"
+                                  : "border-green-300 hover:border-green-400"
+                              }`}
+                              onClick={() => {
+                                const newValue = !escrowEnabled;
+                                setEscrowEnabled(newValue);
+                                updateFormData({
+                                  escrowEnabled: newValue,
+                                });
+                              }}
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-3">
+                                  <div
+                                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                                      escrowEnabled
+                                        ? "bg-green-500 scale-110"
+                                        : "bg-green-200"
+                                    }`}
+                                  >
+                                    <span className="text-2xl">
+                                      {escrowEnabled ? "✓" : "🛡️"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-lg font-bold text-green-800">
+                                        안전거래
+                                      </span>
+                                      <span className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md animate-pulse">
+                                        ⭐ 강력추천
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-green-700 mt-1 font-medium">
+                                      거래금액이 보호되며, 상품 수령 후에
+                                      판매자에게 입금됩니다.
+                                    </p>
+                                  </div>
+                                </div>
+                                <label className="flex items-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={escrowEnabled}
+                                    onChange={e => {
+                                      e.stopPropagation();
+                                      setEscrowEnabled(e.target.checked);
+                                      updateFormData({
+                                        escrowEnabled: e.target.checked,
+                                      });
+                                    }}
+                                    className="w-8 h-8 text-green-600 border-2 border-gray-400 rounded-lg focus:ring-green-500 cursor-pointer"
+                                  />
+                                </label>
+                              </div>
+                              <div className="pt-3 border-t border-green-200">
+                                <p className="text-xs text-gray-600">
+                                  💡 안전거래 수수료(1.9%)는 구매자가
+                                  부담합니다.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
                           {errors.shippingTypes && (
                             <p className="mt-1 text-sm text-red-600">
                               {errors.shippingTypes.message}

@@ -15,14 +15,12 @@ import {
   onSnapshot,
   serverTimestamp,
   Timestamp,
-  and,
 } from "firebase/firestore";
 import { db } from "../api/firebase";
 import {
   Chat,
   Message,
   ChatWithDetails,
-  CreateChatData,
   SendMessageData,
 } from "../../data/chat/types";
 import { getItem } from "../api/products";
@@ -37,6 +35,74 @@ async function updateResponseRateAsync(sellerUid: string) {
   } catch (error) {
     console.error("응답률 업데이트 실패:", error);
   }
+}
+
+// 사용자 온라인 상태 설정
+export async function setUserOnlineStatus(
+  userId: string,
+  isOnline: boolean
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log(
+      `🟢 온라인 상태 설정: ${userId} -> ${isOnline ? "온라인" : "오프라인"}`
+    );
+
+    const userRef = doc(db, "users", userId);
+
+    // 온라인/오프라인 상태 설정
+    await setDoc(
+      userRef,
+      {
+        isOnline: isOnline,
+        lastSeen: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    console.log(
+      `✅ 온라인 상태 설정 완료: ${userId} -> ${isOnline ? "온라인" : "오프라인"}`
+    );
+    return { success: true };
+  } catch (error) {
+    console.error("❌ 온라인 상태 설정 실패:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "온라인 상태 설정에 실패했습니다.",
+    };
+  }
+}
+
+// 사용자 온라인 상태 구독
+export function subscribeToUserOnlineStatus(
+  userId: string,
+  callback: (isOnline: boolean, lastSeen?: Timestamp) => void
+): () => void {
+  console.log(`👀 온라인 상태 구독 시작: ${userId}`);
+  const userRef = doc(db, "users", userId);
+
+  return onSnapshot(
+    userRef,
+    doc => {
+      if (doc.exists()) {
+        const data = doc.data();
+        const isOnline = data.isOnline || false;
+        console.log(
+          `📡 온라인 상태 업데이트: ${userId} -> ${isOnline ? "온라인" : "오프라인"}`
+        );
+        callback(isOnline, data.lastSeen);
+      } else {
+        console.log(`❌ 사용자 문서 없음: ${userId}`);
+        callback(false);
+      }
+    },
+    error => {
+      console.error("❌ 온라인 상태 구독 오류:", error);
+      callback(false);
+    }
+  );
 }
 
 // 채팅 생성 또는 가져오기
@@ -758,26 +824,64 @@ export async function blockUser(
 
     // 차단된 사용자와의 모든 채팅 삭제
     const chatsRef = collection(db, "chats");
-    const buyerQuery = query(
+
+    // 단일 필드 쿼리로 분리하여 인덱스 문제 해결
+    const buyerAsBuyerQuery = query(
       chatsRef,
-      where("buyerUid", "==", blockerUid),
-      where("sellerUid", "==", blockedUid)
+      where("buyerUid", "==", blockerUid)
     );
-    const sellerQuery = query(
+    const buyerAsSellerQuery = query(
       chatsRef,
-      where("buyerUid", "==", blockedUid),
       where("sellerUid", "==", blockerUid)
     );
+    const blockedAsBuyerQuery = query(
+      chatsRef,
+      where("buyerUid", "==", blockedUid)
+    );
+    const blockedAsSellerQuery = query(
+      chatsRef,
+      where("sellerUid", "==", blockedUid)
+    );
 
-    const [buyerSnapshot, sellerSnapshot] = await Promise.all([
-      getDocs(buyerQuery),
-      getDocs(sellerQuery),
+    const [
+      buyerAsBuyerSnapshot,
+      buyerAsSellerSnapshot,
+      blockedAsBuyerSnapshot,
+      blockedAsSellerSnapshot,
+    ] = await Promise.all([
+      getDocs(buyerAsBuyerQuery),
+      getDocs(buyerAsSellerQuery),
+      getDocs(blockedAsBuyerQuery),
+      getDocs(blockedAsSellerQuery),
     ]);
 
-    const chatsToDelete = [
-      ...buyerSnapshot.docs.map(doc => doc.id),
-      ...sellerSnapshot.docs.map(doc => doc.id),
+    // 모든 채팅을 수집하고 클라이언트에서 필터링
+    const allChats = [
+      ...buyerAsBuyerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      ...buyerAsSellerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      ...blockedAsBuyerSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })),
+      ...blockedAsSellerSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })),
     ];
+
+    // 중복 제거
+    const uniqueChats = allChats.filter(
+      (chat, index, self) => index === self.findIndex(c => c.id === chat.id)
+    );
+
+    // 차단자와 차단된 사용자가 모두 참여한 채팅만 필터링
+    const chatsToDelete = uniqueChats
+      .filter(
+        chat =>
+          (chat.buyerUid === blockerUid && chat.sellerUid === blockedUid) ||
+          (chat.buyerUid === blockedUid && chat.sellerUid === blockerUid)
+      )
+      .map(chat => chat.id);
 
     // 모든 관련 채팅 삭제
     const deletePromises = chatsToDelete.map(chatId =>
@@ -807,14 +911,15 @@ export async function isUserBlocked(
 ): Promise<{ success: boolean; isBlocked?: boolean; error?: string }> {
   try {
     const blocksRef = collection(db, "blocks");
-    const blockQuery = query(
-      blocksRef,
-      where("blockerUid", "==", blockerUid),
-      where("blockedUid", "==", blockedUid)
-    );
+    const blockQuery = query(blocksRef, where("blockerUid", "==", blockerUid));
 
     const snapshot = await getDocs(blockQuery);
-    const isBlocked = !snapshot.empty;
+
+    // 클라이언트에서 필터링
+    const isBlocked = snapshot.docs.some(doc => {
+      const data = doc.data();
+      return data.blockedUid === blockedUid;
+    });
 
     return { success: true, isBlocked };
   } catch (error) {
@@ -875,23 +980,25 @@ export async function unblockUser(
     console.log("사용자 차단 해제 시작:", { blockerUid, blockedUid });
 
     const blocksRef = collection(db, "blocks");
-    const blockQuery = query(
-      blocksRef,
-      where("blockerUid", "==", blockerUid),
-      where("blockedUid", "==", blockedUid)
-    );
+    const blockQuery = query(blocksRef, where("blockerUid", "==", blockerUid));
 
     const snapshot = await getDocs(blockQuery);
 
-    if (snapshot.empty) {
+    // 클라이언트에서 필터링하여 해당 차단 기록 찾기
+    const blocksToDelete = snapshot.docs.filter(doc => {
+      const data = doc.data();
+      return data.blockedUid === blockedUid;
+    });
+
+    if (blocksToDelete.length === 0) {
       return { success: false, error: "차단 기록을 찾을 수 없습니다." };
     }
 
     // 모든 차단 기록 삭제
-    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+    const deletePromises = blocksToDelete.map(doc => deleteDoc(doc.ref));
     await Promise.all(deletePromises);
 
-    console.log("차단 해제 완료:", snapshot.docs.length, "개 기록 삭제");
+    console.log("차단 해제 완료:", blocksToDelete.length, "개 기록 삭제");
 
     return { success: true };
   } catch (error) {

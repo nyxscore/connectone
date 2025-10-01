@@ -312,7 +312,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                     )}
 
                     {/* 거래중 배지 */}
-                    <div className="absolute top-1 right-1 bg-orange-500 text-white px-1.5 py-0.5 rounded text-xs font-bold shadow-lg">
+                    <div className="absolute bottom-1 right-1 bg-orange-500 text-white px-1.5 py-0.5 rounded text-xs font-bold shadow-lg">
                       거래중
                     </div>
                   </div>
@@ -385,7 +385,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                     )}
 
                     {/* 거래중 배지 */}
-                    <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
+                    <div className="absolute bottom-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
                       거래중
                     </div>
                   </div>
@@ -502,7 +502,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
                           <div>
                             <p className="text-xs text-gray-500 mb-1">등급</p>
                             <p className="text-sm font-medium text-gray-900">
-                              {sellerProfile?.grade || "Bronze"}
+                              {sellerProfile?.grade || "E"}
                             </p>
                           </div>
                           <div>

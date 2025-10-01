@@ -1,0 +1,200 @@
+"use client";
+
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { CheckCircle, Home, Package, MessageCircle } from "lucide-react";
+import toast from "react-hot-toast";
+import { FirestoreChatModal } from "@/components/chat/FirestoreChatModal";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/api/firebase";
+
+function PaymentSuccessContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const [orderInfo, setOrderInfo] = useState({
+    orderId: "",
+    amount: 0,
+    escrow: false,
+    itemId: "",
+    sellerUid: "",
+  });
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [transactionSaved, setTransactionSaved] = useState(false);
+
+  useEffect(() => {
+    const orderId = searchParams.get("orderId");
+    const amount = searchParams.get("amount");
+    const escrow = searchParams.get("escrow") === "true";
+    const itemId = searchParams.get("itemId") || "";
+    const sellerUid = searchParams.get("sellerUid") || "";
+
+    console.log("결제 성공 페이지 파라미터:", {
+      orderId,
+      amount,
+      escrow,
+      itemId,
+      sellerUid,
+    });
+
+    if (orderId && amount) {
+      setOrderInfo({
+        orderId,
+        amount: parseInt(amount),
+        escrow,
+        itemId,
+        sellerUid,
+      });
+      toast.success("결제가 완료되었습니다!");
+    } else {
+      console.error("결제 정보 없음 - 홈으로 리다이렉트");
+      toast.error("결제 정보를 찾을 수 없습니다.");
+      router.push("/");
+    }
+  }, [searchParams, router]);
+
+  // Firestore에 거래 내역 저장
+  useEffect(() => {
+    if (!user || !orderInfo.orderId || transactionSaved) return;
+
+    const saveTransaction = async () => {
+      try {
+        console.log("거래 내역 저장 시작:", {
+          buyerUid: user.id,
+          sellerUid: orderInfo.sellerUid,
+          productId: orderInfo.itemId,
+          amount: orderInfo.amount,
+          escrow: orderInfo.escrow,
+        });
+
+        await addDoc(collection(db, "transactions"), {
+          orderId: orderInfo.orderId,
+          buyerUid: user.id,
+          sellerUid: orderInfo.sellerUid,
+          productId: orderInfo.itemId,
+          amount: orderInfo.amount,
+          status: orderInfo.escrow ? "paid_hold" : "pending",
+          escrowEnabled: orderInfo.escrow,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        console.log("거래 내역 저장 완료");
+        setTransactionSaved(true);
+      } catch (error) {
+        console.error("거래 내역 저장 실패:", error);
+      }
+    };
+
+    saveTransaction();
+  }, [user, orderInfo, transactionSaved]);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* 헤더 */}
+      <div className="bg-white border-b">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <Button onClick={() => router.push("/")} variant="ghost" size="sm">
+            <Home className="w-4 h-4 mr-2" />
+            홈으로 가기
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center p-4 pt-12">
+        <Card className="max-w-md w-full p-8">
+          {/* 성공 아이콘 */}
+          <div className="text-center mb-6">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-12 h-12 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">결제 완료</h1>
+            <p className="text-gray-600">
+              {orderInfo.escrow
+                ? "안전거래로 결제가 완료되었습니다"
+                : "결제가 성공적으로 완료되었습니다"}
+            </p>
+          </div>
+
+          {/* 주문 정보 */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">주문번호</span>
+              <span className="text-sm font-medium font-mono">
+                {orderInfo.orderId}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">결제금액</span>
+              <span className="text-lg font-bold text-blue-600">
+                {orderInfo.amount.toLocaleString()}원
+              </span>
+            </div>
+            {orderInfo.escrow && (
+              <div className="flex items-center justify-center pt-2 border-t border-gray-200">
+                <span className="text-xs text-green-600 font-medium">
+                  🛡️ 안전거래 - 상품 수령 확인 후 판매자에게 입금됩니다
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* 버튼 */}
+          <div className="space-y-3">
+            <Button
+              onClick={() => {
+                console.log("채팅하기 클릭 - orderInfo:", orderInfo);
+                if (orderInfo.sellerUid && orderInfo.itemId) {
+                  setShowChatModal(true);
+                } else {
+                  toast.error(
+                    `채팅 정보가 부족합니다. sellerUid: ${orderInfo.sellerUid}, itemId: ${orderInfo.itemId}`
+                  );
+                }
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              <MessageCircle className="w-5 h-5 mr-2" />
+              판매자와 채팅하기
+            </Button>
+            <Button
+              onClick={() => router.push("/profile/transactions")}
+              variant="outline"
+              className="w-full"
+            >
+              <Package className="w-5 h-5 mr-2" />
+              거래 내역 보기
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      {/* 채팅 모달 */}
+      {showChatModal && orderInfo.sellerUid && orderInfo.itemId && (
+        <FirestoreChatModal
+          isOpen={showChatModal}
+          onClose={() => setShowChatModal(false)}
+          sellerUid={orderInfo.sellerUid}
+          itemId={orderInfo.itemId}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
+  );
+}

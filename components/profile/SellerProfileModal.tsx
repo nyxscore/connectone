@@ -22,6 +22,7 @@ import { getOrCreateChat } from "../../lib/chat/api";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { ReportBlockModal } from "../chat/ReportBlockModal";
 
 interface SellerProfileModalProps {
   sellerProfile: UserProfile | null;
@@ -40,6 +41,10 @@ export function SellerProfileModal({
 }: SellerProfileModalProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const [showReportBlockModal, setShowReportBlockModal] = useState(false);
+  const [reportBlockModalTab, setReportBlockModalTab] = useState<
+    "report" | "block"
+  >("report");
 
   if (!isOpen || !sellerProfile) return null;
 
@@ -96,19 +101,33 @@ export function SellerProfileModal({
   };
 
   const getGradeColor = (grade: string) => {
-    switch (grade?.toLowerCase()) {
-      case "bronze":
-        return "text-orange-600 bg-orange-100";
-      case "silver":
-        return "text-gray-600 bg-gray-100";
-      case "gold":
-        return "text-yellow-600 bg-yellow-100";
-      case "platinum":
+    switch (grade?.toUpperCase()) {
+      case "C":
+        return "text-green-600 bg-green-100";
+      case "D":
+        return "text-sky-600 bg-sky-100";
+      case "E":
+        return "text-emerald-600 bg-emerald-100";
+      case "F":
         return "text-blue-600 bg-blue-100";
-      case "diamond":
+      case "G":
+        return "text-purple-600 bg-purple-100";
+      case "A":
+        return "text-orange-600 bg-orange-100";
+      case "B":
+        return "text-yellow-600 bg-yellow-100";
+      case "BRONZE":
+        return "text-orange-600 bg-orange-100";
+      case "SILVER":
+        return "text-gray-600 bg-gray-100";
+      case "GOLD":
+        return "text-yellow-600 bg-yellow-100";
+      case "PLATINUM":
+        return "text-blue-600 bg-blue-100";
+      case "DIAMOND":
         return "text-purple-600 bg-purple-100";
       default:
-        return "text-gray-600 bg-gray-100";
+        return "text-green-600 bg-green-100";
     }
   };
 
@@ -151,28 +170,38 @@ export function SellerProfileModal({
                   {sellerProfile.nickname || "판매자"}
                 </h3>
                 <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${getGradeColor(
-                    sellerProfile.grade || "Bronze"
+                  className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${getGradeColor(
+                    sellerProfile.grade || "C"
                   )}`}
                 >
-                  {sellerProfile.grade || "Bronze"}
+                  <span className="text-xs">🌱</span>
+                  <span>
+                    {(() => {
+                      const grade = sellerProfile.grade || "C";
+                      const gradeLabels = {
+                        E: "Ensemble",
+                        D: "Duo",
+                        C: "Chord",
+                        B: "Bravura",
+                        A: "Allegro",
+                      };
+                      return (
+                        gradeLabels[grade as keyof typeof gradeLabels] ||
+                        "Chord"
+                      );
+                    })()}
+                  </span>
                 </span>
               </div>
 
-              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                <div className="flex items-center space-x-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>{sellerProfile.region || "지역 미설정"}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    {sellerProfile.createdAt
-                      ? formatDate(sellerProfile.createdAt)
-                      : "가입일 미상"}
-                  </span>
-                </div>
-              </div>
+              {/* 한줄소개 - 닉네임 밑에 표시 */}
+              {sellerProfile.introShort && (
+                <p className="text-gray-600 mb-3 text-sm italic font-medium">
+                  "{sellerProfile.introShort}"
+                </p>
+              )}
+
+              {/* 지역과 날짜 정보 제거 */}
 
               {/* 평점 및 거래 통계 */}
               <div className="flex items-center space-x-6">
@@ -269,18 +298,18 @@ export function SellerProfileModal({
               </div>
             </Card>
 
-            <Card className="p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <Clock className="w-5 h-5 text-green-500" />
-                <h4 className="font-semibold text-gray-900">자기소개</h4>
-              </div>
-              <div className="text-sm text-gray-700 leading-relaxed">
-                {sellerProfile.bio ||
-                  sellerProfile.about ||
-                  sellerProfile.description ||
-                  "자기소개가 없습니다."}
-              </div>
-            </Card>
+            {/* 자기소개 */}
+            {sellerProfile.introLong && (
+              <Card className="p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Clock className="w-5 h-5 text-green-500" />
+                  <h4 className="font-semibold text-gray-900">자기소개</h4>
+                </div>
+                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {sellerProfile.introLong}
+                </div>
+              </Card>
+            )}
           </div>
 
           {/* 액션 버튼들 */}
@@ -295,9 +324,8 @@ export function SellerProfileModal({
             <div className="flex space-x-2">
               <Button
                 onClick={() => {
-                  // 신고하기 기능
-                  console.log("신고하기 클릭됨:", sellerProfile?.uid);
-                  alert("신고하기 기능이 곧 추가될 예정입니다.");
+                  setReportBlockModalTab("report");
+                  setShowReportBlockModal(true);
                 }}
                 variant="outline"
                 className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
@@ -307,9 +335,8 @@ export function SellerProfileModal({
               </Button>
               <Button
                 onClick={() => {
-                  // 차단하기 기능
-                  console.log("차단하기 클릭됨:", sellerProfile?.uid);
-                  alert("차단하기 기능이 곧 추가될 예정입니다.");
+                  setReportBlockModalTab("block");
+                  setShowReportBlockModal(true);
                 }}
                 variant="outline"
                 className="flex-1 border-gray-300 text-gray-600 hover:bg-gray-50"
@@ -324,6 +351,17 @@ export function SellerProfileModal({
           </div>
         </div>
       </div>
+
+      {/* 신고/차단 모달 */}
+      {showReportBlockModal && (
+        <ReportBlockModal
+          isOpen={showReportBlockModal}
+          onClose={() => setShowReportBlockModal(false)}
+          reportedUid={sellerProfile?.uid || ""}
+          reportedNickname={sellerProfile?.nickname || ""}
+          initialTab={reportBlockModalTab}
+        />
+      )}
     </div>
   );
 }

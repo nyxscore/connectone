@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/hooks/useAuth";
-import { getUserProfile, getRecentTrades } from "../../../lib/profile/api";
-import { UserProfile, TradeItem } from "../../../data/profile/types";
+import { getUserProfile } from "../../../lib/profile/api";
+import { UserProfile } from "../../../data/profile/types";
 import { ProfileHeader } from "../../../components/profile/ProfileHeader";
 import { ProfileStats } from "../../../components/profile/ProfileStats";
 import { ProfileAbout } from "../../../components/profile/ProfileAbout";
-import { TradeList } from "../../../components/profile/TradeList";
 import { Loader2, AlertCircle } from "lucide-react";
 
 export default function UserProfilePage() {
@@ -16,9 +15,7 @@ export default function UserProfilePage() {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [trades, setTrades] = useState<TradeItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tradesLoading, setTradesLoading] = useState(true);
   const [error, setError] = useState("");
 
   const uid = params.uid as string;
@@ -26,7 +23,6 @@ export default function UserProfilePage() {
   useEffect(() => {
     if (uid) {
       loadProfile();
-      loadTrades();
     }
   }, [uid]);
 
@@ -45,21 +41,6 @@ export default function UserProfilePage() {
       setError("프로필을 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadTrades = async () => {
-    try {
-      setTradesLoading(true);
-      const result = await getRecentTrades(uid, 5);
-
-      if (result.success && result.data) {
-        setTrades(result.data);
-      }
-    } catch (err) {
-      console.error("거래 내역 로드 실패:", err);
-    } finally {
-      setTradesLoading(false);
     }
   };
 
@@ -107,9 +88,6 @@ export default function UserProfilePage() {
 
           {/* 자기소개 */}
           <ProfileAbout user={profile} isOwnProfile={isOwnProfile} />
-
-          {/* 최근 거래 */}
-          <TradeList trades={trades} loading={tradesLoading} />
         </div>
       </div>
     </div>

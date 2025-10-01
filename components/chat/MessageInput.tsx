@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { sendMessage } from "../../lib/chat/api";
 import { uploadImages } from "../../lib/api/storage";
 import { Button } from "../ui/Button";
@@ -28,6 +28,11 @@ export function MessageInput({
   const [isUploading, setIsUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 컴포넌트 마운트 시 자동 포커스
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,17 +87,27 @@ export function MessageInput({
 
       setMessage("");
       setSelectedFiles([]);
-      onMessageSent?.();
 
       // 텍스트 영역 높이 초기화
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
       }
+
+      onMessageSent?.();
+
+      // 포커스는 약간의 딜레이 후에 확실하게
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 50);
     } catch (error) {
       console.error("메시지 전송 실패:", error);
       toast.error("메시지 전송 중 오류가 발생했습니다.");
     } finally {
       setIsSending(false);
+      // 전송 완료 후에도 포커스 유지
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
     }
   };
 

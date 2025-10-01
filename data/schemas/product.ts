@@ -91,7 +91,7 @@ export const productDetailSchema = z.object({
 export const sellerInfoSchema = z.object({
   id: z.string(),
   displayName: z.string(),
-  grade: z.enum(["Bronze", "Silver", "Gold"]),
+  grade: z.enum(["E", "D", "C", "B", "A"]),
   phoneVerified: z.boolean(),
   idVerified: z.boolean(),
   bankVerified: z.boolean(),

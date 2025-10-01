@@ -3,19 +3,16 @@
 import Link from "next/link";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
-import { logout } from "../../lib/auth";
-import { useRouter } from "next/navigation";
+import { ProfileDropdown } from "../profile/ProfileDropdown";
 import {
   getTotalUnreadMessageCount,
   subscribeToUnreadCount,
 } from "../../lib/chat/api";
-import { MessageCircle, Bell, Menu, X } from "lucide-react";
+import { MessageCircle, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import toast from "react-hot-toast";
 
 export function Header() {
   const { user, loading } = useAuth();
-  const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -55,16 +52,6 @@ export function Header() {
       unsubscribe();
     };
   }, [user?.uid]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success("로그아웃되었습니다.");
-      router.push("/");
-    } catch (error) {
-      toast.error("로그아웃 중 오류가 발생했습니다.");
-    }
-  };
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -116,47 +103,7 @@ export function Header() {
 
           {/* 데스크톱 사용자 메뉴 */}
           <div className="hidden md:flex items-center space-x-4">
-            {loading ? (
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            ) : user ? (
-              <div className="flex items-center space-x-4">
-                <Link
-                  href="/profile"
-                  className="flex items-center space-x-2 hover:bg-gray-50 rounded-lg p-2 transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                    {user.photoURL || user.profileImage ? (
-                      <img
-                        src={user.photoURL || user.profileImage}
-                        alt={user.nickname}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm font-medium text-gray-600">
-                        {user.nickname?.charAt(0)?.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    {user.nickname}
-                  </span>
-                </Link>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  로그아웃
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link href="/auth/login">
-                  <Button variant="ghost" size="sm">
-                    로그인
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button size="sm">회원가입</Button>
-                </Link>
-              </div>
-            )}
+            <ProfileDropdown />
           </div>
 
           {/* 모바일 메뉴 버튼 */}
@@ -278,17 +225,27 @@ export function Header() {
             {/* 로그아웃 버튼 (로그인한 사용자만) */}
             {user && (
               <div className="px-4 py-3 border-t border-gray-200">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    handleLogout();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                <Link
+                  href="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full text-center px-3 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md mb-2"
                 >
-                  로그아웃
-                </Button>
+                  프로필 보기
+                </Link>
+                <Link
+                  href="/profile/items"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full text-center px-3 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md mb-2"
+                >
+                  내 상품
+                </Link>
+                <Link
+                  href="/profile/transactions"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full text-center px-3 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md mb-2"
+                >
+                  거래 내역
+                </Link>
               </div>
             )}
           </div>

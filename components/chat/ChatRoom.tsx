@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Message } from "../../data/chat/types";
-import { subscribeToMessages, markMessageAsRead } from "../../lib/chat/api";
+import {
+  subscribeToMessages,
+  markMessageAsRead,
+  subscribeToUserOnlineStatus,
+} from "../../lib/chat/api";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { MessageInput } from "./MessageInput";
 import { OtherUserProfileModal } from "./OtherUserProfileModal";
@@ -36,6 +40,7 @@ export function ChatRoom({ chatId, otherUser, item, onBack }: ChatRoomProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +72,17 @@ export function ChatRoom({ chatId, otherUser, item, onBack }: ChatRoomProps) {
 
     return () => unsubscribe();
   }, [chatId, user]);
+
+  // 상대방 온라인 상태 구독
+  useEffect(() => {
+    if (!otherUser.uid) return;
+
+    const unsubscribe = subscribeToUserOnlineStatus(otherUser.uid, isOnline => {
+      setIsOtherUserOnline(isOnline);
+    });
+
+    return () => unsubscribe();
+  }, [otherUser.uid]);
 
   // 메시지 읽음 처리
   useEffect(() => {
@@ -155,30 +171,28 @@ export function ChatRoom({ chatId, otherUser, item, onBack }: ChatRoomProps) {
             </Button>
           )}
 
-          {/* 상대방 프로필 */}
-          <div
-            className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg"
-            onClick={() => {
-              console.log("프로필 클릭됨:", otherUser);
-              setShowProfileModal(true);
-            }}
-          >
-            {otherUser.profileImage ? (
-              <img
-                src={otherUser.profileImage}
-                alt={otherUser.nickname}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                <User className="w-5 h-5 text-gray-500" />
-              </div>
-            )}
+          {/* 상품 정보 */}
+          <div className="flex items-center space-x-3">
+            {/* 상품 썸네일 */}
+            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+              {itemInfo?.images?.[0] ? (
+                <img
+                  src={itemInfo.images[0]}
+                  alt={itemInfo.title || "상품"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Package className="w-6 h-6 text-gray-500" />
+              )}
+            </div>
+            {/* 상품명과 가격 */}
             <div>
               <h3 className="font-semibold text-gray-900">
-                {otherUser.nickname}
+                {itemInfo?.title || "상품 정보 없음"}
               </h3>
-              <p className="text-sm text-gray-500">온라인</p>
+              <p className="text-sm text-gray-500">
+                ₩{itemInfo?.price ? itemInfo.price.toLocaleString() : "0"}
+              </p>
             </div>
           </div>
         </div>

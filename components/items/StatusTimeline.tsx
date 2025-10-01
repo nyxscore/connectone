@@ -41,11 +41,11 @@ export function StatusTimeline({
         };
       case "reserved":
         return {
-          label: "예약중",
+          label: "거래중",
           icon: Clock,
           color: "text-yellow-600",
           bgColor: "bg-yellow-100",
-          description: "상품이 예약되었습니다",
+          description: "상품이 거래 중입니다",
         };
       case "paid_hold":
         return {

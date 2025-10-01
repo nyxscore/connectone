@@ -152,13 +152,11 @@ export default function UsersPage() {
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">전체 등급</option>
-                    <option value="C">C (Chord)</option>
-                    <option value="D">D (Duo)</option>
                     <option value="E">E (Ensemble)</option>
-                    <option value="F">F (Forte)</option>
-                    <option value="G">G (Grand)</option>
-                    <option value="A">A (Allegro)</option>
+                    <option value="D">D (Duo)</option>
+                    <option value="C">C (Chord)</option>
                     <option value="B">B (Bravura)</option>
+                    <option value="A">A (Allegro)</option>
                   </select>
                   <Button variant="outline">
                     <Filter className="w-4 h-4 mr-2" />

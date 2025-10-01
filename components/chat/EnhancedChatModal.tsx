@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -86,6 +86,12 @@ export function EnhancedChatModal({
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showReportModal, setShowReportModal] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 메시지가 변경될 때마다 스크롤을 최하단으로
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -155,10 +161,18 @@ export function EnhancedChatModal({
             ? chatData.sellerUid
             : chatData.buyerUid;
 
-        // 상대방 정보 가져오기
-        const otherUserResult = await getUserProfile(otherUid);
-        const otherUser = otherUserResult.success ? otherUserResult.data : null;
-        setOtherUserProfile(otherUser);
+        // 채팅 문서에 이미 저장된 otherUser 정보 사용 (우선순위)
+        const storedOtherUser = chatData.otherUser;
+
+        // 없으면 Firestore에서 가져오기
+        let otherUser = null;
+        if (!storedOtherUser?.nickname || !storedOtherUser?.profileImage) {
+          const otherUserResult = await getUserProfile(otherUid);
+          otherUser = otherUserResult.success ? otherUserResult.data : null;
+          setOtherUserProfile(otherUser);
+        } else {
+          setOtherUserProfile(storedOtherUser as any);
+        }
 
         // 아이템 정보 가져오기
         let itemResult = null;
@@ -172,8 +186,14 @@ export function EnhancedChatModal({
           otherUser: {
             uid: otherUid,
             nickname:
-              otherUser?.nickname || otherUser?.displayName || "알 수 없음",
-            profileImage: otherUser?.photoURL || otherUser?.profileImage,
+              storedOtherUser?.nickname ||
+              otherUser?.nickname ||
+              otherUser?.displayName ||
+              "알 수 없음",
+            profileImage:
+              storedOtherUser?.profileImage ||
+              otherUser?.profileImage ||
+              otherUser?.photoURL,
           },
           item: {
             id: chatData.itemId || "unknown",
@@ -232,7 +252,7 @@ export function EnhancedChatModal({
               uid: sellerUid,
               nickname:
                 otherUser?.nickname || otherUser?.displayName || "알 수 없음",
-              profileImage: otherUser?.photoURL || otherUser?.profileImage,
+              profileImage: otherUser?.profileImage || otherUser?.photoURL,
             },
             item: {
               id: itemId,
@@ -471,30 +491,26 @@ export function EnhancedChatModal({
               </Button>
               {chatData && (
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                    {chatData.otherUser.profileImage ? (
+                  {/* 상품 썸네일 */}
+                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {chatData.item.imageUrl ? (
                       <img
-                        src={chatData.otherUser.profileImage}
-                        alt={chatData.otherUser.nickname}
-                        className="w-10 h-10 rounded-full object-cover"
+                        src={chatData.item.imageUrl}
+                        alt={chatData.item.title}
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User className="w-5 h-5 text-gray-500" />
+                      <MessageCircle className="w-6 h-6 text-gray-500" />
                     )}
                   </div>
+                  {/* 상품명과 가격 */}
                   <div>
                     <h3 className="font-semibold text-gray-900">
-                      {chatData.otherUser.nickname}
+                      {chatData.item.title}
                     </h3>
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <span>{chatData.item.title}</span>
-                      <span>•</span>
-                      <span>{formatPrice(chatData.item.price)}</span>
-                    </div>
-                    <div className="flex items-center space-x-1 text-xs text-gray-400">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span>35분 전</span>
-                    </div>
+                    <p className="text-sm text-gray-500">
+                      {formatPrice(chatData.item.price)}
+                    </p>
                   </div>
                 </div>
               )}
@@ -542,7 +558,7 @@ export function EnhancedChatModal({
                   </p>
                   <div className="space-y-1">
                     <p className="text-xs text-gray-600">
-                      • 입금 요구가 있을 경우 거래를 중단하세요.
+                      • 연락처, 주소 등 개인정보를 함부로 공유하지 마세요.
                     </p>
                     <p className="text-xs text-gray-600">
                       • 먼저 송금을 요청하는 경우 사기 가능성이 높습니다.
@@ -645,6 +661,8 @@ export function EnhancedChatModal({
                 );
               })
             )}
+            {/* 스크롤 자동 이동을 위한 참조점 */}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* 메시지 입력 */}
@@ -680,6 +698,37 @@ export function EnhancedChatModal({
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {/* 상대방 프로필 */}
+              {chatData && (
+                <div className="flex flex-col items-center pb-6 border-b">
+                  {/* 프로필 사진 */}
+                  <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+                    {chatData.otherUser.profileImage ? (
+                      <img
+                        src={chatData.otherUser.profileImage}
+                        alt={chatData.otherUser.nickname}
+                        className="w-20 h-20 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-10 h-10 text-gray-500" />
+                    )}
+                  </div>
+                  {/* 닉네임 */}
+                  <h3 className="font-bold text-lg text-gray-900 mb-1">
+                    {chatData.otherUser.nickname}
+                  </h3>
+                  {/* 프로필 보기 버튼 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowOtherProfileModal(true)}
+                    className="mt-2"
+                  >
+                    프로필 보기
+                  </Button>
+                </div>
+              )}
+
               {/* 인증 상태 */}
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3">

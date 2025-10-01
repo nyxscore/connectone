@@ -280,4 +280,3 @@ export function getNextGradeRequirements(user: User): {
     totalTrades: Math.max(0, requirements.totalTrades - user.tradeCount),
   };
 }
-

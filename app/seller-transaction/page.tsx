@@ -2,12 +2,12 @@
 
 import { useSearchParams } from "next/navigation";
 import { SellerTransactionPageClient } from "../../components/transaction/SellerTransactionPageClient";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { getItem } from "../../lib/api/products";
 import { SellItem } from "../../data/types";
 import { Loader2 } from "lucide-react";
 
-export default function SellerTransactionPage() {
+function SellerTransactionContent() {
   const searchParams = useSearchParams();
   const itemId = searchParams.get("id");
   const [item, setItem] = useState<SellItem | null>(null);
@@ -81,4 +81,21 @@ export default function SellerTransactionPage() {
   }
 
   return <SellerTransactionPageClient item={item} />;
+}
+
+export default function SellerTransactionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-4" />
+            <p className="text-gray-600">로딩 중...</p>
+          </div>
+        </div>
+      }
+    >
+      <SellerTransactionContent />
+    </Suspense>
+  );
 }

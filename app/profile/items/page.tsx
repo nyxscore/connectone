@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../lib/hooks/useAuth";
 import { getUserItems } from "../../../lib/api/products";
 import { ItemDetailModal } from "../../../components/items/ItemDetailModal";
@@ -20,10 +20,12 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-export default function MyItemsPage() {
+function MyItemsPageContent() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [myItems, setMyItems] = useState<any[]>([]);
+  const [filteredItems, setFilteredItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showItemModal, setShowItemModal] = useState(false);
@@ -76,6 +78,17 @@ export default function MyItemsPage() {
       setLoading(false);
     }
   };
+
+  // 상태별 필터링
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status) {
+      const filtered = myItems.filter(item => item.status === status);
+      setFilteredItems(filtered);
+    } else {
+      setFilteredItems(myItems);
+    }
+  }, [myItems, searchParams]);
 
   const handleItemClick = (item: any) => {
     setSelectedItem(item);
@@ -186,7 +199,21 @@ export default function MyItemsPage() {
                 프로필로 돌아가기
               </Button>
               <h1 className="text-2xl font-bold text-gray-900">
-                내가 등록한 상품
+                {(() => {
+                  const status = searchParams.get("status");
+                  switch (status) {
+                    case "sold":
+                      return "판매 완료된 상품";
+                    case "reserved":
+                      return "거래중인 상품";
+                    case "active":
+                      return "판매중인 상품";
+                    case "inactive":
+                      return "판매중단된 상품";
+                    default:
+                      return "내가 등록한 상품";
+                  }
+                })()}
               </h1>
             </div>
             <Button onClick={() => router.push("/sell")} variant="primary">
@@ -196,9 +223,68 @@ export default function MyItemsPage() {
         </div>
       </div>
 
+      {/* 거래 현황 대시보드 */}
+      <div className="max-w-6xl mx-auto px-4 pt-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* 판매중 */}
+          <Card
+            className="p-6 cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-br from-blue-50 to-white"
+            onClick={() => router.push("/profile/items?status=active")}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">판매중</p>
+                <p className="text-3xl font-bold text-blue-600">
+                  {myItems.filter(item => item.status === "active").length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-2xl">📦</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* 거래중 */}
+          <Card
+            className="p-6 cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-br from-orange-50 to-white"
+            onClick={() => router.push("/profile/items?status=reserved")}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">거래중</p>
+                <p className="text-3xl font-bold text-orange-600">
+                  {myItems.filter(item => item.status === "reserved").length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-2xl">🤝</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* 판매완료 */}
+          <Card
+            className="p-6 cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-br from-green-50 to-white"
+            onClick={() => router.push("/profile/items?status=sold")}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">판매완료</p>
+                <p className="text-3xl font-bold text-green-600">
+                  {myItems.filter(item => item.status === "sold").length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <span className="text-2xl">✅</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
       {/* 상품 목록 */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {myItems.length === 0 ? (
+      <div className="max-w-6xl mx-auto px-4 pb-8">
+        {filteredItems.length === 0 ? (
           <Card className="p-12 text-center">
             <p className="text-gray-500 mb-6 text-lg">
               등록한 상품이 없습니다.
@@ -213,7 +299,7 @@ export default function MyItemsPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {myItems.map(item => (
+            {filteredItems.map(item => (
               <div key={item.id} className="relative group">
                 <ItemCard item={item} onClick={handleItemClick} />
 
@@ -298,5 +384,19 @@ export default function MyItemsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function MyItemsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        </div>
+      }
+    >
+      <MyItemsPageContent />
+    </Suspense>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { getUserProfile } from "../../lib/profile/api";
-import { reportUser, blockUser } from "../../lib/chat/api";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -17,6 +16,7 @@ import {
   Shield,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { ReportBlockModal } from "./ReportBlockModal";
 
 interface OtherUserProfileModalProps {
   isOpen: boolean;
@@ -38,9 +38,10 @@ export function OtherUserProfileModal({
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportReason, setReportReason] = useState("");
-  const [reportDescription, setReportDescription] = useState("");
+  const [showReportBlockModal, setShowReportBlockModal] = useState(false);
+  const [reportBlockModalTab, setReportBlockModalTab] = useState<
+    "report" | "block"
+  >("report");
 
   useEffect(() => {
     if (isOpen && userUid) {
@@ -67,6 +68,10 @@ export function OtherUserProfileModal({
           "OtherUserProfileModal - 프로필 데이터 설정:",
           userProfileResult.data
         );
+        console.log("OtherUserProfileModal - 자기소개 필드들:", {
+          introShort: userProfileResult.data.introShort,
+          introLong: userProfileResult.data.introLong,
+        });
       } else {
         console.error("프로필 로드 실패:", userProfileResult.error);
         setProfile(null);
@@ -76,62 +81,6 @@ export function OtherUserProfileModal({
       setProfile(null);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleReport = async () => {
-    if (!user?.uid || !reportReason) {
-      toast.error("신고 사유를 선택해주세요.");
-      return;
-    }
-
-    try {
-      const result = await reportUser(
-        user.uid,
-        userUid,
-        reportReason,
-        reportDescription
-      );
-
-      if (result.success) {
-        toast.success("신고가 접수되었습니다.");
-        setShowReportModal(false);
-        setReportReason("");
-        setReportDescription("");
-      } else {
-        toast.error(result.error || "신고 처리에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("신고 처리 실패:", error);
-      toast.error("신고 처리 중 오류가 발생했습니다.");
-    }
-  };
-
-  const handleBlock = async () => {
-    if (!user?.uid) {
-      toast.error("로그인이 필요합니다.");
-      return;
-    }
-
-    if (
-      confirm(
-        `${userNickname}님을 차단하시겠습니까?\n차단하면 해당 사용자와의 모든 채팅이 삭제됩니다.`
-      )
-    ) {
-      try {
-        const result = await blockUser(user.uid, userUid);
-
-        if (result.success) {
-          toast.success("사용자가 차단되었습니다.");
-          onBlocked?.();
-          onClose();
-        } else {
-          toast.error(result.error || "차단 처리에 실패했습니다.");
-        }
-      } catch (error) {
-        console.error("차단 처리 실패:", error);
-        toast.error("차단 처리 중 오류가 발생했습니다.");
-      }
     }
   };
 
@@ -198,9 +147,12 @@ export function OtherUserProfileModal({
                 <h3 className="text-xl font-bold text-gray-900 mt-4">
                   {profile.nickname || profile.displayName || "알 수 없음"}
                 </h3>
-                <p className="text-gray-600 mt-1">
-                  {profile.region || "지역 정보 없음"}
-                </p>
+                {/* 한줄소개 - 닉네임 밑에 표시 */}
+                {profile.introShort && (
+                  <p className="text-gray-600 mt-2 text-sm italic font-medium">
+                    "{profile.introShort}"
+                  </p>
+                )}
               </div>
 
               {/* 등급 정보 */}
@@ -214,42 +166,38 @@ export function OtherUserProfileModal({
                   </div>
                   <div className="flex items-center space-x-2">
                     <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${
                         profile.grade === "A"
-                          ? "bg-orange-100 text-orange-800"
+                          ? "bg-orange-100 text-orange-600"
                           : profile.grade === "B"
-                            ? "bg-yellow-100 text-yellow-800"
+                            ? "bg-yellow-100 text-yellow-600"
                             : profile.grade === "C"
-                              ? "bg-gray-100 text-gray-800"
+                              ? "bg-green-100 text-green-600"
                               : profile.grade === "D"
-                                ? "bg-sky-100 text-sky-800"
+                                ? "bg-sky-100 text-sky-600"
                                 : profile.grade === "E"
-                                  ? "bg-green-100 text-green-800"
+                                  ? "bg-emerald-100 text-emerald-600"
                                   : profile.grade === "F"
-                                    ? "bg-blue-100 text-blue-800"
+                                    ? "bg-blue-100 text-blue-600"
                                     : profile.grade === "G"
-                                      ? "bg-purple-100 text-purple-800"
-                                      : "bg-gray-100 text-gray-800"
+                                      ? "bg-purple-100 text-purple-600"
+                                      : "bg-green-100 text-green-600"
                       }`}
                     >
-                      {profile.grade}등급
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {profile.grade === "A"
-                        ? "Allegro"
-                        : profile.grade === "B"
-                          ? "Bravura"
-                          : profile.grade === "C"
-                            ? "Chord"
-                            : profile.grade === "D"
-                              ? "Duo"
-                              : profile.grade === "E"
-                                ? "Ensemble"
-                                : profile.grade === "F"
-                                  ? "Forte"
-                                  : profile.grade === "G"
-                                    ? "Grand"
-                                    : "Unknown"}
+                      <span className="text-xs">🌱</span>
+                      <span>
+                        {profile.grade === "A"
+                          ? "Allegro"
+                          : profile.grade === "B"
+                            ? "Bravura"
+                            : profile.grade === "C"
+                              ? "Chord"
+                              : profile.grade === "D"
+                                ? "Duo"
+                                : profile.grade === "E"
+                                  ? "Ensemble"
+                                  : "Chord"}
+                      </span>
                     </span>
                   </div>
                 </Card>
@@ -275,54 +223,13 @@ export function OtherUserProfileModal({
               </Card>
 
               {/* 자기소개 */}
-              {profile.introShort && (
+              {profile.introLong && (
                 <Card className="p-4">
                   <h4 className="font-semibold text-gray-900 mb-2">자기소개</h4>
-                  <p className="text-gray-700">{profile.introShort}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap">
+                    {profile.introLong}
+                  </p>
                 </Card>
-              )}
-
-              {/* 가입일 */}
-              {profile.createdAt && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    {(() => {
-                      try {
-                        let date: Date;
-                        if (
-                          profile.createdAt.toDate &&
-                          typeof profile.createdAt.toDate === "function"
-                        ) {
-                          date = profile.createdAt.toDate();
-                        } else if (profile.createdAt.seconds) {
-                          date = new Date(profile.createdAt.seconds * 1000);
-                        } else {
-                          date = new Date(profile.createdAt);
-                        }
-
-                        if (isNaN(date.getTime())) return "가입일 정보 없음";
-
-                        const now = new Date();
-                        const diffInMs = now.getTime() - date.getTime();
-                        const diffInDays = Math.floor(
-                          diffInMs / (1000 * 60 * 60 * 24)
-                        );
-
-                        if (diffInDays < 1) return "오늘 가입";
-                        else if (diffInDays < 7)
-                          return `${diffInDays}일 전 가입`;
-                        else if (diffInDays < 30)
-                          return `${Math.floor(diffInDays / 7)}주 전 가입`;
-                        else if (diffInDays < 365)
-                          return `${Math.floor(diffInDays / 30)}개월 전 가입`;
-                        else return `${Math.floor(diffInDays / 365)}년 전 가입`;
-                      } catch (error) {
-                        return "가입일 정보 없음";
-                      }
-                    })()}
-                  </span>
-                </div>
               )}
             </div>
           ) : (
@@ -338,7 +245,10 @@ export function OtherUserProfileModal({
           {/* 신고/차단 버튼 */}
           <div className="flex space-x-2">
             <Button
-              onClick={() => setShowReportModal(true)}
+              onClick={() => {
+                setReportBlockModalTab("report");
+                setShowReportBlockModal(true);
+              }}
               variant="outline"
               className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
             >
@@ -346,7 +256,10 @@ export function OtherUserProfileModal({
               신고하기
             </Button>
             <Button
-              onClick={handleBlock}
+              onClick={() => {
+                setReportBlockModalTab("block");
+                setShowReportBlockModal(true);
+              }}
               variant="outline"
               className="flex-1 text-gray-600 border-gray-300 hover:bg-gray-50"
             >
@@ -361,70 +274,15 @@ export function OtherUserProfileModal({
         </div>
       </div>
 
-      {/* 신고 모달 */}
-      {showReportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-900">
-                사용자 신고
-              </h3>
-            </div>
-
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  신고 사유
-                </label>
-                <select
-                  value={reportReason}
-                  onChange={e => setReportReason(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">사유를 선택해주세요</option>
-                  <option value="spam">스팸/광고</option>
-                  <option value="harassment">괴롭힘/욕설</option>
-                  <option value="fraud">사기/부정거래</option>
-                  <option value="inappropriate">부적절한 내용</option>
-                  <option value="other">기타</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  상세 설명 (선택사항)
-                </label>
-                <textarea
-                  value={reportDescription}
-                  onChange={e => setReportDescription(e.target.value)}
-                  placeholder="신고 사유를 자세히 설명해주세요"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-20 resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="p-4 border-t flex space-x-2">
-              <Button
-                onClick={() => {
-                  setShowReportModal(false);
-                  setReportReason("");
-                  setReportDescription("");
-                }}
-                variant="outline"
-                className="flex-1"
-              >
-                취소
-              </Button>
-              <Button
-                onClick={handleReport}
-                className="flex-1 bg-red-600 hover:bg-red-700"
-                disabled={!reportReason}
-              >
-                신고하기
-              </Button>
-            </div>
-          </div>
-        </div>
+      {/* 신고/차단 모달 */}
+      {showReportBlockModal && (
+        <ReportBlockModal
+          isOpen={showReportBlockModal}
+          onClose={() => setShowReportBlockModal(false)}
+          reportedUid={userUid}
+          reportedNickname={userNickname}
+          initialTab={reportBlockModalTab}
+        />
       )}
     </div>
   );

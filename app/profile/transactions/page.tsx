@@ -6,7 +6,9 @@ import { Button } from "../../../components/ui/Button";
 import { useAuth } from "../../../lib/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { Transaction, TransactionStatus } from "../../../data/types";
-import { getUserTransactions } from "../../../lib/api/payment";
+// import { getUserTransactions } from "../../../lib/api/payment";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../../../lib/api/firebase";
 import {
   CreditCard,
   Package,
@@ -90,14 +92,43 @@ export default function TransactionsPage() {
     setError("");
 
     try {
-      const result = await getUserTransactions(user.id);
-      if (result.success && result.data) {
-        setTransactions(result.data);
+      // Firestore에서 직접 거래 내역 조회
+      const transactionsRef = collection(db, "transactions");
+      const q = query(transactionsRef, where("buyerUid", "==", user.id));
+
+      console.log("거래 내역 조회 시작:", user.id);
+      const snapshot = await getDocs(q);
+      console.log("조회된 문서 개수:", snapshot.docs.length);
+
+      const transactionList: Transaction[] = snapshot.docs
+        .map(
+          doc =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            }) as Transaction
+        )
+        .sort((a, b) => {
+          // 클라이언트에서 정렬 (최신순)
+          const aTime = a.createdAt?.toMillis?.() || 0;
+          const bTime = b.createdAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+
+      setTransactions(transactionList);
+      console.log("거래 내역 조회 완료:", transactionList);
+    } catch (err: any) {
+      console.error("거래 내역 조회 실패:", err);
+      console.error("에러 메시지:", err.message);
+      console.error("에러 코드:", err.code);
+
+      if (err.message?.includes("index")) {
+        setError("Firestore 인덱스가 필요합니다. 콘솔을 확인해주세요.");
       } else {
-        setError(result.error || "결제 내역을 불러오는데 실패했습니다.");
+        setError(
+          `결제 내역을 불러오는데 실패했습니다: ${err.message || "알 수 없는 오류"}`
+        );
       }
-    } catch (err) {
-      setError("결제 내역을 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -107,7 +138,9 @@ export default function TransactionsPage() {
     return new Intl.NumberFormat("ko-KR").format(price) + "원";
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (timestamp: any) => {
+    // Firestore Timestamp 처리
+    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat("ko-KR", {
       year: "numeric",
       month: "2-digit",
@@ -174,70 +207,100 @@ export default function TransactionsPage() {
                 const StatusIcon = statusInfo.icon;
 
                 return (
-                  <Card key={transaction.id}>
+                  <Card key={transaction.id} className="overflow-hidden">
+                    {/* 상태 헤더 */}
+                    <div
+                      className={`px-6 py-3 border-b ${statusInfo.color.replace("text-", "bg-").replace("bg-", "bg-").replace("-600", "-50").replace("-100", "-50")} border-${statusInfo.color.split("-")[1]}-200`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <StatusIcon
+                            className={`w-5 h-5 ${statusInfo.color}`}
+                          />
+                          <span className={`font-semibold ${statusInfo.color}`}>
+                            {statusInfo.label}
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {formatDate(transaction.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+
                     <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-3">
-                            <div
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}
-                            >
-                              <div className="flex items-center space-x-2">
-                                <StatusIcon className="w-4 h-4" />
-                                <span>{statusInfo.label}</span>
-                              </div>
-                            </div>
-                            <span className="text-sm text-gray-500">
-                              {formatDate(transaction.createdAt)}
-                            </span>
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-lg font-semibold text-gray-900">
-                                {formatPrice(transaction.amount)}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                거래 ID: {transaction.id.slice(-8)}
-                              </span>
-                            </div>
-
-                            <p className="text-sm text-gray-600">
-                              {statusInfo.description}
-                            </p>
-
-                            {transaction.trackingNumber && (
-                              <div className="flex items-center space-x-2">
-                                <Truck className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm text-gray-600">
-                                  운송장 번호: {transaction.trackingNumber}
-                                </span>
-                              </div>
-                            )}
-
-                            {transaction.notes && (
-                              <p className="text-sm text-gray-500 italic">
-                                {transaction.notes}
-                              </p>
-                            )}
-                          </div>
+                      {/* 영수증 스타일 내역 */}
+                      <div className="space-y-4">
+                        {/* 주문번호 */}
+                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                          <span className="text-sm text-gray-500">
+                            주문번호
+                          </span>
+                          <span className="text-sm font-mono text-gray-900">
+                            {transaction.orderId || transaction.id.slice(-12)}
+                          </span>
                         </div>
 
-                        <div className="ml-4">
+                        {/* 상품 정보 */}
+                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                          <span className="text-sm text-gray-500">상품</span>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => {
-                              // 상품 상세 페이지로 이동
                               window.open(
                                 `/item/${transaction.productId}`,
                                 "_blank"
                               );
                             }}
+                            className="text-sm text-blue-600 hover:text-blue-700 p-0 h-auto"
                           >
-                            상품 보기
+                            상품 보기 →
                           </Button>
                         </div>
+
+                        {/* 결제 금액 */}
+                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                          <span className="text-sm text-gray-500">
+                            결제 금액
+                          </span>
+                          <span className="text-base font-semibold text-gray-900">
+                            {formatPrice(transaction.amount)}
+                          </span>
+                        </div>
+
+                        {/* 결제 방법 */}
+                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                          <span className="text-sm text-gray-500">
+                            결제 방법
+                          </span>
+                          <span className="text-sm text-gray-900">
+                            {transaction.escrowEnabled
+                              ? "안전거래 (에스크로)"
+                              : "일반 결제"}
+                          </span>
+                        </div>
+
+                        {/* 거래 상태 설명 */}
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-xs text-gray-600">
+                            {statusInfo.description}
+                          </p>
+                        </div>
+
+                        {/* 운송장 번호 (있을 경우) */}
+                        {transaction.trackingNumber && (
+                          <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
+                            <div className="flex items-center space-x-2">
+                              <Truck className="w-4 h-4 text-blue-600" />
+                              <span className="text-sm text-blue-900 font-medium">
+                                운송장 번호
+                              </span>
+                            </div>
+                            <span className="text-sm font-mono text-blue-900">
+                              {transaction.trackingNumber}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
