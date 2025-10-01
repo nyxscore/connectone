@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { ChatList } from "../../components/chat/ChatList";
 import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal";
@@ -9,7 +9,7 @@ import { MessageCircle, Plus, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ChatPage() {
+function ChatPageContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -108,5 +108,17 @@ export default function ChatPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    }>
+      <ChatPageContent />
+    </Suspense>
   );
 }
