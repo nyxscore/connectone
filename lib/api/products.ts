@@ -143,7 +143,7 @@ export async function getUserItems(
     let q = query(
       collection(db, "items"),
       where("sellerUid", "==", sellerUid),
-      orderBy("createdAt", "desc"),
+      where("status", "==", "active"), // 판매중인 상품만 조회
       limit(limitCount)
     );
 
@@ -158,9 +158,16 @@ export async function getUserItems(
       items.push({ id: doc.id, ...doc.data() } as Item);
     });
 
+    // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
+    const sortedItems = items.sort((a, b) => {
+      const aTime = a.createdAt?.seconds || 0;
+      const bTime = b.createdAt?.seconds || 0;
+      return bTime - aTime;
+    });
+
     return {
       success: true,
-      items,
+      items: sortedItems,
     };
   } catch (error) {
     console.error("사용자 아이템 조회 실패:", error);

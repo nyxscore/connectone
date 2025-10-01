@@ -5,7 +5,8 @@ import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { MessageInput } from "./MessageInput";
-import { OtherUserProfileModal } from "./OtherUserProfileModal";
+import { SellerProfileModal } from "../profile/SellerProfileModal";
+import { SellerProfileCard } from "../profile/SellerProfileCard";
 import { SellItem } from "../../data/types";
 import { UserProfile } from "../../data/profile/types";
 import { getUserProfile } from "../../lib/profile/api";
@@ -76,6 +77,7 @@ export function EnhancedChatModal({
       title: string;
       price: number;
       imageUrl?: string;
+      status?: string;
     };
   } | null>(null);
   const [otherUserProfile, setOtherUserProfile] = useState<UserProfile | null>(
@@ -86,6 +88,8 @@ export function EnhancedChatModal({
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [isStartingTransaction, setIsStartingTransaction] = useState(false);
+  const [isCancelingTransaction, setIsCancelingTransaction] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 메시지가 변경될 때마다 스크롤을 최하단으로
@@ -99,6 +103,40 @@ export function EnhancedChatModal({
       loadChatData();
     }
   }, [isOpen, user, itemId, sellerUid, chatId]);
+
+  // 상품 상태 변경 이벤트 감지
+  useEffect(() => {
+    const handleItemStatusChanged = (event: CustomEvent) => {
+      const { itemId: changedItemId, status } = event.detail;
+      if (chatData?.item?.id === changedItemId) {
+        console.log("상품 상태 변경 감지:", status);
+        // 상품 상태 업데이트
+        setChatData(prev =>
+          prev
+            ? {
+                ...prev,
+                item: {
+                  ...prev.item,
+                  status: status,
+                },
+              }
+            : null
+        );
+      }
+    };
+
+    window.addEventListener(
+      "itemStatusChanged",
+      handleItemStatusChanged as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "itemStatusChanged",
+        handleItemStatusChanged as EventListener
+      );
+    };
+  }, [chatData?.item?.id]);
 
   useEffect(() => {
     if (chatData?.chatId) {
@@ -183,6 +221,7 @@ export function EnhancedChatModal({
 
         setChatData({
           chatId,
+          sellerUid: chatData.sellerUid, // sellerUid 추가!
           otherUser: {
             uid: otherUid,
             nickname:
@@ -227,7 +266,7 @@ export function EnhancedChatModal({
             itemId,
             user.uid,
             sellerUid,
-            `${itemTitle}에 대해 문의드립니다.`
+            "" // 자동 메시지 제거
           );
 
           if (!result.success || !result.chatId) {
@@ -460,6 +499,124 @@ export function EnhancedChatModal({
       } catch (error) {
         console.error("차단 실패:", error);
         toast.error("차단 처리 중 오류가 발생했습니다.");
+      }
+    }
+  };
+
+  const handleStartTransaction = async () => {
+    if (!chatData?.otherUser?.uid || !user?.uid || !chatData?.item?.id) {
+      toast.error("거래 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    // 현재 상품 상태 확인
+    console.log("현재 상품 상태:", chatData.item.status);
+    console.log("상품 ID:", chatData.item.id);
+    console.log("구매자 UID:", chatData.otherUser.uid);
+    console.log("판매자 UID:", user.uid);
+
+    // 이미 거래중인지 확인
+    if (chatData.item.status === "reserved") {
+      toast.error("이미 거래가 진행중입니다.");
+      return;
+    }
+
+    setIsStartingTransaction(true);
+
+    try {
+      // 상품 상태를 '거래중'으로 변경하고 구매자 지정
+      const response = await fetch("/api/products/start-transaction", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemId: chatData.item.id,
+          buyerUid: chatData.otherUser.uid,
+          sellerUid: user.uid,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("거래가 시작되었습니다!");
+
+        // chatData의 item.status를 "reserved"로 업데이트
+        setChatData(prev =>
+          prev
+            ? {
+                ...prev,
+                item: {
+                  ...prev.item,
+                  status: "reserved",
+                },
+              }
+            : null
+        );
+
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: chatData.item.id, status: "reserved" },
+          })
+        );
+      } else {
+        toast.error(result.error || "거래 시작에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("거래 시작 실패:", error);
+      toast.error("거래 시작 중 오류가 발생했습니다.");
+    } finally {
+      setIsStartingTransaction(false);
+    }
+  };
+
+  const handleCancelTransaction = async () => {
+    if (!chatData?.item?.id || !user?.uid) {
+      toast.error("거래 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    if (
+      confirm(
+        "정말로 거래를 취소하시겠습니까?\n상품 상태가 '판매중'으로 변경됩니다."
+      )
+    ) {
+      setIsCancelingTransaction(true);
+
+      try {
+        // 상품 상태를 '판매중'으로 변경하고 구매자 정보 제거
+        const response = await fetch("/api/products/cancel-transaction", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            itemId: chatData.item.id,
+            userId: user.uid,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          toast.success("거래가 취소되었습니다!");
+
+          // 전역 이벤트 발생으로 상품 목록 업데이트
+          window.dispatchEvent(
+            new CustomEvent("itemStatusChanged", {
+              detail: { itemId: chatData.item.id, status: "active" },
+            })
+          );
+        } else {
+          toast.error(result.error || "거래 취소에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("거래 취소 실패:", error);
+        toast.error("거래 취소 중 오류가 발생했습니다.");
+      } finally {
+        setIsCancelingTransaction(false);
       }
     }
   };
@@ -699,33 +856,17 @@ export function EnhancedChatModal({
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
               {/* 상대방 프로필 */}
-              {chatData && (
-                <div className="flex flex-col items-center pb-6 border-b">
-                  {/* 프로필 사진 */}
-                  <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mb-3">
-                    {chatData.otherUser.profileImage ? (
-                      <img
-                        src={chatData.otherUser.profileImage}
-                        alt={chatData.otherUser.nickname}
-                        className="w-20 h-20 rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-10 h-10 text-gray-500" />
-                    )}
-                  </div>
-                  {/* 닉네임 */}
-                  <h3 className="font-bold text-lg text-gray-900 mb-1">
-                    {chatData.otherUser.nickname}
-                  </h3>
-                  {/* 프로필 보기 버튼 */}
-                  <Button
-                    variant="outline"
-                    size="sm"
+              {chatData && otherUserProfile && (
+                <div className="pb-6 border-b">
+                  <SellerProfileCard
+                    sellerProfile={otherUserProfile}
+                    seller={{
+                      displayName: chatData.otherUser.nickname,
+                    }}
+                    region="서울시 강남구" // 기본값
                     onClick={() => setShowOtherProfileModal(true)}
-                    className="mt-2"
-                  >
-                    프로필 보기
-                  </Button>
+                    showClickable={true}
+                  />
                 </div>
               )}
 
@@ -749,6 +890,63 @@ export function EnhancedChatModal({
                   </div>
                 </div>
               </div>
+
+              {/* 거래 진행하기 버튼 (판매자만 보임) */}
+              {user && chatData && user.uid === chatData.sellerUid && (
+                <div className="mb-4">
+                  <Button
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `${chatData.otherUser.nickname}님과 거래를 시작하시겠습니까?\n상품 상태가 '거래중'으로 변경됩니다.`
+                        )
+                      ) {
+                        handleStartTransaction();
+                      }
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isStartingTransaction}
+                  >
+                    {isStartingTransaction ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        거래 진행 중...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        거래 진행하기
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {/* 거래 취소 버튼 (거래중일 때만, 판매자와 구매자 모두) */}
+              {user && chatData && chatData.item.status === "reserved" && (
+                <div className="mb-4">
+                  <Button
+                    onClick={handleCancelTransaction}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white"
+                    disabled={isCancelingTransaction}
+                  >
+                    {isCancelingTransaction ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        거래 취소 중...
+                      </>
+                    ) : (
+                      <>
+                        <X className="w-4 h-4 mr-2" />
+                        거래 취소하기
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    거래를 취소하고 상품을 다시 판매중으로 변경합니다
+                  </p>
+                </div>
+              )}
 
               {/* 액션 버튼들 */}
               <div className="grid grid-cols-2 gap-2">
@@ -774,22 +972,105 @@ export function EnhancedChatModal({
 
               {/* 거래 상태 */}
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  거래 상태
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-gray-100 rounded">
-                    <span className="text-sm text-gray-600">거래 대기</span>
-                    <Clock className="w-4 h-4 text-gray-400" />
+                {/* 거래 유형 표시 */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">
+                    거래 유형
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(() => {
+                      const tradeTypes = [];
+                      const currentTradeType = chatData?.tradeType || "직거래";
+
+                      if (currentTradeType.includes("직거래")) {
+                        tradeTypes.push(
+                          <span
+                            key="direct"
+                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800 border border-green-200"
+                          >
+                            직거래
+                          </span>
+                        );
+                      }
+                      if (currentTradeType.includes("택배")) {
+                        tradeTypes.push(
+                          <span
+                            key="delivery"
+                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                          >
+                            택배
+                          </span>
+                        );
+                      }
+                      if (
+                        currentTradeType.includes("안전거래") ||
+                        currentTradeType.includes("안전결제")
+                      ) {
+                        tradeTypes.push(
+                          <span
+                            key="safe"
+                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                          >
+                            안전결제
+                          </span>
+                        );
+                      }
+                      return tradeTypes;
+                    })()}
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-gray-100 rounded">
-                    <span className="text-sm text-gray-600">결제 완료</span>
-                    <Clock className="w-4 h-4 text-gray-400" />
+                </div>
+
+                {/* 거래 상태 */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">
+                    거래 상태
+                  </h4>
+                  <div className="space-y-2">
+                    {/* 거래 대기 */}
+                    <div className="flex items-center justify-between p-3 rounded-lg border-2 bg-green-50 border-green-300 text-green-800">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">거래 대기</span>
+                        <span className="text-green-600">✅</span>
+                      </div>
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    </div>
+
+                    {/* 결제 완료 */}
+                    <div className="flex items-center justify-between p-3 rounded-lg border-2 bg-green-50 border-green-300 text-green-800">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">
+                          {chatData?.tradeType?.includes("안전거래")
+                            ? "안전결제 완료"
+                            : "결제 완료"}
+                        </span>
+                        <span className="text-green-600">✅</span>
+                      </div>
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    </div>
+
+                    {/* 판매완료 */}
+                    <div className="flex items-center justify-between p-3 rounded-lg border-2 bg-gray-50 border-gray-200 text-gray-600">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">판매완료</span>
+                        <Clock className="w-4 h-4 text-gray-400" />
+                      </div>
+                      <Clock className="w-5 h-5 text-gray-400" />
+                    </div>
+
+                    {/* 거래 완료 버튼 */}
+                    <Button
+                      className={`w-full p-3 ${
+                        chatData?.item?.status === "escrow_completed"
+                          ? "bg-green-600 hover:bg-green-700"
+                          : "bg-blue-600 hover:bg-blue-700"
+                      } text-white font-medium`}
+                    >
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      {chatData?.item?.status === "escrow_completed"
+                        ? "상품 발송 대기"
+                        : "거래 완료"}
+                    </Button>
                   </div>
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    거래 완료
-                  </Button>
                 </div>
               </div>
             </div>
@@ -797,21 +1078,11 @@ export function EnhancedChatModal({
         )}
 
         {/* 상대방 프로필 모달 */}
-        {showOtherProfileModal && chatData && (
-          <OtherUserProfileModal
+        {showOtherProfileModal && chatData && otherUserProfile && (
+          <SellerProfileModal
             isOpen={showOtherProfileModal}
             onClose={() => setShowOtherProfileModal(false)}
-            userUid={chatData.otherUser.uid}
-            userNickname={chatData.otherUser.nickname}
-            userProfileImage={chatData.otherUser.profileImage}
-            onBlocked={() => {
-              onClose();
-              window.dispatchEvent(
-                new CustomEvent("chatDeleted", {
-                  detail: { chatId: chatData.chatId },
-                })
-              );
-            }}
+            sellerProfile={otherUserProfile}
           />
         )}
 

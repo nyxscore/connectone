@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CheckCircle, Home, Package, MessageCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import { FirestoreChatModal } from "@/components/chat/FirestoreChatModal";
+import { EnhancedChatModal } from "@/components/chat/EnhancedChatModal";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/api/firebase";
@@ -81,6 +81,36 @@ function PaymentSuccessContent() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+
+        // 안전결제인 경우 상품 상태를 안전결제 완료로 업데이트
+        if (orderInfo.escrow && orderInfo.itemId) {
+          try {
+            const { doc, updateDoc } = await import("firebase/firestore");
+            const { db } = await import("@/lib/api/firebase");
+
+            const itemRef = doc(db, "items", orderInfo.itemId);
+            await updateDoc(itemRef, {
+              status: "escrow_completed", // 안전결제 완료 상태
+              buyerId: user.id,
+              escrowCompletedAt: new Date(),
+              updatedAt: new Date(),
+            });
+
+            console.log("안전결제 완료 상태로 업데이트됨");
+
+            // 상품 상태 변경 이벤트 발생
+            window.dispatchEvent(
+              new CustomEvent("itemStatusChanged", {
+                detail: {
+                  itemId: orderInfo.itemId,
+                  status: "escrow_completed",
+                },
+              })
+            );
+          } catch (error) {
+            console.error("안전결제 상태 업데이트 중 오류:", error);
+          }
+        }
 
         console.log("거래 내역 저장 완료");
         setTransactionSaved(true);
@@ -174,7 +204,7 @@ function PaymentSuccessContent() {
 
       {/* 채팅 모달 */}
       {showChatModal && orderInfo.sellerUid && orderInfo.itemId && (
-        <FirestoreChatModal
+        <EnhancedChatModal
           isOpen={showChatModal}
           onClose={() => setShowChatModal(false)}
           sellerUid={orderInfo.sellerUid}

@@ -36,7 +36,8 @@ import { Card } from "@/components/ui/Card";
 import { FirestoreChatModal } from "@/components/chat/FirestoreChatModal";
 import { getUserProfile } from "@/lib/profile/api";
 import { UserProfile } from "@/data/profile/types";
-import { OtherUserProfileModal } from "@/components/chat/OtherUserProfileModal";
+import { SellerProfileCard } from "@/components/profile/SellerProfileCard";
+import { SellerProfileModal } from "@/components/profile/SellerProfileModal";
 import EditProductModal from "./EditProductModal";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ItemGallery } from "@/components/items/ItemGallery";
@@ -103,6 +104,7 @@ export default function ProductDetailModal({
   const [showChatModal, setShowChatModal] = useState(false);
   const [showSellerProfileModal, setShowSellerProfileModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedTradeType, setSelectedTradeType] = useState<string>("");
 
   // 본인 상품인지 확인
   const isOwnItem = user && product && user.uid === product.sellerId;
@@ -570,68 +572,13 @@ export default function ProductDetailModal({
                   </div>
 
                   {/* 판매자 정보 */}
-                  <div
-                    className="pt-4 border-t border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors rounded-lg p-2 -m-2"
+                  <SellerProfileCard
+                    sellerProfile={sellerProfile}
+                    seller={seller}
+                    region={product.region}
                     onClick={() => setShowSellerProfileModal(true)}
-                  >
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      판매자 정보
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                          {sellerProfile?.photoURL ? (
-                            <img
-                              src={sellerProfile.photoURL}
-                              alt={sellerProfile.nickname}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="w-6 h-6 text-gray-400" />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">
-                            {sellerProfile?.nickname ||
-                              seller?.displayName ||
-                              "판매자"}
-                          </h3>
-                          <div className="flex items-center space-x-2">
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                              {(() => {
-                                const grade =
-                                  sellerProfile?.grade || seller?.grade || "C";
-                                const gradeInfo = getGradeInfo(grade);
-                                return gradeInfo.displayName;
-                              })()}
-                            </div>
-                            <div className="flex items-center text-sm text-gray-500">
-                              <MapPin className="w-4 h-4 mr-1" />
-                              {sellerProfile?.region || product.region}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-500">거래 횟수</span>
-                          <p className="font-semibold">
-                            {sellerProfile?.tradesCount || 0}회
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">평점</span>
-                          <p className="font-semibold">
-                            {sellerProfile?.averageRating
-                              ? `${sellerProfile.averageRating.toFixed(1)}점`
-                              : "-"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    showClickable={true}
+                  />
                 </div>
 
                 {/* 이미지 갤러리 (통일: ItemGallery 사용) */}
@@ -912,6 +859,33 @@ export default function ProductDetailModal({
                                   : "border border-gray-300 hover:bg-gray-50"
                               }`}
                               onClick={() => {
+                                // 선택된 거래 형태 저장
+                                if (
+                                  product?.tradeOptions?.includes("직거래") &&
+                                  product?.tradeOptions?.includes("택배")
+                                ) {
+                                  // 직거래와 택배 모두 가능한 경우
+                                  if (buyerEscrowEnabled) {
+                                    setSelectedTradeType("택배 + 안전거래");
+                                  } else if (
+                                    product?.tradeOptions?.includes("택배")
+                                  ) {
+                                    setSelectedTradeType("택배");
+                                  } else {
+                                    setSelectedTradeType("직거래");
+                                  }
+                                } else if (
+                                  product?.tradeOptions?.includes("직거래")
+                                ) {
+                                  setSelectedTradeType("직거래");
+                                } else if (
+                                  product?.tradeOptions?.includes("택배")
+                                ) {
+                                  setSelectedTradeType("택배");
+                                } else {
+                                  setSelectedTradeType("직거래"); // 기본값
+                                }
+
                                 // 채팅 기능 - 채팅 모달 열기
                                 setShowChatModal(true);
                               }}
@@ -1028,16 +1002,15 @@ export default function ProductDetailModal({
         onClose={() => setShowChatModal(false)}
         itemId={product?.id}
         sellerUid={product?.sellerId}
+        tradeType={selectedTradeType}
       />
 
       {/* 판매자 프로필 모달 */}
       {sellerProfile && (
-        <OtherUserProfileModal
+        <SellerProfileModal
           isOpen={showSellerProfileModal}
           onClose={() => setShowSellerProfileModal(false)}
-          userUid={sellerProfile.uid}
-          userNickname={sellerProfile.nickname || "사용자"}
-          userProfileImage={sellerProfile.profileImage}
+          sellerProfile={sellerProfile}
         />
       )}
 

@@ -16,6 +16,7 @@ import {
   ChevronUp,
   Bell,
   Trash2,
+  ShoppingCart,
 } from "lucide-react";
 import toast from "react-hot-toast";
 

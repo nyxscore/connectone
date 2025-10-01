@@ -43,6 +43,7 @@ interface FirestoreChatModalProps {
   itemId?: string;
   sellerUid?: string;
   chatId?: string;
+  tradeType?: string;
   onChatDeleted?: () => void;
 }
 
@@ -52,6 +53,7 @@ export function FirestoreChatModal({
   itemId,
   sellerUid,
   chatId,
+  tradeType,
   onChatDeleted,
 }: FirestoreChatModalProps) {
   const { user } = useAuth();
@@ -70,6 +72,7 @@ export function FirestoreChatModal({
       price: number;
       imageUrl?: string;
     };
+    tradeType?: string;
   } | null>(null);
   const [showOtherProfileModal, setShowOtherProfileModal] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -183,10 +186,11 @@ export function FirestoreChatModal({
           },
           item: {
             id: chatData.itemId || "unknown",
-            title: itemResult?.title || "상품 정보 없음",
-            price: itemResult?.price || 0,
-            imageUrl: itemResult?.imageUrl,
+            title: itemResult?.item?.title || "상품 정보 없음",
+            price: itemResult?.item?.price || 0,
+            imageUrl: itemResult?.item?.imageUrl,
           },
+          tradeType: tradeType || "직거래",
         });
 
         console.log("최종 사용자 데이터:", {
@@ -210,7 +214,7 @@ export function FirestoreChatModal({
             itemId,
             user.uid,
             sellerUid,
-            `${itemTitle}에 대해 문의드립니다.`
+            "" // 자동 메시지 제거
           );
 
           if (!result.success || !result.chatId) {
@@ -251,10 +255,11 @@ export function FirestoreChatModal({
             },
             item: {
               id: itemId,
-              title: itemResult?.title || "상품 정보 없음",
-              price: itemResult?.price || 0,
-              imageUrl: itemResult?.imageUrl,
+              title: itemResult?.item?.title || "상품 정보 없음",
+              price: itemResult?.item?.price || 0,
+              imageUrl: itemResult?.item?.imageUrl,
             },
+            tradeType: tradeType || "직거래",
           });
 
           console.log("최종 사용자 데이터:", {
@@ -424,9 +429,17 @@ export function FirestoreChatModal({
                   <h3 className="font-semibold text-gray-900">
                     {chatData.item.title}
                   </h3>
-                  <p className="text-sm text-gray-500">
-                    {chatData.item.price.toLocaleString()}원
-                  </p>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-gray-500">
+                      {chatData.item.price.toLocaleString()}원
+                    </p>
+                    {/* 거래 형태 표시 */}
+                    {chatData.tradeType && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {chatData.tradeType}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

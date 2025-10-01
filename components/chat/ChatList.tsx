@@ -124,6 +124,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
             title: "상품 정보 없음",
             price: 0,
             imageUrl: null,
+            status: "unknown",
           };
 
           if (itemResult?.success && itemResult?.item) {
@@ -132,6 +133,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
               title: itemResult.item.title || "상품명 없음",
               price: itemResult.item.price || 0,
               imageUrl: itemResult.item.images?.[0] || null,
+              status: itemResult.item.status || "unknown",
             };
           } else {
             console.warn(`상품 정보를 가져올 수 없음:`, {
@@ -438,9 +440,22 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-600 truncate">
-                      {chat.item.title}
-                    </p>
+                    <div className="flex items-center space-x-2">
+                      <p className="text-xs text-gray-600 truncate">
+                        {chat.item.title}
+                      </p>
+                      {/* 거래 상태 표시 */}
+                      {chat.item.status === "reserved" && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          거래중
+                        </span>
+                      )}
+                      {chat.item.status === "escrow_completed" && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          안전결제완료
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs font-medium text-gray-900">
                       {chat.item.price.toLocaleString()}원
                     </p>

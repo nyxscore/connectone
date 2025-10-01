@@ -121,6 +121,8 @@ export function TossPaymentDemo({
       amount: totalAmount,
       orderName,
       escrowEnabled,
+      itemId,
+      sellerUid,
     });
 
     toast.success("테스트 결제가 완료되었습니다!");

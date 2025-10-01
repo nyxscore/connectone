@@ -3,7 +3,7 @@
 import { Card } from "../ui/Card";
 import { SellItem } from "../../data/types";
 import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
-import { MapPin, Calendar, Brain } from "lucide-react";
+import { MapPin, Calendar, Brain, Clock } from "lucide-react";
 import { WatermarkImage } from "../ui/WatermarkImage";
 // date-fns 제거 - 성능 최적화
 import { useRouter } from "next/navigation";
@@ -17,11 +17,6 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
   const router = useRouter();
 
   const handleClick = () => {
-    if (item.status === "reserved") {
-      alert("거래중인 상품입니다.");
-      return;
-    }
-
     if (item.status === "sold") {
       alert("판매완료된 상품입니다.");
       return;
@@ -128,13 +123,6 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
           </div>
         )}
 
-        {/* 거래중 상태 표시 */}
-        {item.status === "reserved" && (
-          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-orange-500 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold shadow-lg">
-            거래중
-          </div>
-        )}
-
         {/* 판매완료 상태 표시 */}
         {item.status === "sold" && (
           <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-gray-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold shadow-lg">
@@ -171,6 +159,16 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
             {getCategoryIcon(item.category)} {getCategoryLabel(item.category)}
           </span>
         </div>
+
+        {/* 거래중 상태 표시 */}
+        {item.status === "reserved" && (
+          <div className="w-full h-8 bg-orange-100 border border-orange-300 rounded-lg flex items-center justify-center mt-2">
+            <Clock className="w-4 h-4 mr-1 text-orange-600" />
+            <span className="text-sm font-semibold text-orange-600">
+              거래중
+            </span>
+          </div>
+        )}
 
         {/* 판매방법 표시 - 모든 거래 방식 표시 */}
         {item.shippingTypes && item.shippingTypes.length > 0 && (

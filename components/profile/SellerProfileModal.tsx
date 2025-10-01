@@ -16,6 +16,7 @@ import {
   Award,
   TrendingUp,
   Clock,
+  Package,
 } from "lucide-react";
 import { UserProfile } from "../../data/profile/types";
 import { getOrCreateChat } from "../../lib/chat/api";
@@ -315,11 +316,14 @@ export function SellerProfileModal({
           {/* 액션 버튼들 */}
           <div className="space-y-3 pt-4 border-t border-gray-200">
             <Button
-              onClick={handleStartChat}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                router.push(`/profile/items?userId=${sellerProfile.uid}`);
+                onClose();
+              }}
+              className="w-full bg-green-600 hover:bg-green-700"
             >
-              <MessageCircle className="w-5 h-5 mr-2" />
-              채팅하기
+              <Package className="w-5 h-5 mr-2" />
+              판매 상품 보기
             </Button>
             <div className="flex space-x-2">
               <Button

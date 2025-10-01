@@ -69,10 +69,11 @@ function PaymentContent() {
         title: itemData.title || `${itemData.brand} ${itemData.model}`,
         price: itemData.price,
         escrowEnabled: escrow,
-        sellerUid: itemData.sellerUid,
+        sellerUid: itemData.sellerUid || itemData.sellerId,
       });
 
       console.log("상품 정보 로드 완료:", itemData);
+      console.log("sellerUid 확인:", itemData.sellerUid || itemData.sellerId);
     } catch (error) {
       console.error("상품 로딩 실패:", error);
       toast.error("상품 정보를 불러올 수 없습니다.");
