@@ -1017,8 +1017,10 @@ export function EnhancedChatModal({
                 </div>
               </div>
 
-              {/* 거래 진행하기 버튼 (판매자만 보임) */}
-              {user && chatData && user.uid === chatData.sellerUid && (
+              {/* 거래 진행하기 버튼 (판매자만 보임, 거래대기 또는 안전결제 완료 상태일 때) */}
+              {user && chatData && 
+               user.uid === chatData.sellerUid && 
+               (chatData.item.status === "active" || chatData.item.status === "escrow_completed") && (
                 <div className="mb-4">
                   <Button
                     onClick={() => {
