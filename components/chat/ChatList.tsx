@@ -158,6 +158,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
           };
         } catch (error) {
           console.error(`채팅 ${doc.id} 정보 로드 실패:`, error);
+          console.error(`아이템 ID: ${chatData.itemId}`);
           return {
             ...chatData,
             otherUser: {
@@ -170,6 +171,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
               title: "상품 정보 없음",
               price: 0,
               imageUrl: null,
+              status: "unknown",
             },
             unreadCount: isBuyer
               ? chatData.buyerUnreadCount || 0
