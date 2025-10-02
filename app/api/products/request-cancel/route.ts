@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 거래중인 상품인지 확인
-    if (itemData.status !== "reserved" && itemData.status !== "escrow_completed") {
+    if (
+      itemData.status !== "reserved" &&
+      itemData.status !== "escrow_completed"
+    ) {
       return NextResponse.json(
         { success: false, error: "취소할 수 없는 상품 상태입니다." },
         { status: 400 }

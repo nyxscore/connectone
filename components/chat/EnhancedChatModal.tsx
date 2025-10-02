@@ -227,6 +227,20 @@ export function EnhancedChatModal({
           console.log("아이템 정보 로드 결과:", itemResult);
         }
 
+        // 거래 유형 추론 (상품 상태 기반)
+        let inferredTradeType = "직거래";
+        if (itemResult?.success && itemResult?.item) {
+          console.log("상품 상태:", itemResult.item.status);
+          console.log("거래 옵션:", itemResult.item.tradeOptions);
+          if (itemResult.item.status === "escrow_completed") {
+            // 안전결제 완료 상태라면 안전결제로 추론
+            inferredTradeType = "안전결제";
+          } else if (itemResult.item.tradeOptions?.includes("택배")) {
+            inferredTradeType = "택배";
+          }
+        }
+        console.log("추론된 거래 유형:", inferredTradeType);
+
         setChatData({
           chatId,
           sellerUid: chatData.sellerUid, // sellerUid 추가!
@@ -262,7 +276,7 @@ export function EnhancedChatModal({
                 ? itemResult.item.status
                 : "active",
           },
-          tradeType: tradeType || chatData.tradeType || "직거래", // 전달받은 거래 유형 우선 사용
+          tradeType: tradeType || chatData.tradeType || inferredTradeType, // 전달받은 거래 유형 우선 사용
         });
       } else if (itemId && sellerUid) {
         // 새 채팅 생성
@@ -1061,50 +1075,52 @@ export function EnhancedChatModal({
               )}
 
               {/* 구매자 취소 요청 버튼 (안전결제 완료 후) */}
-              {user && chatData && 
-               chatData.item.status === "escrow_completed" && 
-               user.uid === chatData.otherUser.uid && (
-                <div className="mb-4">
-                  <Button
-                    onClick={() => setShowCancelModal(true)}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    구매 취소 요청
-                  </Button>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    판매자에게 취소 요청을 보냅니다
-                  </p>
-                </div>
-              )}
+              {user &&
+                chatData &&
+                chatData.item.status === "escrow_completed" &&
+                user.uid === chatData.otherUser.uid && (
+                  <div className="mb-4">
+                    <Button
+                      onClick={() => setShowCancelModal(true)}
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      구매 취소 요청
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      판매자에게 취소 요청을 보냅니다
+                    </p>
+                  </div>
+                )}
 
               {/* 판매자 취소 요청 승인 버튼 */}
-              {user && chatData && 
-               chatData.item.status === "cancel_requested" && 
-               user.uid === chatData.sellerUid && (
-                <div className="mb-4">
-                  <Button
-                    onClick={handleApproveCancel}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    disabled={isApprovingCancel}
-                  >
-                    {isApprovingCancel ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        승인 중...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        취소 요청 승인
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    구매자의 취소 요청을 승인합니다
-                  </p>
-                </div>
-              )}
+              {user &&
+                chatData &&
+                chatData.item.status === "cancel_requested" &&
+                user.uid === chatData.sellerUid && (
+                  <div className="mb-4">
+                    <Button
+                      onClick={handleApproveCancel}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      disabled={isApprovingCancel}
+                    >
+                      {isApprovingCancel ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          승인 중...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          취소 요청 승인
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      구매자의 취소 요청을 승인합니다
+                    </p>
+                  </div>
+                )}
 
               {/* 액션 버튼들 */}
               <div className="grid grid-cols-2 gap-2">
@@ -1353,7 +1369,7 @@ export function EnhancedChatModal({
 
               <textarea
                 value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
+                onChange={e => setCancelReason(e.target.value)}
                 placeholder="취소 사유를 입력하세요..."
                 className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 mb-4"
               />
