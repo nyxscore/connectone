@@ -1165,6 +1165,44 @@ export function EnhancedChatModal({
                   </div>
                 )}
 
+              {/* 판매자 거래 취소 버튼 (안전결제 완료 상태일 때) */}
+              {user &&
+                chatData &&
+                user.uid === chatData.sellerUid &&
+                chatData.item.status === "escrow_completed" &&
+                !chatData.item.transactionCancelledAt && (
+                  <div className="mb-4">
+                    <Button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "정말로 거래를 취소하시겠습니까?\n안전결제가 취소되고 환불이 처리됩니다."
+                          )
+                        ) {
+                          handleCancelTransaction();
+                        }
+                      }}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white"
+                      disabled={isCancelingTransaction}
+                    >
+                      {isCancelingTransaction ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          취소 처리 중...
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4 mr-2" />
+                          거래 취소하기
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      안전결제를 취소하고 환불을 처리합니다
+                    </p>
+                  </div>
+                )}
+
               {/* 거래 취소된 상품 안내 */}
               {user &&
                 chatData &&
