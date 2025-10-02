@@ -209,6 +209,7 @@ function PaymentSuccessContent() {
           onClose={() => setShowChatModal(false)}
           sellerUid={orderInfo.sellerUid}
           itemId={orderInfo.itemId}
+          tradeType={orderInfo.escrow ? "안전결제" : "직거래"}
         />
       )}
     </div>

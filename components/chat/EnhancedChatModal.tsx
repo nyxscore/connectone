@@ -51,6 +51,7 @@ interface EnhancedChatModalProps {
   itemId?: string;
   sellerUid?: string;
   chatId?: string;
+  tradeType?: string;
   onChatDeleted?: () => void;
 }
 
@@ -60,6 +61,7 @@ export function EnhancedChatModal({
   itemId,
   sellerUid,
   chatId,
+  tradeType,
   onChatDeleted,
 }: EnhancedChatModalProps) {
   const { user } = useAuth();
@@ -79,6 +81,8 @@ export function EnhancedChatModal({
       imageUrl?: string;
       status?: string;
     };
+    tradeType?: string;
+    sellerUid?: string;
   } | null>(null);
   const [otherUserProfile, setOtherUserProfile] = useState<UserProfile | null>(
     null
@@ -249,7 +253,12 @@ export function EnhancedChatModal({
               itemResult?.success && itemResult?.item
                 ? itemResult.item.images?.[0]
                 : undefined,
+            status:
+              itemResult?.success && itemResult?.item
+                ? itemResult.item.status
+                : "active",
           },
+          tradeType: tradeType || chatData.tradeType || "직거래", // 전달받은 거래 유형 우선 사용
         });
       } else if (itemId && sellerUid) {
         // 새 채팅 생성
@@ -287,6 +296,7 @@ export function EnhancedChatModal({
 
           setChatData({
             chatId: result.chatId,
+            sellerUid: sellerUid,
             otherUser: {
               uid: sellerUid,
               nickname:
@@ -308,7 +318,12 @@ export function EnhancedChatModal({
                 itemResult?.success && itemResult?.item
                   ? itemResult.item.images?.[0]
                   : undefined,
+              status:
+                itemResult?.success && itemResult?.item
+                  ? itemResult.item.status
+                  : "active",
             },
+            tradeType: tradeType || "직거래", // 전달받은 거래 유형 사용
           });
         } catch (error) {
           console.error("채팅 생성 실패:", error);
@@ -982,6 +997,8 @@ export function EnhancedChatModal({
                       const tradeTypes = [];
                       const currentTradeType = chatData?.tradeType || "직거래";
 
+                      console.log("현재 거래 유형:", currentTradeType); // 디버그용
+
                       if (currentTradeType.includes("직거래")) {
                         tradeTypes.push(
                           <span
@@ -1027,49 +1044,93 @@ export function EnhancedChatModal({
                   </h4>
                   <div className="space-y-2">
                     {/* 거래 대기 */}
-                    <div className="flex items-center justify-between p-3 rounded-lg border-2 bg-green-50 border-green-300 text-green-800">
+                    <div
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                        chatData?.item?.status === "active"
+                          ? "bg-green-50 border-green-300 text-green-800"
+                          : "bg-gray-50 border-gray-200 text-gray-600"
+                      }`}
+                    >
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-medium">거래 대기</span>
-                        <span className="text-green-600">✅</span>
+                        {chatData?.item?.status === "active" && (
+                          <span className="text-green-600">✅</span>
+                        )}
                       </div>
-                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      {chatData?.item?.status === "active" ? (
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-gray-400" />
+                      )}
                     </div>
 
                     {/* 결제 완료 */}
-                    <div className="flex items-center justify-between p-3 rounded-lg border-2 bg-green-50 border-green-300 text-green-800">
+                    <div
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                        chatData?.item?.status === "escrow_completed"
+                          ? "bg-green-50 border-green-300 text-green-800"
+                          : "bg-gray-50 border-gray-200 text-gray-600"
+                      }`}
+                    >
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-medium">
-                          {chatData?.tradeType?.includes("안전거래")
+                          {chatData?.tradeType?.includes("안전거래") ||
+                          chatData?.tradeType?.includes("안전결제")
                             ? "안전결제 완료"
                             : "결제 완료"}
                         </span>
-                        <span className="text-green-600">✅</span>
+                        {chatData?.item?.status === "escrow_completed" && (
+                          <span className="text-green-600">✅</span>
+                        )}
                       </div>
-                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      {chatData?.item?.status === "escrow_completed" ? (
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+
+                    {/* 거래중 */}
+                    <div
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                        chatData?.item?.status === "reserved"
+                          ? "bg-blue-50 border-blue-300 text-blue-800"
+                          : "bg-gray-50 border-gray-200 text-gray-600"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">거래중</span>
+                        {chatData?.item?.status === "reserved" && (
+                          <span className="text-blue-600">🔄</span>
+                        )}
+                      </div>
+                      {chatData?.item?.status === "reserved" ? (
+                        <Clock className="w-5 h-5 text-blue-600" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-gray-400" />
+                      )}
                     </div>
 
                     {/* 판매완료 */}
-                    <div className="flex items-center justify-between p-3 rounded-lg border-2 bg-gray-50 border-gray-200 text-gray-600">
+                    <div
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                        chatData?.item?.status === "sold"
+                          ? "bg-green-50 border-green-300 text-green-800"
+                          : "bg-gray-50 border-gray-200 text-gray-600"
+                      }`}
+                    >
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-medium">판매완료</span>
-                        <Clock className="w-4 h-4 text-gray-400" />
+                        {chatData?.item?.status === "sold" && (
+                          <span className="text-green-600">✅</span>
+                        )}
                       </div>
-                      <Clock className="w-5 h-5 text-gray-400" />
+                      {chatData?.item?.status === "sold" ? (
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-gray-400" />
+                      )}
                     </div>
-
-                    {/* 거래 완료 버튼 */}
-                    <Button
-                      className={`w-full p-3 ${
-                        chatData?.item?.status === "escrow_completed"
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-blue-600 hover:bg-blue-700"
-                      } text-white font-medium`}
-                    >
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      {chatData?.item?.status === "escrow_completed"
-                        ? "상품 발송 대기"
-                        : "거래 완료"}
-                    </Button>
                   </div>
                 </div>
               </div>
