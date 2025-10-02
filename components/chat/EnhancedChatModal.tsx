@@ -228,6 +228,7 @@ export function EnhancedChatModal({
         if (chatData.itemId && chatData.itemId !== "unknown") {
           itemResult = await getItem(chatData.itemId);
           console.log("아이템 정보 로드 결과:", itemResult);
+        console.log("아이템 상태:", itemResult?.item?.status);
         }
 
         // 거래 유형 추론 (상품 상태 기반)
