@@ -29,17 +29,20 @@ export async function POST(req: NextRequest) {
     // 안전결제 완료 상태인 경우 안전결제 취소 API 호출
     if (itemData.status === "escrow_completed") {
       try {
-        const escrowCancelResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/payment/cancel-escrow`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            itemId,
-            sellerUid: userId,
-            reason: reason || "판매자 거래 취소"
-          }),
-        });
+        const escrowCancelResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/payment/cancel-escrow`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              itemId,
+              sellerUid: userId,
+              reason: reason || "판매자 거래 취소",
+            }),
+          }
+        );
 
         const escrowResult = await escrowCancelResponse.json();
 
@@ -47,11 +50,14 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({
             success: true,
             message: "안전결제가 취소되었습니다. 환불이 처리됩니다.",
-            escrowCancelled: true
+            escrowCancelled: true,
           });
         } else {
           return NextResponse.json(
-            { success: false, error: escrowResult.error || "안전결제 취소에 실패했습니다." },
+            {
+              success: false,
+              error: escrowResult.error || "안전결제 취소에 실패했습니다.",
+            },
             { status: 500 }
           );
         }
@@ -68,12 +74,14 @@ export async function POST(req: NextRequest) {
     await updateDoc(itemRef, {
       status: "active", // '판매중'으로 되돌리기
       buyerId: null, // 구매자 정보 제거
+      transactionCancelledAt: new Date(), // 거래 취소 시간 기록
+      cancelledBy: userId, // 취소한 사용자 기록
       updatedAt: new Date(),
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "거래가 취소되었습니다."
+      message: "거래가 취소되었습니다.",
     });
   } catch (error) {
     console.error("Error canceling transaction:", error);

@@ -275,6 +275,10 @@ export function EnhancedChatModal({
               itemResult?.success && itemResult?.item
                 ? itemResult.item.status
                 : "active",
+            transactionCancelledAt:
+              itemResult?.success && itemResult?.item
+                ? itemResult.item.transactionCancelledAt
+                : null,
           },
           tradeType: tradeType || chatData.tradeType || inferredTradeType, // 전달받은 거래 유형 우선 사용
         });
@@ -340,6 +344,10 @@ export function EnhancedChatModal({
                 itemResult?.success && itemResult?.item
                   ? itemResult.item.status
                   : "active",
+              transactionCancelledAt:
+                itemResult?.success && itemResult?.item
+                  ? itemResult.item.transactionCancelledAt
+                  : null,
             },
             tradeType: tradeType || "직거래", // 전달받은 거래 유형 사용
           });
@@ -612,7 +620,7 @@ export function EnhancedChatModal({
     }
 
     const isEscrowCompleted = chatData.item.status === "escrow_completed";
-    const confirmMessage = isEscrowCompleted 
+    const confirmMessage = isEscrowCompleted
       ? "정말로 거래를 취소하시겠습니까?\n안전결제가 취소되고 환불이 처리됩니다."
       : "정말로 거래를 취소하시겠습니까?\n상품 상태가 '판매중'으로 변경됩니다.";
 
@@ -1023,12 +1031,13 @@ export function EnhancedChatModal({
                 </div>
               </div>
 
-              {/* 거래 진행하기 버튼 (판매자만 보임, 거래대기 또는 안전결제 완료 상태일 때) */}
+              {/* 거래 진행하기 버튼 (판매자만 보임, 거래대기 또는 안전결제 완료 상태일 때, 거래 취소 기록이 없을 때) */}
               {user &&
                 chatData &&
                 user.uid === chatData.sellerUid &&
                 (chatData.item.status === "active" ||
-                  chatData.item.status === "escrow_completed") && (
+                  chatData.item.status === "escrow_completed") &&
+                !chatData.item.transactionCancelledAt && (
                   <div className="mb-4">
                     <Button
                       onClick={() => {
@@ -1055,6 +1064,22 @@ export function EnhancedChatModal({
                         </>
                       )}
                     </Button>
+                  </div>
+                )}
+
+              {/* 거래 취소된 상품 안내 */}
+              {user &&
+                chatData &&
+                user.uid === chatData.sellerUid &&
+                chatData.item.transactionCancelledAt && (
+                  <div className="mb-4 p-3 bg-gray-100 border border-gray-300 rounded-lg">
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <X className="w-4 h-4" />
+                      <span className="text-sm font-medium">거래가 취소되었습니다</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      이 상품에 대한 거래는 이미 취소되었습니다.
+                    </p>
                   </div>
                 )}
 

@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       sellerUid,
       buyerUid: itemData.buyerId,
       amount: itemData.price,
-      reason: reason || "판매자 거래 취소"
+      reason: reason || "판매자 거래 취소",
     });
 
     // Mock: 환불 성공으로 가정
@@ -63,11 +63,17 @@ export async function POST(request: NextRequest) {
         escrowCompletedAt: null,
         escrowCanceledAt: new Date(),
         escrowCancelReason: reason || "판매자 거래 취소",
+        transactionCancelledAt: new Date(), // 거래 취소 시간 기록
+        cancelledBy: sellerUid, // 취소한 사용자 기록
         updatedAt: new Date(),
       });
 
       // 거래 내역에 취소 기록 추가
-      const transactionsRef = doc(db, "transactions", `${itemId}_${itemData.buyerId}`);
+      const transactionsRef = doc(
+        db,
+        "transactions",
+        `${itemId}_${itemData.buyerId}`
+      );
       await updateDoc(transactionsRef, {
         status: "cancelled",
         cancelledAt: new Date(),
