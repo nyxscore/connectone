@@ -666,60 +666,63 @@ export function FirestoreChatModal({
                 otherUserUid: chatData?.otherUser?.uid,
                 isBuyer: user?.uid === chatData?.otherUser?.uid,
                 status: chatData?.item?.status,
-                isEscrowCompleted: chatData?.item?.status === "escrow_completed",
+                isEscrowCompleted:
+                  chatData?.item?.status === "escrow_completed",
                 isNotCancelled: !chatData?.item?.transactionCancelledAt,
                 chatDataExists: !!chatData,
                 otherUserExists: !!chatData?.otherUser,
               })}
-              
+
               {/* 안전결제 완료 상태에서의 버튼들 */}
-              {chatData.item.status === "escrow_completed" && !chatData.item.transactionCancelledAt && (
-                <>
-                  {/* 거래 취소하기 버튼 */}
-                  <Button
-                    onClick={handleCancelTransaction}
-                    variant="outline"
-                    className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
-                    disabled={isCancelingTransaction}
-                  >
-                    {isCancelingTransaction ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        취소 처리 중...
-                      </>
-                    ) : (
-                      <>
-                        <X className="w-4 h-4 mr-2" />
-                        거래 취소하기
-                      </>
-                    )}
-                  </Button>
-                </>
-              )}
+              {chatData.item.status === "escrow_completed" &&
+                !chatData.item.transactionCancelledAt && (
+                  <>
+                    {/* 거래 취소하기 버튼 */}
+                    <Button
+                      onClick={handleCancelTransaction}
+                      variant="outline"
+                      className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
+                      disabled={isCancelingTransaction}
+                    >
+                      {isCancelingTransaction ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          취소 처리 중...
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4 mr-2" />
+                          거래 취소하기
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
 
               {/* 거래중 상태에서의 버튼들 */}
-              {chatData.item.status === "reserved" && !chatData.item.transactionCancelledAt && (
-                <>
-                  {/* 구매 완료 버튼 */}
-                  <Button
-                    onClick={handleCompletePurchase}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
-                    disabled={isCompletingPurchase}
-                  >
-                    {isCompletingPurchase ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        완료 처리 중...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        구매 완료
-                      </>
-                    )}
-                  </Button>
-                </>
-              )}
+              {chatData.item.status === "reserved" &&
+                !chatData.item.transactionCancelledAt && (
+                  <>
+                    {/* 구매 완료 버튼 */}
+                    <Button
+                      onClick={handleCompletePurchase}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
+                      disabled={isCompletingPurchase}
+                    >
+                      {isCompletingPurchase ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          완료 처리 중...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          구매 완료
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
             </div>
           </div>
         )}

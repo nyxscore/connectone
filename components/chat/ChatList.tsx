@@ -105,6 +105,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
 
           console.log(`상대방 프로필 정보 결과:`, otherUserResult);
           console.log(`아이템 정보:`, itemResult);
+          console.log(`아이템 상태:`, itemResult?.item?.status);
 
           const otherUser = otherUserResult.success
             ? otherUserResult.data
