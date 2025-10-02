@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../lib/hooks/useAuth";
 import { getUserItems } from "../../../lib/api/products";
@@ -51,7 +51,7 @@ function MyItemsPageContent() {
     if (currentUser || targetUserId) {
       loadMyItems();
     }
-  }, [currentUser, authLoading, router, targetUserId, activeTab]);
+  }, [currentUser, authLoading, targetUserId, loadMyItems]);
 
   // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
@@ -70,7 +70,7 @@ function MyItemsPageContent() {
     };
   }, [showItemMenu]);
 
-  const loadMyItems = async () => {
+  const loadMyItems = useCallback(async () => {
     const userId = targetUserId || currentUser?.uid;
     if (!userId) return;
 
@@ -147,7 +147,7 @@ function MyItemsPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [targetUserId, currentUser?.uid, activeTab]);
 
   // 상태별 필터링
   useEffect(() => {

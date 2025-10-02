@@ -1018,37 +1018,39 @@ export function EnhancedChatModal({
               </div>
 
               {/* 거래 진행하기 버튼 (판매자만 보임, 거래대기 또는 안전결제 완료 상태일 때) */}
-              {user && chatData && 
-               user.uid === chatData.sellerUid && 
-               (chatData.item.status === "active" || chatData.item.status === "escrow_completed") && (
-                <div className="mb-4">
-                  <Button
-                    onClick={() => {
-                      if (
-                        confirm(
-                          `${chatData.otherUser.nickname}님과 거래를 시작하시겠습니까?\n상품 상태가 '거래중'으로 변경됩니다.`
-                        )
-                      ) {
-                        handleStartTransaction();
-                      }
-                    }}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    disabled={isStartingTransaction}
-                  >
-                    {isStartingTransaction ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        거래 진행 중...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        거래 진행하기
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+              {user &&
+                chatData &&
+                user.uid === chatData.sellerUid &&
+                (chatData.item.status === "active" ||
+                  chatData.item.status === "escrow_completed") && (
+                  <div className="mb-4">
+                    <Button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `${chatData.otherUser.nickname}님과 거래를 시작하시겠습니까?\n상품 상태가 '거래중'으로 변경됩니다.`
+                          )
+                        ) {
+                          handleStartTransaction();
+                        }
+                      }}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      disabled={isStartingTransaction}
+                    >
+                      {isStartingTransaction ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          거래 진행 중...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          거래 진행하기
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
 
               {/* 거래 취소 버튼 (거래중일 때만, 판매자와 구매자 모두) */}
               {user && chatData && chatData.item.status === "reserved" && (
