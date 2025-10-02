@@ -1078,7 +1078,7 @@ export function EnhancedChatModal({
 
         {/* 사이드바 */}
         {showSidebar && (
-          <div className="w-80 bg-gray-50 border-l flex flex-col">
+          <div className="w-80 bg-gray-50 border-l flex flex-col h-full">
             {/* 사이드바 헤더 */}
             <div className="flex items-center justify-between p-4 border-b bg-white">
               <h3 className="font-semibold text-gray-900">상대방 정보</h3>
@@ -1092,7 +1092,7 @@ export function EnhancedChatModal({
               </Button>
             </div>
 
-            <div className="flex-1 p-4 space-y-6 max-h-[calc(100vh-200px)] overflow-hidden">
+            <div className="flex-1 p-4 space-y-6">
               {/* 상대방 프로필 */}
               {chatData && otherUserProfile && (
                 <div className="pb-6 border-b">
@@ -1248,8 +1248,9 @@ export function EnhancedChatModal({
                   {console.log("구매자 버튼 조건 확인:", {
                     isBuyer: user.uid === chatData.otherUser.uid,
                     status: chatData.item.status,
-                    isEscrowCompleted: chatData.item.status === "escrow_completed",
-                    isNotCancelled: !chatData.item.transactionCancelledAt
+                    isEscrowCompleted:
+                      chatData.item.status === "escrow_completed",
+                    isNotCancelled: !chatData.item.transactionCancelledAt,
                   })}
                   {/* 안전결제 완료 상태에서의 버튼들 */}
                   {chatData.item.status === "escrow_completed" &&
