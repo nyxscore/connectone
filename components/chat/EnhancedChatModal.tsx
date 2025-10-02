@@ -228,7 +228,7 @@ export function EnhancedChatModal({
         if (chatData.itemId && chatData.itemId !== "unknown") {
           itemResult = await getItem(chatData.itemId);
           console.log("아이템 정보 로드 결과:", itemResult);
-        console.log("아이템 상태:", itemResult?.item?.status);
+          console.log("아이템 상태:", itemResult?.item?.status);
         }
 
         // 거래 유형 추론 (상품 상태 기반)
@@ -1243,99 +1243,103 @@ export function EnhancedChatModal({
               )}
 
               {/* 구매자 액션 버튼들 */}
-              {user && chatData && chatData.otherUser && user.uid === chatData.otherUser.uid && (
-                <div className="mb-4 space-y-2">
-                  {/* 디버깅 로그 */}
-                  {console.log("구매자 버튼 조건 확인:", {
-                    userId: user?.uid,
-                    otherUserUid: chatData?.otherUser?.uid,
-                    isBuyer: user?.uid === chatData?.otherUser?.uid,
-                    status: chatData?.item?.status,
-                    isEscrowCompleted: chatData?.item?.status === "escrow_completed",
-                    isNotCancelled: !chatData?.item?.transactionCancelledAt,
-                    chatDataExists: !!chatData,
-                    otherUserExists: !!chatData?.otherUser
-                  })}
-                  {/* 안전결제 완료 상태에서의 버튼들 */}
-                  {chatData.item.status === "escrow_completed" &&
-                    !chatData.item.transactionCancelledAt && (
-                      <>
-                        {/* 거래 취소하기 버튼 */}
-                        <Button
-                          onClick={() => {
-                            if (
-                              confirm(
-                                "정말로 거래를 취소하시겠습니까?\n안전결제가 취소되고 환불이 처리됩니다."
-                              )
-                            ) {
-                              handleCancelTransaction();
-                            }
-                          }}
-                          variant="outline"
-                          className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
-                          disabled={isCancelingTransaction}
-                        >
-                          {isCancelingTransaction ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              취소 처리 중...
-                            </>
-                          ) : (
-                            <>
-                              <X className="w-4 h-4 mr-2" />
-                              거래 취소하기
-                            </>
-                          )}
-                        </Button>
+              {user &&
+                chatData &&
+                chatData.otherUser &&
+                user.uid === chatData.otherUser.uid && (
+                  <div className="mb-4 space-y-2">
+                    {/* 디버깅 로그 */}
+                    {console.log("구매자 버튼 조건 확인:", {
+                      userId: user?.uid,
+                      otherUserUid: chatData?.otherUser?.uid,
+                      isBuyer: user?.uid === chatData?.otherUser?.uid,
+                      status: chatData?.item?.status,
+                      isEscrowCompleted:
+                        chatData?.item?.status === "escrow_completed",
+                      isNotCancelled: !chatData?.item?.transactionCancelledAt,
+                      chatDataExists: !!chatData,
+                      otherUserExists: !!chatData?.otherUser,
+                    })}
+                    {/* 안전결제 완료 상태에서의 버튼들 */}
+                    {chatData.item.status === "escrow_completed" &&
+                      !chatData.item.transactionCancelledAt && (
+                        <>
+                          {/* 거래 취소하기 버튼 */}
+                          <Button
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  "정말로 거래를 취소하시겠습니까?\n안전결제가 취소되고 환불이 처리됩니다."
+                                )
+                              ) {
+                                handleCancelTransaction();
+                              }
+                            }}
+                            variant="outline"
+                            className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
+                            disabled={isCancelingTransaction}
+                          >
+                            {isCancelingTransaction ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                취소 처리 중...
+                              </>
+                            ) : (
+                              <>
+                                <X className="w-4 h-4 mr-2" />
+                                거래 취소하기
+                              </>
+                            )}
+                          </Button>
 
-                        {/* 구매 취소 요청 버튼 */}
-                        <Button
-                          onClick={() => setShowCancelModal(true)}
-                          variant="outline"
-                          className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 h-10"
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          구매 취소 요청
-                        </Button>
-                      </>
-                    )}
+                          {/* 구매 취소 요청 버튼 */}
+                          <Button
+                            onClick={() => setShowCancelModal(true)}
+                            variant="outline"
+                            className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 h-10"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            구매 취소 요청
+                          </Button>
+                        </>
+                      )}
 
-                  {/* 거래중 상태에서의 버튼들 */}
-                  {chatData.item.status === "reserved" &&
-                    !chatData.item.transactionCancelledAt && (
-                      <>
-                        {/* 구매 완료 버튼 */}
-                        <Button
-                          onClick={handleCompletePurchase}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
-                          disabled={isCompletingPurchase}
-                        >
-                          {isCompletingPurchase ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              완료 처리 중...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              구매 완료
-                            </>
-                          )}
-                        </Button>
+                    {/* 거래중 상태에서의 버튼들 */}
+                    {chatData.item.status === "reserved" &&
+                      !chatData.item.transactionCancelledAt && (
+                        <>
+                          {/* 구매 완료 버튼 */}
+                          <Button
+                            onClick={handleCompletePurchase}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
+                            disabled={isCompletingPurchase}
+                          >
+                            {isCompletingPurchase ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                완료 처리 중...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                구매 완료
+                              </>
+                            )}
+                          </Button>
 
-                        {/* 구매 취소 요청 버튼 */}
-                        <Button
-                          onClick={() => setShowCancelModal(true)}
-                          variant="outline"
-                          className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 h-10"
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          구매 취소 요청
-                        </Button>
-                      </>
-                    )}
-                </div>
-              )}
+                          {/* 구매 취소 요청 버튼 */}
+                          <Button
+                            onClick={() => setShowCancelModal(true)}
+                            variant="outline"
+                            className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 h-10"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            구매 취소 요청
+                          </Button>
+                        </>
+                      )}
+                  </div>
+                )}
 
               {/* 판매자 취소 요청 승인 버튼 */}
               {user &&

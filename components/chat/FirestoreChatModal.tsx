@@ -33,6 +33,7 @@ import {
   MessageCircle,
   Trash2,
   Package,
+  CheckCircle,
 } from "lucide-react";
 // date-fns 제거 - 간단한 시간 표시로 변경
 import toast from "react-hot-toast";
@@ -77,6 +78,13 @@ export function FirestoreChatModal({
   const [showOtherProfileModal, setShowOtherProfileModal] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [isStartingTransaction, setIsStartingTransaction] = useState(false);
+  const [isCancelingTransaction, setIsCancelingTransaction] = useState(false);
+  const [isRequestingCancel, setIsRequestingCancel] = useState(false);
+  const [isApprovingCancel, setIsApprovingCancel] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCompletingPurchase, setIsCompletingPurchase] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -399,6 +407,91 @@ export function FirestoreChatModal({
     }
   };
 
+  const handleCancelTransaction = async () => {
+    if (!chatData?.item?.id || !user?.uid) {
+      toast.error("거래 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    const isEscrowCompleted = chatData.item.status === "escrow_completed";
+    const confirmMessage = isEscrowCompleted
+      ? "정말로 거래를 취소하시겠습니까?\n안전결제가 취소되고 환불이 처리됩니다."
+      : "정말로 거래를 취소하시겠습니까?\n상품 상태가 '판매중'으로 변경됩니다.";
+
+    if (confirm(confirmMessage)) {
+      setIsCancelingTransaction(true);
+
+      try {
+        const response = await fetch("/api/products/cancel-transaction", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            itemId: chatData.item.id,
+            sellerUid: user.uid,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          toast.success("거래가 취소되었습니다!");
+          onClose();
+        } else {
+          toast.error(result.error || "거래 취소에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("거래 취소 실패:", error);
+        toast.error("거래 취소 중 오류가 발생했습니다.");
+      } finally {
+        setIsCancelingTransaction(false);
+      }
+    }
+  };
+
+  const handleCompletePurchase = async () => {
+    if (!chatData?.item?.id || !user?.uid) {
+      toast.error("거래 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    if (
+      confirm(
+        "정말로 구매를 완료하시겠습니까?\n상품 상태가 '판매완료'로 변경되고 판매자에게 입금이 처리됩니다."
+      )
+    ) {
+      setIsCompletingPurchase(true);
+
+      try {
+        const response = await fetch("/api/products/complete-purchase", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            itemId: chatData.item.id,
+            buyerUid: user.uid,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          toast.success("구매가 완료되었습니다! 판매자에게 입금이 처리됩니다.");
+          onClose();
+        } else {
+          toast.error(result.error || "구매 완료에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("구매 완료 실패:", error);
+        toast.error("구매 완료 중 오류가 발생했습니다.");
+      } finally {
+        setIsCompletingPurchase(false);
+      }
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -562,6 +655,74 @@ export function FirestoreChatModal({
           {/* 스크롤 타겟 */}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* 구매자 액션 버튼들 */}
+        {chatData && user && user.uid === chatData.otherUser.uid && (
+          <div className="p-4 border-t bg-gray-50">
+            <div className="space-y-2">
+              {/* 디버깅 로그 */}
+              {console.log("FirestoreChatModal 구매자 버튼 조건 확인:", {
+                userId: user?.uid,
+                otherUserUid: chatData?.otherUser?.uid,
+                isBuyer: user?.uid === chatData?.otherUser?.uid,
+                status: chatData?.item?.status,
+                isEscrowCompleted: chatData?.item?.status === "escrow_completed",
+                isNotCancelled: !chatData?.item?.transactionCancelledAt,
+                chatDataExists: !!chatData,
+                otherUserExists: !!chatData?.otherUser,
+              })}
+              
+              {/* 안전결제 완료 상태에서의 버튼들 */}
+              {chatData.item.status === "escrow_completed" && !chatData.item.transactionCancelledAt && (
+                <>
+                  {/* 거래 취소하기 버튼 */}
+                  <Button
+                    onClick={handleCancelTransaction}
+                    variant="outline"
+                    className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
+                    disabled={isCancelingTransaction}
+                  >
+                    {isCancelingTransaction ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        취소 처리 중...
+                      </>
+                    ) : (
+                      <>
+                        <X className="w-4 h-4 mr-2" />
+                        거래 취소하기
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+
+              {/* 거래중 상태에서의 버튼들 */}
+              {chatData.item.status === "reserved" && !chatData.item.transactionCancelledAt && (
+                <>
+                  {/* 구매 완료 버튼 */}
+                  <Button
+                    onClick={handleCompletePurchase}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
+                    disabled={isCompletingPurchase}
+                  >
+                    {isCompletingPurchase ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        완료 처리 중...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        구매 완료
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 메시지 입력 */}
         {chatData && user && (
