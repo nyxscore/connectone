@@ -101,13 +101,27 @@ export async function updateUserResponseRate(userId: string): Promise<{
     const responseRate = await calculateResponseRate(userId);
 
     // Firestore에서 사용자 프로필 업데이트
-    const { doc, updateDoc } = await import("firebase/firestore");
+    const { doc, setDoc, getDoc } = await import("firebase/firestore");
     const userProfileRef = doc(db, "profiles", userId);
 
-    await updateDoc(userProfileRef, {
-      responseRate,
-      updatedAt: new Date(),
-    });
+    // 문서가 존재하는지 확인
+    const userProfileSnap = await getDoc(userProfileRef);
+    
+    if (userProfileSnap.exists()) {
+      // 문서가 존재하면 업데이트
+      const { updateDoc } = await import("firebase/firestore");
+      await updateDoc(userProfileRef, {
+        responseRate,
+        updatedAt: new Date(),
+      });
+    } else {
+      // 문서가 없으면 생성
+      await setDoc(userProfileRef, {
+        responseRate,
+        updatedAt: new Date(),
+        createdAt: new Date(),
+      });
+    }
 
     console.log("사용자 응답률 업데이트 완료:", { userId, responseRate });
 
