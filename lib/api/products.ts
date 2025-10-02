@@ -109,15 +109,21 @@ export async function getItem(
   itemId: string
 ): Promise<{ success: boolean; item?: Item; error?: string }> {
   try {
+    console.log("getItem 호출:", itemId);
     const docRef = doc(db, "items", itemId);
+    console.log("docRef 생성 완료");
     const docSnap = await getDoc(docRef);
+    console.log("getDoc 완료:", docSnap.exists());
 
     if (docSnap.exists()) {
+      const itemData = { id: docSnap.id, ...docSnap.data() } as Item;
+      console.log("아이템 데이터:", itemData);
       return {
         success: true,
-        item: { id: docSnap.id, ...docSnap.data() } as Item,
+        item: itemData,
       };
     } else {
+      console.log("아이템이 존재하지 않음:", itemId);
       return {
         success: false,
         error: "아이템을 찾을 수 없습니다.",
@@ -125,6 +131,7 @@ export async function getItem(
     }
   } catch (error) {
     console.error("아이템 조회 실패:", error);
+    console.error("아이템 ID:", itemId);
     return {
       success: false,
       error:
