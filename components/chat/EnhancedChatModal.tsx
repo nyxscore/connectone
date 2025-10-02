@@ -98,6 +98,7 @@ export function EnhancedChatModal({
   const [isApprovingCancel, setIsApprovingCancel] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [isCompletingPurchase, setIsCompletingPurchase] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 메시지가 변경될 때마다 스크롤을 최하단으로
@@ -761,6 +762,54 @@ export function EnhancedChatModal({
     }
   };
 
+  const handleCompletePurchase = async () => {
+    if (!chatData?.item?.id || !user?.uid) {
+      toast.error("거래 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    if (
+      confirm(
+        "정말로 구매를 완료하시겠습니까?\n상품 상태가 '판매완료'로 변경되고 판매자에게 입금이 처리됩니다."
+      )
+    ) {
+      setIsCompletingPurchase(true);
+
+      try {
+        const response = await fetch("/api/products/complete-purchase", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            itemId: chatData.item.id,
+            buyerUid: user.uid,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          toast.success("구매가 완료되었습니다! 판매자에게 입금이 처리됩니다.");
+
+          // 전역 이벤트 발생으로 상품 목록 업데이트
+          window.dispatchEvent(
+            new CustomEvent("itemStatusChanged", {
+              detail: { itemId: chatData.item.id, status: "sold" },
+            })
+          );
+        } else {
+          toast.error(result.error || "구매 완료에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("구매 완료 실패:", error);
+        toast.error("구매 완료 중 오류가 발생했습니다.");
+      } finally {
+        setIsCompletingPurchase(false);
+      }
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("ko-KR", {
       style: "currency",
@@ -1075,7 +1124,9 @@ export function EnhancedChatModal({
                   <div className="mb-4 p-3 bg-gray-100 border border-gray-300 rounded-lg">
                     <div className="flex items-center space-x-2 text-gray-600">
                       <X className="w-4 h-4" />
-                      <span className="text-sm font-medium">거래가 취소되었습니다</span>
+                      <span className="text-sm font-medium">
+                        거래가 취소되었습니다
+                      </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       이 상품에 대한 거래는 이미 취소되었습니다.
@@ -1153,6 +1204,35 @@ export function EnhancedChatModal({
                     </Button>
                     <p className="text-xs text-gray-500 mt-2 text-center">
                       구매자의 취소 요청을 승인합니다
+                    </p>
+                  </div>
+                )}
+
+              {/* 구매자 구매 완료 버튼 (거래중 상태일 때) */}
+              {user &&
+                chatData &&
+                chatData.item.status === "reserved" &&
+                user.uid === chatData.otherUser.uid && (
+                  <div className="mb-4">
+                    <Button
+                      onClick={handleCompletePurchase}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={isCompletingPurchase}
+                    >
+                      {isCompletingPurchase ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          완료 처리 중...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          구매 완료
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      물건을 수령받으셨다면 구매 완료를 눌러주세요
                     </p>
                   </div>
                 )}
@@ -1258,31 +1338,28 @@ export function EnhancedChatModal({
                       )}
                     </div>
 
-                    {/* 결제 완료 */}
-                    <div
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
-                        chatData?.item?.status === "escrow_completed"
-                          ? "bg-green-50 border-green-300 text-green-800"
-                          : "bg-gray-50 border-gray-200 text-gray-600"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">
-                          {chatData?.tradeType?.includes("안전거래") ||
-                          chatData?.tradeType?.includes("안전결제")
-                            ? "안전결제 완료"
-                            : "결제 완료"}
-                        </span>
-                        {chatData?.item?.status === "escrow_completed" && (
-                          <span className="text-green-600">✅</span>
+                    {/* 결제 완료 (안전결제인 경우만) */}
+                    {(chatData?.tradeType?.includes("안전결제") || chatData?.tradeType?.includes("안전거래")) && (
+                      <div
+                        className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                          chatData?.item?.status === "escrow_completed"
+                            ? "bg-green-50 border-green-300 text-green-800"
+                            : "bg-gray-50 border-gray-200 text-gray-600"
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium">안전결제 완료</span>
+                          {chatData?.item?.status === "escrow_completed" && (
+                            <span className="text-green-600">✅</span>
+                          )}
+                        </div>
+                        {chatData?.item?.status === "escrow_completed" ? (
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <Clock className="w-5 h-5 text-gray-400" />
                         )}
                       </div>
-                      {chatData?.item?.status === "escrow_completed" ? (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <Clock className="w-5 h-5 text-gray-400" />
-                      )}
-                    </div>
+                    )}
 
                     {/* 거래중 */}
                     <div
