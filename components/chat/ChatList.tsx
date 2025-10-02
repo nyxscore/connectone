@@ -139,6 +139,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
               imageUrl: itemResult.item.images?.[0] || null,
               status: itemResult.item.status || "unknown",
             };
+            console.log(`아이템 정보 생성 완료:`, itemInfo);
           } else {
             console.warn(`상품 정보를 가져올 수 없음:`, {
               itemId: chatData.itemId,
