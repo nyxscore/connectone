@@ -99,6 +99,8 @@ export function EnhancedChatModal({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [isCompletingPurchase, setIsCompletingPurchase] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [isBlocking, setIsBlocking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 메시지가 변경될 때마다 스크롤을 최하단으로
@@ -500,6 +502,9 @@ export function EnhancedChatModal({
       if (result.success) {
         toast.success("신고가 접수되었습니다.");
         setShowReportModal(false);
+        
+        // 신고 후 차단 여부 묻기
+        setShowBlockModal(true);
       } else {
         toast.error(result.error || "신고 접수에 실패했습니다.");
       }
@@ -808,6 +813,50 @@ export function EnhancedChatModal({
         setIsCompletingPurchase(false);
       }
     }
+  };
+
+  const handleBlockUser = async () => {
+    if (!chatData?.otherUser?.uid || !user?.uid) {
+      toast.error("차단할 사용자 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    setIsBlocking(true);
+
+    try {
+      const response = await fetch("/api/users/block", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          targetUserId: chatData.otherUser.uid,
+          action: "block",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("사용자가 차단되었습니다.");
+        setShowBlockModal(false);
+        
+        // 채팅 모달 닫기
+        onClose();
+      } else {
+        toast.error(result.error || "차단에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("차단 실패:", error);
+      toast.error("차단 중 오류가 발생했습니다.");
+    } finally {
+      setIsBlocking(false);
+    }
+  };
+
+  const handleSkipBlock = () => {
+    setShowBlockModal(false);
   };
 
   const formatPrice = (price: number) => {
@@ -1508,6 +1557,50 @@ export function EnhancedChatModal({
                     "요청 보내기"
                   )}
                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 차단 확인 모달 */}
+        {showBlockModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  사용자 차단
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  {chatData?.otherUser?.nickname}님을 차단하시겠습니까?<br />
+                  차단된 사용자와는 더 이상 채팅할 수 없습니다.
+                </p>
+                <div className="flex space-x-3">
+                  <Button
+                    onClick={handleSkipBlock}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isBlocking}
+                  >
+                    아니오
+                  </Button>
+                  <Button
+                    onClick={handleBlockUser}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                    disabled={isBlocking}
+                  >
+                    {isBlocking ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        차단 중...
+                      </>
+                    ) : (
+                      "네, 차단합니다"
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
