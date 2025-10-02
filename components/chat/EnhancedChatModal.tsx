@@ -94,6 +94,10 @@ export function EnhancedChatModal({
   const [showReportModal, setShowReportModal] = useState(false);
   const [isStartingTransaction, setIsStartingTransaction] = useState(false);
   const [isCancelingTransaction, setIsCancelingTransaction] = useState(false);
+  const [isRequestingCancel, setIsRequestingCancel] = useState(false);
+  const [isApprovingCancel, setIsApprovingCancel] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 메시지가 변경될 때마다 스크롤을 최하단으로
@@ -636,6 +640,99 @@ export function EnhancedChatModal({
     }
   };
 
+  const handleRequestCancel = async () => {
+    if (!chatData?.item?.id || !user?.uid) {
+      toast.error("거래 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    setIsRequestingCancel(true);
+
+    try {
+      const response = await fetch("/api/products/request-cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemId: chatData.item.id,
+          buyerUid: user.uid,
+          reason: cancelReason || "구매자 요청",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("취소 요청이 전송되었습니다!");
+        setShowCancelModal(false);
+        setCancelReason("");
+
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: chatData.item.id, status: "cancel_requested" },
+          })
+        );
+      } else {
+        toast.error(result.error || "취소 요청에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("취소 요청 실패:", error);
+      toast.error("취소 요청 중 오류가 발생했습니다.");
+    } finally {
+      setIsRequestingCancel(false);
+    }
+  };
+
+  const handleApproveCancel = async () => {
+    if (!chatData?.item?.id || !user?.uid) {
+      toast.error("거래 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    if (
+      confirm(
+        "정말로 취소 요청을 승인하시겠습니까?\n상품이 다시 판매중으로 변경됩니다."
+      )
+    ) {
+      setIsApprovingCancel(true);
+
+      try {
+        const response = await fetch("/api/products/approve-cancel", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            itemId: chatData.item.id,
+            sellerUid: user.uid,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          toast.success("취소 요청이 승인되었습니다!");
+
+          // 전역 이벤트 발생으로 상품 목록 업데이트
+          window.dispatchEvent(
+            new CustomEvent("itemStatusChanged", {
+              detail: { itemId: chatData.item.id, status: "active" },
+            })
+          );
+        } else {
+          toast.error(result.error || "취소 승인에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("취소 승인 실패:", error);
+        toast.error("취소 승인 중 오류가 발생했습니다.");
+      } finally {
+        setIsApprovingCancel(false);
+      }
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("ko-KR", {
       style: "currency",
@@ -963,6 +1060,52 @@ export function EnhancedChatModal({
                 </div>
               )}
 
+              {/* 구매자 취소 요청 버튼 (안전결제 완료 후) */}
+              {user && chatData && 
+               chatData.item.status === "escrow_completed" && 
+               user.uid === chatData.otherUser.uid && (
+                <div className="mb-4">
+                  <Button
+                    onClick={() => setShowCancelModal(true)}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    구매 취소 요청
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    판매자에게 취소 요청을 보냅니다
+                  </p>
+                </div>
+              )}
+
+              {/* 판매자 취소 요청 승인 버튼 */}
+              {user && chatData && 
+               chatData.item.status === "cancel_requested" && 
+               user.uid === chatData.sellerUid && (
+                <div className="mb-4">
+                  <Button
+                    onClick={handleApproveCancel}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isApprovingCancel}
+                  >
+                    {isApprovingCancel ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        승인 중...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        취소 요청 승인
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    구매자의 취소 요청을 승인합니다
+                  </p>
+                </div>
+              )}
+
               {/* 액션 버튼들 */}
               <div className="grid grid-cols-2 gap-2">
                 <Button
@@ -1183,6 +1326,60 @@ export function EnhancedChatModal({
                     {reason}
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 취소 요청 모달 */}
+        {showCancelModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  구매 취소 요청
+                </h3>
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4">
+                취소 사유를 입력해주세요. (선택사항)
+              </p>
+
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="취소 사유를 입력하세요..."
+                className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 mb-4"
+              />
+
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => setShowCancelModal(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleRequestCancel}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                  disabled={isRequestingCancel}
+                >
+                  {isRequestingCancel ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      요청 중...
+                    </>
+                  ) : (
+                    "요청 보내기"
+                  )}
+                </Button>
               </div>
             </div>
           </div>

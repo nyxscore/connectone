@@ -866,7 +866,7 @@ export default function ProductDetailModal({
                                 ) {
                                   // 직거래와 택배 모두 가능한 경우
                                   if (buyerEscrowEnabled) {
-                                    setSelectedTradeType("택배 + 안전거래");
+                                    setSelectedTradeType("택배 + 안전결제");
                                   } else if (
                                     product?.tradeOptions?.includes("택배")
                                   ) {
@@ -877,13 +877,25 @@ export default function ProductDetailModal({
                                 } else if (
                                   product?.tradeOptions?.includes("직거래")
                                 ) {
-                                  setSelectedTradeType("직거래");
+                                  if (buyerEscrowEnabled) {
+                                    setSelectedTradeType("직거래 + 안전결제");
+                                  } else {
+                                    setSelectedTradeType("직거래");
+                                  }
                                 } else if (
                                   product?.tradeOptions?.includes("택배")
                                 ) {
-                                  setSelectedTradeType("택배");
+                                  if (buyerEscrowEnabled) {
+                                    setSelectedTradeType("택배 + 안전결제");
+                                  } else {
+                                    setSelectedTradeType("택배");
+                                  }
                                 } else {
-                                  setSelectedTradeType("직거래"); // 기본값
+                                  if (buyerEscrowEnabled) {
+                                    setSelectedTradeType("안전결제");
+                                  } else {
+                                    setSelectedTradeType("직거래"); // 기본값
+                                  }
                                 }
 
                                 // 채팅 기능 - 채팅 모달 열기
