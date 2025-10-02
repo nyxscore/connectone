@@ -98,6 +98,8 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
 
         try {
           console.log(`상대방 프로필 정보 가져오기 시작: ${otherUid}`);
+          console.log(`아이템 ID: ${chatData.itemId}`);
+          
           const [otherUserResult, itemResult] = await Promise.all([
             getUserProfile(otherUid),
             getItem(chatData.itemId),
@@ -106,6 +108,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
           console.log(`상대방 프로필 정보 결과:`, otherUserResult);
           console.log(`아이템 정보:`, itemResult);
           console.log(`아이템 상태:`, itemResult?.item?.status);
+          console.log(`아이템 성공 여부:`, itemResult?.success);
 
           const otherUser = otherUserResult.success
             ? otherUserResult.data
