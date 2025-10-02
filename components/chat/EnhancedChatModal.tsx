@@ -1242,15 +1242,18 @@ export function EnhancedChatModal({
               )}
 
               {/* 구매자 액션 버튼들 */}
-              {user && chatData && user.uid === chatData.otherUser.uid && (
+              {user && chatData && chatData.otherUser && user.uid === chatData.otherUser.uid && (
                 <div className="mb-4 space-y-2">
                   {/* 디버깅 로그 */}
                   {console.log("구매자 버튼 조건 확인:", {
-                    isBuyer: user.uid === chatData.otherUser.uid,
-                    status: chatData.item.status,
-                    isEscrowCompleted:
-                      chatData.item.status === "escrow_completed",
-                    isNotCancelled: !chatData.item.transactionCancelledAt,
+                    userId: user?.uid,
+                    otherUserUid: chatData?.otherUser?.uid,
+                    isBuyer: user?.uid === chatData?.otherUser?.uid,
+                    status: chatData?.item?.status,
+                    isEscrowCompleted: chatData?.item?.status === "escrow_completed",
+                    isNotCancelled: !chatData?.item?.transactionCancelledAt,
+                    chatDataExists: !!chatData,
+                    otherUserExists: !!chatData?.otherUser
                   })}
                   {/* 안전결제 완료 상태에서의 버튼들 */}
                   {chatData.item.status === "escrow_completed" &&
