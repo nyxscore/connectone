@@ -169,21 +169,13 @@ export function Header() {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div>
                   <Link
                     href="/auth/login"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Button variant="ghost" size="sm" className="w-full">
                       로그인
-                    </Button>
-                  </Link>
-                  <Link
-                    href="/auth/signup"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Button size="sm" className="w-full">
-                      회원가입
                     </Button>
                   </Link>
                 </div>

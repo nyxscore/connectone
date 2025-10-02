@@ -42,8 +42,11 @@ import {
   XCircle,
   Clock,
   Settings,
+  Truck,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { ShippingTrackingModal } from "../shipping/ShippingTrackingModal";
+import BuyerShippingInfoModal from "../shipping/BuyerShippingInfoModal";
 
 interface EnhancedChatModalProps {
   isOpen: boolean;
@@ -101,6 +104,14 @@ export function EnhancedChatModal({
   const [isCompletingPurchase, setIsCompletingPurchase] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
+  const [showShippingModal, setShowShippingModal] = useState(false);
+  const [isRegisteringShipping, setIsRegisteringShipping] = useState(false);
+  const [courier, setCourier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [showShippingTrackingModal, setShowShippingTrackingModal] =
+    useState(false);
+  const [showBuyerShippingInfoModal, setShowBuyerShippingInfoModal] =
+    useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 메시지가 변경될 때마다 스크롤을 최하단으로
@@ -117,22 +128,41 @@ export function EnhancedChatModal({
 
   // 상품 상태 변경 이벤트 감지
   useEffect(() => {
-    const handleItemStatusChanged = (event: CustomEvent) => {
+    const handleItemStatusChanged = async (event: CustomEvent) => {
       const { itemId: changedItemId, status } = event.detail;
       if (chatData?.item?.id === changedItemId) {
         console.log("상품 상태 변경 감지:", status);
-        // 상품 상태 업데이트
-        setChatData(prev =>
-          prev
-            ? {
-                ...prev,
-                item: {
-                  ...prev.item,
-                  status: status,
-                },
-              }
-            : null
-        );
+        // 상품 상태 업데이트 (shippingInfo도 함께 업데이트)
+        if (status === "shipping") {
+          // 배송중으로 변경될 때 최신 상품 정보 다시 가져오기
+          const itemResult = await getItem(changedItemId);
+          if (itemResult?.success && itemResult?.item) {
+            setChatData(prev =>
+              prev
+                ? {
+                    ...prev,
+                    item: {
+                      ...prev.item,
+                      status,
+                      shippingInfo: itemResult.item.shippingInfo,
+                    },
+                  }
+                : null
+            );
+          }
+        } else {
+          setChatData(prev =>
+            prev
+              ? {
+                  ...prev,
+                  item: {
+                    ...prev.item,
+                    status: status,
+                  },
+                }
+              : null
+          );
+        }
       }
     };
 
@@ -152,6 +182,10 @@ export function EnhancedChatModal({
   useEffect(() => {
     if (chatData?.chatId) {
       console.log("chatData 변경됨 - 메시지 로드:", chatData.chatId);
+      console.log("=== chatData 상태 변경 감지 ===");
+      console.log("chatData.item:", chatData.item);
+      console.log("chatData.item.shippingInfo:", chatData.item?.shippingInfo);
+      console.log("chatData.item.status:", chatData.item?.status);
       loadMessages(chatData.chatId);
 
       // 실시간 메시지 구독
@@ -236,14 +270,49 @@ export function EnhancedChatModal({
         if (itemResult?.success && itemResult?.item) {
           console.log("상품 상태:", itemResult.item.status);
           console.log("거래 옵션:", itemResult.item.tradeOptions);
-          if (itemResult.item.status === "escrow_completed") {
-            // 안전결제 완료 상태라면 안전결제로 추론
+
+          const tradeOptions = itemResult.item.tradeOptions || [];
+
+          // 안전결제 감지: 상태가 escrow_completed, shipping이거나 tradeOptions에 안전결제 관련 옵션이 있으면
+          const isEscrow =
+            itemResult.item.status === "escrow_completed" ||
+            itemResult.item.status === "shipping" ||
+            tradeOptions.includes("안전결제") ||
+            tradeOptions.includes("안전거래") ||
+            tradeOptions.includes("escrow");
+
+          // 택배 감지: tradeOptions에 택배 관련 옵션이 있으면
+          const isDelivery =
+            tradeOptions.includes("택배") || tradeOptions.includes("parcel");
+
+          console.log("상품 상태:", itemResult.item.status);
+          console.log("거래 옵션:", tradeOptions);
+          console.log("안전결제 여부:", isEscrow);
+          console.log("택배 여부:", isDelivery);
+
+          // 배송중 상태는 안전결제로 간주 (이미 결제가 완료된 상태)
+          if (itemResult.item.status === "shipping") {
+            if (isDelivery) {
+              inferredTradeType = "택배 + 안전결제";
+            } else {
+              inferredTradeType = "안전결제";
+            }
+          } else if (isEscrow && isDelivery) {
+            inferredTradeType = "택배 + 안전결제";
+          } else if (isEscrow) {
             inferredTradeType = "안전결제";
-          } else if (itemResult.item.tradeOptions?.includes("택배")) {
+          } else if (isDelivery) {
             inferredTradeType = "택배";
           }
         }
         console.log("추론된 거래 유형:", inferredTradeType);
+
+        console.log("=== loadChatData에서 setChatData 호출 ===");
+        console.log(
+          "itemResult.item.shippingInfo:",
+          itemResult.item.shippingInfo
+        );
+        console.log("itemResult.item.status:", itemResult.item.status);
 
         setChatData({
           chatId,
@@ -283,9 +352,19 @@ export function EnhancedChatModal({
               itemResult?.success && itemResult?.item
                 ? itemResult.item.transactionCancelledAt
                 : null,
+            shippingInfo:
+              itemResult?.success && itemResult?.item
+                ? itemResult.item.shippingInfo
+                : null,
           },
           tradeType: tradeType || chatData.tradeType || inferredTradeType, // 전달받은 거래 유형 우선 사용
         });
+
+        console.log("=== setChatData 호출 완료 ===");
+        console.log(
+          "setChatData에 전달된 shippingInfo:",
+          itemResult.item.shippingInfo
+        );
       } else if (itemId && sellerUid) {
         // 새 채팅 생성
         console.log("새 채팅 생성:", { itemId, sellerUid });
@@ -320,6 +399,36 @@ export function EnhancedChatModal({
           const itemResult = await getItem(itemId);
           console.log("새 채팅 아이템 정보 로드 결과:", itemResult);
 
+          // 새 채팅용 거래 유형 추론
+          let newInferredTradeType = "직거래";
+          if (itemResult?.success && itemResult?.item) {
+            const tradeOptions = itemResult.item.tradeOptions || [];
+
+            const isEscrow =
+              itemResult.item.status === "escrow_completed" ||
+              itemResult.item.status === "shipping" ||
+              tradeOptions.includes("안전결제") ||
+              tradeOptions.includes("안전거래") ||
+              tradeOptions.includes("escrow");
+
+            const isDelivery =
+              tradeOptions.includes("택배") || tradeOptions.includes("parcel");
+
+            if (itemResult.item.status === "shipping") {
+              if (isDelivery) {
+                newInferredTradeType = "택배 + 안전결제";
+              } else {
+                newInferredTradeType = "안전결제";
+              }
+            } else if (isEscrow && isDelivery) {
+              newInferredTradeType = "택배 + 안전결제";
+            } else if (isEscrow) {
+              newInferredTradeType = "안전결제";
+            } else if (isDelivery) {
+              newInferredTradeType = "택배";
+            }
+          }
+
           setChatData({
             chatId: result.chatId,
             sellerUid: sellerUid,
@@ -352,8 +461,12 @@ export function EnhancedChatModal({
                 itemResult?.success && itemResult?.item
                   ? itemResult.item.transactionCancelledAt
                   : null,
+              shippingInfo:
+                itemResult?.success && itemResult?.item
+                  ? itemResult.item.shippingInfo
+                  : null,
             },
-            tradeType: tradeType || "직거래", // 전달받은 거래 유형 사용
+            tradeType: tradeType || newInferredTradeType, // 전달받은 거래 유형 우선, 없으면 추론된 유형 사용
           });
         } catch (error) {
           console.error("채팅 생성 실패:", error);
@@ -569,6 +682,17 @@ export function EnhancedChatModal({
       return;
     }
 
+    // 거래 가능한 상태인지 확인 (취소 이력 무시)
+    if (
+      chatData.item.status !== "active" &&
+      chatData.item.status !== "escrow_completed"
+    ) {
+      toast.error("거래할 수 없는 상품 상태입니다.");
+      return;
+    }
+
+    // 재거래 가능 - 취소 이력이 있어도 상관없음
+
     setIsStartingTransaction(true);
 
     try {
@@ -765,6 +889,71 @@ export function EnhancedChatModal({
       } finally {
         setIsApprovingCancel(false);
       }
+    }
+  };
+
+  const handleRegisterShipping = async (shippingInfo: {
+    courier: string;
+    trackingNumber: string;
+  }) => {
+    if (!chatData?.item?.id || !user?.uid) {
+      toast.error("거래 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    try {
+      setIsRegisteringShipping(true);
+
+      const response = await fetch("/api/products/register-shipping", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemId: chatData.item.id,
+          sellerUid: user.uid,
+          courier: shippingInfo.courier,
+          trackingNumber: shippingInfo.trackingNumber,
+        }),
+      });
+
+      const result = await response.json();
+      console.log("송장 등록 API 응답:", result);
+
+      if (result.success) {
+        toast.success(
+          "발송 정보가 등록되었습니다! 상품 상태가 '배송중'으로 변경됩니다."
+        );
+
+        // 상품 상태를 shipping으로 업데이트
+        setChatData(prev =>
+          prev
+            ? {
+                ...prev,
+                item: { ...prev.item, status: "shipping" },
+              }
+            : null
+        );
+
+        console.log("상품 상태를 shipping으로 변경:", chatData.item.id);
+
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: chatData.item.id, status: "shipping" },
+          })
+        );
+
+        // 송장 등록 모달 닫기
+        setShowShippingModal(false);
+      } else {
+        toast.error(result.error || "발송 정보 등록에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("발송 정보 등록 실패:", error);
+      toast.error("발송 정보 등록 중 오류가 발생했습니다.");
+    } finally {
+      setIsRegisteringShipping(false);
     }
   };
 
@@ -1131,90 +1320,365 @@ export function EnhancedChatModal({
               </div>
 
               {/* 판매자 액션 버튼들 */}
-              {user &&
-                chatData &&
-                user.uid === chatData.sellerUid &&
-                !chatData.item.transactionCancelledAt && (
-                  <div className="mb-4 space-y-2">
-                    {/* 거래 진행하기 버튼 */}
-                    {(chatData.item.status === "active" ||
-                      chatData.item.status === "escrow_completed") && (
-                      <Button
-                        onClick={() => {
-                          if (
-                            confirm(
-                              `${chatData.otherUser.nickname}님과 거래를 시작하시겠습니까?\n상품 상태가 '거래중'으로 변경됩니다.`
-                            )
-                          ) {
-                            handleStartTransaction();
-                          }
-                        }}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white h-10"
-                        disabled={isStartingTransaction}
-                      >
-                        {isStartingTransaction ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            거래 진행 중...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            거래 진행하기
-                          </>
-                        )}
-                      </Button>
-                    )}
+              {user && chatData && user.uid === chatData.sellerUid && (
+                <div className="mb-4 space-y-2">
+                  {/* 거래 진행하기 버튼 */}
+                  {(chatData.item.status === "active" ||
+                    chatData.item.status === "escrow_completed") && (
+                    <Button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `${chatData.otherUser.nickname}님과 거래를 시작하시겠습니까?\n상품 상태가 '거래중'으로 변경됩니다.`
+                          )
+                        ) {
+                          handleStartTransaction();
+                        }
+                      }}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white h-10"
+                      disabled={isStartingTransaction}
+                    >
+                      {isStartingTransaction ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          거래 진행 중...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          거래 진행하기
+                        </>
+                      )}
+                    </Button>
+                  )}
 
-                    {/* 거래 취소 버튼 */}
-                    {chatData.item.status === "escrow_completed" && (
-                      <Button
-                        onClick={() => {
-                          if (
-                            confirm(
-                              "정말로 거래를 취소하시겠습니까?\n안전결제가 취소되고 환불이 처리됩니다."
-                            )
-                          ) {
-                            handleCancelTransaction();
-                          }
-                        }}
-                        variant="outline"
-                        className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
-                        disabled={isCancelingTransaction}
-                      >
-                        {isCancelingTransaction ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            취소 처리 중...
-                          </>
-                        ) : (
-                          <>
-                            <X className="w-4 h-4 mr-2" />
-                            거래 취소하기
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                )}
+                  {/* 거래중 상태 - 택배 발송 정보 입력 */}
+                  {chatData.item.status === "reserved" && (
+                    <div className="space-y-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-5 h-5 text-orange-600" />
+                        <span className="text-lg font-bold text-orange-600">
+                          거래중
+                        </span>
+                      </div>
 
-              {/* 거래 취소된 상품 안내 */}
-              {user &&
-                chatData &&
-                user.uid === chatData.sellerUid &&
-                chatData.item.transactionCancelledAt && (
-                  <div className="mb-4 p-3 bg-gray-100 border border-gray-300 rounded-lg">
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <X className="w-4 h-4" />
-                      <span className="text-sm font-medium">
-                        거래가 취소되었습니다
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            택배사
+                          </label>
+                          <select
+                            value={courier}
+                            onChange={e => setCourier(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                          >
+                            <option value="">택배사를 선택하세요</option>
+                            <option value="cj">CJ대한통운</option>
+                            <option value="hanjin">한진택배</option>
+                            <option value="lotte">롯데택배</option>
+                            <option value="kdexp">경동택배</option>
+                            <option value="epost">우체국택배</option>
+                            <option value="logen">로젠택배</option>
+                            <option value="dongbu">동부택배</option>
+                            <option value="kg">KG로지스</option>
+                            <option value="kgm">KGB택배</option>
+                            <option value="inno">이노지스</option>
+                            <option value="slx">SLX택배</option>
+                            <option value="fedex">FedEx</option>
+                            <option value="ups">UPS</option>
+                            <option value="dhl">DHL</option>
+                            <option value="other">기타</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            송장번호
+                          </label>
+                          <input
+                            type="text"
+                            value={trackingNumber}
+                            onChange={e => setTrackingNumber(e.target.value)}
+                            placeholder="송장번호를 입력하세요"
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                          />
+                        </div>
+
+                        <Button
+                          onClick={() => {
+                            if (!courier) {
+                              toast.error("택배사를 선택해주세요.");
+                              return;
+                            }
+                            if (!trackingNumber.trim()) {
+                              toast.error("송장번호를 입력해주세요.");
+                              return;
+                            }
+                            handleRegisterShipping({
+                              courier,
+                              trackingNumber: trackingNumber.trim(),
+                            });
+                          }}
+                          className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                          disabled={isRegisteringShipping}
+                        >
+                          {isRegisteringShipping ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                              등록 중...
+                            </>
+                          ) : (
+                            <>
+                              <Truck className="w-4 h-4 mr-2" />
+                              발송완료
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 배송중 상태 */}
+                  {chatData.item.status === "shipping" && (
+                    <div className="space-y-3">
+                      <div className="w-full h-12 bg-blue-100 border border-blue-300 rounded-xl flex items-center justify-center">
+                        <Truck className="w-5 h-5 mr-2 text-blue-600" />
+                        <span className="text-lg font-bold text-blue-600">
+                          배송중
+                        </span>
+                      </div>
+
+                      {/* 구매자 배송지 정보 */}
+                      {chatData.item.buyerShippingInfo && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                          <h4 className="text-sm font-medium text-green-700 mb-2">
+                            구매자 배송지 정보
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-green-600">
+                                받는 사람:
+                              </span>
+                              <span className="text-sm font-medium text-green-900">
+                                {chatData.item.buyerShippingInfo.recipientName}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-green-600">
+                                연락처:
+                              </span>
+                              <span className="text-sm font-medium text-green-900">
+                                {chatData.item.buyerShippingInfo.phoneNumber}
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-sm text-green-600">
+                                배송 주소:
+                              </span>
+                              <p className="text-sm font-medium text-green-900">
+                                {chatData.item.buyerShippingInfo.address}
+                              </p>
+                            </div>
+                            {chatData.item.buyerShippingInfo.deliveryMemo && (
+                              <div className="space-y-1">
+                                <span className="text-sm text-green-600">
+                                  배송 메모:
+                                </span>
+                                <p className="text-sm font-medium text-green-900">
+                                  {chatData.item.buyerShippingInfo.deliveryMemo}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 송장번호 정보 */}
+                      {/* 배송 정보 (택배사, 송장번호) - 판매자가 입력한 정보 */}
+                      {chatData?.item?.status === "shipping" ? (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            배송 정보
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">
+                                택배사:
+                              </span>
+                              <span className="text-sm font-medium text-gray-900">
+                                {chatData.item.shippingInfo.courier}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">
+                                송장번호:
+                              </span>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm font-medium text-gray-900 font-mono">
+                                  {chatData.item.shippingInfo.trackingNumber}
+                                </span>
+                                <div className="flex space-x-1">
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(
+                                        chatData.item.shippingInfo
+                                          .trackingNumber
+                                      );
+                                      toast.success(
+                                        "송장번호가 복사되었습니다."
+                                      );
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 border border-blue-300 rounded hover:bg-blue-50"
+                                  >
+                                    복사
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setShowShippingTrackingModal(true)
+                                    }
+                                    className="text-green-600 hover:text-green-800 text-xs px-2 py-1 border border-green-300 rounded hover:bg-green-50"
+                                  >
+                                    배송조회
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">
+                                발송일:
+                              </span>
+                              <span className="text-sm font-medium text-gray-900">
+                                {chatData.item.shippingInfo.shippedAt
+                                  ? new Date(
+                                      chatData.item.shippingInfo.shippedAt
+                                        .seconds * 1000
+                                    ).toLocaleDateString("ko-KR")
+                                  : "정보 없음"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <div className="flex items-center space-x-2">
+                            <AlertCircle className="w-5 h-5 text-yellow-600" />
+                            <span className="text-sm font-medium text-yellow-800">
+                              배송 정보가 없습니다
+                            </span>
+                          </div>
+                          <p className="text-xs text-yellow-700 mt-1">
+                            판매자가 배송 정보를 등록하지 않았습니다.
+                          </p>
+                          <Button
+                            onClick={async () => {
+                              if (chatData?.item?.id) {
+                                console.log(
+                                  "배송 정보 새로고침 시도:",
+                                  chatData.item.id
+                                );
+                                const itemResult = await getItem(
+                                  chatData.item.id
+                                );
+                                console.log("새로고침 결과:", itemResult);
+                                if (itemResult?.success && itemResult?.item) {
+                                  setChatData(prev =>
+                                    prev
+                                      ? {
+                                          ...prev,
+                                          item: {
+                                            ...prev.item,
+                                            shippingInfo:
+                                              itemResult.item.shippingInfo,
+                                          },
+                                        }
+                                      : null
+                                  );
+                                }
+                              }
+                            }}
+                            className="mt-2 text-xs px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white"
+                          >
+                            배송정보 새로고침
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* 구매자용 구매 확정 버튼 */}
+                      {user &&
+                        chatData &&
+                        user.uid === chatData.otherUser.uid && (
+                          <Button
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  "상품을 수령하셨나요?\n구매 확정 후에는 취소할 수 없습니다."
+                                )
+                              ) {
+                                handleCompletePurchase();
+                              }
+                            }}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white h-10"
+                            disabled={isCompletingPurchase}
+                          >
+                            {isCompletingPurchase ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                확정 중...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                구매 확정
+                              </>
+                            )}
+                          </Button>
+                        )}
+                    </div>
+                  )}
+
+                  {/* 거래완료 상태 */}
+                  {chatData.item.status === "sold" && (
+                    <div className="w-full h-12 bg-green-100 border border-green-300 rounded-xl flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
+                      <span className="text-lg font-bold text-green-600">
+                        거래완료
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      이 상품에 대한 거래는 이미 취소되었습니다.
-                    </p>
-                  </div>
-                )}
+                  )}
+
+                  {/* 거래 취소 버튼 */}
+                  {chatData.item.status === "escrow_completed" && (
+                    <Button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "정말로 거래를 취소하시겠습니까?\n안전결제가 취소되고 환불이 처리됩니다."
+                          )
+                        ) {
+                          handleCancelTransaction();
+                        }
+                      }}
+                      variant="outline"
+                      className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
+                      disabled={isCancelingTransaction}
+                    >
+                      {isCancelingTransaction ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          취소 처리 중...
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4 mr-2" />
+                          거래 취소하기
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* 거래 취소된 상품 안내 - 재거래 가능하도록 제거 */}
 
               {/* 거래 취소 버튼 (거래중일 때만, 판매자와 구매자 모두) */}
               {user && chatData && chatData.item.status === "reserved" && (
@@ -1236,9 +1700,6 @@ export function EnhancedChatModal({
                       </>
                     )}
                   </Button>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    거래를 취소하고 상품을 다시 판매중으로 변경합니다
-                  </p>
                 </div>
               )}
 
@@ -1291,6 +1752,21 @@ export function EnhancedChatModal({
                               </>
                             )}
                           </Button>
+
+                          {/* 배송지 정보 입력 버튼 (구매자만) */}
+                          {user &&
+                            chatData &&
+                            user.uid === chatData.buyerUid && (
+                              <Button
+                                onClick={() =>
+                                  setShowBuyerShippingInfoModal(true)
+                                }
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
+                              >
+                                <MapPin className="w-4 h-4 mr-2" />
+                                배송지 정보 입력
+                              </Button>
+                            )}
 
                           {/* 구매 취소 요청 버튼 */}
                           <Button
@@ -1406,17 +1882,8 @@ export function EnhancedChatModal({
 
                       console.log("현재 거래 유형:", currentTradeType); // 디버그용
 
-                      if (currentTradeType.includes("직거래")) {
-                        tradeTypes.push(
-                          <span
-                            key="direct"
-                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800 border border-green-200"
-                          >
-                            직거래
-                          </span>
-                        );
-                      }
-                      if (currentTradeType.includes("택배")) {
+                      // 복합 거래 유형 처리
+                      if (currentTradeType === "택배 + 안전결제") {
                         tradeTypes.push(
                           <span
                             key="delivery"
@@ -1425,19 +1892,53 @@ export function EnhancedChatModal({
                             택배
                           </span>
                         );
-                      }
-                      if (
-                        currentTradeType.includes("안전거래") ||
-                        currentTradeType.includes("안전결제")
-                      ) {
                         tradeTypes.push(
                           <span
-                            key="safe"
+                            key="escrow"
                             className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200"
                           >
                             안전결제
                           </span>
                         );
+                      } else {
+                        // 단일 거래 유형 처리
+                        if (currentTradeType.includes("직거래")) {
+                          tradeTypes.push(
+                            <span
+                              key="direct"
+                              className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800 border border-green-200"
+                            >
+                              직거래
+                            </span>
+                          );
+                        }
+                        if (
+                          currentTradeType.includes("택배") &&
+                          !currentTradeType.includes("안전결제")
+                        ) {
+                          tradeTypes.push(
+                            <span
+                              key="delivery"
+                              className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                            >
+                              택배
+                            </span>
+                          );
+                        }
+                        if (
+                          (currentTradeType.includes("안전거래") ||
+                            currentTradeType.includes("안전결제")) &&
+                          !currentTradeType.includes("택배")
+                        ) {
+                          tradeTypes.push(
+                            <span
+                              key="escrow"
+                              className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                            >
+                              안전결제
+                            </span>
+                          );
+                        }
                       }
                       return tradeTypes;
                     })()}
@@ -1471,50 +1972,45 @@ export function EnhancedChatModal({
                       )}
                     </div>
 
-                    {/* 결제 완료 (안전결제인 경우만) */}
-                    {(chatData?.tradeType?.includes("안전결제") ||
-                      chatData?.tradeType?.includes("안전거래")) && (
-                      <div
-                        className={`flex items-center justify-between p-3 rounded-lg border-2 ${
-                          chatData?.item?.status === "escrow_completed"
-                            ? "bg-green-50 border-green-300 text-green-800"
-                            : "bg-gray-50 border-gray-200 text-gray-600"
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium">
-                            안전결제 완료
-                          </span>
-                          {chatData?.item?.status === "escrow_completed" && (
-                            <span className="text-green-600">✅</span>
-                          )}
-                        </div>
-                        {chatData?.item?.status === "escrow_completed" ? (
-                          <CheckCircle className="w-5 h-5 text-green-600" />
-                        ) : (
-                          <Clock className="w-5 h-5 text-gray-400" />
-                        )}
-                      </div>
-                    )}
-
                     {/* 거래중 */}
                     <div
                       className={`flex items-center justify-between p-3 rounded-lg border-2 ${
                         chatData?.item?.status === "reserved"
-                          ? "bg-blue-50 border-blue-300 text-blue-800"
+                          ? "bg-orange-50 border-orange-300 text-orange-800"
                           : "bg-gray-50 border-gray-200 text-gray-600"
                       }`}
                     >
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-medium">거래중</span>
                         {chatData?.item?.status === "reserved" && (
-                          <span className="text-blue-600">🔄</span>
+                          <span className="text-orange-600">✅</span>
                         )}
                       </div>
                       {chatData?.item?.status === "reserved" ? (
-                        <Clock className="w-5 h-5 text-blue-600" />
+                        <Clock className="w-5 h-5 text-orange-600" />
                       ) : (
                         <Clock className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+
+                    {/* 배송중 */}
+                    <div
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                        chatData?.item?.status === "shipping"
+                          ? "bg-blue-50 border-blue-300 text-blue-800"
+                          : "bg-gray-50 border-gray-200 text-gray-600"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">배송중</span>
+                        {chatData?.item?.status === "shipping" && (
+                          <span className="text-blue-600">✅</span>
+                        )}
+                      </div>
+                      {chatData?.item?.status === "shipping" ? (
+                        <Truck className="w-5 h-5 text-blue-600" />
+                      ) : (
+                        <Truck className="w-5 h-5 text-gray-400" />
                       )}
                     </div>
 
@@ -1535,7 +2031,7 @@ export function EnhancedChatModal({
                       {chatData?.item?.status === "sold" ? (
                         <CheckCircle className="w-5 h-5 text-green-600" />
                       ) : (
-                        <Clock className="w-5 h-5 text-gray-400" />
+                        <CheckCircle className="w-5 h-5 text-gray-400" />
                       )}
                     </div>
                   </div>
@@ -1551,6 +2047,32 @@ export function EnhancedChatModal({
             isOpen={showOtherProfileModal}
             onClose={() => setShowOtherProfileModal(false)}
             sellerProfile={otherUserProfile}
+          />
+        )}
+
+        {/* 배송조회 모달 */}
+        {showShippingTrackingModal && chatData?.item?.shippingInfo && (
+          <ShippingTrackingModal
+            isOpen={showShippingTrackingModal}
+            onClose={() => setShowShippingTrackingModal(false)}
+            courier={chatData.item.shippingInfo.courier}
+            trackingNumber={chatData.item.shippingInfo.trackingNumber}
+          />
+        )}
+
+        {/* 구매자 배송지 정보 입력 모달 */}
+        {showBuyerShippingInfoModal && chatData?.item?.id && user && (
+          <BuyerShippingInfoModal
+            isOpen={showBuyerShippingInfoModal}
+            onClose={() => setShowBuyerShippingInfoModal(false)}
+            itemId={chatData.item.id}
+            buyerUid={user.uid}
+            onSuccess={() => {
+              // 성공 시 채팅 데이터 새로고침
+              if (chatData?.item?.id) {
+                loadChatData(chatData.item.id);
+              }
+            }}
           />
         )}
 

@@ -60,6 +60,22 @@ export const sellItemSchema = z.object({
   escrowEnabled: z.boolean().default(false),
 });
 
+export const shippingAddressSchema = z.object({
+  recipientName: z.string().min(1, "받는 사람 이름을 입력해주세요."),
+  phoneNumber: z
+    .string()
+    .min(1, "연락처를 입력해주세요.")
+    .regex(
+      /^01[0-9]-?[0-9]{4}-?[0-9]{4}$/,
+      "올바른 연락처 형식을 입력해주세요."
+    ),
+  address: z.string().min(10, "상세 주소를 입력해주세요."),
+  zipCode: z.string().min(5, "우편번호를 입력해주세요."),
+  deliveryMemo: z.string().optional(),
+  isDefault: z.boolean().default(false),
+});
+
 export type SignUpFormData = z.infer<typeof signUpSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type SellItemInput = z.infer<typeof sellItemSchema>;
+export type ShippingAddress = z.infer<typeof shippingAddressSchema>;

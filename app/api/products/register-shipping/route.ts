@@ -4,16 +4,15 @@ import { db } from "@/lib/api/firebase";
 
 export async function POST(request: NextRequest) {
   try {
-    const { itemId, buyerUid, sellerUid } = await request.json();
+    const { itemId, sellerUid, courier, trackingNumber } = await request.json();
 
-    if (!itemId || !buyerUid || !sellerUid) {
+    if (!itemId || !sellerUid || !courier || !trackingNumber) {
       return NextResponse.json(
         { success: false, error: "필수 정보가 누락되었습니다." },
         { status: 400 }
       );
     }
 
-    // 상품 문서 가져오기
     const itemRef = doc(db, "items", itemId);
     const itemSnap = await getDoc(itemRef);
 
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const itemData = itemSnap.data();
 
-    // 판매자 확인
+    // 판매자 권한 확인
     if (itemData.sellerUid !== sellerUid) {
       return NextResponse.json(
         { success: false, error: "권한이 없습니다." },
@@ -34,29 +33,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 이미 거래중인지 확인
-    if (itemData.status === "reserved" || itemData.status === "sold") {
+    // 거래중 상태인지 확인
+    if (itemData.status !== "reserved") {
       return NextResponse.json(
-        { success: false, error: "이미 거래중이거나 판매완료된 상품입니다." },
+        { success: false, error: "거래중인 상품만 발송 등록할 수 있습니다." },
         { status: 400 }
       );
     }
 
-    // 상품 상태를 '거래중'으로 변경하고 구매자 지정
+    // 발송 정보 등록 및 상태를 배송중으로 변경
     await updateDoc(itemRef, {
-      status: "reserved",
-      buyerUid: buyerUid,
-      transactionCancelledAt: null, // 거래 취소 필드 초기화
-      cancelledBy: null, // 취소한 사용자 필드 초기화
+      status: "shipping", // 배송중으로 변경
+      shippingInfo: {
+        courier,
+        trackingNumber,
+        shippedAt: new Date(),
+      },
       updatedAt: new Date(),
     });
 
     return NextResponse.json({
       success: true,
-      message: "거래가 시작되었습니다.",
+      message: "발송 정보가 등록되었습니다.",
     });
   } catch (error) {
-    console.error("거래 시작 API 오류:", error);
+    console.error("발송 정보 등록 API 오류:", error);
     return NextResponse.json(
       { success: false, error: "서버 오류가 발생했습니다." },
       { status: 500 }

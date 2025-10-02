@@ -223,7 +223,6 @@ export default function ProductWizardPage() {
         formData.tradeType === "buy"
           ? []
           : data.shippingTypes
-              .filter(type => type !== "escrow") // escrow 제외
               .map(type => {
                 switch (type) {
                   case "direct":
@@ -232,6 +231,8 @@ export default function ProductWizardPage() {
                     return "택배";
                   case "shipping":
                     return "화물운송";
+                  case "escrow":
+                    return "안전결제";
                   default:
                     return type;
                 }

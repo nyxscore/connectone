@@ -251,9 +251,7 @@ export function TransactionPageClient({ item }: TransactionPageClientProps) {
             </div>
             <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-orange-100">
               <Clock className="w-4 h-4 text-orange-600" />
-              <span className="text-sm font-medium text-orange-600">
-                거래중
-              </span>
+              <span className="text-sm font-bold text-orange-600">거래중</span>
             </div>
           </div>
         </div>

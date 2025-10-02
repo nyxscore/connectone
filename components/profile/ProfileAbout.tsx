@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { UserProfile } from "../../data/profile/types";
-import { Edit, Save, X } from "lucide-react";
+import { Edit, Save, X, MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {

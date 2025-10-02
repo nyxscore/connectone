@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../lib/hooks/useAuth";
 import { getUserItems } from "../../../lib/api/products";
-import { ItemDetailModal } from "../../../components/items/ItemDetailModal";
+import ProductDetailModal from "../../../components/product/ProductDetailModal";
 import { ItemCard } from "../../../components/items/ItemCard";
 import EditProductModal from "../../../components/product/EditProductModal";
 import { Card } from "../../../components/ui/Card";
@@ -74,28 +74,44 @@ function MyItemsPageContent() {
     const userId = targetUserId || currentUser?.uid;
     if (!userId) return;
 
+    console.log("loadMyItems 시작:", {
+      userId,
+      activeTab,
+      targetUserId,
+      currentUserId: currentUser?.uid,
+    });
+
     try {
       setLoading(true);
 
       if (activeTab === "buying") {
-        // 구매중인 상품 로드 (buyerId가 현재 사용자인 상품들)
+        console.log("구매중인 상품 로드 시작");
+        // 구매중인 상품 로드 (buyerUid가 현재 사용자인 상품들)
         const { collection, query, where, getDocs, orderBy } = await import(
           "firebase/firestore"
         );
         const { db } = await import("../../../lib/api/firebase");
 
         const itemsRef = collection(db, "items");
-        const q = query(
-          itemsRef,
-          where("buyerId", "==", userId),
-          where("status", "in", ["reserved", "escrow_completed"])
-        );
+        const q = query(itemsRef, where("buyerUid", "==", userId));
 
         const querySnapshot = await getDocs(q);
         const items = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         }));
+
+        console.log("구매중인 상품 쿼리 결과:", {
+          userId,
+          querySnapshotSize: querySnapshot.docs.length,
+          items: items.map(item => ({
+            id: item.id,
+            status: item.status,
+            buyerUid: item.buyerUid,
+            sellerUid: item.sellerUid,
+            title: item.title,
+          })),
+        });
 
         // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
         const sortedItems = items.sort((a, b) => {
@@ -115,7 +131,7 @@ function MyItemsPageContent() {
         const itemsRef = collection(db, "items");
         const q = query(
           itemsRef,
-          where("sellerId", "==", userId),
+          where("sellerUid", "==", userId),
           where("status", "==", "reserved")
         );
 
@@ -124,6 +140,18 @@ function MyItemsPageContent() {
           id: doc.id,
           ...doc.data(),
         }));
+
+        console.log("거래중인 상품 쿼리 결과:", {
+          userId,
+          querySnapshotSize: querySnapshot.docs.length,
+          items: items.map(item => ({
+            id: item.id,
+            status: item.status,
+            sellerUid: item.sellerUid,
+            buyerUid: item.buyerUid,
+            title: item.title,
+          })),
+        });
 
         // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
         const sortedItems = items.sort((a, b) => {
@@ -159,6 +187,19 @@ function MyItemsPageContent() {
       setFilteredItems(myItems);
     }
   }, [myItems, searchParams]);
+
+  // 거래 상태 변경 이벤트 리스너 - loadMyItems 정의 후에 등록
+  useEffect(() => {
+    const handleItemStatusChanged = () => {
+      console.log("거래 상태 변경 이벤트 감지 - 데이터 새로고침");
+      loadMyItems();
+    };
+
+    window.addEventListener("itemStatusChanged", handleItemStatusChanged);
+    return () => {
+      window.removeEventListener("itemStatusChanged", handleItemStatusChanged);
+    };
+  }, [loadMyItems]);
 
   const handleItemClick = (item: any) => {
     setSelectedItem(item);
@@ -373,7 +414,7 @@ function MyItemsPageContent() {
               )}
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
             {filteredItems.map(item => (
               <div key={item.id} className="relative group">
                 <ItemCard item={item} onClick={handleItemClick} />
@@ -436,17 +477,15 @@ function MyItemsPageContent() {
         )}
       </div>
 
-      {/* 상품 상세 모달 */}
-      {selectedItem && (
-        <ItemDetailModal
-          item={selectedItem}
-          isOpen={showItemModal}
-          onClose={() => {
-            setShowItemModal(false);
-            setSelectedItem(null);
-          }}
-        />
-      )}
+      {/* 상품 상세 모달 (결제 기능 포함) */}
+      <ProductDetailModal
+        item={selectedItem}
+        isOpen={showItemModal}
+        onClose={() => {
+          setShowItemModal(false);
+          setSelectedItem(null);
+        }}
+      />
 
       {/* 상품 수정 모달 */}
       {editingItem && (

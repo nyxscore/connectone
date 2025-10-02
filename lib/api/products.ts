@@ -21,7 +21,29 @@ export interface Item extends SellItemInput {
   id: string;
   sellerUid: string;
   aiTags: string[];
-  status: "active" | "reserved" | "paid_hold" | "sold" | "inactive";
+  status:
+    | "active"
+    | "reserved"
+    | "paid_hold"
+    | "sold"
+    | "inactive"
+    | "escrow_completed"
+    | "shipping";
+  tradeOptions?: string[];
+  shippingInfo?: {
+    courier: string;
+    trackingNumber: string;
+    shippedAt: any;
+  };
+  buyerShippingInfo?: {
+    recipientName: string;
+    address: string;
+    phoneNumber: string;
+    deliveryMemo?: string;
+    submittedAt: any;
+  };
+  transactionCancelledAt?: any;
+  buyerUid?: string;
   createdAt: any;
   updatedAt: any;
 }
@@ -572,6 +594,36 @@ export async function deleteItem(
       error:
         error instanceof Error ? error.message : "상품 삭제에 실패했습니다.",
     };
+  }
+}
+
+// 구매자 배송지 정보 제출
+export async function submitBuyerShippingInfo(
+  itemId: string,
+  buyerUid: string,
+  shippingInfo: {
+    recipientName: string;
+    address: string;
+    phoneNumber: string;
+    deliveryMemo?: string;
+  }
+): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const itemRef = doc(db, "items", itemId);
+    await updateDoc(itemRef, {
+      buyerShippingInfo: {
+        ...shippingInfo,
+        submittedAt: serverTimestamp(),
+      },
+      updatedAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("배송지 정보 제출 에러:", error);
+    return { success: false, error: "배송지 정보 제출에 실패했습니다." };
   }
 }
 

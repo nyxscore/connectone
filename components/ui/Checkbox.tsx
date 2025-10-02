@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { cn } from "../../lib/utils";
 
 interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -9,8 +9,8 @@ interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   ({ className, label, error, helperText, id, ...props }, ref) => {
-    const checkboxId =
-      id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = useId();
+    const checkboxId = id || generatedId;
 
     return (
       <div className="w-full">
@@ -53,18 +53,3 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
 );
 
 Checkbox.displayName = "Checkbox";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

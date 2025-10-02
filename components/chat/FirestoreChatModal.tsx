@@ -437,6 +437,14 @@ export function FirestoreChatModal({
 
         if (result.success) {
           toast.success("거래가 취소되었습니다!");
+
+          // 전역 이벤트 발생으로 상품 목록 업데이트
+          window.dispatchEvent(
+            new CustomEvent("itemStatusChanged", {
+              detail: { itemId: chatData.item.id, status: "active" },
+            })
+          );
+
           onClose();
         } else {
           toast.error(result.error || "거래 취소에 실패했습니다.");
@@ -479,6 +487,14 @@ export function FirestoreChatModal({
 
         if (result.success) {
           toast.success("구매가 완료되었습니다! 판매자에게 입금이 처리됩니다.");
+
+          // 전역 이벤트 발생으로 상품 목록 업데이트
+          window.dispatchEvent(
+            new CustomEvent("itemStatusChanged", {
+              detail: { itemId: chatData.item.id, status: "sold" },
+            })
+          );
+
           onClose();
         } else {
           toast.error(result.error || "구매 완료에 실패했습니다.");
@@ -528,9 +544,31 @@ export function FirestoreChatModal({
                     </p>
                     {/* 거래 형태 표시 */}
                     {chatData.tradeType && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {chatData.tradeType}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {chatData.tradeType === "택배 + 안전결제" ? (
+                          <>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              택배
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              안전결제
+                            </span>
+                          </>
+                        ) : chatData.tradeType === "직거래 + 안전결제" ? (
+                          <>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              직거래
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              안전결제
+                            </span>
+                          </>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {chatData.tradeType}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

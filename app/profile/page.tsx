@@ -18,6 +18,7 @@ import { ItemCard } from "../../components/items/ItemCard";
 import { BlockedUsersModal } from "../../components/profile/BlockedUsersModal";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
 import ProductDetailModal from "../../components/product/ProductDetailModal";
+import ShippingAddressModal from "../../components/profile/ShippingAddressModal";
 import {
   MemberGradeSystem,
   GradeBenefitsSummary,
@@ -48,6 +49,7 @@ export default function MyProfilePage() {
   const [error, setError] = useState("");
   const [showBlockedUsers, setShowBlockedUsers] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [showShippingAddress, setShowShippingAddress] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
@@ -267,6 +269,30 @@ export default function MyProfilePage() {
             onUpdate={handleProfileUpdate}
           />
 
+          {/* 배송지 관리 */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-6 h-6 text-blue-600" />
+                <h2 className="text-lg font-semibold text-gray-900">
+                  배송지 관리
+                </h2>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowShippingAddress(true)}
+                className="flex items-center"
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                배송지 관리
+              </Button>
+            </div>
+            <p className="text-gray-600 text-sm">
+              거래 시 사용할 배송지 정보를 관리하세요.
+            </p>
+          </Card>
+
           {/* 계정 설정 */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -409,6 +435,15 @@ export default function MyProfilePage() {
         onClose={() => setShowGradeModal(false)}
         currentGrade={currentUser?.grade}
       />
+
+      {/* 배송지 관리 모달 */}
+      {currentUser && (
+        <ShippingAddressModal
+          isOpen={showShippingAddress}
+          onClose={() => setShowShippingAddress(false)}
+          userId={currentUser.uid}
+        />
+      )}
     </div>
   );
 }

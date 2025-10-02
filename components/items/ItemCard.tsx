@@ -164,9 +164,7 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
         {item.status === "reserved" && (
           <div className="w-full h-8 bg-orange-100 border border-orange-300 rounded-lg flex items-center justify-center mt-2">
             <Clock className="w-4 h-4 mr-1 text-orange-600" />
-            <span className="text-sm font-semibold text-orange-600">
-              거래중
-            </span>
+            <span className="text-sm font-bold text-orange-600">거래중</span>
           </div>
         )}
 

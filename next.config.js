@@ -110,8 +110,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // 출력 설정
-  output: "export",
+  // 출력 설정 (API 라우트 사용을 위해 제거)
+  // output: "export",
 
   // 트레일링 슬래시
   trailingSlash: false,

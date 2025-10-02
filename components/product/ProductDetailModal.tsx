@@ -23,6 +23,7 @@ import {
   Trash2,
   Shield,
   ShoppingCart,
+  Truck,
 } from "lucide-react";
 import { getProductDetail, getSellerInfo } from "@/lib/api/product-detail";
 import { ProductDetail, SellerInfo, TradeOption } from "@/data/schemas/product";
@@ -41,6 +42,8 @@ import { SellerProfileModal } from "@/components/profile/SellerProfileModal";
 import EditProductModal from "./EditProductModal";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ItemGallery } from "@/components/items/ItemGallery";
+import { ShippingInfoModal } from "./ShippingInfoModal";
+import { ShippingTrackingModal } from "../shipping/ShippingTrackingModal";
 
 // 마그니파이어 이미지 컴포넌트
 interface MagnifierImageProps {
@@ -86,7 +89,7 @@ export default function ProductDetailModal({
   const actualProductId = productId || item?.id;
 
   // 현재 사용자가 구매자인지 확인
-  const isBuyer = user?.uid && item?.buyerId && user.uid === item.buyerId;
+  const isBuyer = user?.uid && item?.buyerUid && user.uid === item.buyerUid;
 
   const [seller, setSeller] = useState<SellerInfo | null>(null);
   const [sellerProfile, setSellerProfile] = useState<UserProfile | null>(null);
@@ -105,9 +108,15 @@ export default function ProductDetailModal({
   const [showSellerProfileModal, setShowSellerProfileModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTradeType, setSelectedTradeType] = useState<string>("");
+  const [showShippingModal, setShowShippingModal] = useState(false);
+  const [isRegisteringShipping, setIsRegisteringShipping] = useState(false);
+  const [courier, setCourier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [showShippingTrackingModal, setShowShippingTrackingModal] =
+    useState(false);
 
   // 본인 상품인지 확인
-  const isOwnItem = user && product && user.uid === product.sellerId;
+  const isOwnItem = user && product && user.uid === product.sellerUid;
 
   // 찜한 상품 상태 초기화
   useEffect(() => {
@@ -120,11 +129,39 @@ export default function ProductDetailModal({
     }
   }, [user?.uid, product?.id]);
 
+  // 상품 상태 실시간 업데이트
+  useEffect(() => {
+    const handleItemStatusChanged = (event: CustomEvent) => {
+      const { itemId, status } = event.detail;
+      if (product && itemId === product.id) {
+        console.log("상품 상태 변경 감지:", { itemId, status });
+        // 상품 상태 업데이트
+        setProduct(prev => (prev ? { ...prev, status } : null));
+      }
+    };
+
+    window.addEventListener(
+      "itemStatusChanged",
+      handleItemStatusChanged as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        "itemStatusChanged",
+        handleItemStatusChanged as EventListener
+      );
+    };
+  }, [product]);
+
   // 디버깅 로그
   console.log("ProductDetailModal 디버깅:", {
     user: user ? { uid: user.uid, nickname: user.nickname } : null,
     product: product
-      ? { id: product.id, sellerId: product.sellerId, title: product.title }
+      ? {
+          id: product.id,
+          sellerUid: product.sellerUid,
+          title: product.title,
+          status: product.status,
+        }
       : null,
     isOwnItem,
   });
@@ -439,6 +476,103 @@ export default function ProductDetailModal({
     } catch (error) {
       console.error("상품 삭제 실패:", error);
       toast.error("상품 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleCompletePurchase = async () => {
+    if (!actualProductId || !user?.uid) return;
+
+    try {
+      setLoading(true);
+
+      const response = await fetch("/api/products/complete-purchase", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemId: actualProductId,
+          buyerUid: user.uid,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("구매가 완료되었습니다! 판매자에게 입금이 처리됩니다.");
+
+        // 상품 상태를 sold로 업데이트
+        setProduct(prev => (prev ? { ...prev, status: "sold" } : null));
+
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: actualProductId, status: "sold" },
+          })
+        );
+
+        // 모달 닫기
+        onClose();
+      } else {
+        toast.error(result.error || "구매 완료에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("구매 완료 실패:", error);
+      toast.error("구매 완료 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterShipping = async (shippingInfo: {
+    courier: string;
+    trackingNumber: string;
+  }) => {
+    if (!actualProductId || !user?.uid) return;
+
+    try {
+      setIsRegisteringShipping(true);
+
+      const response = await fetch("/api/products/register-shipping", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemId: actualProductId,
+          sellerUid: user.uid,
+          courier: shippingInfo.courier,
+          trackingNumber: shippingInfo.trackingNumber,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(
+          "발송 정보가 등록되었습니다! 상품 상태가 '배송중'으로 변경됩니다."
+        );
+
+        // 상품 상태를 shipping으로 업데이트
+        setProduct(prev => (prev ? { ...prev, status: "shipping" } : null));
+
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: actualProductId, status: "shipping" },
+          })
+        );
+
+        // 송장 등록 모달 닫기
+        setShowShippingModal(false);
+      } else {
+        toast.error(result.error || "발송 정보 등록에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("발송 정보 등록 실패:", error);
+      toast.error("발송 정보 등록 중 오류가 발생했습니다.");
+    } finally {
+      setIsRegisteringShipping(false);
     }
   };
 
@@ -921,11 +1055,178 @@ export default function ProductDetailModal({
                             </button>
                           </div>
                           {/* 상품 상태에 따른 버튼 표시 */}
+                          {console.log(
+                            "상품 상태 체크:",
+                            product?.status,
+                            "reserved와 비교:",
+                            product?.status === "reserved"
+                          )}
                           {product?.status === "reserved" ? (
+                            <div className="space-y-3">
+                              <div className="w-full h-12 bg-orange-100 border border-orange-300 rounded-xl flex items-center justify-center">
+                                <Clock className="w-5 h-5 mr-2 text-orange-600" />
+                                <span className="text-lg font-bold text-orange-600">
+                                  거래중
+                                </span>
+                              </div>
+                              {console.log(
+                                "거래중 상태 - isOwnItem:",
+                                isOwnItem,
+                                "user.uid:",
+                                user?.uid,
+                                "product.sellerUid:",
+                                product?.sellerUid
+                              )}
+                              <Button
+                                className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+                                onClick={() => setShowShippingModal(true)}
+                              >
+                                <Truck className="w-5 h-5 mr-2" />
+                                발송완료
+                              </Button>
+                            </div>
+                          ) : product?.status === "shipping" ? (
+                            <div className="space-y-3">
+                              <div className="w-full h-12 bg-blue-100 border border-blue-300 rounded-xl flex items-center justify-center">
+                                <Truck className="w-5 h-5 mr-2 text-blue-600" />
+                                <span className="text-lg font-bold text-blue-600">
+                                  배송중
+                                </span>
+                              </div>
+
+                              {/* 송장번호 정보 */}
+                              {product?.shippingInfo && (
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                    배송 정보
+                                  </h4>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-gray-600">
+                                        택배사:
+                                      </span>
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {product.shippingInfo.courier}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-gray-600">
+                                        송장번호:
+                                      </span>
+                                      <div className="flex items-center space-x-2">
+                                        <span className="text-sm font-medium text-gray-900 font-mono">
+                                          {product.shippingInfo.trackingNumber}
+                                        </span>
+                                        <div className="flex space-x-1">
+                                          <button
+                                            onClick={() => {
+                                              navigator.clipboard.writeText(
+                                                product.shippingInfo
+                                                  .trackingNumber
+                                              );
+                                              toast.success(
+                                                "송장번호가 복사되었습니다."
+                                              );
+                                            }}
+                                            className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 border border-blue-300 rounded hover:bg-blue-50"
+                                          >
+                                            복사
+                                          </button>
+                                          <button
+                                            onClick={() =>
+                                              setShowShippingTrackingModal(true)
+                                            }
+                                            className="text-green-600 hover:text-green-800 text-xs px-2 py-1 border border-green-300 rounded hover:bg-green-50"
+                                          >
+                                            배송조회
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-gray-600">
+                                        발송일:
+                                      </span>
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {product.shippingInfo.shippedAt
+                                          ? new Date(
+                                              product.shippingInfo.shippedAt
+                                                .seconds * 1000
+                                            ).toLocaleDateString("ko-KR")
+                                          : "정보 없음"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 구매자용 구매 확정 버튼 */}
+                              {isBuyer && (
+                                <Button
+                                  onClick={() => {
+                                    if (
+                                      confirm(
+                                        "상품을 수령하셨나요?\n구매 확정 후에는 취소할 수 없습니다."
+                                      )
+                                    ) {
+                                      handleCompletePurchase();
+                                    }
+                                  }}
+                                  className="w-full bg-green-600 hover:bg-green-700 text-white h-10"
+                                  disabled={loading}
+                                >
+                                  {loading ? (
+                                    <>
+                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                      확정 중...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="w-4 h-4 mr-2" />
+                                      구매 확정
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          ) : product?.status === "escrow_completed" &&
+                            isBuyer ? (
+                            <div className="space-y-3">
+                              <div className="w-full h-12 bg-blue-100 border border-blue-300 rounded-xl flex items-center justify-center">
+                                <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
+                                <span className="text-lg font-bold text-blue-600">
+                                  구매중
+                                </span>
+                              </div>
+                              <Button
+                                className="w-full h-12 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => {
+                                  if (
+                                    confirm(
+                                      "상품을 수령하셨나요?\n구매 확정 후에는 취소할 수 없습니다."
+                                    )
+                                  ) {
+                                    handleCompletePurchase();
+                                  }
+                                }}
+                                disabled={loading}
+                              >
+                                <CheckCircle className="w-5 h-5 mr-2" />
+                                {loading ? "확정 중..." : "구매 확정"}
+                              </Button>
+                            </div>
+                          ) : product?.status === "reserved" && isBuyer ? (
                             <div className="w-full h-12 bg-orange-100 border border-orange-300 rounded-xl flex items-center justify-center">
                               <Clock className="w-5 h-5 mr-2 text-orange-600" />
-                              <span className="text-lg font-semibold text-orange-600">
-                                거래중
+                              <span className="text-lg font-bold text-orange-600">
+                                거래중 (배송 대기)
+                              </span>
+                            </div>
+                          ) : product?.status === "sold" ? (
+                            <div className="w-full h-12 bg-green-100 border border-green-300 rounded-xl flex items-center justify-center">
+                              <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
+                              <span className="text-lg font-bold text-green-600">
+                                거래완료
                               </span>
                             </div>
                           ) : isBuyer ? (
@@ -1036,6 +1337,24 @@ export default function ProductDetailModal({
             // 수정 완료 후 상품 정보 새로고침
             window.location.reload();
           }}
+        />
+      )}
+
+      {/* 송장 등록 모달 */}
+      <ShippingInfoModal
+        isOpen={showShippingModal}
+        onClose={() => setShowShippingModal(false)}
+        onConfirm={handleRegisterShipping}
+        loading={isRegisteringShipping}
+      />
+
+      {/* 배송조회 모달 */}
+      {showShippingTrackingModal && product?.shippingInfo && (
+        <ShippingTrackingModal
+          isOpen={showShippingTrackingModal}
+          onClose={() => setShowShippingTrackingModal(false)}
+          courier={product.shippingInfo.courier}
+          trackingNumber={product.shippingInfo.trackingNumber}
         />
       )}
     </div>

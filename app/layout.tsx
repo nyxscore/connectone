@@ -24,6 +24,10 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script
+          src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+          async
+        ></script>
       </head>
       <body className="font-sans antialiased bg-gray-50">
         <div className="min-h-screen flex flex-col">

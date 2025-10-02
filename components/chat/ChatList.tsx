@@ -69,6 +69,68 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
     };
   }, []);
 
+  // 상품 상태 변경 이벤트 감지
+  useEffect(() => {
+    const handleItemStatusChanged = async (event: CustomEvent) => {
+      const { itemId: changedItemId, status } = event.detail;
+      console.log("ChatList: 상품 상태 변경 감지:", { changedItemId, status });
+
+      // 배송중으로 변경될 때는 최신 상품 정보를 다시 가져와서 shippingInfo 포함
+      if (status === "shipping") {
+        try {
+          const itemResult = await getItem(changedItemId);
+          if (itemResult?.success && itemResult?.item) {
+            setChats(prevChats =>
+              prevChats.map(chat => {
+                if (chat.itemId === changedItemId) {
+                  return {
+                    ...chat,
+                    item: {
+                      ...chat.item,
+                      status: status,
+                      shippingInfo: itemResult.item.shippingInfo,
+                    },
+                  };
+                }
+                return chat;
+              })
+            );
+          }
+        } catch (error) {
+          console.error("상품 정보 업데이트 실패:", error);
+        }
+      } else {
+        // 다른 상태 변경은 단순히 상태만 업데이트
+        setChats(prevChats =>
+          prevChats.map(chat => {
+            if (chat.itemId === changedItemId) {
+              return {
+                ...chat,
+                item: {
+                  ...chat.item,
+                  status: status,
+                },
+              };
+            }
+            return chat;
+          })
+        );
+      }
+    };
+
+    window.addEventListener(
+      "itemStatusChanged",
+      handleItemStatusChanged as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "itemStatusChanged",
+        handleItemStatusChanged as EventListener
+      );
+    };
+  }, []);
+
   // 실시간으로 채팅 목록과 미읽음 메시지 수 업데이트
   useEffect(() => {
     if (!user) return;
@@ -99,7 +161,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
         try {
           console.log(`상대방 프로필 정보 가져오기 시작: ${otherUid}`);
           console.log(`아이템 ID: ${chatData.itemId}`);
-          
+
           const [otherUserResult, itemResult] = await Promise.all([
             getUserProfile(otherUid),
             getItem(chatData.itemId),
@@ -129,6 +191,7 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
             price: 0,
             imageUrl: null,
             status: "unknown",
+            shippingInfo: null,
           };
 
           if (itemResult?.success && itemResult?.item) {
@@ -138,13 +201,23 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
               price: itemResult.item.price || 0,
               imageUrl: itemResult.item.images?.[0] || null,
               status: itemResult.item.status || "unknown",
+              shippingInfo: itemResult.item.shippingInfo || null,
             };
             console.log(`아이템 정보 생성 완료:`, itemInfo);
           } else {
-            console.warn(`상품 정보를 가져올 수 없음:`, {
+            // 상품이 삭제되었거나 존재하지 않는 경우 기본값 사용
+            console.log(`상품 정보를 가져올 수 없음 (상품 삭제됨):`, {
               itemId: chatData.itemId,
               error: itemResult?.error,
             });
+            itemInfo = {
+              id: chatData.itemId,
+              title: "삭제된 상품",
+              price: 0,
+              imageUrl: null,
+              status: "deleted",
+              shippingInfo: null,
+            };
           }
 
           return {
@@ -449,12 +522,31 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
                       <p className="text-xs text-gray-600 truncate">
-                        {chat.item.title}
+                        {chat.item.status === "deleted" ? (
+                          <span className="text-red-500 italic">삭제된 상품</span>
+                        ) : (
+                          chat.item.title
+                        )}
                       </p>
                       {/* 거래 상태 표시 */}
                       {chat.item.status === "reserved" && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
                           거래중
+                        </span>
+                      )}
+                      {chat.item.status === "shipping" && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                          배송중
+                        </span>
+                      )}
+                      {chat.item.status === "sold" && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                          거래완료
+                        </span>
+                      )}
+                      {chat.item.status === "deleted" && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                          삭제됨
                         </span>
                       )}
                       {chat.item.status === "escrow_completed" && (
