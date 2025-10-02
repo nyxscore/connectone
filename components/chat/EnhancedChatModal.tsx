@@ -1093,7 +1093,7 @@ export function EnhancedChatModal({
               </Button>
             </div>
 
-            <div className="flex-1 p-4 space-y-6">
+            <div className="flex-1 p-4 space-y-6 overflow-y-auto">
               {/* 상대방 프로필 */}
               {chatData && otherUserProfile && (
                 <div className="pb-6 border-b">
