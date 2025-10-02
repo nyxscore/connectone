@@ -29,7 +29,9 @@ export async function getUserProfile(
   uid: string
 ): Promise<ApiResponse<UserProfile>> {
   try {
+    console.log("getUserProfile 호출:", uid);
     const userDoc = await getDoc(doc(db, "users", uid));
+    console.log("getUserProfile getDoc 완료:", userDoc.exists());
 
     if (!userDoc.exists()) {
       return { success: false, error: "사용자를 찾을 수 없습니다." };
