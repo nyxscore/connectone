@@ -1209,10 +1209,10 @@ export function EnhancedChatModal({
                 </div>
               )}
 
-              {/* 구매자 취소 요청 버튼 (안전결제 완료 후) */}
+              {/* 구매자 취소 요청 버튼 (안전결제 완료 후 또는 거래중) */}
               {user &&
                 chatData &&
-                chatData.item.status === "escrow_completed" &&
+                (chatData.item.status === "escrow_completed" || chatData.item.status === "reserved") &&
                 user.uid === chatData.otherUser.uid && (
                   <div className="mb-4">
                     <Button
@@ -1223,7 +1223,9 @@ export function EnhancedChatModal({
                       구매 취소 요청
                     </Button>
                     <p className="text-xs text-gray-500 mt-2 text-center">
-                      판매자에게 취소 요청을 보냅니다
+                      {chatData.item.status === "escrow_completed" 
+                        ? "안전결제 취소 요청을 보냅니다"
+                        : "거래 취소 요청을 보냅니다"}
                     </p>
                   </div>
                 )}
