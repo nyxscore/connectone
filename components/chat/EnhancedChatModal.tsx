@@ -502,7 +502,7 @@ export function EnhancedChatModal({
       if (result.success) {
         toast.success("신고가 접수되었습니다.");
         setShowReportModal(false);
-        
+
         // 신고 후 차단 여부 묻기
         setShowBlockModal(true);
       } else {
@@ -841,7 +841,7 @@ export function EnhancedChatModal({
       if (result.success) {
         toast.success("사용자가 차단되었습니다.");
         setShowBlockModal(false);
-        
+
         // 채팅 모달 닫기
         onClose();
       } else {
@@ -1388,7 +1388,8 @@ export function EnhancedChatModal({
                     </div>
 
                     {/* 결제 완료 (안전결제인 경우만) */}
-                    {(chatData?.tradeType?.includes("안전결제") || chatData?.tradeType?.includes("안전거래")) && (
+                    {(chatData?.tradeType?.includes("안전결제") ||
+                      chatData?.tradeType?.includes("안전거래")) && (
                       <div
                         className={`flex items-center justify-between p-3 rounded-lg border-2 ${
                           chatData?.item?.status === "escrow_completed"
@@ -1397,7 +1398,9 @@ export function EnhancedChatModal({
                         }`}
                       >
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium">안전결제 완료</span>
+                          <span className="text-sm font-medium">
+                            안전결제 완료
+                          </span>
                           {chatData?.item?.status === "escrow_completed" && (
                             <span className="text-green-600">✅</span>
                           )}
@@ -1574,7 +1577,8 @@ export function EnhancedChatModal({
                   사용자 차단
                 </h3>
                 <p className="text-sm text-gray-600 mb-6">
-                  {chatData?.otherUser?.nickname}님을 차단하시겠습니까?<br />
+                  {chatData?.otherUser?.nickname}님을 차단하시겠습니까?
+                  <br />
                   차단된 사용자와는 더 이상 채팅할 수 없습니다.
                 </p>
                 <div className="flex space-x-3">

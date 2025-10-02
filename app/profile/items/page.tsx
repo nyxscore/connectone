@@ -51,7 +51,7 @@ function MyItemsPageContent() {
     if (currentUser || targetUserId) {
       loadMyItems();
     }
-  }, [currentUser, authLoading, targetUserId, loadMyItems]);
+  }, [currentUser, authLoading, targetUserId, activeTab]);
 
   // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
