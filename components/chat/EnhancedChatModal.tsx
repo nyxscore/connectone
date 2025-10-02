@@ -611,11 +611,12 @@ export function EnhancedChatModal({
       return;
     }
 
-    if (
-      confirm(
-        "정말로 거래를 취소하시겠습니까?\n상품 상태가 '판매중'으로 변경됩니다."
-      )
-    ) {
+    const isEscrowCompleted = chatData.item.status === "escrow_completed";
+    const confirmMessage = isEscrowCompleted 
+      ? "정말로 거래를 취소하시겠습니까?\n안전결제가 취소되고 환불이 처리됩니다."
+      : "정말로 거래를 취소하시겠습니까?\n상품 상태가 '판매중'으로 변경됩니다.";
+
+    if (confirm(confirmMessage)) {
       setIsCancelingTransaction(true);
 
       try {
@@ -634,7 +635,12 @@ export function EnhancedChatModal({
         const result = await response.json();
 
         if (result.success) {
-          toast.success("거래가 취소되었습니다!");
+          // 안전결제 취소인지 확인
+          if (result.escrowCancelled) {
+            toast.success("안전결제가 취소되었습니다! 환불이 처리됩니다.");
+          } else {
+            toast.success("거래가 취소되었습니다!");
+          }
 
           // 전역 이벤트 발생으로 상품 목록 업데이트
           window.dispatchEvent(
