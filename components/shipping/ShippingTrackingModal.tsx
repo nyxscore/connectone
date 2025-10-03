@@ -33,6 +33,25 @@ export function ShippingTrackingModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // 택배사 코드를 한글 이름으로 변환
+  const getCourierName = (courierCode: string) => {
+    const courierMap: { [key: string]: string } = {
+      cj: "CJ대한통운",
+      hanjin: "한진택배",
+      lotte: "롯데택배",
+      kdexp: "경동택배",
+      epost: "우체국택배",
+      logen: "로젠택배",
+      ktx: "KTX물류",
+      dhl: "DHL",
+      fedex: "FedEx",
+      ups: "UPS",
+      ems: "EMS",
+      cvs: "편의점택배",
+    };
+    return courierMap[courierCode] || courierCode;
+  };
+
   useEffect(() => {
     if (isOpen && courier && trackingNumber) {
       fetchShippingInfo();
@@ -73,7 +92,7 @@ export function ShippingTrackingModal({
           <div>
             <h2 className="text-xl font-bold text-gray-900">배송조회</h2>
             <p className="text-sm text-gray-600 mt-1">
-              {courier} - {trackingNumber}
+              {getCourierName(courier)} - {trackingNumber}
             </p>
           </div>
           <div className="flex items-center space-x-2">

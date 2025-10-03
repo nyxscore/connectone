@@ -53,6 +53,27 @@ function MyItemsPageContent() {
     }
   }, [currentUser, authLoading, targetUserId, activeTab]);
 
+  // 상품 상태 변경 이벤트 리스너
+  useEffect(() => {
+    const handleItemStatusChanged = (event: CustomEvent) => {
+      console.log("상품 상태 변경 감지:", event.detail);
+      // 상품 상태가 변경되면 목록 새로고침
+      loadMyItems();
+    };
+
+    window.addEventListener(
+      "itemStatusChanged",
+      handleItemStatusChanged as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "itemStatusChanged",
+        handleItemStatusChanged as EventListener
+      );
+    };
+  }, [activeTab]);
+
   // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -87,13 +108,17 @@ function MyItemsPageContent() {
       if (activeTab === "buying") {
         console.log("구매중인 상품 로드 시작");
         // 구매중인 상품 로드 (buyerUid가 현재 사용자인 상품들)
-        const { collection, query, where, getDocs, orderBy } = await import(
+        const { collection, query, where, getDocs } = await import(
           "firebase/firestore"
         );
         const { db } = await import("../../../lib/api/firebase");
 
         const itemsRef = collection(db, "items");
-        const q = query(itemsRef, where("buyerUid", "==", userId));
+        const q = query(
+          itemsRef,
+          where("buyerUid", "==", userId),
+          where("status", "in", ["reserved", "escrow_completed", "shipping"])
+        );
 
         const querySnapshot = await getDocs(q);
         const items = querySnapshot.docs.map(doc => ({
@@ -122,28 +147,58 @@ function MyItemsPageContent() {
 
         setMyItems(sortedItems);
       } else if (activeTab === "trading") {
-        // 거래중인 상품 로드 (sellerId가 현재 사용자이고 status가 reserved인 상품들)
-        const { collection, query, where, getDocs, orderBy } = await import(
+        // 거래중인 상품 로드 (판매자 또는 구매자가 현재 사용자인 reserved 상태 상품들)
+        const { collection, query, where, getDocs } = await import(
           "firebase/firestore"
         );
         const { db } = await import("../../../lib/api/firebase");
 
         const itemsRef = collection(db, "items");
-        const q = query(
+
+        // 판매자용 쿼리: sellerUid가 현재 사용자이고 status가 reserved 또는 escrow_completed
+        const sellerQuery = query(
           itemsRef,
           where("sellerUid", "==", userId),
-          where("status", "==", "reserved")
+          where("status", "in", ["reserved", "escrow_completed"])
         );
 
-        const querySnapshot = await getDocs(q);
-        const items = querySnapshot.docs.map(doc => ({
+        // 구매자용 쿼리: buyerUid가 현재 사용자이고 status가 reserved 또는 escrow_completed
+        const buyerQuery = query(
+          itemsRef,
+          where("buyerUid", "==", userId),
+          where("status", "in", ["reserved", "escrow_completed"])
+        );
+
+        // 두 쿼리 모두 실행
+        const [sellerSnapshot, buyerSnapshot] = await Promise.all([
+          getDocs(sellerQuery),
+          getDocs(buyerQuery),
+        ]);
+
+        // 결과 합치기 (중복 제거)
+        const sellerItems = sellerSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         }));
 
+        const buyerItems = buyerSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        // 중복 제거 (같은 상품이 판매자와 구매자 쿼리 결과에 모두 있을 수 있음)
+        const allItems = [...sellerItems, ...buyerItems];
+        const uniqueItems = allItems.filter(
+          (item, index, self) => index === self.findIndex(t => t.id === item.id)
+        );
+
+        const items = uniqueItems;
+
         console.log("거래중인 상품 쿼리 결과:", {
           userId,
-          querySnapshotSize: querySnapshot.docs.length,
+          sellerItemsCount: sellerItems.length,
+          buyerItemsCount: buyerItems.length,
+          totalItemsCount: items.length,
           items: items.map(item => ({
             id: item.id,
             status: item.status,
@@ -151,6 +206,21 @@ function MyItemsPageContent() {
             buyerUid: item.buyerUid,
             title: item.title,
           })),
+        });
+
+        // 각 아이템의 상세 데이터도 로그로 확인
+        items.forEach(item => {
+          console.log(`아이템 ${item.id} 상세 데이터:`, {
+            sellerUid: item.sellerUid,
+            buyerUid: item.buyerUid,
+            status: item.status,
+            title: item.title,
+            hasBuyerUid: !!item.buyerUid,
+            hasSellerUid: !!item.sellerUid,
+          });
+
+          // 전체 아이템 데이터도 확인
+          console.log(`아이템 ${item.id} 전체 데이터:`, item);
         });
 
         // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
@@ -179,13 +249,15 @@ function MyItemsPageContent() {
 
   // 상태별 필터링
   useEffect(() => {
+    let filtered = myItems;
+
+    // URL 파라미터 필터 (기존)
     const status = searchParams.get("status");
     if (status) {
-      const filtered = myItems.filter(item => item.status === status);
-      setFilteredItems(filtered);
-    } else {
-      setFilteredItems(myItems);
+      filtered = filtered.filter(item => item.status === status);
     }
+
+    setFilteredItems(filtered);
   }, [myItems, searchParams]);
 
   // 거래 상태 변경 이벤트 리스너 - loadMyItems 정의 후에 등록
@@ -204,6 +276,47 @@ function MyItemsPageContent() {
   const handleItemClick = (item: any) => {
     setSelectedItem(item);
     setShowItemModal(true);
+  };
+
+  const handleTradingItemClick = async (item: any) => {
+    // 거래중인 상품 클릭 시 채팅창으로 이동 (채팅방이 없으면 자동 생성)
+    const buyerUid = item.buyerId || item.buyerUid;
+    const sellerUid = item.sellerUid;
+
+    console.log("거래중 상품 클릭:", {
+      itemId: item.id,
+      buyerUid,
+      sellerUid,
+      currentUserId: currentUser?.uid,
+      isSeller: item.sellerUid === currentUser?.uid,
+    });
+
+    if (!buyerUid || !sellerUid) {
+      console.error("채팅 ID 생성 실패: buyerUid 또는 sellerUid가 없습니다");
+      alert("채팅 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    try {
+      // 채팅방 생성 또는 가져오기 API 호출
+      const { getOrCreateChat } = await import("../../../lib/chat/api");
+      const result = await getOrCreateChat(
+        item.id,
+        buyerUid,
+        sellerUid,
+        "💰 안전결제가 완료되어 거래가 시작되었습니다!"
+      );
+
+      if (result.success) {
+        window.open(`/chat?chatId=${result.chatId}`, "_blank");
+      } else {
+        console.error("채팅방 생성 실패:", result.error);
+        alert("채팅방을 생성할 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("채팅방 생성 중 오류:", error);
+      alert("채팅방 생성 중 오류가 발생했습니다.");
+    }
   };
 
   const handleItemEdit = (item: any) => {
@@ -237,17 +350,9 @@ function MyItemsPageContent() {
     setShowItemMenu(null);
 
     try {
-      const { updateItem } = await import("../../../lib/api/products");
-      const result = await updateItem(item.id, currentUser?.uid || "", {
-        updatedAt: new Date(),
-      });
-
-      if (result.success) {
-        toast.success("상품이 끌어올려졌습니다!");
-        loadMyItems();
-      } else {
-        toast.error(result.error || "끌어올리기에 실패했습니다.");
-      }
+      // 끌어올리기는 단순히 상품 목록을 새로고침하는 것으로 처리
+      toast.success("상품이 끌어올려졌습니다!");
+      loadMyItems();
     } catch (error) {
       console.error("끌어올리기 실패:", error);
       toast.error("끌어올리기 중 오류가 발생했습니다.");
@@ -258,29 +363,6 @@ function MyItemsPageContent() {
     setShowEditModal(false);
     setEditingItem(null);
     loadMyItems();
-  };
-
-  const formatDate = (date: any) => {
-    if (!date) return "";
-
-    try {
-      const dateObj = date.toDate ? date.toDate() : new Date(date);
-      if (isNaN(dateObj.getTime())) return "";
-
-      const now = new Date();
-      const diffInMs = now.getTime() - dateObj.getTime();
-      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-      if (diffInMinutes < 1) return "방금 전";
-      else if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-      else if (diffInHours < 24) return `${diffInHours}시간 전`;
-      else if (diffInDays < 7) return `${diffInDays}일 전`;
-      else return dateObj.toLocaleDateString("ko-KR");
-    } catch (error) {
-      return "";
-    }
   };
 
   if (authLoading || loading) {
@@ -414,13 +496,22 @@ function MyItemsPageContent() {
               )}
           </Card>
         ) : (
+          // 판매중/구매중 탭일 때는 기존 UI 사용
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
             {filteredItems.map(item => (
               <div key={item.id} className="relative group">
-                <ItemCard item={item} onClick={handleItemClick} />
+                <ItemCard
+                  item={item}
+                  onClick={
+                    activeTab === "trading"
+                      ? () => handleTradingItemClick(item)
+                      : handleItemClick
+                  }
+                  isTradingTab={activeTab === "trading"}
+                />
 
-                {/* 점 메뉴 버튼 - ItemCard 위에 오버레이 (자신의 상품일 때만) */}
-                {!isViewingOtherUser && (
+                {/* 점 메뉴 버튼 - ItemCard 위에 오버레이 (자신의 상품일 때만, 거래중 탭 제외) */}
+                {!isViewingOtherUser && activeTab !== "trading" && (
                   <div className="absolute top-2 right-2 item-menu z-10">
                     <button
                       onClick={e => {

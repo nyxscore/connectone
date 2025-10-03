@@ -4,9 +4,10 @@ import { db } from "@/lib/api/firebase";
 
 export async function POST(request: NextRequest) {
   try {
-    const { itemId, sellerUid, reason } = await request.json();
+    const { itemId, sellerUid, buyerUid, cancelledBy, reason } =
+      await request.json();
 
-    if (!itemId || !sellerUid) {
+    if (!itemId || !sellerUid || !cancelledBy) {
       return NextResponse.json(
         { success: false, error: "필수 정보가 누락되었습니다." },
         { status: 400 }
@@ -26,8 +27,11 @@ export async function POST(request: NextRequest) {
 
     const itemData = itemSnap.data();
 
-    // 판매자 확인
-    if (itemData.sellerUid !== sellerUid) {
+    // 권한 확인 - 판매자 또는 구매자만 취소 가능
+    const isSeller = itemData.sellerUid === cancelledBy;
+    const isBuyer = itemData.buyerUid === cancelledBy;
+
+    if (!isSeller && !isBuyer) {
       return NextResponse.json(
         { success: false, error: "권한이 없습니다." },
         { status: 403 }
@@ -60,11 +64,13 @@ export async function POST(request: NextRequest) {
       await updateDoc(itemRef, {
         status: "active",
         buyerId: null,
+        buyerUid: null, // buyerUid도 함께 초기화
         escrowCompletedAt: null,
         escrowCanceledAt: new Date(),
-        escrowCancelReason: reason || "판매자 거래 취소",
+        escrowCancelReason:
+          reason || (isSeller ? "판매자 거래 취소" : "구매자 거래 취소"),
         transactionCancelledAt: new Date(), // 거래 취소 시간 기록
-        cancelledBy: sellerUid, // 취소한 사용자 기록
+        cancelledBy: cancelledBy, // 실제 취소한 사용자 기록
         updatedAt: new Date(),
       });
 
@@ -72,12 +78,14 @@ export async function POST(request: NextRequest) {
       const transactionsRef = doc(
         db,
         "transactions",
-        `${itemId}_${itemData.buyerId}`
+        `${itemId}_${itemData.buyerUid}`
       );
       await updateDoc(transactionsRef, {
         status: "cancelled",
         cancelledAt: new Date(),
-        cancelReason: reason || "판매자 거래 취소",
+        cancelReason:
+          reason || (isSeller ? "판매자 거래 취소" : "구매자 거래 취소"),
+        cancelledBy: cancelledBy,
         updatedAt: new Date(),
       }).catch(() => {
         // 거래 내역이 없어도 상품 취소는 진행

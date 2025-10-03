@@ -19,16 +19,15 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import toast from "react-hot-toast";
-
-// Mock 알림 타입
-interface Notification {
-  id: string;
-  message: string;
-  createdAt: Date;
-  isRead: boolean;
-  link?: string; // 알림 클릭 시 이동할 링크
-  type?: "chat" | "product" | "transaction" | "system"; // 알림 종류
-}
+import {
+  getUserNotifications,
+  markNotificationAsRead,
+  deleteNotification,
+  deleteAllNotifications,
+  subscribeToNotifications,
+  subscribeToUnreadNotificationCount,
+} from "../../lib/api/notifications";
+import { Notification } from "../../data/types";
 
 export function ProfileDropdown() {
   const { user, loading } = useAuth();
@@ -37,35 +36,63 @@ export function ProfileDropdown() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Mock 알림 데이터 (나중에 실제 API로 교체)
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      message: "새로운 채팅 메시지가 도착했습니다.",
-      createdAt: new Date(),
-      isRead: false,
-      link: "/chat",
-      type: "chat",
-    },
-    {
-      id: "2",
-      message: "상품이 판매되었습니다.",
-      createdAt: new Date(Date.now() - 3600000),
-      isRead: false,
-      link: "/profile/items",
-      type: "product",
-    },
-    {
-      id: "3",
-      message: "거래가 완료되었습니다.",
-      createdAt: new Date(Date.now() - 7200000),
-      isRead: true,
-      link: "/profile/transactions",
-      type: "transaction",
-    },
-  ]);
+  // 실제 알림 데이터
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
 
-  const unreadNotificationCount = notifications.filter(n => !n.isRead).length;
+  // 알림 데이터 로드 및 실시간 구독
+  useEffect(() => {
+    if (!user?.uid) {
+      setNotifications([]);
+      setUnreadNotificationCount(0);
+      return;
+    }
+
+    // 초기 알림 로드
+    const loadNotifications = async () => {
+      setIsLoadingNotifications(true);
+      try {
+        const result = await getUserNotifications(user.uid, 20);
+        if (result.success && result.notifications) {
+          setNotifications(result.notifications);
+        }
+      } catch (error) {
+        console.error("알림 로드 실패:", error);
+      } finally {
+        setIsLoadingNotifications(false);
+      }
+    };
+
+    loadNotifications();
+
+    // 실시간 알림 구독
+    const unsubscribeNotifications = subscribeToNotifications(
+      user.uid,
+      newNotifications => {
+        setNotifications(newNotifications);
+      },
+      error => {
+        console.error("알림 구독 오류:", error);
+      }
+    );
+
+    // 실시간 읽지 않은 알림 개수 구독
+    const unsubscribeUnreadCount = subscribeToUnreadNotificationCount(
+      user.uid,
+      count => {
+        setUnreadNotificationCount(count);
+      },
+      error => {
+        console.error("읽지 않은 알림 개수 구독 오류:", error);
+      }
+    );
+
+    return () => {
+      unsubscribeNotifications();
+      unsubscribeUnreadCount();
+    };
+  }, [user?.uid]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -96,24 +123,50 @@ export function ProfileDropdown() {
   };
 
   // 개별 알림 삭제
-  const handleDeleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    toast.success("알림이 삭제되었습니다.");
+  const handleDeleteNotification = async (id: string) => {
+    if (!user?.uid) return;
+
+    try {
+      const result = await deleteNotification(id, user.uid);
+      if (result.success) {
+        toast.success("알림이 삭제되었습니다.");
+      } else {
+        toast.error(result.error || "알림 삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("알림 삭제 오류:", error);
+      toast.error("알림 삭제에 실패했습니다.");
+    }
   };
 
   // 모든 알림 삭제
-  const handleDeleteAllNotifications = () => {
-    setNotifications([]);
-    toast.success("모든 알림이 삭제되었습니다.");
+  const handleDeleteAllNotifications = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const result = await deleteAllNotifications(user.uid);
+      if (result.success) {
+        toast.success("모든 알림이 삭제되었습니다.");
+      } else {
+        toast.error(result.error || "알림 삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("알림 삭제 오류:", error);
+      toast.error("알림 삭제에 실패했습니다.");
+    }
   };
 
   // 알림 클릭 - 읽음 처리 + 해당 페이지로 이동
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!user?.uid) return;
+
     // 읽지 않은 알림이면 읽음 처리
     if (!notification.isRead) {
-      setNotifications(prev =>
-        prev.map(n => (n.id === notification.id ? { ...n, isRead: true } : n))
-      );
+      try {
+        await markNotificationAsRead(notification.id, user.uid);
+      } catch (error) {
+        console.error("알림 읽음 처리 오류:", error);
+      }
     }
 
     // 링크가 있으면 해당 페이지로 이동
@@ -220,7 +273,14 @@ export function ProfileDropdown() {
             {/* 알림 목록 */}
             {isNotificationOpen && (
               <div className="px-2 pb-2 max-h-64 overflow-y-auto">
-                {notifications.length > 0 ? (
+                {isLoadingNotifications ? (
+                  <div className="px-3 py-4 text-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-xs text-gray-500">
+                      알림을 불러오는 중...
+                    </p>
+                  </div>
+                ) : notifications.length > 0 ? (
                   <>
                     <div className="flex justify-end px-2 py-1">
                       <button
@@ -252,15 +312,15 @@ export function ProfileDropdown() {
                             {notification.message}
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
-                            {new Date(notification.createdAt).toLocaleString(
-                              "ko-KR",
-                              {
+                            {notification.createdAt &&
+                              new Date(
+                                notification.createdAt.seconds * 1000
+                              ).toLocaleString("ko-KR", {
                                 month: "short",
                                 day: "numeric",
                                 hour: "2-digit",
                                 minute: "2-digit",
-                              }
-                            )}
+                              })}
                           </p>
                         </div>
                         <button

@@ -500,6 +500,32 @@ export interface NotificationTrigger {
   processedAt?: Date;
 }
 
+// 실제 알림 데이터 타입 (Firestore에 저장될 알림)
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data: Record<string, any>; // 추가 데이터 (링크, 상품 정보 등)
+  isRead: boolean;
+  priority: "low" | "normal" | "high" | "urgent";
+  link?: string; // 알림 클릭 시 이동할 링크
+  createdAt: any; // Firestore Timestamp
+  readAt?: any; // Firestore Timestamp
+}
+
+// 알림 생성용 타입
+export interface CreateNotificationData {
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: Record<string, any>;
+  priority?: "low" | "normal" | "high" | "urgent";
+  link?: string;
+}
+
 // 상품 목록 응답 타입
 export interface ProductListResponse {
   products: Product[];

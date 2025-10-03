@@ -4,6 +4,11 @@ import {
   NotificationTrigger,
 } from "../../data/types";
 import { emailService } from "../email/service";
+import {
+  createNewMessageNotification,
+  createTransactionUpdateNotification,
+  createProductSoldNotification,
+} from "../api/notifications";
 
 // 알림 트리거 서비스
 export class NotificationTriggerService {
@@ -15,6 +20,15 @@ export class NotificationTriggerService {
     messagePreview: string;
     chatId: string;
   }): Promise<void> {
+    // Firestore에 알림 생성
+    try {
+      await createNewMessageNotification(data);
+      console.log("✅ Firestore 새 메시지 알림 생성 완료:", data.userId);
+    } catch (error) {
+      console.error("❌ Firestore 새 메시지 알림 생성 실패:", error);
+    }
+
+    // 기존 이메일 알림 트리거
     await this.triggerNotification({
       type: "new_message",
       userId: data.userId,
@@ -39,6 +53,22 @@ export class NotificationTriggerService {
     amount: number;
     counterpartName: string;
   }): Promise<void> {
+    // Firestore에 알림 생성
+    try {
+      await createTransactionUpdateNotification({
+        userId: data.userId,
+        transactionId: data.transactionId,
+        status: data.status,
+        productTitle: data.productTitle,
+        amount: data.amount,
+        counterpartName: data.counterpartName,
+      });
+      console.log("✅ Firestore 거래 상태 알림 생성 완료:", data.userId);
+    } catch (error) {
+      console.error("❌ Firestore 거래 상태 알림 생성 실패:", error);
+    }
+
+    // 기존 이메일 알림 트리거
     await this.triggerNotification({
       type: "transaction_update",
       userId: data.userId,
@@ -250,18 +280,3 @@ export class NotificationTriggerService {
 
 // 싱글톤 인스턴스
 export const notificationTrigger = new NotificationTriggerService();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

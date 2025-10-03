@@ -25,6 +25,7 @@ import {
 } from "../../data/chat/types";
 import { getItem } from "../api/products";
 import { getUserProfile } from "../auth";
+import { notificationTrigger } from "../notifications/trigger";
 
 // 응답률 업데이트 (비동기)
 async function updateResponseRateAsync(sellerUid: string) {
@@ -130,13 +131,27 @@ export async function getOrCreateChat(
     const chatSnap = await getDoc(chatRef);
 
     if (chatSnap.exists()) {
-      // 기존 채팅이 있으면 첫 메시지가 있을 때만 전송
+      // 기존 채팅이 있으면 첫 메시지가 있을 때만 전송 (시스템 메시지로)
+      // 단, 이미 시스템 메시지가 있는지 확인
       if (firstMessage) {
-        await sendMessage({
-          chatId,
-          senderUid: buyerUid,
-          content: firstMessage,
-        });
+        const messagesRef = collection(db, "messages");
+        const messagesQuery = query(
+          messagesRef,
+          where("chatId", "==", chatId),
+          where("senderUid", "==", "system"),
+          where("content", "==", firstMessage),
+          limit(1)
+        );
+        const existingSystemMessage = await getDocs(messagesQuery);
+
+        // 같은 내용의 시스템 메시지가 없을 때만 전송
+        if (existingSystemMessage.empty) {
+          await sendMessage({
+            chatId,
+            senderUid: "system",
+            content: firstMessage,
+          });
+        }
       }
       return { success: true, chatId };
     }
@@ -155,11 +170,11 @@ export async function getOrCreateChat(
     await setDoc(chatRef, chatData);
     console.log("채팅 생성 완료:", chatId);
 
-    // 첫 메시지가 있으면 전송
+    // 첫 메시지가 있으면 전송 (시스템 메시지로)
     if (firstMessage) {
       await sendMessage({
         chatId,
-        senderUid: buyerUid,
+        senderUid: "system",
         content: firstMessage,
       });
     }
@@ -289,8 +304,8 @@ export async function sendMessage(
   data: SendMessageData
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // senderUid 검증
-    if (!data.senderUid) {
+    // 시스템 메시지인 경우 senderUid 검증 생략
+    if (data.senderUid !== "system" && !data.senderUid) {
       console.error("sendMessage: senderUid가 없습니다:", data);
       return { success: false, error: "발신자 정보가 없습니다." };
     }
@@ -302,7 +317,7 @@ export async function sendMessage(
       content: data.content,
       type: data.imageUrl ? "image" : "text", // 이미지가 있으면 image 타입, 없으면 text 타입
       createdAt: serverTimestamp() as Timestamp,
-      readBy: [data.senderUid], // 발신자는 자동으로 읽음 처리
+      readBy: data.senderUid === "system" ? [] : [data.senderUid], // 시스템 메시지는 읽음 처리하지 않음
     };
 
     // imageUrl이 있을 때만 추가
@@ -344,6 +359,40 @@ export async function sendMessage(
 
       await updateDoc(chatRef, updates);
       console.log("채팅 업데이트 완료:", updates);
+
+      // 시스템 메시지가 아닌 경우에만 상대방에게 새 메시지 알림 전송
+      if (data.senderUid !== "system") {
+        const recipientUid =
+          chatData.buyerUid === data.senderUid
+            ? chatData.sellerUid
+            : chatData.buyerUid;
+        if (recipientUid !== data.senderUid) {
+          try {
+            // 상대방 정보와 상품 정보 가져오기
+            const [recipientProfile, itemResult] = await Promise.all([
+              getUserProfile(recipientUid),
+              getItem(chatData.itemId),
+            ]);
+
+            const senderProfile = await getUserProfile(data.senderUid);
+
+            if (recipientProfile && senderProfile && itemResult.item) {
+              await notificationTrigger.triggerNewMessage({
+                userId: recipientUid,
+                senderName: senderProfile.nickname || "알 수 없음",
+                productTitle: itemResult.item.title,
+                messagePreview:
+                  data.content.length > 50
+                    ? data.content.substring(0, 50) + "..."
+                    : data.content,
+                chatId: data.chatId,
+              });
+            }
+          } catch (error) {
+            console.error("메시지 알림 트리거 실패:", error);
+          }
+        }
+      }
     } else {
       console.warn("채팅 문서가 존재하지 않음, 새로 생성:", data.chatId);
 
@@ -379,6 +428,39 @@ export async function sendMessage(
         console.log("채팅 문서 생성 완료:", data.chatId);
       } else {
         console.error("잘못된 채팅 ID 형식:", data.chatId);
+      }
+    }
+
+    // 시스템 메시지인 경우 판매자에게 알림 전송
+    if (data.senderUid === "system") {
+      try {
+        // 채팅 정보에서 판매자 정보 가져오기
+        const chatRef = doc(db, "chats", data.chatId);
+        const chatSnap = await getDoc(chatRef);
+        if (chatSnap.exists()) {
+          const chatData = chatSnap.data() as Chat;
+          const sellerUid = chatData.sellerUid;
+
+          if (sellerUid) {
+            // 판매자에게 시스템 알림 전송
+            const [sellerProfile, itemResult] = await Promise.all([
+              getUserProfile(sellerUid),
+              getItem(chatData.itemId),
+            ]);
+
+            if (sellerProfile && itemResult.item) {
+              await notificationTrigger.triggerNewMessage({
+                userId: sellerUid,
+                senderName: "시스템",
+                productTitle: itemResult.item.title,
+                messagePreview: data.content,
+                chatId: data.chatId,
+              });
+            }
+          }
+        }
+      } catch (notificationError) {
+        console.error("시스템 알림 전송 실패:", notificationError);
       }
     }
 

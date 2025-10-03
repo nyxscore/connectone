@@ -11,9 +11,14 @@ import { useRouter } from "next/navigation";
 interface ItemCardProps {
   item: SellItem;
   onClick?: (item: SellItem) => void;
+  isTradingTab?: boolean;
 }
 
-export function ItemCard({ item, onClick }: ItemCardProps) {
+export function ItemCard({
+  item,
+  onClick,
+  isTradingTab = false,
+}: ItemCardProps) {
   const router = useRouter();
 
   const handleClick = () => {
@@ -91,7 +96,13 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
 
   return (
     <Card
-      className={`overflow-hidden ${isSold ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+      className={`overflow-hidden ${
+        isSold
+          ? "opacity-60 cursor-not-allowed"
+          : isTradingTab
+            ? "cursor-pointer hover:shadow-lg hover:bg-blue-50 transition-all"
+            : "cursor-pointer"
+      }`}
       onClick={isSold ? undefined : handleClick}
     >
       {/* 썸네일 */}
@@ -161,7 +172,7 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
         </div>
 
         {/* 거래중 상태 표시 */}
-        {item.status === "reserved" && (
+        {(item.status === "reserved" || item.status === "escrow_completed") && (
           <div className="w-full h-8 bg-orange-100 border border-orange-300 rounded-lg flex items-center justify-center mt-2">
             <Clock className="w-4 h-4 mr-1 text-orange-600" />
             <span className="text-sm font-bold text-orange-600">거래중</span>
@@ -179,6 +190,15 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
                 {getShippingTypeLabel(type)}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* 거래중 탭일 때 채팅 안내 */}
+        {isTradingTab && !isSold && (
+          <div className="pt-2 border-t border-gray-100 text-center">
+            <span className="text-xs text-blue-600 font-medium">
+              💬 클릭하여 채팅하기
+            </span>
           </div>
         )}
       </div>

@@ -85,27 +85,6 @@ export function ItemFilters({
         {/* 필터 옵션들 - 세로 정렬 */}
         {isFiltersOpen && (
           <div className="pt-4 border-t">
-            {/* 거래 가능 섹션 */}
-            <div className="py-4 border-b border-gray-200">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="available"
-                  checked={filters.available || false}
-                  onChange={e =>
-                    handleFilterChange("available", e.target.checked)
-                  }
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="available"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  거래 가능
-                </label>
-              </div>
-            </div>
-
             {/* 지역 섹션 */}
             <div className="py-4 border-b border-gray-200">
               <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -187,6 +166,47 @@ export function ItemFilters({
                 {category.label}
               </Button>
             ))}
+          </div>
+        </div>
+
+        {/* 거래 상태 필터 - 항상 보이는 버튼 형태 */}
+        <div className="pt-4 border-t">
+          <span className="text-sm font-medium text-gray-700 mb-3 block">
+            거래 상태
+          </span>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={!filters.status ? "primary" : "outline"}
+              size="sm"
+              onClick={() => handleFilterChange("status", undefined)}
+              className="text-xs sm:text-sm"
+            >
+              전체
+            </Button>
+            <Button
+              variant={filters.status === "available" ? "primary" : "outline"}
+              size="sm"
+              onClick={() => handleFilterChange("status", "available")}
+              className="text-xs sm:text-sm bg-green-50 text-green-700 border-green-300 hover:bg-green-100"
+            >
+              거래가능
+            </Button>
+            <Button
+              variant={filters.status === "reserved" ? "primary" : "outline"}
+              size="sm"
+              onClick={() => handleFilterChange("status", "reserved")}
+              className="text-xs sm:text-sm bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100"
+            >
+              거래중
+            </Button>
+            <Button
+              variant={filters.status === "sold" ? "primary" : "outline"}
+              size="sm"
+              onClick={() => handleFilterChange("status", "sold")}
+              className="text-xs sm:text-sm bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
+            >
+              판매완료
+            </Button>
           </div>
         </div>
       </div>

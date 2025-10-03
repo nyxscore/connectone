@@ -348,6 +348,7 @@ export interface ItemListFilters {
   minPrice?: number;
   maxPrice?: number;
   available?: boolean;
+  status?: string;
 }
 
 export interface ItemListOptions {
@@ -373,11 +374,27 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       filters = {},
     } = options;
 
-    // 기본 쿼리: active, reserved, sold 상태인 아이템 조회 (거래중, 판매완료 상품도 표시)
-    let q = query(
-      collection(db, "items"),
-      where("status", "in", ["active", "reserved", "sold"])
-    );
+    // 상태 필터 처리
+    let statusFilter = ["active", "reserved", "escrow_completed", "sold"]; // 기본값: 모든 거래 가능한 상태
+
+    if (filters.status) {
+      switch (filters.status) {
+        case "available":
+          statusFilter = ["active"]; // 거래가능한 상품만
+          break;
+        case "reserved":
+          statusFilter = ["reserved", "escrow_completed"]; // 거래중인 상품만 (안전결제 완료 포함)
+          break;
+        case "sold":
+          statusFilter = ["sold"]; // 판매완료된 상품만
+          break;
+        default:
+          statusFilter = ["active", "reserved", "escrow_completed", "sold"]; // 전체
+      }
+    }
+
+    // 기본 쿼리: 필터에 따라 상태별 조회
+    let q = query(collection(db, "items"), where("status", "in", statusFilter));
 
     // 디버깅: 모든 상품의 카테고리 확인 (개발 중에만)
     if (filters.category && process.env.NODE_ENV === "development") {
@@ -446,11 +463,6 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     }
     if (filters.maxPrice !== undefined) {
       items = items.filter(item => item.price <= filters.maxPrice!);
-    }
-
-    // 거래 가능 필터링 (체크되면 active 상태만 표시)
-    if (filters.available) {
-      items = items.filter(item => item.status === "active");
     }
 
     // 카테고리 필터링 (클라이언트 사이드 - 서브카테고리 지원)

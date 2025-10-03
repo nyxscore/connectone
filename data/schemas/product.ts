@@ -84,6 +84,8 @@ export const productDetailSchema = z.object({
     )
     .optional()
     .default([]),
+  status: z.string().optional(),
+  buyerUid: z.string().optional(),
   createdAt: z.any(),
   updatedAt: z.any(),
 });

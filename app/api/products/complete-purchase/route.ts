@@ -26,19 +26,19 @@ export async function POST(request: NextRequest) {
 
     const itemData = itemSnap.data();
 
-    // 구매자 확인
-    if (itemData.buyerId !== buyerUid) {
+    // 상품 상태 확인 - 배송중 상태에서만 구매 확정 가능
+    if (itemData.status !== "shipping") {
       return NextResponse.json(
-        { success: false, error: "권한이 없습니다." },
-        { status: 403 }
+        { success: false, error: "배송중인 상품만 구매 확정할 수 있습니다." },
+        { status: 400 }
       );
     }
 
-    // 거래중 상태인지 확인
-    if (itemData.status !== "reserved") {
+    // 구매자 확인 (배송중 상태의 상품은 이미 buyerUid가 설정되어 있음)
+    if (itemData.buyerUid !== buyerUid) {
       return NextResponse.json(
-        { success: false, error: "구매 완료할 수 없는 상태입니다." },
-        { status: 400 }
+        { success: false, error: "권한이 없습니다." },
+        { status: 403 }
       );
     }
 

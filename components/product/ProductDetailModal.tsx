@@ -89,7 +89,13 @@ export default function ProductDetailModal({
   const actualProductId = productId || item?.id;
 
   // 현재 사용자가 구매자인지 확인
-  const isBuyer = user?.uid && item?.buyerUid && user.uid === item.buyerUid;
+  const isBuyer =
+    user?.uid &&
+    product?.buyerUid &&
+    user.uid === product.buyerUid &&
+    (product?.status === "reserved" ||
+      product?.status === "escrow_completed" ||
+      product?.status === "shipping");
 
   const [seller, setSeller] = useState<SellerInfo | null>(null);
   const [sellerProfile, setSellerProfile] = useState<UserProfile | null>(null);
@@ -116,7 +122,7 @@ export default function ProductDetailModal({
     useState(false);
 
   // 본인 상품인지 확인
-  const isOwnItem = user && product && user.uid === product.sellerUid;
+  const isOwnItem = user && product && user.uid === product.sellerId;
 
   // 찜한 상품 상태 초기화
   useEffect(() => {
@@ -153,18 +159,6 @@ export default function ProductDetailModal({
   }, [product]);
 
   // 디버깅 로그
-  console.log("ProductDetailModal 디버깅:", {
-    user: user ? { uid: user.uid, nickname: user.nickname } : null,
-    product: product
-      ? {
-          id: product.id,
-          sellerUid: product.sellerUid,
-          title: product.title,
-          status: product.status,
-        }
-      : null,
-    isOwnItem,
-  });
 
   // SellItem을 ProductDetail로 변환하는 함수
   const convertSellItemToProductDetail = (
@@ -206,9 +200,6 @@ export default function ProductDetailModal({
         return 0;
       });
 
-    console.log("SellItem shippingTypes:", sellItem.shippingTypes);
-    console.log("변환된 tradeOptions:", tradeOptions);
-
     return {
       id: sellItem.id,
       title:
@@ -226,6 +217,8 @@ export default function ProductDetailModal({
       aiProcessedImages: sellItem.aiProcessedImages || [],
       createdAt: sellItem.createdAt,
       updatedAt: sellItem.updatedAt,
+      status: sellItem.status, // 상품 상태 추가
+      buyerUid: sellItem.buyerUid, // 구매자 ID 추가
       escrowEnabled: sellItem.escrowEnabled || false, // 안전거래 옵션 추가
     };
   };
@@ -479,8 +472,92 @@ export default function ProductDetailModal({
     }
   };
 
+  // 거래 시작 (구매 버튼 클릭)
+  const handleStartTransaction = async () => {
+    if (!actualProductId || !user?.uid || !product?.sellerId) return;
+
+    // 상품 상태 확인
+    if (product?.status === "reserved") {
+      toast.error("이미 다른 구매자와 거래중인 상품입니다.");
+      return;
+    }
+
+    if (product?.status === "sold") {
+      toast.error("이미 판매완료된 상품입니다.");
+      return;
+    }
+
+    if (product?.status !== "active") {
+      toast.error("구매할 수 없는 상태의 상품입니다.");
+      return;
+    }
+
+    // 판매자와 구매자가 같은 사람인지 확인
+    if (product?.sellerId === user.uid) {
+      toast.error("자신의 상품은 구매할 수 없습니다.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await fetch("/api/products/start-transaction", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemId: actualProductId,
+          buyerUid: user.uid,
+          sellerUid: product.sellerId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("거래가 시작되었습니다! 채팅창에서 거래를 진행하세요.");
+
+        // 상품 상태를 reserved로 업데이트
+        setProduct(prev =>
+          prev ? { ...prev, status: "reserved", buyerUid: user.uid } : null
+        );
+
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: actualProductId, status: "reserved" },
+          })
+        );
+
+        // 모달 닫기
+        onClose();
+      } else {
+        toast.error(result.error || "거래 시작에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("거래 시작 실패:", error);
+      toast.error("거래 시작 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 구매 확정 (배송중 상태에서)
   const handleCompletePurchase = async () => {
     if (!actualProductId || !user?.uid) return;
+
+    // 상품 상태 확인 - 배송중 상태에서만 구매 확정 가능
+    if (product?.status !== "shipping") {
+      toast.error("배송중인 상품만 구매 확정할 수 있습니다.");
+      return;
+    }
+
+    // 구매자 확인
+    if (product?.buyerUid !== user.uid) {
+      toast.error("권한이 없습니다.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -514,11 +591,11 @@ export default function ProductDetailModal({
         // 모달 닫기
         onClose();
       } else {
-        toast.error(result.error || "구매 완료에 실패했습니다.");
+        toast.error(result.error || "구매 확정에 실패했습니다.");
       }
     } catch (error) {
-      console.error("구매 완료 실패:", error);
-      toast.error("구매 완료 중 오류가 발생했습니다.");
+      console.error("구매 확정 실패:", error);
+      toast.error("구매 확정 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -577,23 +654,46 @@ export default function ProductDetailModal({
   };
 
   const handleCancelPurchase = async () => {
-    if (!actualProductId) return;
+    if (!actualProductId || !user?.uid) return;
 
     const confirmed = window.confirm("정말 구매를 취소하시겠습니까?");
     if (!confirmed) return;
 
     try {
       setLoading(true);
-      // 상품 상태를 다시 active로 변경하고 buyerId 제거
-      const { updateItemStatus } = await import("../../lib/api/products");
-      const result = await updateItemStatus(actualProductId, "active");
+
+      const response = await fetch("/api/products/cancel-transaction", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemId: actualProductId,
+          userId: user.uid,
+          reason: "구매자 취소",
+        }),
+      });
+
+      const result = await response.json();
 
       if (result.success) {
         toast.success("구매가 취소되었습니다.");
+
+        // 상품 상태를 active로 업데이트
+        setProduct(prev =>
+          prev ? { ...prev, status: "active", buyerUid: null } : null
+        );
+
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: actualProductId, status: "active" },
+          })
+        );
+
         onClose();
-        window.location.reload();
       } else {
-        toast.error("구매 취소에 실패했습니다.");
+        toast.error(result.error || "구매 취소에 실패했습니다.");
       }
     } catch (error) {
       console.error("구매 취소 실패:", error);
@@ -612,7 +712,7 @@ export default function ProductDetailModal({
       // 채팅 생성 및 이동 로직
       const { createChat } = await import("../../lib/chat/api");
       const chatResult = await createChat(
-        product.sellerUid,
+        product.sellerId,
         user.uid,
         product.id
       );
@@ -909,7 +1009,12 @@ export default function ProductDetailModal({
 
                     {/* 액션 버튼들 */}
                     <div className="space-y-3 pt-4">
-                      {isOwnItem ? (
+                      {!product ? (
+                        // 상품 데이터 로딩 중
+                        <div className="w-full h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                          <span className="text-gray-500">로딩 중...</span>
+                        </div>
+                      ) : isOwnItem ? (
                         // 본인 상품일 때 - 수정하기, 삭제하기, 구매신청자 목록 버튼
                         <div className="space-y-3">
                           <Button
@@ -1069,14 +1174,6 @@ export default function ProductDetailModal({
                                   거래중
                                 </span>
                               </div>
-                              {console.log(
-                                "거래중 상태 - isOwnItem:",
-                                isOwnItem,
-                                "user.uid:",
-                                user?.uid,
-                                "product.sellerUid:",
-                                product?.sellerUid
-                              )}
                               <Button
                                 className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white"
                                 onClick={() => setShowShippingModal(true)}
@@ -1160,8 +1257,8 @@ export default function ProductDetailModal({
                                 </div>
                               )}
 
-                              {/* 구매자용 구매 확정 버튼 */}
-                              {isBuyer && (
+                              {/* 구매자용 구매 확정 버튼 - 배송중 상태에서만 */}
+                              {product?.status === "shipping" && isBuyer && (
                                 <Button
                                   onClick={() => {
                                     if (
@@ -1195,25 +1292,12 @@ export default function ProductDetailModal({
                               <div className="w-full h-12 bg-blue-100 border border-blue-300 rounded-xl flex items-center justify-center">
                                 <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
                                 <span className="text-lg font-bold text-blue-600">
-                                  구매중
+                                  결제 완료
                                 </span>
                               </div>
-                              <Button
-                                className="w-full h-12 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => {
-                                  if (
-                                    confirm(
-                                      "상품을 수령하셨나요?\n구매 확정 후에는 취소할 수 없습니다."
-                                    )
-                                  ) {
-                                    handleCompletePurchase();
-                                  }
-                                }}
-                                disabled={loading}
-                              >
-                                <CheckCircle className="w-5 h-5 mr-2" />
-                                {loading ? "확정 중..." : "구매 확정"}
-                              </Button>
+                              <div className="text-center text-sm text-gray-600">
+                                판매자가 거래를 진행할 때까지 기다려주세요
+                              </div>
                             </div>
                           ) : product?.status === "reserved" && isBuyer ? (
                             <div className="w-full h-12 bg-orange-100 border border-orange-300 rounded-xl flex items-center justify-center">
@@ -1229,8 +1313,10 @@ export default function ProductDetailModal({
                                 거래완료
                               </span>
                             </div>
-                          ) : isBuyer ? (
-                            // 구매자일 때는 구매취소 버튼 표시
+                          ) : (product?.status === "escrow_completed" ||
+                              product?.status === "reserved") &&
+                            isBuyer ? (
+                            // 구매자일 때는 구매취소 버튼 표시 (안전결제 완료 또는 거래중 상태에서만)
                             <Button
                               className="w-full h-12 text-lg font-semibold bg-red-600 hover:bg-red-700 text-white"
                               onClick={handleCancelPurchase}
@@ -1246,11 +1332,28 @@ export default function ProductDetailModal({
                               {buyerEscrowEnabled &&
                                 selectedTradeMethod?.includes("택배") && (
                                   <Button
-                                    onClick={() => {
-                                      // 안전거래로 구매
-                                      router.push(
-                                        `/payment?itemId=${product?.id}&escrow=true`
-                                      );
+                                    onClick={async () => {
+                                      // 안전거래로 구매 - 결제창으로 이동
+                                      try {
+                                        setLoading(true);
+
+                                        // 결제창으로 이동
+                                        const paymentUrl = `/payment/${product?.id}?method=escrow&amount=${product?.price}`;
+                                        window.open(paymentUrl, "_blank");
+
+                                        // 모달 닫기
+                                        onClose();
+                                      } catch (error) {
+                                        console.error(
+                                          "결제창 이동 실패:",
+                                          error
+                                        );
+                                        toast.error(
+                                          "결제창 이동 중 오류가 발생했습니다."
+                                        );
+                                      } finally {
+                                        setLoading(false);
+                                      }
                                     }}
                                     className="w-full h-12 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
                                     disabled={loading}

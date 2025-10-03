@@ -29,6 +29,17 @@ export async function POST(req: NextRequest) {
     // 안전결제 완료 상태인 경우 안전결제 취소 API 호출
     if (itemData.status === "escrow_completed") {
       try {
+        // 구매자와 판매자 구분
+        const isBuyer = itemData.buyerUid === userId;
+        const isSeller = itemData.sellerUid === userId;
+
+        if (!isBuyer && !isSeller) {
+          return NextResponse.json(
+            { success: false, error: "권한이 없습니다." },
+            { status: 403 }
+          );
+        }
+
         const escrowCancelResponse = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/payment/cancel-escrow`,
           {
@@ -38,8 +49,11 @@ export async function POST(req: NextRequest) {
             },
             body: JSON.stringify({
               itemId,
-              sellerUid: userId,
-              reason: reason || "판매자 거래 취소",
+              sellerUid: itemData.sellerUid, // 항상 판매자 UID 전송
+              buyerUid: itemData.buyerUid, // 구매자 UID 추가
+              cancelledBy: userId, // 실제 취소한 사용자
+              reason:
+                reason || (isBuyer ? "구매자 거래 취소" : "판매자 거래 취소"),
             }),
           }
         );
@@ -74,6 +88,7 @@ export async function POST(req: NextRequest) {
     await updateDoc(itemRef, {
       status: "active", // '판매중'으로 되돌리기
       buyerId: null, // 구매자 정보 제거
+      buyerUid: null, // buyerUid도 함께 초기화
       transactionCancelledAt: new Date(), // 거래 취소 시간 기록
       cancelledBy: userId, // 취소한 사용자 기록
       updatedAt: new Date(),
