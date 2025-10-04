@@ -62,12 +62,12 @@ export function ItemCard({
     }
 
     if (item.status === "reserved") {
-      alert("거래중인 상품입니다. 이미 다른 구매자와 거래가 진행 중입니다.");
+      alert("거래중인 상품입니다.");
       return;
     }
 
     if (item.status === "escrow_completed") {
-      alert("거래중인 상품입니다. 이미 다른 구매자와 거래가 진행 중입니다.");
+      alert("거래중인 상품입니다.");
       return;
     }
 
@@ -181,12 +181,6 @@ export function ItemCard({
           </div>
         )}
 
-        {/* 판매완료 상태 표시 */}
-        {item.status === "sold" && (
-          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-gray-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold shadow-lg">
-            판매완료
-          </div>
-        )}
 
         {/* 거래중 상태 표시 */}
         {item.status === "reserved" && (
@@ -253,20 +247,10 @@ export function ItemCard({
 
         {/* 거래완료 상태 표시 */}
         {item.status === "sold" && (
-          <div className="w-full h-8 bg-green-100 border border-green-300 rounded-lg flex items-center justify-center mt-2">
-            {item.transactionType === "sold" ? (
-              <>
-                <span className="text-sm font-bold text-green-600">
-                  판매완료
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="text-sm font-bold text-green-600">
-                  구매완료
-                </span>
-              </>
-            )}
+          <div className="w-full h-8 bg-gray-100 border border-gray-300 rounded-lg flex items-center justify-center mt-2">
+            <span className="text-sm font-bold text-gray-600">
+              거래완료
+            </span>
           </div>
         )}
 
