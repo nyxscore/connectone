@@ -41,7 +41,12 @@ import toast from "react-hot-toast";
 import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
 
 export default function MyProfilePage() {
-  const { user: currentUser, isLoading: authLoading, updateUser, refreshUser } = useAuth();
+  const {
+    user: currentUser,
+    isLoading: authLoading,
+    updateUser,
+    refreshUser,
+  } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [myItems, setMyItems] = useState<any[]>([]);

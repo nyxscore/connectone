@@ -143,8 +143,17 @@ export async function deleteAvatar(
       try {
         // Storage URL에서 파일 경로 추출
         const urlParts = photoURL.split("/");
-        const fileName = urlParts[urlParts.length - 1];
-        const storageRef = ref(storage, `avatars/${uid}/${fileName}`);
+        let fileName = urlParts[urlParts.length - 1];
+        
+        // URL 파라미터 제거 (?alt=media&token=...)
+        if (fileName.includes("?")) {
+          fileName = fileName.split("?")[0];
+        }
+        
+        // URL 디코딩 (avatars%2F... -> avatars/...)
+        fileName = decodeURIComponent(fileName);
+        
+        const storageRef = ref(storage, fileName);
         await deleteObject(storageRef);
         console.log("Firebase Storage에서 아바타 삭제 완료:", fileName);
       } catch (storageError) {

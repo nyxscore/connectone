@@ -53,77 +53,41 @@ export const useAuth = () => {
     setUser(prev => (prev ? { ...prev, ...updatedUserData } : null));
   };
 
-  // 사용자 정보 새로고침 함수
-  const refreshUser = async () => {
-    const firebaseUser = auth.currentUser;
-    if (firebaseUser) {
-      await processUser(firebaseUser);
-    }
-  };
+  // processUser 함수를 useEffect 밖으로 이동
+  const processUser = async (firebaseUser: FirebaseUser | null, isMounted: boolean) => {
+    console.log("useAuth: processUser 호출", {
+      firebaseUser: !!firebaseUser,
+    });
+    if (!isMounted) return;
 
-  useEffect(() => {
-    let isMounted = true;
-    console.log("useAuth: 초기화 시작");
+    try {
+      if (firebaseUser) {
+        console.log("useAuth: Firebase 사용자 있음", {
+          uid: firebaseUser.uid,
+        });
+        try {
+          const userData = await getUserProfile(firebaseUser.uid);
 
-    const processUser = async (firebaseUser: FirebaseUser | null) => {
-      console.log("useAuth: processUser 호출", {
-        firebaseUser: !!firebaseUser,
-      });
-      if (!isMounted) return;
+          if (!isMounted) return;
 
-      try {
-        if (firebaseUser) {
-          console.log("useAuth: Firebase 사용자 있음", {
-            uid: firebaseUser.uid,
-          });
-          try {
-            const userData = await getUserProfile(firebaseUser.uid);
-
-            if (!isMounted) return;
-
-            if (userData && userData.success && userData.data) {
-              const user = convertUserProfileToUser(
-                userData.data,
-                firebaseUser
-              );
-              setUser(user);
-            } else {
-              // Firestore에서 사용자 정보를 가져오지 못한 경우, Firebase 사용자 정보로 임시 사용자 생성
-              const tempUser: User = {
-                id: firebaseUser.uid,
-                uid: firebaseUser.uid,
-                email: firebaseUser.email || "",
-                phoneNumber: firebaseUser.phoneNumber || undefined,
-                nickname:
-                  firebaseUser.displayName ||
-                  firebaseUser.email?.split("@")[0] ||
-                  "사용자",
-                region: "서울시 강남구",
-                grade: "C",
-                tradeCount: 0,
-                reviewCount: 0,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                profileImage: firebaseUser.photoURL || undefined,
-                safeTransactionCount: 0,
-                averageRating: 0,
-                disputeCount: 0,
-                isPhoneVerified: false,
-              };
-              setUser(tempUser);
-            }
-          } catch (error) {
-            console.error("사용자 정보 가져오기 실패:", error);
-            if (!isMounted) return;
-
-            // 에러가 발생해도 Firebase 사용자 정보로 임시 사용자 생성
+          if (userData && userData.success && userData.data) {
+            const user = convertUserProfileToUser(
+              userData.data,
+              firebaseUser
+            );
+            setUser(user);
+          } else {
+            // Firestore에서 사용자 정보를 가져오지 못한 경우, Firebase 사용자 정보로 임시 사용자 생성
             const tempUser: User = {
               id: firebaseUser.uid,
               uid: firebaseUser.uid,
               email: firebaseUser.email || "",
               phoneNumber: firebaseUser.phoneNumber || undefined,
-              nickname: firebaseUser.displayName || "사용자",
-              region: "",
+              nickname:
+                firebaseUser.displayName ||
+                firebaseUser.email?.split("@")[0] ||
+                "사용자",
+              region: "서울시 강남구",
               grade: "C",
               tradeCount: 0,
               reviewCount: 0,
@@ -137,23 +101,62 @@ export const useAuth = () => {
             };
             setUser(tempUser);
           }
-        } else {
-          console.log("useAuth: Firebase 사용자 없음");
-          setUser(null);
+        } catch (error) {
+          console.error("사용자 정보 가져오기 실패:", error);
+          if (!isMounted) return;
+
+          // 에러가 발생해도 Firebase 사용자 정보로 임시 사용자 생성
+          const tempUser: User = {
+            id: firebaseUser.uid,
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || "",
+            phoneNumber: firebaseUser.phoneNumber || undefined,
+            nickname: firebaseUser.displayName || "사용자",
+            region: "",
+            grade: "C",
+            tradeCount: 0,
+            reviewCount: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            profileImage: firebaseUser.photoURL || undefined,
+            safeTransactionCount: 0,
+            averageRating: 0,
+            disputeCount: 0,
+            isPhoneVerified: false,
+          };
+          setUser(tempUser);
         }
-      } catch (error) {
-        console.error("useAuth: 인증 상태 처리 실패:", error);
+      } else {
+        console.log("useAuth: Firebase 사용자 없음");
         setUser(null);
-      } finally {
-        if (isMounted) {
-          console.log("useAuth: 로딩 완료");
-          setLoading(false);
-        }
       }
-    };
+    } catch (error) {
+      console.error("useAuth: 인증 상태 처리 실패:", error);
+      setUser(null);
+    } finally {
+      if (isMounted) {
+        console.log("useAuth: 로딩 완료");
+        setLoading(false);
+      }
+    }
+  };
+
+  // 사용자 정보 새로고침 함수
+  const refreshUser = async () => {
+    const firebaseUser = auth.currentUser;
+    if (firebaseUser) {
+      await processUser(firebaseUser, true);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    console.log("useAuth: 초기화 시작");
 
     console.log("useAuth: onAuthStateChanged 구독 시작");
-    const unsubscribe = onAuthStateChanged(auth, processUser);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      processUser(firebaseUser, isMounted);
+    });
 
     return () => {
       isMounted = false;
