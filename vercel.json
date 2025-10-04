@@ -1,12 +1,17 @@
 {
   "framework": "nextjs",
-  "buildCommand": "rm -rf .next && npm run build",
+  "buildCommand": "rm -rf .next node_modules package-lock.json && npm install && npm run build",
   "outputDirectory": ".next",
-  "installCommand": "rm -rf node_modules package-lock.json && npm install",
+  "installCommand": "npm install",
   "devCommand": "next dev",
   "functions": {
     "app/api/**/*.ts": {
       "runtime": "nodejs18.x"
+    }
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_VERCEL_URL": "@vercel-url"
     }
   }
 }

@@ -26,7 +26,6 @@
     "@firebase/storage": "^0.14.0",
     "@google-cloud/vision": "^5.3.3",
     "@hookform/resolvers": "^3.10.0",
-    "@sentry/nextjs": "^10.11.0",
     "@tanstack/react-query": "^5.8.4",
     "@tanstack/react-query-devtools": "^5.8.4",
     "@tosspayments/payment-sdk": "^1.9.1",
