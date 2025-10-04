@@ -1431,15 +1431,15 @@ export function EnhancedChatModal({
 
         {/* 모바일 오버레이 */}
         {showSidebar && (
-          <div 
+          <div
             className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setShowSidebar(false)}
           />
         )}
-        
+
         {/* 사이드바 */}
         {showSidebar && (
-          <div className="w-full md:w-80 bg-gray-50 border-l flex flex-col h-full absolute md:relative right-0 top-0 z-50 md:z-auto">
+          <div className="w-full md:w-80 bg-gray-50 border-l flex flex-col h-full absolute md:relative right-20 md:right-0 top-0 z-50 md:z-auto">
             {/* 사이드바 헤더 */}
             <div className="flex items-center justify-between p-4 border-b bg-white">
               <h3 className="font-semibold text-gray-900">상대방 정보</h3>
