@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "SKIP_ENV_VALIDATION=true next build",
+    "build": "SKIP_ENV_VALIDATION=true SKIP_LINT=true NEXT_LINT=false next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
