@@ -374,8 +374,8 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       filters = {},
     } = options;
 
-    // 상태 필터 처리
-    let statusFilter = ["active", "reserved", "escrow_completed", "sold"]; // 기본값: 모든 거래 가능한 상태
+    // 상태 필터 처리 - 거래중인 상품은 목록에서 제외
+    let statusFilter = ["active", "sold"]; // 기본값: 거래 가능한 상품과 판매완료 상품만
 
     if (filters.status) {
       switch (filters.status) {
@@ -389,7 +389,7 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
           statusFilter = ["sold"]; // 판매완료된 상품만
           break;
         default:
-          statusFilter = ["active", "reserved", "escrow_completed", "sold"]; // 전체
+          statusFilter = ["active", "sold"]; // 거래 가능한 상품과 판매완료 상품만
       }
     }
 
@@ -401,7 +401,7 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       console.log("=== 카테고리 디버깅 시작 ===");
       const allItemsQuery = query(
         collection(db, "items"),
-        where("status", "in", ["active", "reserved", "sold"])
+        where("status", "in", ["active", "sold"])
       );
       const allItemsSnapshot = await getDocs(allItemsQuery);
       console.log("전체 상품 개수:", allItemsSnapshot.size);
