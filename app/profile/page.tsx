@@ -7,6 +7,7 @@ import {
   getUserProfile,
   uploadAvatar,
   updateUserProfile,
+  deleteAvatar,
 } from "../../lib/profile/api";
 import { getUserItems } from "../../lib/api/products";
 import { UserProfile } from "../../data/profile/types";
@@ -129,28 +130,40 @@ export default function MyProfilePage() {
     if (!currentUser) return;
 
     try {
-      // 프로필 업데이트
-      const updateResult = await updateUserProfile(currentUser.uid, {
-        photoURL: photoURL || undefined, // 빈 문자열이면 undefined로 설정
-      });
+      if (photoURL) {
+        // 새 사진 업로드
+        const updateResult = await updateUserProfile(currentUser.uid, {
+          photoURL: photoURL,
+        });
 
-      if (updateResult.success && profile) {
-        setProfile({ ...profile, photoURL: photoURL || undefined });
-        
-        // 헤더의 사용자 정보도 즉시 업데이트
-        updateUser({ profileImage: photoURL || undefined });
-        
-        if (photoURL) {
+        if (updateResult.success && profile) {
+          setProfile({ ...profile, photoURL: photoURL });
+          
+          // 헤더의 사용자 정보도 즉시 업데이트
+          updateUser({ profileImage: photoURL });
+          
           toast.success("아바타가 업데이트되었습니다.");
         } else {
-          toast.success("프로필 사진이 삭제되었습니다.");
+          toast.error(updateResult.error || "아바타 업데이트에 실패했습니다.");
         }
       } else {
-        toast.error(updateResult.error || "아바타 업데이트에 실패했습니다.");
+        // 프로필 사진 삭제
+        const deleteResult = await deleteAvatar(currentUser.uid, profile?.photoURL);
+        
+        if (deleteResult.success && profile) {
+          setProfile({ ...profile, photoURL: undefined });
+          
+          // 헤더의 사용자 정보도 즉시 업데이트
+          updateUser({ profileImage: undefined });
+          
+          toast.success("프로필 사진이 삭제되었습니다.");
+        } else {
+          toast.error(deleteResult.error || "프로필 사진 삭제에 실패했습니다.");
+        }
       }
     } catch (error) {
-      console.error("아바타 업데이트 실패:", error);
-      toast.error("아바타 업데이트 중 오류가 발생했습니다.");
+      console.error("아바타 처리 실패:", error);
+      toast.error("아바타 처리 중 오류가 발생했습니다.");
     }
   };
 

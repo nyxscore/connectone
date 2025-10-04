@@ -50,7 +50,7 @@ export const useAuth = () => {
 
   // 사용자 정보 업데이트 함수
   const updateUser = (updatedUserData: Partial<User>) => {
-    setUser(prev => prev ? { ...prev, ...updatedUserData } : null);
+    setUser(prev => (prev ? { ...prev, ...updatedUserData } : null));
   };
 
   useEffect(() => {

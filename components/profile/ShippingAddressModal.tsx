@@ -235,7 +235,7 @@ export default function ShippingAddressModal({
           toast.success("배송지가 추가되었습니다.");
           loadAddresses();
           handleCancelEdit();
-          
+
           // 새로 추가된 배송지를 반환
           const newAddress: ShippingAddress = {
             ...addressData,

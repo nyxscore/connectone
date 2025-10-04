@@ -2,7 +2,7 @@
 
 import { Card } from "../ui/Card";
 import { UserProfile } from "../../data/profile/types";
-import { getGradeInfo, uploadAvatar } from "../../lib/profile/api";
+import { getGradeInfo, uploadAvatar, deleteAvatar } from "../../lib/profile/api";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import {
@@ -92,11 +92,24 @@ export function ProfileStats({
     setShowMenu(false);
   };
 
-  const handleAvatarDelete = () => {
-    if (onAvatarUpdate) {
-      onAvatarUpdate("");
-      toast.success("프로필 사진이 삭제되었습니다.");
+  const handleAvatarDelete = async () => {
+    if (!onAvatarUpdate) return;
+    
+    try {
+      // 실제 Firebase Storage와 Firestore에서 삭제
+      const result = await deleteAvatar(user.uid, user.photoURL);
+      
+      if (result.success) {
+        onAvatarUpdate(""); // UI 업데이트
+        toast.success("프로필 사진이 삭제되었습니다.");
+      } else {
+        toast.error(result.error || "프로필 사진 삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("프로필 사진 삭제 실패:", error);
+      toast.error("프로필 사진 삭제 중 오류가 발생했습니다.");
     }
+    
     setShowMenu(false);
   };
 

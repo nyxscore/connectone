@@ -10,7 +10,7 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { db, storage } from "../api/firebase";
 import {
   UserProfile,
@@ -124,6 +124,41 @@ export async function uploadAvatar(
   } catch (error) {
     console.error("아바타 업로드 실패:", error);
     return { success: false, error: "아바타 업로드에 실패했습니다." };
+  }
+}
+
+// 아바타 이미지 삭제
+export async function deleteAvatar(
+  uid: string,
+  photoURL?: string
+): Promise<ApiResponse<void>> {
+  try {
+    // Firebase Storage에서 이미지 삭제
+    if (photoURL) {
+      try {
+        // Storage URL에서 파일 경로 추출
+        const urlParts = photoURL.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const storageRef = ref(storage, `avatars/${uid}/${fileName}`);
+        await deleteObject(storageRef);
+        console.log("Firebase Storage에서 아바타 삭제 완료:", fileName);
+      } catch (storageError) {
+        console.warn("Firebase Storage에서 아바타 삭제 실패 (무시됨):", storageError);
+        // Storage 삭제 실패해도 Firestore 업데이트는 진행
+      }
+    }
+
+    // Firestore에서 photoURL 필드 삭제
+    const userRef = doc(db, "users", uid);
+    await updateDoc(userRef, {
+      photoURL: null,
+      updatedAt: serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("아바타 삭제 실패:", error);
+    return { success: false, error: "아바타 삭제에 실패했습니다." };
   }
 }
 
