@@ -126,62 +126,62 @@ export function EnhancedChatModal({
   const [expandedShippingAddresses, setExpandedShippingAddresses] = useState<
     Set<string>
   >(new Set());
-  const [statusNotifications, setStatusNotifications] = useState<
-    Array<{
-      id: string;
-      status: string;
-      message: string;
-      timestamp: Date;
-      type: "escrow_completed" | "reserved" | "shipping" | "sold";
-    }>
-  >([]);
 
-  // 상태 변경 알림 추가 함수
-  const addStatusNotification = (
+  // 상태 변경 시 시스템 메시지로 알림 추가
+  const addStatusSystemMessage = async (
     type: "escrow_completed" | "reserved" | "shipping" | "sold"
   ) => {
-    console.log(`🔔 addStatusNotification 호출됨: ${type}`);
-    
+    console.log(`🔔 addStatusSystemMessage 호출됨: ${type}`);
+
     const notifications = {
       escrow_completed: {
         message:
           "🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다.",
-        status: "안전결제 완료",
       },
       reserved: {
         message:
           "🚀 거래가 시작되었습니다! 판매자가 거래를 진행하기 시작했습니다.",
-        status: "거래 진행 시작",
       },
       shipping: {
         message: "📦 상품이 발송되었습니다! 판매자가 상품을 발송했습니다.",
-        status: "배송 시작",
       },
       sold: {
         message: "🎊 거래가 완료되었습니다! 구매자가 상품 수령을 확인했습니다.",
-        status: "거래 완료",
       },
     };
 
-    const notification = {
-      id: `${type}_${Date.now()}`,
-      status: notifications[type].status,
-      message: notifications[type].message,
-      timestamp: new Date(),
-      type,
-    };
+    if (!chatData?.chatId) {
+      console.error("채팅 ID가 없어서 시스템 메시지를 추가할 수 없습니다.");
+      return;
+    }
 
-    console.log('🔔 알림 객체 생성:', notification);
+    // 이미 해당 시스템 메시지가 있는지 확인
+    const existingMessage = messages.find(
+      msg => msg.senderUid === "system" && msg.content === notifications[type].message
+    );
+    
+    if (existingMessage) {
+      console.log("⚠️ 해당 시스템 메시지가 이미 존재합니다:", type);
+      return;
+    }
 
-    setStatusNotifications(prev => {
-      const newNotifications = [...prev, notification];
-      console.log('🔔 알림 상태 업데이트:', {
-        기존: prev.length,
-        새로: newNotifications.length,
-        전체: newNotifications
+    try {
+      // 시스템 메시지를 채팅에 추가
+      const { addMessage } = await import("../../lib/chat/api");
+      const result = await addMessage({
+        chatId: chatData.chatId,
+        senderUid: "system",
+        content: notifications[type].message,
       });
-      return newNotifications;
-    });
+
+      if (result.success) {
+        console.log("✅ 시스템 메시지 추가 성공:", type);
+      } else {
+        console.error("❌ 시스템 메시지 추가 실패:", result.error);
+      }
+    } catch (error) {
+      console.error("❌ 시스템 메시지 추가 중 오류:", error);
+    }
   };
 
   // 배송지 메시지 렌더링 함수
@@ -305,37 +305,35 @@ export function EnhancedChatModal({
   useEffect(() => {
     if (chatData?.item?.status && user) {
       const currentStatus = chatData.item.status;
-      
-      console.log('🔔 알림 초기화 시작:', {
+
+      console.log("🔔 알림 초기화 시작:", {
         currentStatus,
         userId: user.uid,
         isBuyer: user.uid === chatData.buyerUid,
-        isSeller: user.uid === chatData.sellerUid
+        isSeller: user.uid === chatData.sellerUid,
       });
-      
-      // 기존 알림 초기화
-      setStatusNotifications([]);
-      
-      // 현재 상태에 맞는 알림들 추가
-      if (currentStatus === 'escrow_completed') {
-        console.log('✅ escrow_completed 알림 추가');
-        addStatusNotification('escrow_completed');
-      } else if (currentStatus === 'reserved') {
-        console.log('✅ escrow_completed + reserved 알림 추가');
-        addStatusNotification('escrow_completed');
-        addStatusNotification('reserved');
-      } else if (currentStatus === 'shipping') {
-        console.log('✅ escrow_completed + reserved + shipping 알림 추가');
-        addStatusNotification('escrow_completed');
-        addStatusNotification('reserved');
-        addStatusNotification('shipping');
-      } else if (currentStatus === 'sold') {
-        console.log('✅ 모든 알림 추가');
-        addStatusNotification('escrow_completed');
-        addStatusNotification('reserved');
-        addStatusNotification('shipping');
-        addStatusNotification('sold');
-      }
+
+
+        // 현재 상태에 맞는 알림들 추가 (시스템 메시지로)
+        if (currentStatus === "escrow_completed") {
+          console.log("✅ escrow_completed 시스템 메시지 추가");
+          addStatusSystemMessage("escrow_completed");
+        } else if (currentStatus === "reserved") {
+          console.log("✅ escrow_completed + reserved 시스템 메시지 추가");
+          addStatusSystemMessage("escrow_completed");
+          addStatusSystemMessage("reserved");
+        } else if (currentStatus === "shipping") {
+          console.log("✅ escrow_completed + reserved + shipping 시스템 메시지 추가");
+          addStatusSystemMessage("escrow_completed");
+          addStatusSystemMessage("reserved");
+          addStatusSystemMessage("shipping");
+        } else if (currentStatus === "sold") {
+          console.log("✅ 모든 시스템 메시지 추가");
+          addStatusSystemMessage("escrow_completed");
+          addStatusSystemMessage("reserved");
+          addStatusSystemMessage("shipping");
+          addStatusSystemMessage("sold");
+        }
     }
   }, [chatData?.item?.status, user?.uid]);
 
@@ -964,7 +962,7 @@ export function EnhancedChatModal({
         );
 
         // 거래 시작 알림 추가
-        addStatusNotification("reserved");
+        addStatusSystemMessage("reserved");
       } else {
         toast.error(result.error || "거래 시작에 실패했습니다.");
       }
@@ -1177,7 +1175,7 @@ export function EnhancedChatModal({
         );
 
         // 배송 시작 알림 추가
-        addStatusNotification("shipping");
+        addStatusSystemMessage("shipping");
 
         // 송장 등록 모달 닫기
         setShowShippingModal(false);
@@ -1233,7 +1231,7 @@ export function EnhancedChatModal({
           );
 
           // 거래 완료 알림 추가
-          addStatusNotification("sold");
+          addStatusSystemMessage("sold");
         } else {
           toast.error(result.error || "구매 완료에 실패했습니다.");
         }
@@ -1428,91 +1426,6 @@ export function EnhancedChatModal({
               </div>
             ) : (
               <>
-                {/* 거래 상태 변경 알림들 (누적 표시) */}
-                {console.log('🔔 알림 렌더링:', statusNotifications.length, statusNotifications)}
-                {statusNotifications.map(notification => (
-                  <div key={notification.id} className="mb-4">
-                    <div
-                      className={`border rounded-lg p-4 ${
-                        notification.type === "escrow_completed"
-                          ? "bg-green-50 border-green-200"
-                          : notification.type === "reserved"
-                            ? "bg-orange-50 border-orange-200"
-                            : notification.type === "shipping"
-                              ? "bg-blue-50 border-blue-200"
-                              : "bg-green-50 border-green-200"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          {notification.type === "escrow_completed" && (
-                            <CheckCircle className="w-6 h-6 text-green-600" />
-                          )}
-                          {notification.type === "reserved" && (
-                            <Clock className="w-6 h-6 text-orange-600" />
-                          )}
-                          {notification.type === "shipping" && (
-                            <Truck className="w-6 h-6 text-blue-600" />
-                          )}
-                          {notification.type === "sold" && (
-                            <CheckCircle className="w-6 h-6 text-green-600" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4
-                              className={`text-sm font-semibold mb-1 ${
-                                notification.type === "escrow_completed"
-                                  ? "text-green-800"
-                                  : notification.type === "reserved"
-                                    ? "text-orange-800"
-                                    : notification.type === "shipping"
-                                      ? "text-blue-800"
-                                      : "text-green-800"
-                              }`}
-                            >
-                              {notification.status}
-                            </h4>
-                            <span className="text-xs text-gray-500">
-                              {notification.timestamp.toLocaleTimeString(
-                                "ko-KR",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </span>
-                          </div>
-                          <p
-                            className={`text-sm ${
-                              notification.type === "escrow_completed"
-                                ? "text-green-700"
-                                : notification.type === "reserved"
-                                  ? "text-orange-700"
-                                  : notification.type === "shipping"
-                                    ? "text-blue-700"
-                                    : "text-green-700"
-                            }`}
-                          >
-                            {notification.message}
-                          </p>
-                          {notification.type === "shipping" &&
-                            chatData?.item?.shippingInfo && (
-                              <div className="mt-2 text-xs text-blue-600">
-                                🚚 택배사:{" "}
-                                {getCourierName(
-                                  chatData.item.shippingInfo.courier
-                                )}{" "}
-                                | 송장번호:{" "}
-                                {chatData.item.shippingInfo.trackingNumber}
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
                 {messages.map((message, index) => {
                   const isOwn = message.senderUid === user?.uid;
 
