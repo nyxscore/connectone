@@ -61,14 +61,15 @@ export function ItemCard({
       return;
     }
 
-    if (item.status === "reserved") {
-      alert("거래중인 상품입니다.");
-      return;
-    }
-
-    if (item.status === "escrow_completed") {
-      alert("거래중인 상품입니다.");
-      return;
+    // 거래중인 상품인 경우, 구매자나 판매자만 접근 허용
+    if (item.status === "reserved" || item.status === "escrow_completed") {
+      const isSeller = currentUserId && currentUserId === item.sellerUid;
+      const isBuyer = currentUserId && currentUserId === item.buyerUid;
+      
+      if (!isSeller && !isBuyer) {
+        alert("거래중인 상품입니다.");
+        return;
+      }
     }
 
     if (onClick) {
@@ -137,7 +138,8 @@ export function ItemCard({
   };
 
   const isSold = item.status === "sold";
-  const isReserved = item.status === "reserved";
+  const isReserved = (item.status === "reserved" || item.status === "escrow_completed") && 
+                     currentUserId && currentUserId !== item.sellerUid && currentUserId !== item.buyerUid;
 
   return (
     <Card
@@ -150,7 +152,7 @@ export function ItemCard({
               ? "cursor-pointer hover:shadow-lg hover:bg-blue-50 transition-all"
               : "cursor-pointer"
       }`}
-      onClick={isSold || isReserved ? undefined : handleClick}
+      onClick={isSold || (isReserved && !isBuyer && currentUserId !== item.sellerUid) ? undefined : handleClick}
     >
       {/* 썸네일 */}
       <div

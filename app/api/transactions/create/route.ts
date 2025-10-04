@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
           const { getOrCreateChat, addMessage } = await import(
             "../../../../lib/chat/api"
           );
-          
+
           // 채팅방 찾기 또는 생성
           const chatResult = await getOrCreateChat({
             itemId: productId,
@@ -146,13 +146,17 @@ export async function POST(request: NextRequest) {
             const systemMessageResult = await addMessage({
               chatId: chatResult.chatId,
               senderUid: "system",
-              content: "🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다.",
+              content:
+                "🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다.",
             });
 
             if (systemMessageResult.success) {
               console.log("✅ 결제 완료 시스템 메시지 추가 성공");
             } else {
-              console.error("❌ 결제 완료 시스템 메시지 추가 실패:", systemMessageResult.error);
+              console.error(
+                "❌ 결제 완료 시스템 메시지 추가 실패:",
+                systemMessageResult.error
+              );
             }
           } else {
             console.error("❌ 채팅방 찾기/생성 실패:", chatResult.error);
