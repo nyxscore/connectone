@@ -1917,39 +1917,22 @@ export function EnhancedChatModal({
                       </>
                     )}
 
-                    {/* 거래중 상태에서의 버튼들 */}
+                    {/* 거래중 상태 - 구매자는 거래 진행 상태만 확인 */}
                     {chatData.item.status === "reserved" &&
                       !chatData.item.transactionCancelledAt && (
-                        <>
-                          {/* 구매 완료 버튼 */}
-                          <Button
-                            onClick={handleCompletePurchase}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
-                            disabled={isCompletingPurchase}
-                          >
-                            {isCompletingPurchase ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                완료 처리 중...
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                구매 완료
-                              </>
-                            )}
-                          </Button>
-
-                          {/* 구매 취소 요청 버튼 */}
-                          <Button
-                            onClick={() => setShowCancelModal(true)}
-                            variant="outline"
-                            className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 h-10"
-                          >
-                            <X className="w-4 h-4 mr-2" />
-                            구매 취소 요청
-                          </Button>
-                        </>
+                        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Clock className="w-5 h-5 text-orange-600" />
+                            <span className="text-lg font-bold text-orange-600">
+                              거래 진행중
+                            </span>
+                          </div>
+                          <p className="text-sm text-orange-700">
+                            판매자가 거래를 진행하고 있습니다.
+                            <br />
+                            배송 정보가 업데이트되면 알려드리겠습니다.
+                          </p>
+                        </div>
                       )}
                   </div>
                 )}
