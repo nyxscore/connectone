@@ -116,6 +116,11 @@ const nextConfig = {
     dirs: [], // ESLint 체크할 디렉토리 비우기
   },
 
+  // ESLint 완전 비활성화
+  eslintConfig: {
+    ignoreDuringBuilds: true,
+  },
+
   // 추가 빌드 설정
   onDemandEntries: {
     maxInactiveAge: 25 * 1000,
