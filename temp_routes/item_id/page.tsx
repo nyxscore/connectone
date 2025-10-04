@@ -547,6 +547,9 @@ export default function ItemDetailPage() {
                 | "sold"
             }
             statusLog={[]}
+            shippingInfo={item.shippingInfo}
+            currentUserId={user?.uid}
+            buyerUid={item.buyerUid}
           />
         </div>
       </div>

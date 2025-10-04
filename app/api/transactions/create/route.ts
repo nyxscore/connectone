@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// Static export configuration
-export const dynamic = "force-static";
 import {
   collection,
   addDoc,
@@ -115,7 +112,7 @@ export async function POST(request: NextRequest) {
       try {
         // 판매자에게 결제 완료 알림만 전송
         const { notificationTrigger } = await import(
-          "../../../lib/notifications/trigger"
+          "../../../../lib/notifications/trigger"
         );
         const [sellerProfile, itemResult] = await Promise.all([
           getUserProfile(product.sellerUid),

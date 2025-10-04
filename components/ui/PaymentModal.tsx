@@ -14,6 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Product } from "../../data/types";
+import { useAuth } from "../../lib/hooks/useAuth";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export function PaymentModal({
   product,
   onPaymentSuccess,
 }: PaymentModalProps) {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<PaymentStep>("info");
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [cardNumber, setCardNumber] = useState("");
@@ -42,6 +44,12 @@ export function PaymentModal({
   if (!isOpen) return null;
 
   const handlePayment = async () => {
+    if (!user) {
+      setError("로그인이 필요합니다.");
+      setCurrentStep("error");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setCurrentStep("processing");
@@ -60,6 +68,8 @@ export function PaymentModal({
           productId: product.id,
           amount: product.price,
           paymentMethod,
+          buyerId: user.uid, // 현재 사용자 ID 추가
+          isEscrow: true, // 안전결제 플래그 추가
         }),
       });
 
@@ -73,6 +83,7 @@ export function PaymentModal({
         setCurrentStep("error");
       }
     } catch (err) {
+      console.error("결제 처리 중 오류:", err);
       setError("결제 처리 중 오류가 발생했습니다.");
       setCurrentStep("error");
     } finally {

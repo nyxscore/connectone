@@ -1516,7 +1516,8 @@ export function EnhancedChatModal({
                   )}
 
                   {/* 거래중 상태 - 택배 발송 정보 입력 */}
-                  {chatData.item.status === "reserved" && (
+                  {(chatData.item.status === "reserved" ||
+                    chatData.item.status === "escrow_completed") && (
                     <div className="space-y-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                       <div className="flex items-center space-x-2">
                         <Clock className="w-5 h-5 text-orange-600" />
@@ -1657,9 +1658,10 @@ export function EnhancedChatModal({
                       )}
 
                       {/* 송장번호 정보 */}
-                      {/* 배송 정보 (택배사, 송장번호) - 판매자가 입력한 정보 */}
-                      {chatData?.item?.status === "shipping" &&
-                      chatData?.item?.shippingInfo ? (
+                      {/* 배송 정보 (택배사, 송장번호) - 구매자와 판매자 모두에게 표시 */}
+                      {chatData?.item?.shippingInfo &&
+                      (user?.uid === chatData?.buyerUid ||
+                        user?.uid === chatData?.sellerUid) ? (
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                           <h4 className="text-sm font-medium text-gray-700 mb-2">
                             배송 정보
@@ -1730,9 +1732,26 @@ export function EnhancedChatModal({
                                   : "정보 없음"}
                               </span>
                             </div>
+                            {chatData.item.shippingInfo.deliveredAt && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">
+                                  배송완료:
+                                </span>
+                                <span className="text-sm font-medium text-green-600">
+                                  {new Date(
+                                    chatData.item.shippingInfo.deliveredAt
+                                      .seconds * 1000
+                                  ).toLocaleDateString("ko-KR")}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      ) : (
+                      ) : (chatData?.item?.status === "shipping" ||
+                          chatData?.item?.status === "escrow_completed") &&
+                        (user?.uid === chatData?.buyerUid ||
+                          user?.uid === chatData?.sellerUid) &&
+                        !chatData?.item?.shippingInfo ? (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                           <div className="flex items-center space-x-2">
                             <AlertCircle className="w-5 h-5 text-yellow-600" />
@@ -1775,38 +1794,7 @@ export function EnhancedChatModal({
                             배송정보 새로고침
                           </Button>
                         </div>
-                      )}
-
-                      {/* 구매자용 구매 확정 버튼 */}
-                      {user &&
-                        chatData &&
-                        user.uid === chatData.otherUser.uid && (
-                          <Button
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  "상품을 수령하셨나요?\n구매 확정 후에는 취소할 수 없습니다."
-                                )
-                              ) {
-                                handleCompletePurchase();
-                              }
-                            }}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white h-10"
-                            disabled={isCompletingPurchase}
-                          >
-                            {isCompletingPurchase ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                확정 중...
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                구매 확정
-                              </>
-                            )}
-                          </Button>
-                        )}
+                      ) : null}
                     </div>
                   )}
 
@@ -2159,23 +2147,119 @@ export function EnhancedChatModal({
 
                     {/* 배송중 */}
                     <div
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                      className={`p-3 rounded-lg border-2 ${
                         chatData?.item?.status === "shipping"
                           ? "bg-blue-50 border-blue-300 text-blue-800"
                           : "bg-gray-50 border-gray-200 text-gray-600"
                       }`}
                     >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">배송중</span>
-                        {chatData?.item?.status === "shipping" && (
-                          <span className="text-blue-600">✅</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium">배송중</span>
+                          {chatData?.item?.status === "shipping" && (
+                            <span className="text-blue-600">✅</span>
+                          )}
+                        </div>
+                        {chatData?.item?.status === "shipping" ? (
+                          <Truck className="w-5 h-5 text-blue-600" />
+                        ) : (
+                          <Truck className="w-5 h-5 text-gray-400" />
                         )}
                       </div>
-                      {chatData?.item?.status === "shipping" ? (
-                        <Truck className="w-5 h-5 text-blue-600" />
-                      ) : (
-                        <Truck className="w-5 h-5 text-gray-400" />
-                      )}
+
+                      {/* 배송 정보 - 구매자와 판매자 모두에게 표시 */}
+                      {chatData?.item?.status === "shipping" &&
+                        chatData?.item?.shippingInfo &&
+                        (user?.uid === chatData?.buyerUid ||
+                          user?.uid === chatData?.sellerUid) && (
+                          <div className="mt-3 pt-3 border-t border-blue-200">
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-blue-700">
+                                  택배사:
+                                </span>
+                                <span className="text-xs font-medium text-blue-900">
+                                  {(() => {
+                                    const courierMap: {
+                                      [key: string]: string;
+                                    } = {
+                                      cj: "CJ대한통운",
+                                      hanjin: "한진택배",
+                                      lotte: "롯데택배",
+                                      kdexp: "경동택배",
+                                      epost: "우체국택배",
+                                      logen: "로젠택배",
+                                      dongbu: "동부택배",
+                                      kg: "KG로지스",
+                                      kgm: "KGB택배",
+                                      inno: "이노지스",
+                                      slx: "SLX택배",
+                                      fedex: "FedEx",
+                                      ups: "UPS",
+                                      dhl: "DHL",
+                                      other: "기타",
+                                    };
+                                    return (
+                                      courierMap[
+                                        chatData.item.shippingInfo.courier
+                                      ] || chatData.item.shippingInfo.courier
+                                    );
+                                  })()}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-blue-700">
+                                  송장번호:
+                                </span>
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-xs font-mono font-medium text-blue-900">
+                                    {chatData.item.shippingInfo.trackingNumber}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(
+                                        chatData.item.shippingInfo
+                                          .trackingNumber
+                                      );
+                                      toast.success(
+                                        "송장번호가 복사되었습니다."
+                                      );
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800 text-xs px-1 py-0.5 border border-blue-300 rounded hover:bg-blue-100"
+                                  >
+                                    복사
+                                  </button>
+                                </div>
+                              </div>
+                              {chatData.item.shippingInfo.shippedAt && (
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-blue-700">
+                                    발송일:
+                                  </span>
+                                  <span className="text-xs font-medium text-blue-900">
+                                    {new Date(
+                                      chatData.item.shippingInfo.shippedAt
+                                        .seconds * 1000
+                                    ).toLocaleDateString("ko-KR")}
+                                  </span>
+                                </div>
+                              )}
+                              {chatData.item.shippingInfo.deliveredAt && (
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-green-700">
+                                    배송완료:
+                                  </span>
+                                  <span className="text-xs font-medium text-green-900">
+                                    {new Date(
+                                      chatData.item.shippingInfo.deliveredAt
+                                        .seconds * 1000
+                                    ).toLocaleDateString("ko-KR")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                     </div>
 
                     {/* 판매완료 */}
@@ -2198,6 +2282,40 @@ export function EnhancedChatModal({
                         <CheckCircle className="w-5 h-5 text-gray-400" />
                       )}
                     </div>
+
+                    {/* 구매확정 버튼 - 구매자에게만 표시 (채팅창 사이드바) */}
+                    {user &&
+                      chatData &&
+                      user.uid === chatData.buyerUid &&
+                      chatData.item.status === "shipping" && (
+                        <div className="mt-4">
+                          <Button
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  "상품을 수령하셨나요?\n구매 확정 후에는 취소할 수 없습니다."
+                                )
+                              ) {
+                                handleCompletePurchase();
+                              }
+                            }}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white h-10"
+                            disabled={isCompletingPurchase}
+                          >
+                            {isCompletingPurchase ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                확정 중...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                구매 확정
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
@@ -2215,14 +2333,17 @@ export function EnhancedChatModal({
         )}
 
         {/* 배송조회 모달 */}
-        {showShippingTrackingModal && chatData?.item?.shippingInfo && (
-          <ShippingTrackingModal
-            isOpen={showShippingTrackingModal}
-            onClose={() => setShowShippingTrackingModal(false)}
-            courier={chatData.item.shippingInfo.courier}
-            trackingNumber={chatData.item.shippingInfo.trackingNumber}
-          />
-        )}
+        {showShippingTrackingModal &&
+          chatData?.item?.shippingInfo &&
+          (user?.uid === chatData?.buyerUid ||
+            user?.uid === chatData?.sellerUid) && (
+            <ShippingTrackingModal
+              isOpen={showShippingTrackingModal}
+              onClose={() => setShowShippingTrackingModal(false)}
+              courier={chatData.item.shippingInfo.courier}
+              trackingNumber={chatData.item.shippingInfo.trackingNumber}
+            />
+          )}
 
         {/* 구매자 배송지 정보 입력 모달 */}
         {showBuyerShippingInfoModal && chatData?.item?.id && user && (

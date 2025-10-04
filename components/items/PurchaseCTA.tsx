@@ -76,7 +76,10 @@ export function PurchaseCTA({
   }, [showStatusDropdown]);
 
   const handlePurchase = () => {
-    if (onPurchase) {
+    if (escrowEnabled && itemId) {
+      // 안전결제인 경우 결제 페이지로 이동
+      router.push(`/payment?itemId=${itemId}&escrow=true`);
+    } else if (onPurchase) {
       onPurchase();
     } else {
       // 기본 핸들러 - 실제 구현에서는 결제 로직으로 연결

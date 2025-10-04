@@ -1338,7 +1338,7 @@ export default function ProductDetailModal({
                                         setLoading(true);
 
                                         // 결제창으로 이동
-                                        const paymentUrl = `/payment/${product?.id}?method=escrow&amount=${product?.price}`;
+                                        const paymentUrl = `/payment?itemId=${product?.id}&escrow=true`;
                                         window.open(paymentUrl, "_blank");
 
                                         // 모달 닫기

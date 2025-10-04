@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "../ui/Card";
+import { Button } from "../ui/Button";
 import {
   CheckCircle,
   Clock,
@@ -8,9 +10,14 @@ import {
   Package,
   Truck,
   CreditCard,
+  ExternalLink,
+  Copy,
+  Eye,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import { ShippingTrackingModal } from "../shipping/ShippingTrackingModal";
+import toast from "react-hot-toast";
 
 interface StatusLog {
   status: string;
@@ -18,17 +25,52 @@ interface StatusLog {
   note?: string;
 }
 
+interface ShippingInfo {
+  courier: string;
+  trackingNumber: string;
+}
+
 interface StatusTimelineProps {
   status: "active" | "reserved" | "paid_hold" | "shipped" | "sold";
   statusLog?: StatusLog[];
+  shippingInfo?: ShippingInfo;
   className?: string;
+  currentUserId?: string;
+  buyerUid?: string;
 }
 
 export function StatusTimeline({
   status,
   statusLog = [],
+  shippingInfo,
   className = "",
+  currentUserId,
+  buyerUid,
 }: StatusTimelineProps) {
+  const [showShippingTrackingModal, setShowShippingTrackingModal] =
+    useState(false);
+
+  // 택배사 코드를 한글 이름으로 변환
+  const getCourierName = (courierCode: string) => {
+    const courierMap: { [key: string]: string } = {
+      cj: "CJ대한통운",
+      hanjin: "한진택배",
+      lotte: "롯데택배",
+      kdexp: "경동택배",
+      epost: "우체국택배",
+      logen: "로젠택배",
+      ktx: "KTX물류",
+      dhl: "DHL",
+      fedex: "FedEx",
+      ups: "UPS",
+      ems: "EMS",
+      cvs: "편의점택배",
+    };
+    return courierMap[courierCode] || courierCode;
+  };
+
+  // 구매자인지 확인
+  const isBuyer = currentUserId && buyerUid && currentUserId === buyerUid;
   const getStatusInfo = (status: string) => {
     switch (status) {
       case "active":
@@ -178,13 +220,79 @@ export function StatusTimeline({
 
         {/* 추가 정보 */}
         {status === "shipped" && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Truck className="w-4 h-4 text-blue-600" />
-              <p className="text-sm text-blue-800">
-                배송 추적 정보는 구매자에게 개별적으로 안내됩니다.
-              </p>
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center space-x-2 mb-3">
+              <Truck className="w-5 h-5 text-blue-600" />
+              <p className="text-sm font-medium text-blue-800">배송 정보</p>
             </div>
+
+            {shippingInfo && isBuyer ? (
+              <div className="space-y-3">
+                {/* 택배사 및 송장번호 정보 */}
+                <div className="bg-white rounded-lg p-3 border border-blue-100">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-600">택배사:</span>
+                      <p className="font-medium text-gray-900">
+                        {getCourierName(shippingInfo.courier)}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">송장번호:</span>
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium text-gray-900 font-mono">
+                          {shippingInfo.trackingNumber}
+                        </p>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              shippingInfo.trackingNumber
+                            );
+                            toast.success("송장번호가 복사되었습니다.");
+                          }}
+                          className="text-blue-600 hover:text-blue-800 p-1"
+                          title="송장번호 복사"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 배송 추적 버튼 */}
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => setShowShippingTrackingModal(true)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    배송 추적하기
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const url = `https://tracker.delivery/#/${shippingInfo.courier}/${shippingInfo.trackingNumber}`;
+                      window.open(url, "_blank");
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    공식사이트
+                  </Button>
+                </div>
+              </div>
+            ) : shippingInfo ? (
+              <div className="text-sm text-blue-700">
+                배송이 시작되었습니다. 구매자에게 배송 정보가 안내됩니다.
+              </div>
+            ) : (
+              <div className="text-sm text-blue-700">
+                배송 추적 정보는 구매자에게 개별적으로 안내됩니다.
+              </div>
+            )}
           </div>
         )}
 
@@ -199,6 +307,16 @@ export function StatusTimeline({
           </div>
         )}
       </div>
+
+      {/* 배송 추적 모달 */}
+      {shippingInfo && (
+        <ShippingTrackingModal
+          isOpen={showShippingTrackingModal}
+          onClose={() => setShowShippingTrackingModal(false)}
+          courier={shippingInfo.courier}
+          trackingNumber={shippingInfo.trackingNumber}
+        />
+      )}
     </Card>
   );
 }

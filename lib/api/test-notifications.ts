@@ -38,3 +38,5 @@ export async function createTestProductSoldNotification(userId: string) {
     amount: 100000,
   });
 }
+
+

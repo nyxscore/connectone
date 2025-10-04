@@ -3,7 +3,7 @@
 import { Card } from "../ui/Card";
 import { SellItem } from "../../data/types";
 import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
-import { MapPin, Calendar, Brain, Clock } from "lucide-react";
+import { MapPin, Calendar, Brain, Clock, Truck, Package } from "lucide-react";
 import { WatermarkImage } from "../ui/WatermarkImage";
 // date-fns 제거 - 성능 최적화
 import { useRouter } from "next/navigation";
@@ -12,14 +12,40 @@ interface ItemCardProps {
   item: SellItem;
   onClick?: (item: SellItem) => void;
   isTradingTab?: boolean;
+  currentUserId?: string;
+  buyerUid?: string;
 }
 
 export function ItemCard({
   item,
   onClick,
   isTradingTab = false,
+  currentUserId,
+  buyerUid,
 }: ItemCardProps) {
   const router = useRouter();
+
+  // 구매자인지 확인
+  const isBuyer = currentUserId && buyerUid && currentUserId === buyerUid;
+
+  // 택배사 코드를 한글 이름으로 변환
+  const getCourierName = (courierCode: string) => {
+    const courierMap: { [key: string]: string } = {
+      cj: "CJ대한통운",
+      hanjin: "한진택배",
+      lotte: "롯데택배",
+      kdexp: "경동택배",
+      epost: "우체국택배",
+      logen: "로젠택배",
+      ktx: "KTX물류",
+      dhl: "DHL",
+      fedex: "FedEx",
+      ups: "UPS",
+      ems: "EMS",
+      cvs: "편의점택배",
+    };
+    return courierMap[courierCode] || courierCode;
+  };
 
   const handleClick = () => {
     if (item.status === "sold") {
@@ -154,6 +180,24 @@ export function ItemCard({
           {formatPrice(item.price)}
         </div>
 
+        {/* 배송 정보 표시 (구매자에게만) */}
+        {item.status === "shipping" && item.shippingInfo && isBuyer && (
+          <div className="mb-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center space-x-1 mb-1">
+              <Truck className="w-3 h-3 text-blue-600" />
+              <span className="text-xs font-medium text-blue-800">배송중</span>
+            </div>
+            <div className="text-xs text-blue-700">
+              <div className="flex items-center justify-between">
+                <span>{getCourierName(item.shippingInfo.courier)}</span>
+                <span className="font-mono">
+                  {item.shippingInfo.trackingNumber}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center text-xs text-gray-600 space-x-1 sm:space-x-2">
           <span className="flex items-center min-w-0">
             <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
@@ -179,6 +223,25 @@ export function ItemCard({
           </div>
         )}
 
+        {/* 거래완료 상태 표시 */}
+        {item.status === "sold" && (
+          <div className="w-full h-8 bg-green-100 border border-green-300 rounded-lg flex items-center justify-center mt-2">
+            {item.transactionType === "sold" ? (
+              <>
+                <span className="text-sm font-bold text-green-600">
+                  판매완료
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm font-bold text-green-600">
+                  구매완료
+                </span>
+              </>
+            )}
+          </div>
+        )}
+
         {/* 판매방법 표시 - 모든 거래 방식 표시 */}
         {item.shippingTypes && item.shippingTypes.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1 sm:mt-2">
@@ -190,15 +253,6 @@ export function ItemCard({
                 {getShippingTypeLabel(type)}
               </span>
             ))}
-          </div>
-        )}
-
-        {/* 거래중 탭일 때 채팅 안내 */}
-        {isTradingTab && !isSold && (
-          <div className="pt-2 border-t border-gray-100 text-center">
-            <span className="text-xs text-blue-600 font-medium">
-              💬 클릭하여 채팅하기
-            </span>
           </div>
         )}
       </div>
