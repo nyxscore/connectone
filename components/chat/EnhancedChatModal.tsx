@@ -1350,6 +1350,79 @@ export function EnhancedChatModal({
                   </div>
                 )}
 
+                {/* 거래 진행 시작 공지 */}
+                {chatData?.item?.status === "reserved" && (
+                  <div className="mb-4">
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <Clock className="w-6 h-6 text-orange-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-semibold text-orange-800 mb-1">
+                            🚀 거래가 시작되었습니다!
+                          </h4>
+                          <p className="text-sm text-orange-700">
+                            판매자가 거래를 진행하기 시작했습니다.
+                          </p>
+                          <div className="mt-2 text-xs text-orange-600">
+                            💡 판매자는 상품을 발송하고 배송 정보를 입력할 예정입니다.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 배송 시작 공지 */}
+                {chatData?.item?.status === "shipping" && chatData?.item?.shippingInfo && (
+                  <div className="mb-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <Truck className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-semibold text-blue-800 mb-1">
+                            📦 상품이 발송되었습니다!
+                          </h4>
+                          <p className="text-sm text-blue-700">
+                            판매자가 상품을 발송했습니다. 배송 추적이 가능합니다.
+                          </p>
+                          <div className="mt-2 text-xs text-blue-600">
+                            🚚 택배사: {getCourierName(chatData.item.shippingInfo.courier)} | 
+                            송장번호: {chatData.item.shippingInfo.trackingNumber}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 거래 완료 공지 */}
+                {chatData?.item?.status === "sold" && (
+                  <div className="mb-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-semibold text-green-800 mb-1">
+                            🎊 거래가 완료되었습니다!
+                          </h4>
+                          <p className="text-sm text-green-700">
+                            구매자가 상품 수령을 확인하여 거래가 성공적으로 완료되었습니다.
+                          </p>
+                          <div className="mt-2 text-xs text-green-600">
+                            ✅ 안전하고 신뢰할 수 있는 거래였습니다. 거래해주셔서 감사합니다!
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {messages.map((message, index) => {
                   const isOwn = message.senderUid === user?.uid;
 
