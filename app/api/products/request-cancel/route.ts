@@ -54,6 +54,41 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     });
 
+    // 채팅에 시스템 메시지 추가
+    try {
+      const { getOrCreateChat, addMessage } = await import(
+        "../../../../lib/chat/api"
+      );
+      
+      // 채팅방 찾기 또는 생성
+      const chatResult = await getOrCreateChat({
+        itemId: itemId,
+        buyerUid: buyerUid,
+        sellerUid: itemData.sellerUid,
+        firstMessage: "취소 요청이 전송되었습니다.",
+      });
+
+      if (chatResult.success && chatResult.chatId) {
+        // 시스템 메시지 추가
+        const systemMessageResult = await addMessage({
+          chatId: chatResult.chatId,
+          senderUid: "system",
+          content: "⚠️ 구매자가 거래 취소를 요청했습니다. 판매자의 승인이 필요합니다.",
+        });
+
+        if (systemMessageResult.success) {
+          console.log("✅ 취소 요청 시스템 메시지 추가 성공");
+        } else {
+          console.error("❌ 취소 요청 시스템 메시지 추가 실패:", systemMessageResult.error);
+        }
+      } else {
+        console.error("❌ 취소 요청 채팅방 찾기/생성 실패:", chatResult.error);
+      }
+    } catch (chatError) {
+      console.error("❌ 취소 요청 채팅 시스템 메시지 추가 중 오류:", chatError);
+      // 채팅 메시지 추가 실패해도 취소 요청은 성공으로 처리
+    }
+
     return NextResponse.json({
       success: true,
       message: "취소 요청이 전송되었습니다.",
