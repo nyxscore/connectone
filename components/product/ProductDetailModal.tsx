@@ -24,6 +24,7 @@ import {
   Shield,
   ShoppingCart,
   Truck,
+  AlertCircle,
 } from "lucide-react";
 import { getProductDetail, getSellerInfo } from "@/lib/api/product-detail";
 import { ProductDetail, SellerInfo, TradeOption } from "@/data/schemas/product";
@@ -98,10 +99,12 @@ export default function ProductDetailModal({
       product?.status === "shipping");
 
   // 현재 사용자가 판매자인지 확인
-  const isSeller = user?.uid && product?.sellerId && user.uid === product.sellerId;
+  const isSeller =
+    user?.uid && product?.sellerId && user.uid === product.sellerId;
 
   // 거래중인 상품 권한 체크
-  const isReservedOrEscrowCompleted = product?.status === "reserved" || product?.status === "escrow_completed";
+  const isReservedOrEscrowCompleted =
+    product?.status === "reserved" || product?.status === "escrow_completed";
   const canViewProduct = !isReservedOrEscrowCompleted || isSeller || isBuyer;
 
   const [seller, setSeller] = useState<SellerInfo | null>(null);

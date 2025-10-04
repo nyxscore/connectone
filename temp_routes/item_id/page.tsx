@@ -222,7 +222,8 @@ export default function ItemDetailPage() {
   }
 
   // 거래중인 상품 권한 체크
-  const isReservedOrEscrowCompleted = item.status === "reserved" || item.status === "escrow_completed";
+  const isReservedOrEscrowCompleted =
+    item.status === "reserved" || item.status === "escrow_completed";
   const isSeller = user?.uid === item.sellerUid;
   const isBuyer = user?.uid === item.buyerUid;
   const canViewItem = !isReservedOrEscrowCompleted || isSeller || isBuyer;

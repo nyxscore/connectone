@@ -66,6 +66,11 @@ export function ItemCard({
       return;
     }
 
+    if (item.status === "escrow_completed") {
+      alert("거래중인 상품입니다. 이미 다른 구매자와 거래가 진행 중입니다.");
+      return;
+    }
+
     if (onClick) {
       onClick(item);
     } else {
