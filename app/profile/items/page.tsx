@@ -444,7 +444,12 @@ function MyItemsPageContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredItems.map(item => (
               <div key={item.id} className="relative group">
-                <ItemCard item={item} onClick={handleItemClick} />
+                <ItemCard 
+                  item={item} 
+                  onClick={handleItemClick}
+                  currentUserId={currentUser?.uid}
+                  buyerUid={item.buyerUid}
+                />
 
                 {/* 점 메뉴 버튼 - ItemCard 위에 오버레이 (자신의 상품일 때만) */}
                 {!isViewingOtherUser && (
