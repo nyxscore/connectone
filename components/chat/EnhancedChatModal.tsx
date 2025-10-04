@@ -157,9 +157,11 @@ export function EnhancedChatModal({
 
     // 이미 해당 시스템 메시지가 있는지 확인
     const existingMessage = messages.find(
-      msg => msg.senderUid === "system" && msg.content === notifications[type].message
+      msg =>
+        msg.senderUid === "system" &&
+        msg.content === notifications[type].message
     );
-    
+
     if (existingMessage) {
       console.log("⚠️ 해당 시스템 메시지가 이미 존재합니다:", type);
       return;
@@ -313,27 +315,28 @@ export function EnhancedChatModal({
         isSeller: user.uid === chatData.sellerUid,
       });
 
-
-        // 현재 상태에 맞는 알림들 추가 (시스템 메시지로)
-        if (currentStatus === "escrow_completed") {
-          console.log("✅ escrow_completed 시스템 메시지 추가");
-          addStatusSystemMessage("escrow_completed");
-        } else if (currentStatus === "reserved") {
-          console.log("✅ escrow_completed + reserved 시스템 메시지 추가");
-          addStatusSystemMessage("escrow_completed");
-          addStatusSystemMessage("reserved");
-        } else if (currentStatus === "shipping") {
-          console.log("✅ escrow_completed + reserved + shipping 시스템 메시지 추가");
-          addStatusSystemMessage("escrow_completed");
-          addStatusSystemMessage("reserved");
-          addStatusSystemMessage("shipping");
-        } else if (currentStatus === "sold") {
-          console.log("✅ 모든 시스템 메시지 추가");
-          addStatusSystemMessage("escrow_completed");
-          addStatusSystemMessage("reserved");
-          addStatusSystemMessage("shipping");
-          addStatusSystemMessage("sold");
-        }
+      // 현재 상태에 맞는 알림들 추가 (시스템 메시지로)
+      if (currentStatus === "escrow_completed") {
+        console.log("✅ escrow_completed 시스템 메시지 추가");
+        addStatusSystemMessage("escrow_completed");
+      } else if (currentStatus === "reserved") {
+        console.log("✅ escrow_completed + reserved 시스템 메시지 추가");
+        addStatusSystemMessage("escrow_completed");
+        addStatusSystemMessage("reserved");
+      } else if (currentStatus === "shipping") {
+        console.log(
+          "✅ escrow_completed + reserved + shipping 시스템 메시지 추가"
+        );
+        addStatusSystemMessage("escrow_completed");
+        addStatusSystemMessage("reserved");
+        addStatusSystemMessage("shipping");
+      } else if (currentStatus === "sold") {
+        console.log("✅ 모든 시스템 메시지 추가");
+        addStatusSystemMessage("escrow_completed");
+        addStatusSystemMessage("reserved");
+        addStatusSystemMessage("shipping");
+        addStatusSystemMessage("sold");
+      }
     }
   }, [chatData?.item?.status, user?.uid]);
 
