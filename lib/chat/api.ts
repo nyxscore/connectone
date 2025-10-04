@@ -234,12 +234,22 @@ export async function getUserChats(
       allChats.set(doc.id, chatData);
     });
 
-    // 시간순으로 정렬
-    const sortedChats = Array.from(allChats.values()).sort((a, b) => {
-      const aTime = a.updatedAt?.seconds || 0;
-      const bTime = b.updatedAt?.seconds || 0;
-      return bTime - aTime; // 최신순
-    });
+    // 시간순으로 정렬하고 삭제된 채팅 필터링
+    const sortedChats = Array.from(allChats.values())
+      .filter(chat => {
+        // 현재 사용자가 삭제하지 않은 채팅만 표시
+        if (chat.buyerUid === userId) {
+          return !chat.deletedByBuyer; // 구매자가 삭제하지 않은 경우
+        } else if (chat.sellerUid === userId) {
+          return !chat.deletedBySeller; // 판매자가 삭제하지 않은 경우
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const aTime = a.updatedAt?.seconds || 0;
+        const bTime = b.updatedAt?.seconds || 0;
+        return bTime - aTime; // 최신순
+      });
 
     // 페이지네이션 적용
     const startIndex = lastDoc
@@ -669,16 +679,18 @@ export async function deleteChat(
       return { success: false, error: "채팅을 삭제할 권한이 없습니다." };
     }
 
-    // 채팅 삭제
-    await deleteDoc(chatRef);
+    // 채팅을 완전히 삭제하지 않고, 사용자별로 삭제 상태만 표시
+    const deletedByField = chatData.buyerUid === userId ? 'deletedByBuyer' : 'deletedBySeller';
+    
+    await updateDoc(chatRef, {
+      [deletedByField]: true,
+      deletedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
 
-    // 관련 메시지들도 삭제 (선택사항)
-    const messagesRef = collection(db, "messages");
-    const q = query(messagesRef, where("chatId", "==", chatId));
-    const messagesSnapshot = await getDocs(q);
+    console.log(`채팅 삭제 상태 업데이트: ${deletedByField} = true`);
 
-    const deletePromises = messagesSnapshot.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
+    // 관련 메시지들은 삭제하지 않음 (양쪽 사용자가 모두 삭제할 때까지 보관)
 
     return { success: true };
   } catch (error) {

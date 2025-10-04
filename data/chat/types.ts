@@ -7,6 +7,9 @@ export interface Chat {
   sellerUid: string;
   lastMessage: string;
   updatedAt: Timestamp;
+  deletedByBuyer?: boolean; // 구매자가 삭제했는지 여부
+  deletedBySeller?: boolean; // 판매자가 삭제했는지 여부
+  deletedAt?: Timestamp; // 삭제 시간
 }
 
 export interface Message {
