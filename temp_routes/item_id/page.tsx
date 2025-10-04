@@ -221,6 +221,31 @@ export default function ItemDetailPage() {
     );
   }
 
+  // 거래중인 상품 권한 체크
+  const isReservedOrEscrowCompleted = item.status === "reserved" || item.status === "escrow_completed";
+  const isSeller = user?.uid === item.sellerUid;
+  const isBuyer = user?.uid === item.buyerUid;
+  const canViewItem = !isReservedOrEscrowCompleted || isSeller || isBuyer;
+
+  if (!canViewItem) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            접근할 수 없는 상품입니다
+          </h2>
+          <p className="text-gray-600 mb-4">
+            이 상품은 현재 다른 사용자와 거래가 진행중입니다.
+          </p>
+          <Button onClick={() => router.push("/list")}>
+            상품 목록으로 돌아가기
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const conditionInfo = getConditionInfo(item.condition);
   const categoryInfo = getCategoryInfo(item.category);
 

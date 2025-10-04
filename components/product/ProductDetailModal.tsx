@@ -97,6 +97,13 @@ export default function ProductDetailModal({
       product?.status === "escrow_completed" ||
       product?.status === "shipping");
 
+  // 현재 사용자가 판매자인지 확인
+  const isSeller = user?.uid && product?.sellerId && user.uid === product.sellerId;
+
+  // 거래중인 상품 권한 체크
+  const isReservedOrEscrowCompleted = product?.status === "reserved" || product?.status === "escrow_completed";
+  const canViewProduct = !isReservedOrEscrowCompleted || isSeller || isBuyer;
+
   const [seller, setSeller] = useState<SellerInfo | null>(null);
   const [sellerProfile, setSellerProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -157,6 +164,14 @@ export default function ProductDetailModal({
       );
     };
   }, [product]);
+
+  // 거래중인 상품 권한 체크
+  useEffect(() => {
+    if (product && isReservedOrEscrowCompleted && !canViewProduct) {
+      toast.error("이 상품은 현재 다른 사용자와 거래가 진행중입니다.");
+      onClose();
+    }
+  }, [product, isReservedOrEscrowCompleted, canViewProduct, onClose]);
 
   // 디버깅 로그
 
