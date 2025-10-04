@@ -1337,102 +1337,104 @@ export function EnhancedChatModal({
                             🎉 안전결제가 완료되었습니다!
                           </h4>
                           <p className="text-sm text-green-700">
-                            구매자가 안전결제를 완료했습니다. 이제 거래를 진행해주세요.
+                            구매자가 안전결제를 완료했습니다. 이제 거래를
+                            진행해주세요.
                           </p>
                           <div className="mt-2 text-xs text-green-600">
-                            💡 판매자는 상품을 발송하고 배송 정보를 입력해주세요.
+                            💡 판매자는 상품을 발송하고 배송 정보를
+                            입력해주세요.
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
-                
+
                 {messages.map((message, index) => {
-                const isOwn = message.senderUid === user?.uid;
+                  const isOwn = message.senderUid === user?.uid;
 
-                // 이전 메시지와 날짜가 다른지 확인
-                const prevMessage = index > 0 ? messages[index - 1] : null;
-                const showDateSeparator =
-                  !prevMessage ||
-                  !isSameDate(message.createdAt, prevMessage.createdAt);
+                  // 이전 메시지와 날짜가 다른지 확인
+                  const prevMessage = index > 0 ? messages[index - 1] : null;
+                  const showDateSeparator =
+                    !prevMessage ||
+                    !isSameDate(message.createdAt, prevMessage.createdAt);
 
-                return (
-                  <div key={message.id}>
-                    {/* 날짜 구분선 */}
-                    {showDateSeparator && (
-                      <div className="flex items-center justify-center my-4">
-                        <div className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
-                          {formatDate(message.createdAt)}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 메시지 */}
-                    {message.senderUid === "system" ? (
-                      // 시스템 메시지 (공지사항 스타일)
-                      <div className="flex justify-center mb-3">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 max-w-sm">
-                          <div className="flex items-center justify-center">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                            <p className="text-sm text-blue-800 font-medium text-center">
-                              {message.content}
-                            </p>
-                            <div className="w-2 h-2 bg-blue-500 rounded-full ml-2"></div>
+                  return (
+                    <div key={message.id}>
+                      {/* 날짜 구분선 */}
+                      {showDateSeparator && (
+                        <div className="flex items-center justify-center my-4">
+                          <div className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
+                            {formatDate(message.createdAt)}
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      // 일반 메시지
-                      <div
-                        className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-1`}
-                      >
-                        <div className="flex flex-col max-w-xs lg:max-w-md">
-                          <div
-                            className={`px-4 py-2 rounded-lg ${
-                              isOwn
-                                ? "bg-blue-500 text-white"
-                                : "bg-gray-100 text-gray-900"
-                            }`}
-                          >
-                            {message.imageUrl && (
-                              <img
-                                src={message.imageUrl}
-                                alt="첨부 이미지"
-                                className="w-full h-48 object-cover rounded mb-2"
-                              />
-                            )}
-                            {message.content &&
-                              (message.content.includes(
-                                "---SHIPPING_ADDRESS_START---"
-                              ) ? (
-                                renderShippingAddressMessage(
-                                  message.content,
-                                  message.id ||
-                                    `${message.createdAt}_${message.senderUid}`,
-                                  isOwn
-                                )
-                              ) : (
-                                <p className="text-sm">{message.content}</p>
-                              ))}
-                          </div>
+                      )}
 
-                          {/* 시간 */}
-                          <div
-                            className={`flex items-center mt-1 ${
-                              isOwn ? "justify-end" : "justify-start"
-                            }`}
-                          >
-                            <span className="text-xs text-gray-500">
-                              {formatTimeOnly(message.createdAt)}
-                            </span>
+                      {/* 메시지 */}
+                      {message.senderUid === "system" ? (
+                        // 시스템 메시지 (공지사항 스타일)
+                        <div className="flex justify-center mb-3">
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 max-w-sm">
+                            <div className="flex items-center justify-center">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                              <p className="text-sm text-blue-800 font-medium text-center">
+                                {message.content}
+                              </p>
+                              <div className="w-2 h-2 bg-blue-500 rounded-full ml-2"></div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      ) : (
+                        // 일반 메시지
+                        <div
+                          className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-1`}
+                        >
+                          <div className="flex flex-col max-w-xs lg:max-w-md">
+                            <div
+                              className={`px-4 py-2 rounded-lg ${
+                                isOwn
+                                  ? "bg-blue-500 text-white"
+                                  : "bg-gray-100 text-gray-900"
+                              }`}
+                            >
+                              {message.imageUrl && (
+                                <img
+                                  src={message.imageUrl}
+                                  alt="첨부 이미지"
+                                  className="w-full h-48 object-cover rounded mb-2"
+                                />
+                              )}
+                              {message.content &&
+                                (message.content.includes(
+                                  "---SHIPPING_ADDRESS_START---"
+                                ) ? (
+                                  renderShippingAddressMessage(
+                                    message.content,
+                                    message.id ||
+                                      `${message.createdAt}_${message.senderUid}`,
+                                    isOwn
+                                  )
+                                ) : (
+                                  <p className="text-sm">{message.content}</p>
+                                ))}
+                            </div>
+
+                            {/* 시간 */}
+                            <div
+                              className={`flex items-center mt-1 ${
+                                isOwn ? "justify-end" : "justify-start"
+                              }`}
+                            >
+                              <span className="text-xs text-gray-500">
+                                {formatTimeOnly(message.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </>
             )}
             {/* 스크롤 자동 이동을 위한 참조점 */}
@@ -1550,8 +1552,7 @@ export function EnhancedChatModal({
                   )}
 
                   {/* 거래중 상태 - 택배 발송 정보 입력 */}
-                  {(chatData.item.status === "reserved" ||
-                    chatData.item.status === "escrow_completed") && (
+                  {chatData.item.status === "reserved" && (
                     <div className="space-y-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                       <div className="flex items-center space-x-2">
                         <Clock className="w-5 h-5 text-orange-600" />
