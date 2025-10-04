@@ -600,10 +600,9 @@ export function PurchaseCTA({
       )}
 
       {/* 상태별 안내 메시지 */}
-      {status !== "active" && (
+      {status !== "active" && status !== "reserved" && (
         <div className="text-center">
           <p className="text-sm text-gray-500">
-            {status === "reserved" && "이 상품은 현재 예약 중입니다."}
             {status === "paid_hold" && "결제가 완료되어 배송 준비 중입니다."}
             {status === "shipped" && "상품이 배송 중입니다."}
             {status === "sold" && "이 상품은 이미 판매되었습니다."}

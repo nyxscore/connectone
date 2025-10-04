@@ -258,6 +258,18 @@ export default function ItemDetailPage() {
           뒤로가기
         </Button>
 
+        {/* 거래중 상품 안내 메시지 */}
+        {isReservedOrEscrowCompleted && !canViewItem && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-orange-600" />
+              <span className="text-orange-800 font-medium">
+                이 상품은 현재 다른 사용자와 거래가 진행중입니다.
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 왼쪽: 이미지 갤러리 */}
           <div className="lg:col-span-1">

@@ -165,10 +165,9 @@ export default function ProductDetailModal({
     };
   }, [product]);
 
-  // 거래중인 상품 권한 체크
+  // 거래중인 상품 권한 체크 - 모달 닫기만 처리
   useEffect(() => {
     if (product && isReservedOrEscrowCompleted && !canViewProduct) {
-      toast.error("이 상품은 현재 다른 사용자와 거래가 진행중입니다.");
       onClose();
     }
   }, [product, isReservedOrEscrowCompleted, canViewProduct, onClose]);
@@ -751,6 +750,17 @@ export default function ProductDetailModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+        {/* 거래중 상품 안내 메시지 */}
+        {product && isReservedOrEscrowCompleted && !canViewProduct && (
+          <div className="bg-orange-50 border-b border-orange-200 p-4 text-center">
+            <div className="flex items-center justify-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-orange-600" />
+              <span className="text-orange-800 font-medium">
+                이 상품은 현재 다른 사용자와 거래가 진행중입니다.
+              </span>
+            </div>
+          </div>
+        )}
         <div className="p-6">
           {/* 헤더 */}
           <div className="flex justify-between items-center mb-6">
