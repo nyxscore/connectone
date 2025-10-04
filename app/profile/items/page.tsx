@@ -38,9 +38,9 @@ function MyItemsPageContent() {
   const isViewingOtherUser = targetUserId && targetUserId !== currentUser?.uid;
 
   // 탭 상태 관리
-  const [activeTab, setActiveTab] = useState<"selling" | "trading" | "buying" | "sold">(
-    "selling"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "selling" | "trading" | "buying" | "sold"
+  >("selling");
 
   useEffect(() => {
     if (!authLoading && !currentUser && !targetUserId) {
@@ -141,14 +141,14 @@ function MyItemsPageContent() {
         const { db } = await import("../../../lib/api/firebase");
 
         const itemsRef = collection(db, "items");
-        
+
         // 판매완료 상품 (sellerUid가 현재 사용자이고 status가 sold인 상품들)
         const soldItemsQuery = query(
           itemsRef,
           where("sellerUid", "==", userId),
           where("status", "in", ["sold", "paid_hold", "completed"])
         );
-        
+
         // 구매완료 상품 (buyerUid가 현재 사용자이고 status가 sold인 상품들)
         const boughtItemsQuery = query(
           itemsRef,
@@ -158,26 +158,26 @@ function MyItemsPageContent() {
 
         const [soldSnapshot, boughtSnapshot] = await Promise.all([
           getDocs(soldItemsQuery),
-          getDocs(boughtItemsQuery)
+          getDocs(boughtItemsQuery),
         ]);
 
         const items: any[] = [];
-        
+
         // 판매완료 상품 추가
         soldSnapshot.docs.forEach(doc => {
-          items.push({ 
-            id: doc.id, 
-            ...doc.data(), 
-            transactionType: "sold" 
+          items.push({
+            id: doc.id,
+            ...doc.data(),
+            transactionType: "sold",
           });
         });
-        
+
         // 구매완료 상품 추가
         boughtSnapshot.docs.forEach(doc => {
-          items.push({ 
-            id: doc.id, 
-            ...doc.data(), 
-            transactionType: "bought" 
+          items.push({
+            id: doc.id,
+            ...doc.data(),
+            transactionType: "bought",
           });
         });
 
