@@ -53,6 +53,14 @@ export const useAuth = () => {
     setUser(prev => (prev ? { ...prev, ...updatedUserData } : null));
   };
 
+  // 사용자 정보 새로고침 함수
+  const refreshUser = async () => {
+    const firebaseUser = auth.currentUser;
+    if (firebaseUser) {
+      await processUser(firebaseUser);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     console.log("useAuth: 초기화 시작");
@@ -159,5 +167,6 @@ export const useAuth = () => {
     isAuthenticated: !!user,
     isLoading: loading,
     updateUser,
+    refreshUser,
   };
 };

@@ -2,7 +2,11 @@
 
 import { Card } from "../ui/Card";
 import { UserProfile } from "../../data/profile/types";
-import { getGradeInfo, uploadAvatar, deleteAvatar } from "../../lib/profile/api";
+import {
+  getGradeInfo,
+  uploadAvatar,
+  deleteAvatar,
+} from "../../lib/profile/api";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import {
@@ -22,12 +26,14 @@ interface ProfileStatsProps {
   user: UserProfile;
   isOwnProfile?: boolean;
   onAvatarUpdate?: (photoURL: string) => void;
+  onRefreshUser?: () => Promise<void>;
 }
 
 export function ProfileStats({
   user,
   isOwnProfile = false,
   onAvatarUpdate,
+  onRefreshUser,
 }: ProfileStatsProps) {
   const gradeInfo = getGradeInfo(user.grade);
   const [showMenu, setShowMenu] = useState(false);
@@ -78,6 +84,12 @@ export function ProfileStats({
 
           if (result.success && result.data) {
             onAvatarUpdate(result.data);
+            
+            // 헤더의 사용자 정보 새로고침 (최신 데이터 가져오기)
+            if (onRefreshUser) {
+              await onRefreshUser();
+            }
+            
             toast.success("아바타가 업데이트되었습니다.");
           } else {
             toast.error(result.error || "업로드에 실패했습니다.");
@@ -93,14 +105,18 @@ export function ProfileStats({
   };
 
   const handleAvatarDelete = async () => {
-    if (!onAvatarUpdate) return;
-    
+    if (!onAvatarUpdate || !onRefreshUser) return;
+
     try {
       // 실제 Firebase Storage와 Firestore에서 삭제
       const result = await deleteAvatar(user.uid, user.photoURL);
-      
+
       if (result.success) {
         onAvatarUpdate(""); // UI 업데이트
+        
+        // 헤더의 사용자 정보 새로고침 (최신 데이터 가져오기)
+        await onRefreshUser();
+        
         toast.success("프로필 사진이 삭제되었습니다.");
       } else {
         toast.error(result.error || "프로필 사진 삭제에 실패했습니다.");
@@ -109,7 +125,7 @@ export function ProfileStats({
       console.error("프로필 사진 삭제 실패:", error);
       toast.error("프로필 사진 삭제 중 오류가 발생했습니다.");
     }
-    
+
     setShowMenu(false);
   };
 

@@ -10,7 +10,12 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
 import { db, storage } from "../api/firebase";
 import {
   UserProfile,
@@ -137,13 +142,16 @@ export async function deleteAvatar(
     if (photoURL) {
       try {
         // Storage URL에서 파일 경로 추출
-        const urlParts = photoURL.split('/');
+        const urlParts = photoURL.split("/");
         const fileName = urlParts[urlParts.length - 1];
         const storageRef = ref(storage, `avatars/${uid}/${fileName}`);
         await deleteObject(storageRef);
         console.log("Firebase Storage에서 아바타 삭제 완료:", fileName);
       } catch (storageError) {
-        console.warn("Firebase Storage에서 아바타 삭제 실패 (무시됨):", storageError);
+        console.warn(
+          "Firebase Storage에서 아바타 삭제 실패 (무시됨):",
+          storageError
+        );
         // Storage 삭제 실패해도 Firestore 업데이트는 진행
       }
     }

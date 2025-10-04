@@ -41,7 +41,7 @@ import toast from "react-hot-toast";
 import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
 
 export default function MyProfilePage() {
-  const { user: currentUser, isLoading: authLoading, updateUser } = useAuth();
+  const { user: currentUser, isLoading: authLoading, updateUser, refreshUser } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [myItems, setMyItems] = useState<any[]>([]);
@@ -138,24 +138,27 @@ export default function MyProfilePage() {
 
         if (updateResult.success && profile) {
           setProfile({ ...profile, photoURL: photoURL });
-          
-          // 헤더의 사용자 정보도 즉시 업데이트
-          updateUser({ profileImage: photoURL });
-          
+
+          // 헤더의 사용자 정보 새로고침 (최신 데이터 가져오기)
+          await refreshUser();
+
           toast.success("아바타가 업데이트되었습니다.");
         } else {
           toast.error(updateResult.error || "아바타 업데이트에 실패했습니다.");
         }
       } else {
         // 프로필 사진 삭제
-        const deleteResult = await deleteAvatar(currentUser.uid, profile?.photoURL);
-        
+        const deleteResult = await deleteAvatar(
+          currentUser.uid,
+          profile?.photoURL
+        );
+
         if (deleteResult.success && profile) {
           setProfile({ ...profile, photoURL: undefined });
-          
-          // 헤더의 사용자 정보도 즉시 업데이트
-          updateUser({ profileImage: undefined });
-          
+
+          // 헤더의 사용자 정보 새로고침 (최신 데이터 가져오기)
+          await refreshUser();
+
           toast.success("프로필 사진이 삭제되었습니다.");
         } else {
           toast.error(deleteResult.error || "프로필 사진 삭제에 실패했습니다.");
@@ -260,6 +263,7 @@ export default function MyProfilePage() {
             user={profile}
             isOwnProfile={true}
             onAvatarUpdate={handleAvatarUpload}
+            onRefreshUser={refreshUser}
           />
 
           {/* 회원 등급 정보 */}
