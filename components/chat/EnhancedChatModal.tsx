@@ -1323,7 +1323,32 @@ export function EnhancedChatModal({
                 </div>
               </div>
             ) : (
-              messages.map((message, index) => {
+              <>
+                {/* 안전결제 완료 공지 메시지 */}
+                {chatData?.item?.status === "escrow_completed" && (
+                  <div className="mb-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-semibold text-green-800 mb-1">
+                            🎉 안전결제가 완료되었습니다!
+                          </h4>
+                          <p className="text-sm text-green-700">
+                            구매자가 안전결제를 완료했습니다. 이제 거래를 진행해주세요.
+                          </p>
+                          <div className="mt-2 text-xs text-green-600">
+                            💡 판매자는 상품을 발송하고 배송 정보를 입력해주세요.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {messages.map((message, index) => {
                 const isOwn = message.senderUid === user?.uid;
 
                 // 이전 메시지와 날짜가 다른지 확인
@@ -1407,7 +1432,8 @@ export function EnhancedChatModal({
                     )}
                   </div>
                 );
-              })
+              })}
+              </>
             )}
             {/* 스크롤 자동 이동을 위한 참조점 */}
             <div ref={messagesEndRef} />
