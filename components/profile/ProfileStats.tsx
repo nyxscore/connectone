@@ -82,7 +82,6 @@ export function ProfileStats({
 
           if (result.success && result.data) {
             onAvatarUpdate(result.data);
-            toast.success("아바타가 업데이트되었습니다.");
           } else {
             toast.error(result.error || "업로드에 실패했습니다.");
           }
