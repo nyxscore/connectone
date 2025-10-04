@@ -126,6 +126,45 @@ export function EnhancedChatModal({
   const [expandedShippingAddresses, setExpandedShippingAddresses] = useState<
     Set<string>
   >(new Set());
+  const [statusNotifications, setStatusNotifications] = useState<Array<{
+    id: string;
+    status: string;
+    message: string;
+    timestamp: Date;
+    type: 'escrow_completed' | 'reserved' | 'shipping' | 'sold';
+  }>>([]);
+
+  // 상태 변경 알림 추가 함수
+  const addStatusNotification = (type: 'escrow_completed' | 'reserved' | 'shipping' | 'sold') => {
+    const notifications = {
+      'escrow_completed': {
+        message: '🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다.',
+        status: '안전결제 완료'
+      },
+      'reserved': {
+        message: '🚀 거래가 시작되었습니다! 판매자가 거래를 진행하기 시작했습니다.',
+        status: '거래 진행 시작'
+      },
+      'shipping': {
+        message: '📦 상품이 발송되었습니다! 판매자가 상품을 발송했습니다.',
+        status: '배송 시작'
+      },
+      'sold': {
+        message: '🎊 거래가 완료되었습니다! 구매자가 상품 수령을 확인했습니다.',
+        status: '거래 완료'
+      }
+    };
+
+    const notification = {
+      id: `${type}_${Date.now()}`,
+      status: notifications[type].status,
+      message: notifications[type].message,
+      timestamp: new Date(),
+      type
+    };
+
+    setStatusNotifications(prev => [...prev, notification]);
+  };
 
   // 배송지 메시지 렌더링 함수
   const renderShippingAddressMessage = (
@@ -867,6 +906,9 @@ export function EnhancedChatModal({
             detail: { itemId: chatData.item.id, status: "reserved" },
           })
         );
+
+        // 거래 시작 알림 추가
+        addStatusNotification('reserved');
       } else {
         toast.error(result.error || "거래 시작에 실패했습니다.");
       }
@@ -1078,6 +1120,9 @@ export function EnhancedChatModal({
           })
         );
 
+        // 배송 시작 알림 추가
+        addStatusNotification('shipping');
+
         // 송장 등록 모달 닫기
         setShowShippingModal(false);
 
@@ -1124,12 +1169,15 @@ export function EnhancedChatModal({
         if (result.success) {
           toast.success("구매가 완료되었습니다! 판매자에게 입금이 처리됩니다.");
 
-          // 전역 이벤트 발생으로 상품 목록 업데이트
-          window.dispatchEvent(
-            new CustomEvent("itemStatusChanged", {
-              detail: { itemId: chatData.item.id, status: "sold" },
-            })
-          );
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: chatData.item.id, status: "sold" },
+          })
+        );
+
+        // 거래 완료 알림 추가
+        addStatusNotification('sold');
         } else {
           toast.error(result.error || "구매 완료에 실패했습니다.");
         }
@@ -1324,104 +1372,59 @@ export function EnhancedChatModal({
               </div>
             ) : (
               <>
-                {/* 안전결제 완료 공지 메시지 */}
-                {chatData?.item?.status === "escrow_completed" && (
-                  <div className="mb-4">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                {/* 거래 상태 변경 알림들 (누적 표시) */}
+                {statusNotifications.map((notification) => (
+                  <div key={notification.id} className="mb-4">
+                    <div className={`border rounded-lg p-4 ${
+                      notification.type === 'escrow_completed' ? 'bg-green-50 border-green-200' :
+                      notification.type === 'reserved' ? 'bg-orange-50 border-orange-200' :
+                      notification.type === 'shipping' ? 'bg-blue-50 border-blue-200' :
+                      'bg-green-50 border-green-200'
+                    }`}>
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
-                          <CheckCircle className="w-6 h-6 text-green-600" />
+                          {notification.type === 'escrow_completed' && <CheckCircle className="w-6 h-6 text-green-600" />}
+                          {notification.type === 'reserved' && <Clock className="w-6 h-6 text-orange-600" />}
+                          {notification.type === 'shipping' && <Truck className="w-6 h-6 text-blue-600" />}
+                          {notification.type === 'sold' && <CheckCircle className="w-6 h-6 text-green-600" />}
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-sm font-semibold text-green-800 mb-1">
-                            🎉 안전결제가 완료되었습니다!
-                          </h4>
-                          <p className="text-sm text-green-700">
-                            구매자가 안전결제를 완료했습니다. 이제 거래를
-                            진행해주세요.
-                          </p>
-                          <div className="mt-2 text-xs text-green-600">
-                            💡 판매자는 상품을 발송하고 배송 정보를
-                            입력해주세요.
+                          <div className="flex items-center justify-between">
+                            <h4 className={`text-sm font-semibold mb-1 ${
+                              notification.type === 'escrow_completed' ? 'text-green-800' :
+                              notification.type === 'reserved' ? 'text-orange-800' :
+                              notification.type === 'shipping' ? 'text-blue-800' :
+                              'text-green-800'
+                            }`}>
+                              {notification.status}
+                            </h4>
+                            <span className="text-xs text-gray-500">
+                              {notification.timestamp.toLocaleTimeString('ko-KR', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
                           </div>
+                          <p className={`text-sm ${
+                            notification.type === 'escrow_completed' ? 'text-green-700' :
+                            notification.type === 'reserved' ? 'text-orange-700' :
+                            notification.type === 'shipping' ? 'text-blue-700' :
+                            'text-green-700'
+                          }`}>
+                            {notification.message}
+                          </p>
+                          {notification.type === 'shipping' && chatData?.item?.shippingInfo && (
+                            <div className="mt-2 text-xs text-blue-600">
+                              🚚 택배사: {getCourierName(chatData.item.shippingInfo.courier)} | 
+                              송장번호: {chatData.item.shippingInfo.trackingNumber}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
-                )}
+                ))}
 
-                {/* 거래 진행 시작 공지 */}
-                {chatData?.item?.status === "reserved" && (
-                  <div className="mb-4">
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          <Clock className="w-6 h-6 text-orange-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-sm font-semibold text-orange-800 mb-1">
-                            🚀 거래가 시작되었습니다!
-                          </h4>
-                          <p className="text-sm text-orange-700">
-                            판매자가 거래를 진행하기 시작했습니다.
-                          </p>
-                          <div className="mt-2 text-xs text-orange-600">
-                            💡 판매자는 상품을 발송하고 배송 정보를 입력할 예정입니다.
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 배송 시작 공지 */}
-                {chatData?.item?.status === "shipping" && chatData?.item?.shippingInfo && (
-                  <div className="mb-4">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          <Truck className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-sm font-semibold text-blue-800 mb-1">
-                            📦 상품이 발송되었습니다!
-                          </h4>
-                          <p className="text-sm text-blue-700">
-                            판매자가 상품을 발송했습니다. 배송 추적이 가능합니다.
-                          </p>
-                          <div className="mt-2 text-xs text-blue-600">
-                            🚚 택배사: {getCourierName(chatData.item.shippingInfo.courier)} | 
-                            송장번호: {chatData.item.shippingInfo.trackingNumber}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 거래 완료 공지 */}
-                {chatData?.item?.status === "sold" && (
-                  <div className="mb-4">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          <CheckCircle className="w-6 h-6 text-green-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-sm font-semibold text-green-800 mb-1">
-                            🎊 거래가 완료되었습니다!
-                          </h4>
-                          <p className="text-sm text-green-700">
-                            구매자가 상품 수령을 확인하여 거래가 성공적으로 완료되었습니다.
-                          </p>
-                          <div className="mt-2 text-xs text-green-600">
-                            ✅ 안전하고 신뢰할 수 있는 거래였습니다. 거래해주셔서 감사합니다!
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {messages.map((message, index) => {
                   const isOwn = message.senderUid === user?.uid;
