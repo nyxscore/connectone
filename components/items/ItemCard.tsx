@@ -61,6 +61,11 @@ export function ItemCard({
       return;
     }
 
+    if (item.status === "reserved") {
+      alert("거래중인 상품입니다. 이미 다른 구매자와 거래가 진행 중입니다.");
+      return;
+    }
+
     if (onClick) {
       onClick(item);
     } else {
@@ -127,17 +132,20 @@ export function ItemCard({
   };
 
   const isSold = item.status === "sold";
+  const isReserved = item.status === "reserved";
 
   return (
     <Card
       className={`overflow-hidden ${
         isSold
           ? "opacity-60 cursor-not-allowed"
-          : isTradingTab
-            ? "cursor-pointer hover:shadow-lg hover:bg-blue-50 transition-all"
-            : "cursor-pointer"
+          : isReserved
+            ? "opacity-75 cursor-not-allowed border-orange-200 bg-orange-50"
+            : isTradingTab
+              ? "cursor-pointer hover:shadow-lg hover:bg-blue-50 transition-all"
+              : "cursor-pointer"
       }`}
-      onClick={isSold ? undefined : handleClick}
+      onClick={isSold || isReserved ? undefined : handleClick}
     >
       {/* 썸네일 */}
       <div
@@ -172,6 +180,13 @@ export function ItemCard({
         {item.status === "sold" && (
           <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-gray-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold shadow-lg">
             판매완료
+          </div>
+        )}
+
+        {/* 거래중 상태 표시 */}
+        {item.status === "reserved" && (
+          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-orange-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold shadow-lg">
+            거래중
           </div>
         )}
 
