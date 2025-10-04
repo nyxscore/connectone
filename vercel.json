@@ -1,6 +1,12 @@
 {
   "framework": "nextjs",
-  "buildCommand": "next build",
+  "buildCommand": "rm -rf .next && npm run build",
   "outputDirectory": ".next",
-  "installCommand": "npm install"
+  "installCommand": "rm -rf node_modules package-lock.json && npm install",
+  "devCommand": "next dev",
+  "functions": {
+    "app/api/**/*.ts": {
+      "runtime": "nodejs18.x"
+    }
+  }
 }

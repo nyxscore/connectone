@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "rm -rf .next && next build",
+    "build:clean": "rm -rf .next node_modules package-lock.json && npm install && next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
