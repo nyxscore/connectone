@@ -26,14 +26,12 @@ interface ProfileStatsProps {
   user: UserProfile;
   isOwnProfile?: boolean;
   onAvatarUpdate?: (photoURL: string) => void;
-  onRefreshUser?: () => Promise<void>;
 }
 
 export function ProfileStats({
   user,
   isOwnProfile = false,
   onAvatarUpdate,
-  onRefreshUser,
 }: ProfileStatsProps) {
   const gradeInfo = getGradeInfo(user.grade);
   const [showMenu, setShowMenu] = useState(false);
@@ -84,12 +82,6 @@ export function ProfileStats({
 
           if (result.success && result.data) {
             onAvatarUpdate(result.data);
-            
-            // 헤더의 사용자 정보 새로고침 (최신 데이터 가져오기)
-            if (onRefreshUser) {
-              await onRefreshUser();
-            }
-            
             toast.success("아바타가 업데이트되었습니다.");
           } else {
             toast.error(result.error || "업로드에 실패했습니다.");
@@ -105,7 +97,7 @@ export function ProfileStats({
   };
 
   const handleAvatarDelete = async () => {
-    if (!onAvatarUpdate || !onRefreshUser) return;
+    if (!onAvatarUpdate) return;
 
     try {
       // 실제 Firebase Storage와 Firestore에서 삭제
@@ -113,10 +105,6 @@ export function ProfileStats({
 
       if (result.success) {
         onAvatarUpdate(""); // UI 업데이트
-        
-        // 헤더의 사용자 정보 새로고침 (최신 데이터 가져오기)
-        await onRefreshUser();
-        
         toast.success("프로필 사진이 삭제되었습니다.");
       } else {
         toast.error(result.error || "프로필 사진 삭제에 실패했습니다.");

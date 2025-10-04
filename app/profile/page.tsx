@@ -263,7 +263,6 @@ export default function MyProfilePage() {
             user={profile}
             isOwnProfile={true}
             onAvatarUpdate={handleAvatarUpload}
-            onRefreshUser={refreshUser}
           />
 
           {/* 회원 등급 정보 */}
