@@ -40,7 +40,7 @@ import toast from "react-hot-toast";
 import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
 
 export default function MyProfilePage() {
-  const { user: currentUser, isLoading: authLoading } = useAuth();
+  const { user: currentUser, isLoading: authLoading, updateUser } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [myItems, setMyItems] = useState<any[]>([]);
@@ -136,6 +136,10 @@ export default function MyProfilePage() {
 
       if (updateResult.success && profile) {
         setProfile({ ...profile, photoURL: photoURL || undefined });
+        
+        // 헤더의 사용자 정보도 즉시 업데이트
+        updateUser({ profileImage: photoURL || undefined });
+        
         if (photoURL) {
           toast.success("아바타가 업데이트되었습니다.");
         } else {
@@ -328,7 +332,7 @@ export default function MyProfilePage() {
               </div>
 
               {/* 지역 */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <MapPin className="w-5 h-5 text-gray-500" />
                   <div>
@@ -340,9 +344,6 @@ export default function MyProfilePage() {
                     </p>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" onClick={handleEdit}>
-                  <Edit2 className="w-4 h-4" />
-                </Button>
               </div>
 
               {/* 핸드폰 인증 */}

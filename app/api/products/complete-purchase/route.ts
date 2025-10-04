@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/api/firebase";
 
 export async function POST(request: NextRequest) {
@@ -73,6 +73,46 @@ export async function POST(request: NextRequest) {
         // 거래 내역이 없어도 상품 완료는 진행
         console.log("거래 내역 업데이트 실패 (무시됨)");
       });
+
+      // 채팅창에 결제완료 공지 알림 추가
+      try {
+        // 채팅방 찾기 (itemId로 채팅방 검색)
+        const chatsRef = collection(db, "chats");
+        const chatsQuery = query(
+          chatsRef,
+          where("itemId", "==", itemId),
+          where("sellerUid", "==", itemData.sellerUid),
+          where("buyerUid", "==", buyerUid)
+        );
+        const chatsSnapshot = await getDocs(chatsQuery);
+        
+        if (!chatsSnapshot.empty) {
+          const chatDoc = chatsSnapshot.docs[0];
+          const chatId = chatDoc.id;
+          
+          // 시스템 메시지로 결제완료 알림 전송
+          const systemMessage = {
+            chatId,
+            senderId: "system",
+            message: "🎉 결제가 완료되었습니다! 판매자에게 입금이 처리됩니다.",
+            messageType: "system",
+          };
+          
+          // 시스템 메시지 전송
+          await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/chat/send-message`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(systemMessage),
+          }).catch(error => {
+            console.error("시스템 메시지 전송 실패:", error);
+          });
+        }
+      } catch (error) {
+        console.error("채팅 알림 전송 실패:", error);
+        // 채팅 알림 실패는 전체 프로세스를 중단하지 않음
+      }
 
       return NextResponse.json({
         success: true,

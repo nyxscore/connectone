@@ -48,6 +48,11 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 사용자 정보 업데이트 함수
+  const updateUser = (updatedUserData: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...updatedUserData } : null);
+  };
+
   useEffect(() => {
     let isMounted = true;
     console.log("useAuth: 초기화 시작");
@@ -153,5 +158,6 @@ export const useAuth = () => {
     loading,
     isAuthenticated: !!user,
     isLoading: loading,
+    updateUser,
   };
 };

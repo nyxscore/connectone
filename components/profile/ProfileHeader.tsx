@@ -35,17 +35,7 @@ export function ProfileHeader({
           </Button>
 
           <div className="flex items-center space-x-2">
-            {isOwnProfile ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onEdit}
-                className="flex items-center"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                프로필 수정
-              </Button>
-            ) : (
+            {!isOwnProfile && (
               <Button variant="outline" size="sm" className="flex items-center">
                 <Settings className="w-4 h-4 mr-2" />
                 설정

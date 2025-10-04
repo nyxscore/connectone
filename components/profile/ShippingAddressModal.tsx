@@ -27,7 +27,7 @@ import toast from "react-hot-toast";
 
 interface ShippingAddressModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (newAddress?: ShippingAddress) => void;
   userId: string;
 }
 
@@ -235,6 +235,13 @@ export default function ShippingAddressModal({
           toast.success("배송지가 추가되었습니다.");
           loadAddresses();
           handleCancelEdit();
+          
+          // 새로 추가된 배송지를 반환
+          const newAddress: ShippingAddress = {
+            ...addressData,
+            isDefault: addressData.isDefault || addresses.length === 0, // 첫 번째 배송지면 기본으로 설정
+          };
+          onClose(newAddress);
         } else {
           toast.error(result.error || "배송지 추가에 실패했습니다.");
         }

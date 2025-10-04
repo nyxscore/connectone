@@ -58,9 +58,14 @@ export default function ShippingAddressSelectionModal({
     }
   };
 
-  const handleAddressAdded = () => {
+  const handleAddressAdded = (newAddress?: ShippingAddress) => {
     setShowAddModal(false);
     loadAddresses(); // 배송지 목록 새로고침
+    
+    // 새로 추가된 배송지가 있으면 자동으로 선택
+    if (newAddress) {
+      setSelectedAddress(newAddress);
+    }
   };
 
   if (!isOpen) return null;

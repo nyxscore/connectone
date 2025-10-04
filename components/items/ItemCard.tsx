@@ -3,7 +3,7 @@
 import { Card } from "../ui/Card";
 import { SellItem } from "../../data/types";
 import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
-import { MapPin, Calendar, Brain, Clock, Truck, Package } from "lucide-react";
+import { MapPin, Calendar, Brain, Clock, Truck, Package, Shield } from "lucide-react";
 import { WatermarkImage } from "../ui/WatermarkImage";
 // date-fns 제거 - 성능 최적화
 import { useRouter } from "next/navigation";
@@ -243,18 +243,28 @@ export function ItemCard({
         )}
 
         {/* 판매방법 표시 - 모든 거래 방식 표시 */}
-        {item.shippingTypes && item.shippingTypes.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1 sm:mt-2">
-            {item.shippingTypes.map((type, index) => (
-              <span
-                key={index}
-                className="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded-full whitespace-nowrap"
-              >
-                {getShippingTypeLabel(type)}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-1 mt-1 sm:mt-2">
+          {item.shippingTypes && item.shippingTypes.length > 0 && (
+            <>
+              {item.shippingTypes.map((type, index) => (
+                <span
+                  key={index}
+                  className="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                >
+                  {getShippingTypeLabel(type)}
+                </span>
+              ))}
+            </>
+          )}
+          
+          {/* 안전결제 가능 옵션 표시 */}
+          {(item as any).escrowEnabled && (
+            <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full whitespace-nowrap flex items-center">
+              <Shield className="w-3 h-3 mr-1" />
+              안전결제
+            </span>
+          )}
+        </div>
       </div>
     </Card>
   );
