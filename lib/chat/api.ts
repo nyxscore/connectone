@@ -641,13 +641,25 @@ export async function deleteChat(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log("deleteChat 호출됨:", { chatId, userId });
-    const chatRef = doc(db, "chats", chatId);
-    const chatSnap = await getDoc(chatRef);
+    console.log("🔍 deleteChat 호출됨:", { chatId, userId });
+    
+    if (!chatId || !userId) {
+      console.error("❌ 필수 파라미터 누락:", { chatId, userId });
+      return { success: false, error: "필수 파라미터가 누락되었습니다." };
+    }
 
-    console.log("채팅 문서 존재 여부:", chatSnap.exists());
+    const chatRef = doc(db, "chats", chatId);
+    console.log("🔍 채팅 문서 참조 생성:", chatRef.path);
+    
+    const chatSnap = await getDoc(chatRef);
+    console.log("🔍 채팅 문서 조회 결과:", {
+      exists: chatSnap.exists(),
+      id: chatSnap.id,
+      data: chatSnap.exists() ? chatSnap.data() : null
+    });
+
     if (!chatSnap.exists()) {
-      console.log("채팅을 찾을 수 없음:", chatId);
+      console.log("❌ 채팅을 찾을 수 없음:", chatId);
       return { success: false, error: "채팅을 찾을 수 없습니다." };
     }
 
@@ -663,14 +675,24 @@ export async function deleteChat(
 
     // 권한 확인 - buyerUid 또는 sellerUid가 현재 사용자여야 함
     // 또는 buyerUid와 sellerUid가 같은 경우 (자기 자신과의 채팅)도 허용
-    const isAuthorized =
-      chatData.buyerUid === userId ||
-      chatData.sellerUid === userId ||
-      (chatData.buyerUid === chatData.sellerUid &&
-        chatData.buyerUid === userId);
+    const isBuyer = chatData.buyerUid === userId;
+    const isSeller = chatData.sellerUid === userId;
+    const isSelfChat = chatData.buyerUid === chatData.sellerUid && chatData.buyerUid === userId;
+    
+    const isAuthorized = isBuyer || isSeller || isSelfChat;
+
+    console.log("🔍 채팅 삭제 권한 상세 체크:", {
+      userId,
+      buyerUid: chatData.buyerUid,
+      sellerUid: chatData.sellerUid,
+      isBuyer,
+      isSeller,
+      isSelfChat,
+      isAuthorized
+    });
 
     if (!isAuthorized) {
-      console.error("채팅 삭제 권한 없음:", {
+      console.error("❌ 채팅 삭제 권한 없음:", {
         userId,
         buyerUid: chatData.buyerUid,
         sellerUid: chatData.sellerUid,
@@ -682,19 +704,30 @@ export async function deleteChat(
     // 채팅을 완전히 삭제하지 않고, 사용자별로 삭제 상태만 표시
     const deletedByField = chatData.buyerUid === userId ? 'deletedByBuyer' : 'deletedBySeller';
     
+    console.log("🔍 채팅 삭제 상태 업데이트 시작:", {
+      deletedByField,
+      chatId,
+      userId
+    });
+    
     await updateDoc(chatRef, {
       [deletedByField]: true,
       deletedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
 
-    console.log(`채팅 삭제 상태 업데이트: ${deletedByField} = true`);
+    console.log("✅ 채팅 삭제 상태 업데이트 완료:", `${deletedByField} = true`);
 
     // 관련 메시지들은 삭제하지 않음 (양쪽 사용자가 모두 삭제할 때까지 보관)
 
     return { success: true };
   } catch (error) {
-    console.error("채팅 삭제 실패:", error);
+    console.error("❌ 채팅 삭제 실패:", {
+      chatId,
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return {
       success: false,
       error:
