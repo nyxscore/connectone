@@ -38,7 +38,7 @@ function MyItemsPageContent() {
   const isViewingOtherUser = targetUserId && targetUserId !== currentUser?.uid;
 
   // 탭 상태 관리
-  const [activeTab, setActiveTab] = useState<"selling" | "trading" | "buying">(
+  const [activeTab, setActiveTab] = useState<"selling" | "trading" | "buying" | "sold">(
     "selling"
   );
 
@@ -124,6 +124,62 @@ function MyItemsPageContent() {
           id: doc.id,
           ...doc.data(),
         }));
+
+        // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
+        const sortedItems = items.sort((a, b) => {
+          const aTime = a.createdAt?.seconds || 0;
+          const bTime = b.createdAt?.seconds || 0;
+          return bTime - aTime;
+        });
+
+        setMyItems(sortedItems);
+      } else if (activeTab === "sold") {
+        // 거래완료된 상품 로드 (판매완료 + 구매완료)
+        const { collection, query, where, getDocs } = await import(
+          "firebase/firestore"
+        );
+        const { db } = await import("../../../lib/api/firebase");
+
+        const itemsRef = collection(db, "items");
+        
+        // 판매완료 상품 (sellerUid가 현재 사용자이고 status가 sold인 상품들)
+        const soldItemsQuery = query(
+          itemsRef,
+          where("sellerUid", "==", userId),
+          where("status", "in", ["sold", "paid_hold", "completed"])
+        );
+        
+        // 구매완료 상품 (buyerUid가 현재 사용자이고 status가 sold인 상품들)
+        const boughtItemsQuery = query(
+          itemsRef,
+          where("buyerUid", "==", userId),
+          where("status", "in", ["sold", "paid_hold", "completed"])
+        );
+
+        const [soldSnapshot, boughtSnapshot] = await Promise.all([
+          getDocs(soldItemsQuery),
+          getDocs(boughtItemsQuery)
+        ]);
+
+        const items: any[] = [];
+        
+        // 판매완료 상품 추가
+        soldSnapshot.docs.forEach(doc => {
+          items.push({ 
+            id: doc.id, 
+            ...doc.data(), 
+            transactionType: "sold" 
+          });
+        });
+        
+        // 구매완료 상품 추가
+        boughtSnapshot.docs.forEach(doc => {
+          items.push({ 
+            id: doc.id, 
+            ...doc.data(), 
+            transactionType: "bought" 
+          });
+        });
 
         // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
         const sortedItems = items.sort((a, b) => {
@@ -343,6 +399,16 @@ function MyItemsPageContent() {
               >
                 구매중인 상품
               </button>
+              <button
+                onClick={() => setActiveTab("sold")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "sold"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                거래완료된 상품
+              </button>
             </div>
           </div>
         </div>
@@ -359,7 +425,9 @@ function MyItemsPageContent() {
                   ? "등록한 상품이 없습니다."
                   : activeTab === "trading"
                     ? "거래중인 상품이 없습니다."
-                    : "구매중인 상품이 없습니다."}
+                    : activeTab === "buying"
+                      ? "구매중인 상품이 없습니다."
+                      : "거래완료된 상품이 없습니다."}
             </p>
             {!isViewingOtherUser &&
               (activeTab === "selling" || activeTab === "trading") && (
