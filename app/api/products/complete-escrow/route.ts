@@ -35,10 +35,16 @@ export async function POST(req: NextRequest) {
 
     // 채팅에 시스템 메시지 추가
     try {
+      console.log("🔔 complete-escrow 채팅 메시지 추가 시작:", {
+        itemId,
+        buyerUid,
+        sellerUid: itemData.sellerUid
+      });
+
       const { getOrCreateChat, addMessage } = await import(
         "../../../../lib/chat/api"
       );
-
+      
       // 채팅방 찾기 또는 생성
       const chatResult = await getOrCreateChat({
         itemId: itemId,
@@ -46,6 +52,8 @@ export async function POST(req: NextRequest) {
         sellerUid: itemData.sellerUid,
         firstMessage: "안전결제가 완료되었습니다.",
       });
+
+      console.log("🔔 complete-escrow 채팅방 생성/찾기 결과:", chatResult);
 
       if (chatResult.success && chatResult.chatId) {
         // 시스템 메시지 추가
@@ -55,6 +63,8 @@ export async function POST(req: NextRequest) {
           content:
             "🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다.",
         });
+
+        console.log("🔔 complete-escrow 시스템 메시지 추가 결과:", systemMessageResult);
 
         if (systemMessageResult.success) {
           console.log("✅ complete-escrow 시스템 메시지 추가 성공");
