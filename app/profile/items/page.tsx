@@ -78,24 +78,43 @@ function MyItemsPageContent() {
       setLoading(true);
 
       if (activeTab === "buying") {
-        // 구매중인 상품 로드 (buyerId가 현재 사용자인 상품들)
+        // 구매중인 상품 로드 (buyerUid와 buyerId 두 필드 모두 확인)
         const { collection, query, where, getDocs, orderBy } = await import(
           "firebase/firestore"
         );
         const { db } = await import("../../../lib/api/firebase");
 
         const itemsRef = collection(db, "items");
-        const q = query(
+        // buyerUid와 buyerId 두 필드 모두 확인
+        const buyerUidQuery = query(
           itemsRef,
           where("buyerUid", "==", userId),
           where("status", "in", ["reserved", "escrow_completed"])
         );
+        
+        const buyerIdQuery = query(
+          itemsRef,
+          where("buyerId", "==", userId),
+          where("status", "in", ["reserved", "escrow_completed"])
+        );
 
-        const querySnapshot = await getDocs(q);
-        const items = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const [buyerUidSnapshot, buyerIdSnapshot] = await Promise.all([
+          getDocs(buyerUidQuery),
+          getDocs(buyerIdQuery)
+        ]);
+        
+        // 두 결과를 합치고 중복 제거
+        const allItems = new Map();
+        
+        buyerUidSnapshot.docs.forEach(doc => {
+          allItems.set(doc.id, { id: doc.id, ...doc.data() });
+        });
+        
+        buyerIdSnapshot.docs.forEach(doc => {
+          allItems.set(doc.id, { id: doc.id, ...doc.data() });
+        });
+        
+        const items = Array.from(allItems.values());
 
         // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
         const sortedItems = items.sort((a, b) => {
