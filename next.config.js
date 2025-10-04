@@ -100,7 +100,7 @@ const nextConfig = {
 
   // 성능 최적화 (Next.js 15에서는 기본적으로 활성화됨)
 
-  // 타입스크립트 설정 (임시 비활성화)
+  // 타입스크립트 설정 (빌드 에러 무시)
   typescript: {
     ignoreBuildErrors: true,
   },
