@@ -87,7 +87,7 @@ function MyItemsPageContent() {
         const itemsRef = collection(db, "items");
         const q = query(
           itemsRef,
-          where("buyerId", "==", userId),
+          where("buyerUid", "==", userId),
           where("status", "in", ["reserved", "escrow_completed"])
         );
 
