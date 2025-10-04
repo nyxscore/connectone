@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
 
     const itemData = itemSnap.data();
 
-    // 구매자가 맞는지 확인
-    if (itemData.buyerId !== buyerUid) {
+    // 구매자가 맞는지 확인 (buyerId와 buyerUid 모두 체크)
+    if (itemData.buyerId !== buyerUid && itemData.buyerUid !== buyerUid) {
       return NextResponse.json(
         { success: false, error: "권한이 없습니다." },
         { status: 403 }

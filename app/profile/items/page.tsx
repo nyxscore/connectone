@@ -91,7 +91,7 @@ function MyItemsPageContent() {
           where("buyerUid", "==", userId),
           where("status", "in", ["reserved", "escrow_completed"])
         );
-        
+
         const buyerIdQuery = query(
           itemsRef,
           where("buyerId", "==", userId),
@@ -100,20 +100,20 @@ function MyItemsPageContent() {
 
         const [buyerUidSnapshot, buyerIdSnapshot] = await Promise.all([
           getDocs(buyerUidQuery),
-          getDocs(buyerIdQuery)
+          getDocs(buyerIdQuery),
         ]);
-        
+
         // 두 결과를 합치고 중복 제거
         const allItems = new Map();
-        
+
         buyerUidSnapshot.docs.forEach(doc => {
           allItems.set(doc.id, { id: doc.id, ...doc.data() });
         });
-        
+
         buyerIdSnapshot.docs.forEach(doc => {
           allItems.set(doc.id, { id: doc.id, ...doc.data() });
         });
-        
+
         const items = Array.from(allItems.values());
 
         // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)

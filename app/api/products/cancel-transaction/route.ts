@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
     // 안전결제 완료 상태인 경우 안전결제 취소 API 호출
     if (itemData.status === "escrow_completed") {
       try {
-        // 구매자와 판매자 구분
-        const isBuyer = itemData.buyerUid === userId;
+        // 구매자와 판매자 구분 (buyerId와 buyerUid 모두 체크)
+        const isBuyer = itemData.buyerUid === userId || itemData.buyerId === userId;
         const isSeller = itemData.sellerUid === userId;
 
         if (!isBuyer && !isSeller) {
@@ -85,6 +85,17 @@ export async function POST(req: NextRequest) {
     }
 
     // 일반 거래 취소 (안전결제가 아닌 경우)
+    // 구매자와 판매자 구분 (buyerId와 buyerUid 모두 체크)
+    const isBuyer = itemData.buyerUid === userId || itemData.buyerId === userId;
+    const isSeller = itemData.sellerUid === userId;
+
+    if (!isBuyer && !isSeller) {
+      return NextResponse.json(
+        { success: false, error: "권한이 없습니다." },
+        { status: 403 }
+      );
+    }
+
     await updateDoc(itemRef, {
       status: "active", // '판매중'으로 되돌리기
       buyerId: null, // 구매자 정보 제거

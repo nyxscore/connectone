@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
 
     const itemData = itemSnap.data();
 
-    // 권한 확인 - 판매자 또는 구매자만 취소 가능
+    // 권한 확인 - 판매자 또는 구매자만 취소 가능 (buyerId와 buyerUid 모두 체크)
     const isSeller = itemData.sellerUid === cancelledBy;
-    const isBuyer = itemData.buyerUid === cancelledBy;
+    const isBuyer = itemData.buyerUid === cancelledBy || itemData.buyerId === cancelledBy;
 
     if (!isSeller && !isBuyer) {
       return NextResponse.json(
