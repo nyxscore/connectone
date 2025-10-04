@@ -2,7 +2,6 @@
 const nextConfig = {
   // 이미지 최적화 설정
   images: {
-    formats: ["image/webp", "image/avif"],
     domains: [
       "firebasestorage.googleapis.com",
       "res.cloudinary.com",
