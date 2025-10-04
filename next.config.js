@@ -1,10 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 빌드 에러 완전 무시
-  experimental: {
-    skipTrailingSlashRedirect: true,
-    skipMiddlewareUrlNormalize: true,
-  },
   // 이미지 최적화 설정
   images: {
     formats: ["image/webp", "image/avif"],
@@ -116,10 +111,6 @@ const nextConfig = {
     dirs: [], // ESLint 체크할 디렉토리 비우기
   },
 
-  // ESLint 완전 비활성화
-  eslintConfig: {
-    ignoreDuringBuilds: true,
-  },
 
   // 추가 빌드 설정
   onDemandEntries: {
