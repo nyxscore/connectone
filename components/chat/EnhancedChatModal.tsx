@@ -140,6 +140,8 @@ export function EnhancedChatModal({
   const addStatusNotification = (
     type: "escrow_completed" | "reserved" | "shipping" | "sold"
   ) => {
+    console.log(`🔔 addStatusNotification 호출됨: ${type}`);
+    
     const notifications = {
       escrow_completed: {
         message:
@@ -169,7 +171,17 @@ export function EnhancedChatModal({
       type,
     };
 
-    setStatusNotifications(prev => [...prev, notification]);
+    console.log('🔔 알림 객체 생성:', notification);
+
+    setStatusNotifications(prev => {
+      const newNotifications = [...prev, notification];
+      console.log('🔔 알림 상태 업데이트:', {
+        기존: prev.length,
+        새로: newNotifications.length,
+        전체: newNotifications
+      });
+      return newNotifications;
+    });
   };
 
   // 배송지 메시지 렌더링 함수
@@ -288,6 +300,44 @@ export function EnhancedChatModal({
       loadChatData();
     }
   }, [isOpen, user, itemId, sellerUid, chatId]);
+
+  // 채팅 데이터 로드 시 상태별 알림 초기화
+  useEffect(() => {
+    if (chatData?.item?.status && user) {
+      const currentStatus = chatData.item.status;
+      
+      console.log('🔔 알림 초기화 시작:', {
+        currentStatus,
+        userId: user.uid,
+        isBuyer: user.uid === chatData.buyerUid,
+        isSeller: user.uid === chatData.sellerUid
+      });
+      
+      // 기존 알림 초기화
+      setStatusNotifications([]);
+      
+      // 현재 상태에 맞는 알림들 추가
+      if (currentStatus === 'escrow_completed') {
+        console.log('✅ escrow_completed 알림 추가');
+        addStatusNotification('escrow_completed');
+      } else if (currentStatus === 'reserved') {
+        console.log('✅ escrow_completed + reserved 알림 추가');
+        addStatusNotification('escrow_completed');
+        addStatusNotification('reserved');
+      } else if (currentStatus === 'shipping') {
+        console.log('✅ escrow_completed + reserved + shipping 알림 추가');
+        addStatusNotification('escrow_completed');
+        addStatusNotification('reserved');
+        addStatusNotification('shipping');
+      } else if (currentStatus === 'sold') {
+        console.log('✅ 모든 알림 추가');
+        addStatusNotification('escrow_completed');
+        addStatusNotification('reserved');
+        addStatusNotification('shipping');
+        addStatusNotification('sold');
+      }
+    }
+  }, [chatData?.item?.status, user?.uid]);
 
   // 상품 상태 변경 이벤트 감지
   useEffect(() => {
@@ -1379,6 +1429,7 @@ export function EnhancedChatModal({
             ) : (
               <>
                 {/* 거래 상태 변경 알림들 (누적 표시) */}
+                {console.log('🔔 알림 렌더링:', statusNotifications.length, statusNotifications)}
                 {statusNotifications.map(notification => (
                   <div key={notification.id} className="mb-4">
                     <div
