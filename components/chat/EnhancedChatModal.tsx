@@ -477,13 +477,16 @@ export function EnhancedChatModal({
         }
 
         // buyerUid 또는 buyerId 우선순위로 설정
-        const finalBuyerUid = itemResult.item.buyerUid || itemResult.item.buyerId || chatData.buyerUid;
+        const finalBuyerUid =
+          itemResult.item.buyerUid ||
+          itemResult.item.buyerId ||
+          chatData.buyerUid;
 
         console.log("최종 buyerUid 설정:", {
           itemBuyerUid: itemResult.item.buyerUid,
           itemBuyerId: itemResult.item.buyerId,
           chatBuyerUid: chatData.buyerUid,
-          finalBuyerUid
+          finalBuyerUid,
         });
 
         setChatData({
@@ -504,7 +507,7 @@ export function EnhancedChatModal({
       } else if (itemId && sellerUid) {
         // 새로운 채팅 생성
         console.log("새 채팅 생성:", { itemId, sellerUid });
-        
+
         if (user?.uid === sellerUid) {
           setError("자신의 상품과는 채팅할 수 없습니다.");
           return;
@@ -525,13 +528,14 @@ export function EnhancedChatModal({
         }
 
         // buyerUid 또는 buyerId 우선순위로 설정
-        const finalBuyerUid = itemResult.item.buyerUid || itemResult.item.buyerId || user?.uid;
+        const finalBuyerUid =
+          itemResult.item.buyerUid || itemResult.item.buyerId || user?.uid;
 
         console.log("새 채팅 buyerUid 설정:", {
           itemBuyerUid: itemResult.item.buyerUid,
           itemBuyerId: itemResult.item.buyerId,
           userUid: user?.uid,
-          finalBuyerUid
+          finalBuyerUid,
         });
 
         setChatData({
@@ -791,7 +795,6 @@ export function EnhancedChatModal({
       };
     }
   }, [chatData?.chatId, user]);
-
 
   const loadMessages = async (chatId: string) => {
     try {
