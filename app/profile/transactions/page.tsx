@@ -100,20 +100,48 @@ export default function TransactionsPage() {
       const snapshot = await getDocs(q);
       console.log("조회된 문서 개수:", snapshot.docs.length);
 
-      const transactionList: Transaction[] = snapshot.docs
-        .map(
-          doc =>
-            ({
-              id: doc.id,
-              ...doc.data(),
-            }) as Transaction
-        )
-        .sort((a, b) => {
-          // 클라이언트에서 정렬 (최신순)
-          const aTime = a.createdAt?.toMillis?.() || 0;
-          const bTime = b.createdAt?.toMillis?.() || 0;
-          return bTime - aTime;
-        });
+      // 각 거래에 대해 상품 정보 조회
+      const transactionList = await Promise.all(
+        snapshot.docs.map(async doc => {
+          const transactionData = doc.data() as Transaction;
+
+          // 상품 정보 조회
+          try {
+            const { doc: productDoc, getDoc } = await import(
+              "firebase/firestore"
+            );
+            const productRef = productDoc(
+              db,
+              "items",
+              transactionData.productId
+            );
+            const productSnap = await getDoc(productRef);
+
+            if (productSnap.exists()) {
+              const productData = productSnap.data();
+              return {
+                id: doc.id,
+                ...transactionData,
+                productTitle: productData.title,
+              } as Transaction;
+            }
+          } catch (error) {
+            console.error("상품 정보 조회 실패:", error);
+          }
+
+          return {
+            id: doc.id,
+            ...transactionData,
+          } as Transaction;
+        })
+      );
+
+      // 클라이언트에서 정렬 (최신순)
+      transactionList.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
 
       setTransactions(transactionList);
       console.log("거래 내역 조회 완료:", transactionList);
@@ -241,21 +269,28 @@ export default function TransactionsPage() {
                         </div>
 
                         {/* 상품 정보 */}
-                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                          <span className="text-sm text-gray-500">상품</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              window.open(
-                                `/item/${transaction.productId}`,
-                                "_blank"
-                              );
-                            }}
-                            className="text-sm text-blue-600 hover:text-blue-700 p-0 h-auto"
-                          >
-                            상품 보기 →
-                          </Button>
+                        <div className="pb-3 border-b border-gray-100">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm text-gray-500 block mb-1">
+                                상품
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  window.open(
+                                    `/item/${transaction.productId}`,
+                                    "_blank"
+                                  );
+                                }}
+                                className="text-sm text-blue-600 hover:text-blue-700 p-0 h-auto text-left justify-start"
+                              >
+                                {transaction.productTitle || "상품 정보"}
+                                <span className="ml-1">→</span>
+                              </Button>
+                            </div>
+                          </div>
                         </div>
 
                         {/* 결제 금액 */}

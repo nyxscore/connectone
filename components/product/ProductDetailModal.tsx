@@ -35,7 +35,7 @@ import { getGradeInfo } from "@/lib/profile/api";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/api/firebase";
 import { Card } from "@/components/ui/Card";
-import { FirestoreChatModal } from "@/components/chat/FirestoreChatModal";
+import { EnhancedChatModal } from "@/components/chat/EnhancedChatModal";
 import { getUserProfile } from "@/lib/profile/api";
 import { UserProfile } from "@/data/profile/types";
 import { SellerProfileCard } from "@/components/profile/SellerProfileCard";
@@ -696,6 +696,26 @@ export default function ProductDetailModal({
       if (result.success) {
         toast.success("구매가 취소되었습니다.");
 
+        // 구매 취소 시스템 메시지 전송
+        try {
+          const { getOrCreateChat } = await import("../../lib/chat/api");
+          const chatResult = await getOrCreateChat(
+            actualProductId,
+            user?.uid || "",
+            product?.sellerUid || "",
+            "❌ 구매자가 구매를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다."
+          );
+
+          if (chatResult.success) {
+            console.log(
+              "구매 취소 시스템 메시지 전송 완료:",
+              chatResult.chatId
+            );
+          }
+        } catch (error) {
+          console.error("구매 취소 시스템 메시지 전송 실패:", error);
+        }
+
         // 상품 상태를 active로 업데이트
         setProduct(prev =>
           prev ? { ...prev, status: "active", buyerUid: null } : null
@@ -1045,15 +1065,27 @@ export default function ProductDetailModal({
                       ) : isOwnItem ? (
                         // 본인 상품일 때 - 수정하기, 삭제하기, 구매신청자 목록 버튼
                         <div className="space-y-3">
-                          <Button
-                            className="w-full h-12 text-lg font-semibold"
-                            onClick={() => {
-                              setShowEditModal(true);
-                            }}
-                          >
-                            <Edit className="w-5 h-5 mr-2" />
-                            수정하기
-                          </Button>
+                          {/* 거래가 시작된 상품은 수정 불가 */}
+                          {product.status === "reserved" ||
+                          product.status === "escrow_completed" ? (
+                            <Button
+                              className="w-full h-12 text-lg font-semibold opacity-50 cursor-not-allowed"
+                              disabled
+                            >
+                              <Edit className="w-5 h-5 mr-2" />
+                              거래중 - 수정 불가
+                            </Button>
+                          ) : (
+                            <Button
+                              className="w-full h-12 text-lg font-semibold"
+                              onClick={() => {
+                                setShowEditModal(true);
+                              }}
+                            >
+                              <Edit className="w-5 h-5 mr-2" />
+                              수정하기
+                            </Button>
+                          )}
 
                           <Button
                             variant="destructive"
@@ -1441,12 +1473,11 @@ export default function ProductDetailModal({
         )}
 
       {/* 채팅 모달 */}
-      <FirestoreChatModal
+      <EnhancedChatModal
         isOpen={showChatModal}
         onClose={() => setShowChatModal(false)}
         itemId={product?.id}
         sellerUid={product?.sellerId}
-        tradeType={selectedTradeType}
       />
 
       {/* 판매자 프로필 모달 */}

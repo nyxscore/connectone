@@ -357,6 +357,7 @@ export interface ItemListOptions {
   sortBy?: "createdAt" | "price";
   sortOrder?: "desc" | "asc";
   filters?: ItemListFilters;
+  currentUserId?: string; // 현재 로그인한 사용자 ID
 }
 
 export async function getItemList(options: ItemListOptions = {}): Promise<{
@@ -493,6 +494,30 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
           item.description?.toLowerCase().includes(keyword) ||
           item.title?.toLowerCase().includes(keyword)
         );
+      });
+    }
+
+    // 거래중인 상품 필터링 (구매자와 판매자에게만 보이도록)
+    if (options.currentUserId) {
+      items = items.filter(item => {
+        // 거래중인 상품인지 확인 (reserved, paid_hold, shipping, escrow_completed 상태)
+        const isTradingItem =
+          item.status === "reserved" ||
+          item.status === "paid_hold" ||
+          item.status === "shipping" ||
+          item.status === "escrow_completed";
+
+        if (isTradingItem) {
+          // 거래중인 상품은 구매자나 판매자에게만 보임
+          const isSeller = item.sellerUid === options.currentUserId;
+          const isBuyer =
+            item.buyerUid === options.currentUserId ||
+            item.buyerId === options.currentUserId;
+          return isSeller || isBuyer;
+        }
+
+        // 거래중이 아닌 상품은 모든 사용자에게 보임
+        return true;
       });
     }
 

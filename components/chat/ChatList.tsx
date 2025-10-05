@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ChatWithDetails } from "../../data/chat/types";
-import { getUserChats } from "../../lib/chat/api";
+import { getUserChats, deleteChat } from "../../lib/chat/api";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { getUserProfile } from "../../lib/profile/api";
 import { getItem } from "../../lib/api/products";
@@ -17,7 +17,8 @@ import {
 import { db } from "../../lib/api/firebase";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { Loader2, MessageCircle, Clock, User } from "lucide-react";
+import toast from "react-hot-toast";
+import { Loader2, MessageCircle, Clock, User, Trash2 } from "lucide-react";
 // date-fns 제거 - 간단한 시간 표시로 변경
 
 interface ChatListProps {
@@ -32,6 +33,8 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [swipedChatId, setSwipedChatId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // 초기 로딩 상태 설정
   useEffect(() => {
@@ -151,10 +154,32 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
         "개"
       );
 
+      // 삭제된 채팅 필터링
+      const filteredDocs = snapshot.docs.filter((doc: any) => {
+        const chatData = doc.data();
+        const userId = user?.uid;
+
+        if (!userId) return false;
+
+        // 현재 사용자가 삭제하지 않은 채팅만 표시
+        if (chatData.buyerUid === userId) {
+          return !chatData.deletedByBuyer;
+        } else if (chatData.sellerUid === userId) {
+          return !chatData.deletedBySeller;
+        }
+        return true;
+      });
+
+      console.log(
+        `${isBuyer ? "Buyer" : "Seller"} 필터링 후:`,
+        filteredDocs.length,
+        "개"
+      );
+
       const updatedChats: ChatWithDetails[] = [];
 
       // Promise.all을 사용하여 모든 프로필 정보를 병렬로 가져오기
-      const profilePromises = snapshot.docs.map(async (doc: any) => {
+      const profilePromises = filteredDocs.map(async (doc: any) => {
         const chatData = { ...doc.data(), id: doc.id };
         const otherUid = isBuyer ? chatData.sellerUid : chatData.buyerUid;
 
@@ -344,6 +369,71 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
     }
   };
 
+  const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 카드 클릭 이벤트 방지
+
+    if (!user?.uid) return;
+
+    if (!confirm("정말로 이 채팅을 삭제하시겠습니까?")) return;
+
+    setIsDeleting(chatId);
+
+    try {
+      const result = await deleteChat(chatId, user.uid);
+
+      if (result.success) {
+        toast.success("채팅이 삭제되었습니다.");
+
+        // 채팅 목록에서 즉시 제거
+        setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
+
+        // 전역 이벤트 발생
+        window.dispatchEvent(
+          new CustomEvent("chatDeleted", {
+            detail: { chatId },
+          })
+        );
+
+        onChatDeleted?.();
+      } else {
+        toast.error(result.error || "채팅 삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("채팅 삭제 실패:", error);
+      toast.error("채팅 삭제에 실패했습니다.");
+    } finally {
+      setIsDeleting(null);
+      setSwipedChatId(null);
+    }
+  };
+
+  // 모바일 스와이프 처리
+  const handleTouchStart = (e: React.TouchEvent, chatId: string) => {
+    const touch = e.touches[0];
+    const startX = touch.clientX;
+
+    const handleTouchMove = (moveEvent: TouchEvent) => {
+      const moveTouch = moveEvent.touches[0];
+      const currentX = moveTouch.clientX;
+      const diffX = startX - currentX;
+
+      // 오른쪽에서 왼쪽으로 스와이프 (최소 50px)
+      if (diffX > 50) {
+        setSwipedChatId(chatId);
+      } else if (diffX < -50) {
+        setSwipedChatId(null);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+
+    document.addEventListener("touchmove", handleTouchMove);
+    document.addEventListener("touchend", handleTouchEnd);
+  };
+
   const formatTime = (timestamp: any) => {
     if (!timestamp) return "";
 
@@ -441,133 +531,183 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
       {chats.map(chat => {
         console.log("채팅 렌더링:", chat.id, chat);
         return (
-          <Card
+          <div
             key={chat.id}
-            className="p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-            onClick={() => handleChatClick(chat.id)}
+            className="relative"
+            onTouchStart={e => handleTouchStart(e, chat.id)}
           >
-            <div className="flex items-start space-x-2 sm:space-x-3">
-              {/* 상대방 프로필 이미지 */}
-              <div className="flex-shrink-0">
-                {(() => {
-                  console.log(`프로필 이미지 렌더링:`, {
-                    chatId: chat.id,
-                    nickname: chat.otherUser.nickname,
-                    profileImage: chat.otherUser.profileImage,
-                    hasProfileImage: !!chat.otherUser.profileImage,
-                  });
-                  return null;
-                })()}
-                {chat.otherUser.profileImage ? (
-                  <img
-                    src={chat.otherUser.profileImage}
-                    alt={chat.otherUser.nickname}
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
-                    onError={e => {
-                      console.error(
-                        `프로필 이미지 로드 실패:`,
-                        chat.otherUser.profileImage
-                      );
-                      e.currentTarget.style.display = "none";
-                    }}
-                    onLoad={() => {
-                      console.log(
-                        `프로필 이미지 로드 성공:`,
-                        chat.otherUser.profileImage
-                      );
-                    }}
-                  />
-                ) : (
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                    <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
-                  </div>
-                )}
-              </div>
-
-              {/* 채팅 정보 */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
-                    {chat.otherUser.nickname}
-                  </h3>
-                  <div className="flex items-center space-x-1 sm:space-x-2">
-                    {(unreadCounts[chat.id] || 0) > 0 && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 shadow-sm">
-                        {unreadCounts[chat.id]}
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-500 flex items-center">
-                      <Clock className="w-3 h-3 mr-1" />
-                      <span className="hidden sm:inline">
-                        {formatTime(chat.updatedAt)}
-                      </span>
-                      <span className="sm:hidden">
-                        {formatTime(chat.updatedAt)
-                          .replace("시간", "시")
-                          .replace("분", "분")}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* 아이템 정보 */}
-                <div className="flex items-center space-x-2 mb-1 sm:mb-2">
-                  {chat.item.imageUrl && (
-                    <img
-                      src={chat.item.imageUrl}
-                      alt={chat.item.title}
-                      className="w-6 h-6 sm:w-8 sm:h-8 rounded object-cover"
-                    />
+            {/* 모바일 스와이프 삭제 버튼 */}
+            {swipedChatId === chat.id && (
+              <div className="absolute right-0 top-0 bottom-0 bg-red-500 rounded-lg flex items-center justify-center px-4 z-10">
+                <button
+                  onClick={e => handleDeleteChat(chat.id, e)}
+                  disabled={isDeleting === chat.id}
+                  className="text-white p-2"
+                >
+                  {isDeleting === chat.id ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-5 h-5" />
                   )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <p className="text-xs text-gray-600 truncate">
-                        {chat.item.status === "deleted" ? (
-                          <span className="text-red-500 italic">삭제된 상품</span>
-                        ) : (
-                          chat.item.title
-                        )}
-                      </p>
-                      {/* 거래 상태 표시 */}
-                      {chat.item.status === "reserved" && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
-                          거래중
-                        </span>
-                      )}
-                      {chat.item.status === "shipping" && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                          배송중
-                        </span>
-                      )}
-                      {chat.item.status === "sold" && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
-                          거래완료
-                        </span>
-                      )}
-                      {chat.item.status === "deleted" && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">
-                          삭제됨
-                        </span>
-                      )}
-                      {chat.item.status === "escrow_completed" && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          안전결제완료
-                        </span>
-                      )}
+                </button>
+              </div>
+            )}
+
+            <Card
+              className={`p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+                swipedChatId === chat.id ? "transform -translate-x-16" : ""
+              }`}
+              onClick={() => {
+                // 다른 채팅이 스와이프되어 있으면 닫기
+                if (swipedChatId && swipedChatId !== chat.id) {
+                  setSwipedChatId(null);
+                }
+                // 현재 채팅이 스와이프되어 있으면 닫기
+                if (swipedChatId === chat.id) {
+                  setSwipedChatId(null);
+                  return;
+                }
+                handleChatClick(chat.id);
+              }}
+            >
+              <div className="flex items-start space-x-2 sm:space-x-3">
+                {/* 상대방 프로필 이미지 */}
+                <div className="flex-shrink-0">
+                  {(() => {
+                    console.log(`프로필 이미지 렌더링:`, {
+                      chatId: chat.id,
+                      nickname: chat.otherUser.nickname,
+                      profileImage: chat.otherUser.profileImage,
+                      hasProfileImage: !!chat.otherUser.profileImage,
+                    });
+                    return null;
+                  })()}
+                  {chat.otherUser.profileImage ? (
+                    <img
+                      src={chat.otherUser.profileImage}
+                      alt={chat.otherUser.nickname}
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
+                      onError={e => {
+                        console.error(
+                          `프로필 이미지 로드 실패:`,
+                          chat.otherUser.profileImage
+                        );
+                        e.currentTarget.style.display = "none";
+                      }}
+                      onLoad={() => {
+                        console.log(
+                          `프로필 이미지 로드 성공:`,
+                          chat.otherUser.profileImage
+                        );
+                      }}
+                    />
+                  ) : (
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                      <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
                     </div>
-                    <p className="text-xs font-medium text-gray-900">
-                      {chat.item.price.toLocaleString()}원
-                    </p>
-                  </div>
+                  )}
                 </div>
 
-                {/* 마지막 메시지 */}
-                <p className="text-xs sm:text-sm text-gray-600 truncate">
-                  {chat.lastMessage}
-                </p>
+                {/* 채팅 정보 */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
+                      {chat.otherUser.nickname}
+                    </h3>
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      {(unreadCounts[chat.id] || 0) > 0 && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 shadow-sm">
+                          {unreadCounts[chat.id]}
+                        </span>
+                      )}
+                      {/* 웹에서 삭제 버튼 */}
+                      <button
+                        onClick={e => handleDeleteChat(chat.id, e)}
+                        disabled={isDeleting === chat.id}
+                        className="hidden sm:flex items-center justify-center w-6 h-6 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        title="채팅 삭제"
+                      >
+                        {isDeleting === chat.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                      <span className="text-xs text-gray-500 flex items-center">
+                        <Clock className="w-3 h-3 mr-1" />
+                        <span className="hidden sm:inline">
+                          {formatTime(chat.updatedAt)}
+                        </span>
+                        <span className="sm:hidden">
+                          {formatTime(chat.updatedAt)
+                            .replace("시간", "시")
+                            .replace("분", "분")}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 아이템 정보 */}
+                  <div className="flex items-center space-x-2 mb-1 sm:mb-2">
+                    {chat.item.imageUrl && (
+                      <img
+                        src={chat.item.imageUrl}
+                        alt={chat.item.title}
+                        className="w-6 h-6 sm:w-8 sm:h-8 rounded object-cover"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-xs text-gray-600 truncate">
+                          {chat.item.status === "deleted" ? (
+                            <span className="text-red-500 italic">
+                              삭제된 상품
+                            </span>
+                          ) : (
+                            chat.item.title
+                          )}
+                        </p>
+                        {/* 거래 상태 표시 */}
+                        {chat.item.status === "reserved" && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
+                            거래중
+                          </span>
+                        )}
+                        {chat.item.status === "shipping" && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                            배송중
+                          </span>
+                        )}
+                        {chat.item.status === "sold" && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                            거래완료
+                          </span>
+                        )}
+                        {chat.item.status === "deleted" && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                            삭제됨
+                          </span>
+                        )}
+                        {chat.item.status === "escrow_completed" && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            안전결제완료
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-medium text-gray-900">
+                        {chat.item.price.toLocaleString()}원
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 마지막 메시지 */}
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">
+                    {chat.lastMessage}
+                  </p>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         );
       })}
     </div>

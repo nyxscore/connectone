@@ -13,6 +13,8 @@ import { getUserProfile, getGradeInfo } from "../../lib/profile/api";
 import { UserProfile } from "../../data/profile/types";
 import { SellerProfileModal } from "../profile/SellerProfileModal";
 import { CreateLogisticsOrderInput } from "../../data/types/logistics";
+import { EnhancedChatModal } from "../chat/EnhancedChatModal";
+import { getOrCreateChat } from "../../lib/chat/api";
 import {
   CONDITION_GRADES,
   INSTRUMENT_CATEGORIES,
@@ -51,6 +53,8 @@ export function ItemDetailModal({
   const [loading, setLoading] = useState(false);
   const [showLogisticsModal, setShowLogisticsModal] = useState(false);
   const [showSellerProfileModal, setShowSellerProfileModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   // 디버깅: item 객체 확인
   console.log("ItemDetailModal - item 객체:", {
@@ -118,8 +122,17 @@ export function ItemDetailModal({
 
   const formatDate = (date: any) => {
     if (!date) return "";
-    const dateObj = date.toDate ? date.toDate() : new Date(date);
-    return formatDistanceToNow(dateObj, { addSuffix: true, locale: ko });
+    try {
+      const dateObj = date.toDate ? date.toDate() : new Date(date);
+      // 유효한 날짜인지 확인
+      if (isNaN(dateObj.getTime())) {
+        return "날짜 정보 없음";
+      }
+      return formatDistanceToNow(dateObj, { addSuffix: true, locale: ko });
+    } catch (error) {
+      console.error("날짜 포맷팅 오류:", error, date);
+      return "날짜 정보 없음";
+    }
   };
 
   const getShippingTypeLabel = (type: string) => {
@@ -421,7 +434,7 @@ export function ItemDetailModal({
                 isLoggedIn={!!user}
                 itemId={item.id}
                 sellerUid={item.sellerUid}
-                buyerUid={user?.uid}
+                buyerUid={item.buyerUid}
                 currentUserId={user?.uid}
                 onPurchase={async () => {
                   // 구매하기 클릭 시 상품 상태를 reserved로 변경하고 거래 관리 페이지로 이동
@@ -436,6 +449,27 @@ export function ItemDetailModal({
                     );
 
                     if (result.success) {
+                      // 거래 시작 메시지 전송
+                      if (item.sellerUid && user?.uid) {
+                        try {
+                          const chatResult = await getOrCreateChat(
+                            item.id,
+                            user.uid, // 구매자 UID
+                            item.sellerUid, // 판매자 UID
+                            "거래가 시작되었습니다. 구매자와 소통을 시작해주세요."
+                          );
+
+                          if (chatResult.success) {
+                            console.log(
+                              "거래 시작 메시지 전송 완료:",
+                              chatResult.chatId
+                            );
+                          }
+                        } catch (error) {
+                          console.error("거래 시작 메시지 전송 실패:", error);
+                        }
+                      }
+
                       // 거래 관리 페이지로 이동
                       window.location.href = `/transaction/${item.id}`;
                     } else {
@@ -443,6 +477,29 @@ export function ItemDetailModal({
                     }
                   } catch (error) {
                     console.error("구매 처리 실패:", error);
+                  }
+                }}
+                onChat={async () => {
+                  // 채팅 생성 후 모달 열기
+                  if (user && item?.sellerUid && item?.id) {
+                    try {
+                      const chatResult = await getOrCreateChat({
+                        itemId: item.id,
+                        buyerUid: user.uid,
+                        sellerUid: item.sellerUid,
+                        firstMessage:
+                          "안녕하세요! 상품에 대해 문의드리고 싶습니다.",
+                      });
+
+                      if (chatResult.success && chatResult.chatId) {
+                        setSelectedChatId(chatResult.chatId);
+                        setShowChatModal(true);
+                      } else {
+                        console.error("채팅 생성 실패:", chatResult.error);
+                      }
+                    } catch (error) {
+                      console.error("채팅 생성 중 오류:", error);
+                    }
                   }
                 }}
                 onLogisticsQuote={handleLogisticsQuote}
@@ -486,6 +543,22 @@ export function ItemDetailModal({
         onClose={() => setShowSellerProfileModal(false)}
         sellerProfile={sellerProfile}
       />
+
+      {/* 채팅 모달 */}
+      {selectedChatId && (
+        <EnhancedChatModal
+          isOpen={showChatModal}
+          onClose={() => {
+            setShowChatModal(false);
+            setSelectedChatId(null);
+          }}
+          chatId={selectedChatId}
+          onChatDeleted={() => {
+            setShowChatModal(false);
+            setSelectedChatId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

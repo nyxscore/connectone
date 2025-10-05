@@ -394,11 +394,17 @@ export async function createNewMessageNotification(data: {
   messagePreview: string;
   chatId: string;
 }): Promise<{ success: boolean; notificationId?: string; error?: string }> {
+  // 시스템 메시지인 경우 (senderName이 빈 문자열) 메시지 내용만 표시
+  const isSystemMessage = data.senderName === "";
+  const notificationMessage = isSystemMessage
+    ? data.messagePreview
+    : `${data.senderName}님이 "${data.productTitle}" 상품에 대해 메시지를 보냈습니다: ${data.messagePreview}`;
+
   return createNotification({
     userId: data.userId,
     type: "new_message",
     title: "새로운 채팅 메시지",
-    message: `${data.senderName}님이 "${data.productTitle}" 상품에 대해 메시지를 보냈습니다: ${data.messagePreview}`,
+    message: notificationMessage,
     data: {
       senderName: data.senderName,
       productTitle: data.productTitle,

@@ -59,6 +59,7 @@ interface EnhancedChatModalProps {
   chatId?: string;
   tradeType?: string;
   onChatDeleted?: () => void;
+  autoSendSystemMessage?: string;
 }
 
 export function EnhancedChatModal({
@@ -69,6 +70,7 @@ export function EnhancedChatModal({
   chatId,
   tradeType,
   onChatDeleted,
+  autoSendSystemMessage,
 }: EnhancedChatModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -132,52 +134,121 @@ export function EnhancedChatModal({
     type: "escrow_completed" | "reserved" | "shipping" | "sold"
   ) => {
     console.log(`🔔 addStatusSystemMessage 호출됨: ${type}`);
+    console.log(`현재 거래 유형: ${chatData?.tradeType}`);
 
-    const notifications = {
-      escrow_completed: {
-        message:
-          "🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다.",
-      },
-      reserved: {
-        message:
-          "🚀 거래가 시작되었습니다! 판매자가 거래를 진행하기 시작했습니다.",
-      },
-      shipping: {
-        message: "📦 상품이 발송되었습니다! 판매자가 상품을 발송했습니다.",
-      },
-      sold: {
-        message: "🎊 거래가 완료되었습니다! 구매자가 상품 수령을 확인했습니다.",
-      },
+    // 거래 유형에 따른 메시지 분기
+    const getSystemMessage = (type: string, tradeType?: string) => {
+      const isEscrow = tradeType?.includes("안전결제");
+
+      switch (type) {
+        case "escrow_completed":
+          // 안전결제인 경우에만 결제 완료 메시지 표시
+          if (isEscrow) {
+            return "🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다.";
+          } else {
+            // 직거래/택배인 경우 결제 완료 단계가 없으므로 메시지 없음
+            return "";
+          }
+        case "reserved":
+          // 거래 시작 메시지 (모든 거래 유형 공통)
+          if (isEscrow) {
+            return "🚀 안전거래가 시작되었습니다! 판매자가 거래를 진행하기 시작했습니다.";
+          } else if (
+            tradeType?.includes("택배") &&
+            !tradeType?.includes("안전결제")
+          ) {
+            return "🚀 택배거래가 시작되었습니다! 판매자가 거래를 진행하기 시작했습니다.";
+          } else {
+            return "🚀 직거래가 시작되었습니다! 판매자가 거래를 진행하기 시작했습니다.";
+          }
+        case "shipping":
+          // 배송중 메시지 (안전결제인 경우에만 표시)
+          if (isEscrow) {
+            return "📦 상품이 발송되었습니다! 판매자가 상품을 발송했습니다.";
+          } else {
+            // 직거래/택배인 경우 배송중 단계가 없으므로 메시지 없음
+            return "";
+          }
+        case "sold":
+          // 거래 완료 메시지 (모든 거래 유형 공통)
+          return "🎊 거래가 완료되었습니다! 구매자가 상품 수령을 확인했습니다.";
+        default:
+          return "📢 거래 상태가 변경되었습니다.";
+      }
     };
+
+    const message = getSystemMessage(type, chatData?.tradeType);
+
+    // 메시지가 비어있으면 전송하지 않음 (해당 거래 유형에서 발생하지 않는 단계)
+    if (!message) {
+      console.log(
+        `⏭️ ${type} 단계는 현재 거래 유형(${chatData?.tradeType})에서 발생하지 않으므로 시스템 메시지를 전송하지 않습니다.`
+      );
+      return;
+    }
 
     if (!chatData?.chatId) {
       console.error("채팅 ID가 없어서 시스템 메시지를 추가할 수 없습니다.");
       return;
     }
 
-    // 이미 해당 시스템 메시지가 있는지 확인
-    const existingMessage = messages.find(
-      msg =>
-        msg.senderUid === "system" &&
-        msg.content === notifications[type].message
-    );
+    // 시스템 메시지 중복 체크 (메시지 로드 완료 후에만)
+    if (messages.length > 0) {
+      const isDuplicate = messages.some(
+        msg => msg.senderUid === "system" && msg.content === message
+      );
 
-    if (existingMessage) {
-      console.log("⚠️ 해당 시스템 메시지가 이미 존재합니다:", type);
-      return;
+      if (isDuplicate) {
+        console.log(`⏭️ 중복 시스템 메시지 감지: ${type}, 전송하지 않음`);
+        return;
+      }
+    } else {
+      console.log("📝 메시지 목록이 아직 로드되지 않음, 중복 체크 건너뜀");
     }
+
+    console.log("📤 시스템 메시지 전송:", type, message);
 
     try {
       // 시스템 메시지를 채팅에 추가
-      const { addMessage } = await import("../../lib/chat/api");
-      const result = await addMessage({
+      const { sendMessage } = await import("../../lib/chat/api");
+      const result = await sendMessage({
         chatId: chatData.chatId,
         senderUid: "system",
-        content: notifications[type].message,
+        content: message,
       });
 
       if (result.success) {
         console.log("✅ 시스템 메시지 추가 성공:", type);
+
+        // 시스템 메시지 전송 후 채팅 알림 업데이트 (빨간점 표시)
+        try {
+          const { updateDoc, doc } = await import("firebase/firestore");
+          const { db } = await import("../../lib/api/firebase");
+
+          const chatRef = doc(db, "chats", chatData.chatId);
+
+          // 구매자와 판매자 모두에게 읽지 않음 카운트 증가
+          const updateData: any = {
+            lastMessage: message,
+            updatedAt: new Date(),
+          };
+
+          // 구매자 읽지 않음 카운트 증가
+          if (chatData.buyerUid) {
+            updateData.buyerUnreadCount = (chatData.buyerUnreadCount || 0) + 1;
+          }
+
+          // 판매자 읽지 않음 카운트 증가
+          if (chatData.sellerUid) {
+            updateData.sellerUnreadCount =
+              (chatData.sellerUnreadCount || 0) + 1;
+          }
+
+          await updateDoc(chatRef, updateData);
+          console.log("✅ 채팅 알림 카운트 업데이트 완료");
+        } catch (error) {
+          console.error("❌ 채팅 알림 카운트 업데이트 실패:", error);
+        }
       } else {
         console.error("❌ 시스템 메시지 추가 실패:", result.error);
       }
@@ -256,8 +327,8 @@ export function EnhancedChatModal({
     if (!chatId || !user?.uid) return;
 
     try {
-      // 배송지 정보를 특별한 형식으로 전송 (접기/펼치기 가능)
-      const addressMessage = `배송지 정보가 전달되었습니다.\n\n---SHIPPING_ADDRESS_START---\n수령인: ${address.recipientName}\n연락처: ${address.phoneNumber}\n주소: ${address.address}${address.deliveryMemo ? `\n배송 메모: ${address.deliveryMemo}` : ""}\n---SHIPPING_ADDRESS_END---`;
+      // 배송지 정보를 깔끔하게 정렬하여 전송
+      const addressMessage = `배송지 정보가 전달되었습니다.\n\n📦 수령인: ${address.recipientName}\n\n📞 연락처: ${address.phoneNumber}\n\n📍 주소: ${address.address}${address.deliveryMemo ? `\n\n📝 배송 메모: ${address.deliveryMemo}` : ""}`;
 
       const { sendMessage } = await import("../../lib/chat/api");
       await sendMessage({
@@ -270,6 +341,48 @@ export function EnhancedChatModal({
     } catch (error) {
       console.error("배송지 전달 실패:", error);
       toast.error("배송지 전달에 실패했습니다.");
+    }
+  };
+
+  // 거래 시작 시 구매자가 입력한 배송지 정보를 판매자에게 자동 표시
+  const showShippingAddressToSeller = async () => {
+    if (!chatData?.chatId || !chatData?.buyerUid) return;
+
+    try {
+      // 구매자의 최근 배송지 정보 가져오기
+      const { getShippingAddresses } = await import(
+        "../../lib/api/shipping-address"
+      );
+      const addressResult = await getShippingAddresses(chatData.buyerUid);
+
+      if (
+        addressResult.success &&
+        addressResult.addresses &&
+        addressResult.addresses.length > 0
+      ) {
+        // 기본 배송지 또는 첫 번째 배송지 사용
+        const selectedAddress =
+          addressResult.addresses.find(addr => addr.isDefault) ||
+          addressResult.addresses[0];
+
+        if (selectedAddress) {
+          // 배송지 정보를 시스템 메시지로 전송
+          const addressMessage = `🚚 구매자 배송지 정보\n\n📦 수령인: ${selectedAddress.recipientName}\n\n📞 연락처: ${selectedAddress.phoneNumber}\n\n📍 주소: ${selectedAddress.address}${selectedAddress.deliveryMemo ? `\n\n📝 배송 메모: ${selectedAddress.deliveryMemo}` : ""}`;
+
+          const { sendMessage } = await import("../../lib/chat/api");
+          await sendMessage({
+            chatId: chatData.chatId,
+            senderUid: "system",
+            content: addressMessage,
+          });
+
+          console.log("구매자 배송지 정보를 판매자에게 자동 표시 완료");
+        }
+      } else {
+        console.log("구매자의 배송지 정보가 없습니다.");
+      }
+    } catch (error) {
+      console.error("배송지 정보 자동 표시 실패:", error);
     }
   };
 
@@ -303,42 +416,132 @@ export function EnhancedChatModal({
     }
   }, [isOpen, user, itemId, sellerUid, chatId]);
 
-  // 채팅 데이터 로드 시 상태별 알림 초기화
+  // 자동 시스템 메시지 전송 (autoSendSystemMessage가 있으면 이것만 실행)
   useEffect(() => {
-    if (chatData?.item?.status && user) {
-      const currentStatus = chatData.item.status;
+    if (
+      isOpen &&
+      autoSendSystemMessage &&
+      chatData?.chatId &&
+      messages.length > 0 &&
+      !systemMessagesInitialized // 초기화가 완료되지 않은 경우에만
+    ) {
+      console.log("🔔 자동 시스템 메시지 전송:", autoSendSystemMessage);
 
-      console.log("🔔 알림 초기화 시작:", {
-        currentStatus,
-        userId: user.uid,
-        isBuyer: user.uid === chatData.buyerUid,
-        isSeller: user.uid === chatData.sellerUid,
-      });
-
-      // 현재 상태에 맞는 알림들 추가 (시스템 메시지로)
-      if (currentStatus === "escrow_completed") {
-        console.log("✅ escrow_completed 시스템 메시지 추가");
-        addStatusSystemMessage("escrow_completed");
-      } else if (currentStatus === "reserved") {
-        console.log("✅ escrow_completed + reserved 시스템 메시지 추가");
-        addStatusSystemMessage("escrow_completed");
-        addStatusSystemMessage("reserved");
-      } else if (currentStatus === "shipping") {
-        console.log(
-          "✅ escrow_completed + reserved + shipping 시스템 메시지 추가"
+      // 시스템 메시지 전송 (채팅이 완전히 로드된 후)
+      setTimeout(async () => {
+        await addStatusSystemMessage(
+          autoSendSystemMessage as
+            | "escrow_completed"
+            | "reserved"
+            | "shipping"
+            | "sold"
         );
-        addStatusSystemMessage("escrow_completed");
-        addStatusSystemMessage("reserved");
-        addStatusSystemMessage("shipping");
-      } else if (currentStatus === "sold") {
-        console.log("✅ 모든 시스템 메시지 추가");
-        addStatusSystemMessage("escrow_completed");
-        addStatusSystemMessage("reserved");
-        addStatusSystemMessage("shipping");
-        addStatusSystemMessage("sold");
-      }
+        // 자동 메시지 전송 후 초기화 플래그 설정
+        setSystemMessagesInitialized(true);
+      }, 1000);
     }
-  }, [chatData?.item?.status, user?.uid]);
+  }, [
+    isOpen,
+    autoSendSystemMessage,
+    chatData?.chatId,
+    messages.length,
+    systemMessagesInitialized,
+  ]);
+
+  // 시스템 메시지 초기화 플래그 (한 번만 실행되도록)
+  const [systemMessagesInitialized, setSystemMessagesInitialized] =
+    useState(false);
+
+  // 채팅 데이터 로드 시 상태별 알림 초기화 (autoSendSystemMessage가 없을 때만 실행)
+  useEffect(() => {
+    const initializeSystemMessages = async () => {
+      if (
+        chatData?.item?.status &&
+        user &&
+        messages.length > 0 &&
+        !systemMessagesInitialized &&
+        !autoSendSystemMessage
+      ) {
+        const currentStatus = chatData.item.status;
+
+        console.log("🔔 알림 초기화 시작:", {
+          currentStatus,
+          userId: user.uid,
+          isBuyer: user.uid === chatData.buyerUid,
+          isSeller: user.uid === chatData.sellerUid,
+          systemMessagesInitialized,
+        });
+
+        // 현재 상태에 맞는 알림들 추가 (시스템 메시지로) - 거래 유형에 따라 단계별로
+        const isEscrow = chatData?.tradeType?.includes("안전결제");
+
+        if (currentStatus === "escrow_completed") {
+          // 안전결제인 경우에만 결제 완료 메시지 표시
+          if (isEscrow) {
+            console.log("✅ escrow_completed 시스템 메시지 추가 (안전결제)");
+            await addStatusSystemMessage("escrow_completed");
+          } else {
+            console.log("⏭️ 직거래/택배 거래이므로 결제 완료 단계가 없음");
+          }
+        } else if (currentStatus === "reserved") {
+          // 거래 시작 메시지 (모든 거래 유형 공통)
+          console.log("✅ reserved 시스템 메시지 추가 (거래 시작)");
+          await addStatusSystemMessage("reserved");
+
+          // 안전결제인 경우 이전 단계(결제 완료)도 표시
+          if (isEscrow) {
+            console.log("✅ escrow_completed 시스템 메시지도 추가 (안전결제)");
+            await addStatusSystemMessage("escrow_completed");
+          }
+        } else if (currentStatus === "shipping") {
+          // 배송중 메시지 (안전결제인 경우에만 표시)
+          if (isEscrow) {
+            console.log("✅ shipping 시스템 메시지 추가 (안전결제 배송중)");
+            await addStatusSystemMessage("shipping");
+            await addStatusSystemMessage("escrow_completed");
+            await addStatusSystemMessage("reserved");
+          } else {
+            console.log("⏭️ 직거래/택배 거래이므로 배송중 단계가 없음");
+            // 직거래/택배인 경우 거래 시작 메시지만 표시
+            await addStatusSystemMessage("reserved");
+          }
+        } else if (currentStatus === "sold") {
+          // 거래 완료 메시지 (모든 거래 유형 공통)
+          console.log("✅ sold 시스템 메시지 추가 (거래 완료)");
+          await addStatusSystemMessage("sold");
+
+          // 이전 단계들도 표시
+          if (isEscrow) {
+            // 안전결제: 결제완료 → 거래중 → 배송중 → 완료
+            await addStatusSystemMessage("escrow_completed");
+            await addStatusSystemMessage("reserved");
+            await addStatusSystemMessage("shipping");
+          } else {
+            // 직거래/택배: 거래중 → 완료
+            await addStatusSystemMessage("reserved");
+          }
+        }
+
+        // 초기화 완료 플래그 설정
+        setSystemMessagesInitialized(true);
+      }
+    };
+
+    initializeSystemMessages();
+  }, [
+    chatData?.item?.status,
+    user?.uid,
+    messages.length,
+    systemMessagesInitialized,
+    autoSendSystemMessage,
+  ]);
+
+  // 채팅창이 닫히거나 채팅방이 변경되면 초기화 플래그 리셋
+  useEffect(() => {
+    if (!isOpen || chatData?.chatId !== chatId) {
+      setSystemMessagesInitialized(false);
+    }
+  }, [isOpen, chatData?.chatId, chatId]);
 
   // 상품 상태 변경 이벤트 감지
   useEffect(() => {
@@ -587,7 +790,12 @@ export function EnhancedChatModal({
                 : null,
           },
           tradeType: tradeType || chatData.tradeType || inferredTradeType, // 전달받은 거래 유형 우선 사용
-          buyerUid: chatData.buyerUid, // buyerUid 명시적으로 유지
+          buyerUid:
+            itemResult?.success && itemResult?.item
+              ? itemResult.item.buyerUid ||
+                itemResult.item.buyerId ||
+                chatData.buyerUid
+              : chatData.buyerUid, // 상품 정보의 buyerUid 우선 사용
         });
 
         console.log("=== setChatData 호출 완료 ===");
@@ -697,6 +905,12 @@ export function EnhancedChatModal({
                   : null,
             },
             tradeType: tradeType || newInferredTradeType, // 전달받은 거래 유형 우선, 없으면 추론된 유형 사용
+            buyerUid:
+              itemResult?.success && itemResult?.item
+                ? itemResult.item.buyerUid ||
+                  itemResult.item.buyerId ||
+                  user?.uid
+                : user?.uid, // 현재 사용자가 구매자
           });
         } catch (error) {
           console.error("채팅 생성 실패:", error);
@@ -965,7 +1179,12 @@ export function EnhancedChatModal({
         );
 
         // 거래 시작 알림 추가
-        addStatusSystemMessage("reserved");
+        await addStatusSystemMessage("reserved");
+
+        // 안전결제인 경우 구매자가 입력한 배송지 정보를 판매자에게 자동 표시
+        if (chatData.tradeType?.includes("안전결제")) {
+          await showShippingAddressToSeller();
+        }
       } else {
         toast.error(result.error || "거래 시작에 실패했습니다.");
       }
@@ -1014,6 +1233,30 @@ export function EnhancedChatModal({
             toast.success("거래가 취소되었습니다!");
           }
 
+          // 거래 취소 시스템 메시지 전송
+          try {
+            const { sendMessage } = await import("../../lib/chat/api");
+            // 판매자/구매자 정확히 구분
+            const isSeller = user?.uid === chatData.sellerUid;
+            const cancelMessage = isSeller
+              ? "❌ 판매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다."
+              : "❌ 구매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다.";
+
+            const result = await sendMessage({
+              chatId: chatData.chatId,
+              senderUid: "system",
+              content: cancelMessage,
+            });
+
+            if (result.success) {
+              console.log("거래 취소 시스템 메시지 전송 완료");
+            } else {
+              console.error("거래 취소 시스템 메시지 전송 실패:", result.error);
+            }
+          } catch (error) {
+            console.error("거래 취소 시스템 메시지 전송 실패:", error);
+          }
+
           // 전역 이벤트 발생으로 상품 목록 업데이트
           window.dispatchEvent(
             new CustomEvent("itemStatusChanged", {
@@ -1059,6 +1302,27 @@ export function EnhancedChatModal({
         toast.success("취소 요청이 전송되었습니다!");
         setShowCancelModal(false);
         setCancelReason("");
+
+        // 취소 요청 시스템 메시지 전송
+        try {
+          const { sendMessage } = await import("../../lib/chat/api");
+          const cancelMessage =
+            "📝 구매자가 거래 취소를 요청했습니다. 판매자의 승인을 기다리고 있습니다.";
+
+          const result = await sendMessage({
+            chatId: chatData.chatId,
+            senderUid: "system",
+            content: cancelMessage,
+          });
+
+          if (result.success) {
+            console.log("취소 요청 시스템 메시지 전송 완료");
+          } else {
+            console.error("취소 요청 시스템 메시지 전송 실패:", result.error);
+          }
+        } catch (error) {
+          console.error("취소 요청 시스템 메시지 전송 실패:", error);
+        }
 
         // 전역 이벤트 발생으로 상품 목록 업데이트
         window.dispatchEvent(
@@ -1106,6 +1370,27 @@ export function EnhancedChatModal({
 
         if (result.success) {
           toast.success("취소 요청이 승인되었습니다!");
+
+          // 취소 승인 시스템 메시지 전송
+          try {
+            const { sendMessage } = await import("../../lib/chat/api");
+            const cancelMessage =
+              "✅ 판매자가 취소 요청을 승인했습니다. 거래가 취소되고 상품이 다시 판매중으로 변경되었습니다.";
+
+            const result = await sendMessage({
+              chatId: chatData.chatId,
+              senderUid: "system",
+              content: cancelMessage,
+            });
+
+            if (result.success) {
+              console.log("취소 승인 시스템 메시지 전송 완료");
+            } else {
+              console.error("취소 승인 시스템 메시지 전송 실패:", result.error);
+            }
+          } catch (error) {
+            console.error("취소 승인 시스템 메시지 전송 실패:", error);
+          }
 
           // 전역 이벤트 발생으로 상품 목록 업데이트
           window.dispatchEvent(
@@ -1178,7 +1463,7 @@ export function EnhancedChatModal({
         );
 
         // 배송 시작 알림 추가
-        addStatusSystemMessage("shipping");
+        await addStatusSystemMessage("shipping");
 
         // 송장 등록 모달 닫기
         setShowShippingModal(false);
@@ -1234,7 +1519,7 @@ export function EnhancedChatModal({
           );
 
           // 거래 완료 알림 추가
-          addStatusSystemMessage("sold");
+          await addStatusSystemMessage("sold");
         } else {
           toast.error(result.error || "구매 완료에 실패했습니다.");
         }
@@ -1461,6 +1746,12 @@ export function EnhancedChatModal({
                               </p>
                               <div className="w-2 h-2 bg-blue-500 rounded-full ml-2"></div>
                             </div>
+                            {/* 시스템 메시지 시간 */}
+                            <div className="flex justify-center mt-2">
+                              <span className="text-xs text-blue-600">
+                                {formatTimeOnly(message.createdAt)}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       ) : (
@@ -1630,91 +1921,93 @@ export function EnhancedChatModal({
                     </Button>
                   )}
 
-                  {/* 거래중 상태 - 택배 발송 정보 입력 */}
-                  {chatData.item.status === "reserved" && (
-                    <div className="space-y-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <Clock className="w-5 h-5 text-orange-600" />
-                        <span className="text-lg font-bold text-orange-600">
-                          거래중
-                        </span>
-                      </div>
+                  {/* 거래중 상태 - 택배 발송 정보 입력 (안전결제인 경우에만) */}
+                  {chatData.item.status === "reserved" &&
+                    (chatData.tradeType?.includes("안전결제") ||
+                      chatData.item.status === "escrow_completed") && (
+                      <div className="space-y-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="w-5 h-5 text-orange-600" />
+                          <span className="text-lg font-bold text-orange-600">
+                            거래중
+                          </span>
+                        </div>
 
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            택배사
-                          </label>
-                          <select
-                            value={courier}
-                            onChange={e => setCourier(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              택배사
+                            </label>
+                            <select
+                              value={courier}
+                              onChange={e => setCourier(e.target.value)}
+                              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                            >
+                              <option value="">택배사를 선택하세요</option>
+                              <option value="cj">CJ대한통운</option>
+                              <option value="hanjin">한진택배</option>
+                              <option value="lotte">롯데택배</option>
+                              <option value="kdexp">경동택배</option>
+                              <option value="epost">우체국택배</option>
+                              <option value="logen">로젠택배</option>
+                              <option value="dongbu">동부택배</option>
+                              <option value="kg">KG로지스</option>
+                              <option value="kgm">KGB택배</option>
+                              <option value="inno">이노지스</option>
+                              <option value="slx">SLX택배</option>
+                              <option value="fedex">FedEx</option>
+                              <option value="ups">UPS</option>
+                              <option value="dhl">DHL</option>
+                              <option value="other">기타</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              송장번호
+                            </label>
+                            <input
+                              type="text"
+                              value={trackingNumber}
+                              onChange={e => setTrackingNumber(e.target.value)}
+                              placeholder="송장번호를 입력하세요"
+                              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                            />
+                          </div>
+
+                          <Button
+                            onClick={() => {
+                              if (!courier) {
+                                toast.error("택배사를 선택해주세요.");
+                                return;
+                              }
+                              if (!trackingNumber.trim()) {
+                                toast.error("송장번호를 입력해주세요.");
+                                return;
+                              }
+                              handleRegisterShipping({
+                                courier,
+                                trackingNumber: trackingNumber.trim(),
+                              });
+                            }}
+                            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                            disabled={isRegisteringShipping}
                           >
-                            <option value="">택배사를 선택하세요</option>
-                            <option value="cj">CJ대한통운</option>
-                            <option value="hanjin">한진택배</option>
-                            <option value="lotte">롯데택배</option>
-                            <option value="kdexp">경동택배</option>
-                            <option value="epost">우체국택배</option>
-                            <option value="logen">로젠택배</option>
-                            <option value="dongbu">동부택배</option>
-                            <option value="kg">KG로지스</option>
-                            <option value="kgm">KGB택배</option>
-                            <option value="inno">이노지스</option>
-                            <option value="slx">SLX택배</option>
-                            <option value="fedex">FedEx</option>
-                            <option value="ups">UPS</option>
-                            <option value="dhl">DHL</option>
-                            <option value="other">기타</option>
-                          </select>
+                            {isRegisteringShipping ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                등록 중...
+                              </>
+                            ) : (
+                              <>
+                                <Truck className="w-4 h-4 mr-2" />
+                                발송완료
+                              </>
+                            )}
+                          </Button>
                         </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            송장번호
-                          </label>
-                          <input
-                            type="text"
-                            value={trackingNumber}
-                            onChange={e => setTrackingNumber(e.target.value)}
-                            placeholder="송장번호를 입력하세요"
-                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                          />
-                        </div>
-
-                        <Button
-                          onClick={() => {
-                            if (!courier) {
-                              toast.error("택배사를 선택해주세요.");
-                              return;
-                            }
-                            if (!trackingNumber.trim()) {
-                              toast.error("송장번호를 입력해주세요.");
-                              return;
-                            }
-                            handleRegisterShipping({
-                              courier,
-                              trackingNumber: trackingNumber.trim(),
-                            });
-                          }}
-                          className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                          disabled={isRegisteringShipping}
-                        >
-                          {isRegisteringShipping ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                              등록 중...
-                            </>
-                          ) : (
-                            <>
-                              <Truck className="w-4 h-4 mr-2" />
-                              발송완료
-                            </>
-                          )}
-                        </Button>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* 배송중 상태 */}
                   {chatData.item.status === "shipping" && (
@@ -1922,27 +2215,33 @@ export function EnhancedChatModal({
                     </div>
                   )}
 
-                  {/* 거래 취소 버튼 */}
-                  {chatData.item.status === "escrow_completed" && (
-                    <Button
-                      onClick={handleCancelTransaction}
-                      variant="outline"
-                      className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
-                      disabled={isCancelingTransaction}
-                    >
-                      {isCancelingTransaction ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          취소 처리 중...
-                        </>
-                      ) : (
-                        <>
-                          <X className="w-4 h-4 mr-2" />
-                          거래 취소하기
-                        </>
-                      )}
-                    </Button>
-                  )}
+                  {/* 거래 취소 버튼 - 결제완료 단계에서 판매자와 구매자 모두 */}
+                  {(chatData.item.status === "escrow_completed" ||
+                    (autoSendSystemMessage === "escrow_completed" &&
+                      chatData.tradeType?.includes("안전결제"))) &&
+                    user &&
+                    chatData && (
+                      <div className="mt-4">
+                        <Button
+                          onClick={handleCancelTransaction}
+                          variant="outline"
+                          className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
+                          disabled={isCancelingTransaction}
+                        >
+                          {isCancelingTransaction ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              취소 처리 중...
+                            </>
+                          ) : (
+                            <>
+                              <X className="w-4 h-4 mr-2" />
+                              거래 취소하기
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
                 </div>
               )}
 
@@ -1971,24 +2270,7 @@ export function EnhancedChatModal({
                 </div>
               )}
 
-              {/* 구매자 액션 버튼들 - 디버깅용 */}
-              {console.log("구매자 버튼 전체 조건 체크:", {
-                userExists: !!user,
-                chatDataExists: !!chatData,
-                otherUserExists: !!chatData?.otherUser,
-                userId: user?.uid,
-                buyerUid: chatData?.buyerUid,
-                isBuyer: user?.uid === chatData?.buyerUid,
-                itemExists: !!chatData?.item,
-                allConditions: !!(
-                  user &&
-                  chatData &&
-                  chatData.otherUser &&
-                  user.uid === chatData.buyerUid &&
-                  chatData.item
-                ),
-              })}
-
+              {/* 구매자 액션 버튼들 - 채팅창 중앙에 표시 */}
               {user &&
                 chatData &&
                 chatData.otherUser &&
@@ -2001,7 +2283,19 @@ export function EnhancedChatModal({
                         {/* 배송지 정보 입력 버튼 (구매자만) - 맨 위 */}
                         {user && chatData && user.uid === chatData.buyerUid && (
                           <Button
-                            onClick={() => setShowShippingAddressModal(true)}
+                            onClick={() => {
+                              // 안전결제 거래이고 결제 완료 상태일 때만 배송지 정보 입력 허용
+                              if (
+                                chatData.tradeType?.includes("안전결제") &&
+                                chatData.item.status === "escrow_completed"
+                              ) {
+                                setShowShippingAddressModal(true);
+                              } else {
+                                toast.error(
+                                  "안전결제가 완료된 후에만 배송지 정보를 입력할 수 있습니다."
+                                );
+                              }
+                            }}
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
                           >
                             <MapPin className="w-4 h-4 mr-2" />
@@ -2024,7 +2318,7 @@ export function EnhancedChatModal({
                           ) : (
                             <>
                               <X className="w-4 h-4 mr-2" />
-                              취소하기
+                              거래 취소하기
                             </>
                           )}
                         </Button>
@@ -2185,41 +2479,69 @@ export function EnhancedChatModal({
                     거래 상태
                   </h4>
                   <div className="space-y-2">
-                    {/* 거래 대기 / 결제 완료 */}
-                    <div
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
-                        chatData?.item?.status === "active"
-                          ? "bg-green-50 border-green-300 text-green-800"
-                          : chatData?.item?.status === "reserved" ||
-                              chatData?.item?.status === "escrow_completed"
-                            ? "bg-blue-50 border-blue-300 text-blue-800"
-                            : "bg-gray-50 border-gray-200 text-gray-600"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">
-                          {chatData?.item?.status === "reserved" ||
-                          chatData?.item?.status === "escrow_completed"
-                            ? "결제 완료"
-                            : "거래 대기"}
-                        </span>
-                        {chatData?.item?.status === "active" && (
-                          <span className="text-green-600">✅</span>
-                        )}
-                        {(chatData?.item?.status === "reserved" ||
-                          chatData?.item?.status === "escrow_completed") && (
-                          <span className="text-blue-600">💳</span>
-                        )}
-                      </div>
-                      {chatData?.item?.status === "active" ? (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      ) : chatData?.item?.status === "reserved" ||
-                        chatData?.item?.status === "escrow_completed" ? (
-                        <CheckCircle className="w-5 h-5 text-blue-600" />
-                      ) : (
-                        <Clock className="w-5 h-5 text-gray-400" />
+                    {/* 안전결제 거래 상태 표시 */}
+                    {(chatData?.tradeType?.includes("안전결제") ||
+                      chatData?.item?.status === "escrow_completed") && (
+                      <>
+                        {/* 결제 완료 단계 */}
+                        <div
+                          className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                            chatData?.item?.status === "escrow_completed"
+                              ? "bg-blue-50 border-blue-300 text-blue-800"
+                              : chatData?.item?.status === "active"
+                                ? "bg-green-50 border-green-300 text-green-800"
+                                : "bg-gray-50 border-gray-200 text-gray-600"
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium">
+                              {chatData?.item?.status === "escrow_completed"
+                                ? "결제 완료"
+                                : "거래 대기"}
+                            </span>
+                            {chatData?.item?.status === "escrow_completed" && (
+                              <span className="text-blue-600">💳</span>
+                            )}
+                            {chatData?.item?.status === "active" && (
+                              <span className="text-green-600">✅</span>
+                            )}
+                          </div>
+                          {chatData?.item?.status === "escrow_completed" ? (
+                            <CheckCircle className="w-5 h-5 text-blue-600" />
+                          ) : chatData?.item?.status === "active" ? (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <Clock className="w-5 h-5 text-gray-400" />
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* 거래 대기 - 직거래/택배인 경우에만 표시 */}
+                    {!chatData?.tradeType?.includes("안전결제") &&
+                      chatData?.item?.status !== "escrow_completed" && (
+                        <div
+                          className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                            chatData?.item?.status === "active"
+                              ? "bg-green-50 border-green-300 text-green-800"
+                              : "bg-gray-50 border-gray-200 text-gray-600"
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium">
+                              거래 대기
+                            </span>
+                            {chatData?.item?.status === "active" && (
+                              <span className="text-green-600">✅</span>
+                            )}
+                          </div>
+                          {chatData?.item?.status === "active" ? (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <Clock className="w-5 h-5 text-gray-400" />
+                          )}
+                        </div>
                       )}
-                    </div>
 
                     {/* 거래중 */}
                     <div
@@ -2242,122 +2564,128 @@ export function EnhancedChatModal({
                       )}
                     </div>
 
-                    {/* 배송중 */}
-                    <div
-                      className={`p-3 rounded-lg border-2 ${
-                        chatData?.item?.status === "shipping"
-                          ? "bg-blue-50 border-blue-300 text-blue-800"
-                          : "bg-gray-50 border-gray-200 text-gray-600"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium">배송중</span>
-                          {chatData?.item?.status === "shipping" && (
-                            <span className="text-blue-600">✅</span>
+                    {/* 배송중 - 안전결제인 경우에만 표시 */}
+                    {(chatData?.tradeType?.includes("안전결제") ||
+                      chatData?.item?.status === "escrow_completed") && (
+                      <div
+                        className={`p-3 rounded-lg border-2 ${
+                          chatData?.item?.status === "shipping"
+                            ? "bg-blue-50 border-blue-300 text-blue-800"
+                            : "bg-gray-50 border-gray-200 text-gray-600"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium">배송중</span>
+                            {chatData?.item?.status === "shipping" && (
+                              <span className="text-blue-600">✅</span>
+                            )}
+                          </div>
+                          {chatData?.item?.status === "shipping" ? (
+                            <Truck className="w-5 h-5 text-blue-600" />
+                          ) : (
+                            <Truck className="w-5 h-5 text-gray-400" />
                           )}
                         </div>
-                        {chatData?.item?.status === "shipping" ? (
-                          <Truck className="w-5 h-5 text-blue-600" />
-                        ) : (
-                          <Truck className="w-5 h-5 text-gray-400" />
-                        )}
-                      </div>
 
-                      {/* 배송 정보 - 구매자와 판매자 모두에게 표시 */}
-                      {chatData?.item?.status === "shipping" &&
-                        chatData?.item?.shippingInfo &&
-                        (user?.uid === chatData?.buyerUid ||
-                          user?.uid === chatData?.sellerUid) && (
-                          <div className="mt-3 pt-3 border-t border-blue-200">
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="text-xs text-blue-700">
-                                  택배사:
-                                </span>
-                                <span className="text-xs font-medium text-blue-900">
-                                  {(() => {
-                                    const courierMap: {
-                                      [key: string]: string;
-                                    } = {
-                                      cj: "CJ대한통운",
-                                      hanjin: "한진택배",
-                                      lotte: "롯데택배",
-                                      kdexp: "경동택배",
-                                      epost: "우체국택배",
-                                      logen: "로젠택배",
-                                      dongbu: "동부택배",
-                                      kg: "KG로지스",
-                                      kgm: "KGB택배",
-                                      inno: "이노지스",
-                                      slx: "SLX택배",
-                                      fedex: "FedEx",
-                                      ups: "UPS",
-                                      dhl: "DHL",
-                                      other: "기타",
-                                    };
-                                    return (
-                                      courierMap[
-                                        chatData.item.shippingInfo.courier
-                                      ] || chatData.item.shippingInfo.courier
-                                    );
-                                  })()}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-xs text-blue-700">
-                                  송장번호:
-                                </span>
-                                <div className="flex items-center space-x-1">
-                                  <span className="text-xs font-mono font-medium text-blue-900">
-                                    {chatData.item.shippingInfo.trackingNumber}
-                                  </span>
-                                  <button
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(
-                                        chatData.item.shippingInfo
-                                          .trackingNumber
-                                      );
-                                      toast.success(
-                                        "송장번호가 복사되었습니다."
-                                      );
-                                    }}
-                                    className="text-blue-600 hover:text-blue-800 text-xs px-1 py-0.5 border border-blue-300 rounded hover:bg-blue-100"
-                                  >
-                                    복사
-                                  </button>
-                                </div>
-                              </div>
-                              {chatData.item.shippingInfo.shippedAt && (
+                        {/* 배송 정보 - 구매자와 판매자 모두에게 표시 */}
+                        {chatData?.item?.status === "shipping" &&
+                          chatData?.item?.shippingInfo &&
+                          (user?.uid === chatData?.buyerUid ||
+                            user?.uid === chatData?.sellerUid) && (
+                            <div className="mt-3 pt-3 border-t border-blue-200">
+                              <div className="space-y-2">
                                 <div className="flex justify-between items-center">
                                   <span className="text-xs text-blue-700">
-                                    발송일:
+                                    택배사:
                                   </span>
                                   <span className="text-xs font-medium text-blue-900">
-                                    {new Date(
-                                      chatData.item.shippingInfo.shippedAt
-                                        .seconds * 1000
-                                    ).toLocaleDateString("ko-KR")}
+                                    {(() => {
+                                      const courierMap: {
+                                        [key: string]: string;
+                                      } = {
+                                        cj: "CJ대한통운",
+                                        hanjin: "한진택배",
+                                        lotte: "롯데택배",
+                                        kdexp: "경동택배",
+                                        epost: "우체국택배",
+                                        logen: "로젠택배",
+                                        dongbu: "동부택배",
+                                        kg: "KG로지스",
+                                        kgm: "KGB택배",
+                                        inno: "이노지스",
+                                        slx: "SLX택배",
+                                        fedex: "FedEx",
+                                        ups: "UPS",
+                                        dhl: "DHL",
+                                        other: "기타",
+                                      };
+                                      return (
+                                        courierMap[
+                                          chatData.item.shippingInfo.courier
+                                        ] || chatData.item.shippingInfo.courier
+                                      );
+                                    })()}
                                   </span>
                                 </div>
-                              )}
-                              {chatData.item.shippingInfo.deliveredAt && (
                                 <div className="flex justify-between items-center">
-                                  <span className="text-xs text-green-700">
-                                    배송완료:
+                                  <span className="text-xs text-blue-700">
+                                    송장번호:
                                   </span>
-                                  <span className="text-xs font-medium text-green-900">
-                                    {new Date(
-                                      chatData.item.shippingInfo.deliveredAt
-                                        .seconds * 1000
-                                    ).toLocaleDateString("ko-KR")}
-                                  </span>
+                                  <div className="flex items-center space-x-1">
+                                    <span className="text-xs font-mono font-medium text-blue-900">
+                                      {
+                                        chatData.item.shippingInfo
+                                          .trackingNumber
+                                      }
+                                    </span>
+                                    <button
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(
+                                          chatData.item.shippingInfo
+                                            .trackingNumber
+                                        );
+                                        toast.success(
+                                          "송장번호가 복사되었습니다."
+                                        );
+                                      }}
+                                      className="text-blue-600 hover:text-blue-800 text-xs px-1 py-0.5 border border-blue-300 rounded hover:bg-blue-100"
+                                    >
+                                      복사
+                                    </button>
+                                  </div>
                                 </div>
-                              )}
+                                {chatData.item.shippingInfo.shippedAt && (
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs text-blue-700">
+                                      발송일:
+                                    </span>
+                                    <span className="text-xs font-medium text-blue-900">
+                                      {new Date(
+                                        chatData.item.shippingInfo.shippedAt
+                                          .seconds * 1000
+                                      ).toLocaleDateString("ko-KR")}
+                                    </span>
+                                  </div>
+                                )}
+                                {chatData.item.shippingInfo.deliveredAt && (
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs text-green-700">
+                                      배송완료:
+                                    </span>
+                                    <span className="text-xs font-medium text-green-900">
+                                      {new Date(
+                                        chatData.item.shippingInfo.deliveredAt
+                                          .seconds * 1000
+                                      ).toLocaleDateString("ko-KR")}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                    </div>
+                          )}
+                      </div>
+                    )}
 
                     {/* 판매완료 */}
                     <div

@@ -11,10 +11,14 @@ import {
   Truck,
   Package,
   Shield,
+  MessageCircle,
 } from "lucide-react";
 import { WatermarkImage } from "../ui/WatermarkImage";
+import { Button } from "../ui/Button";
 // date-fns 제거 - 성능 최적화
 import { useRouter } from "next/navigation";
+import { getOrCreateChat } from "../../lib/chat/api";
+import { useAuth } from "../../lib/hooks/useAuth";
 
 interface ItemCardProps {
   item: SellItem;
@@ -32,9 +36,35 @@ export function ItemCard({
   buyerUid,
 }: ItemCardProps) {
   const router = useRouter();
+  const { user } = useAuth();
 
   // 구매자인지 확인
   const isBuyer = currentUserId && buyerUid && currentUserId === buyerUid;
+
+  // 채팅 시작 함수
+  const handleChat = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // 카드 클릭 이벤트 방지
+
+    if (!user || !item.sellerUid) return;
+
+    try {
+      const chatResult = await getOrCreateChat(
+        item.id,
+        user.uid,
+        item.sellerUid,
+        "안전결제가 완료되었습니다. 거래를 시작해주세요."
+      );
+
+      if (chatResult.success && chatResult.chatId) {
+        // 채팅 페이지로 이동
+        router.push(`/chat?chatId=${chatResult.chatId}`);
+      } else {
+        console.error("채팅 생성 실패:", chatResult.error);
+      }
+    } catch (error) {
+      console.error("채팅 생성 중 오류:", error);
+    }
+  };
 
   // 택배사 코드를 한글 이름으로 변환
   const getCourierName = (courierCode: string) => {
@@ -55,7 +85,7 @@ export function ItemCard({
     return courierMap[courierCode] || courierCode;
   };
 
-  const handleClick = () => {
+  const handleClick = async (hasTriedFix = false) => {
     console.log("🔍 ItemCard handleClick:", {
       itemId: item.id,
       itemStatus: item.status,
@@ -64,7 +94,8 @@ export function ItemCard({
       itemBuyerUid: item.buyerUid,
       itemSellerUid: item.sellerUid,
       isBuyer: currentUserId && currentUserId === item.buyerUid,
-      isSeller: currentUserId && currentUserId === item.sellerUid
+      isSeller: currentUserId && currentUserId === item.sellerUid,
+      hasTriedFix,
     });
 
     if (item.status === "sold") {
@@ -76,12 +107,93 @@ export function ItemCard({
     if (item.status === "reserved" || item.status === "escrow_completed") {
       const isSeller = currentUserId && currentUserId === item.sellerUid;
       const isBuyer = currentUserId && currentUserId === item.buyerUid;
-      
-      console.log("🔍 권한 체크:", { isSeller, isBuyer });
-      
+
+      console.log("🔍 권한 체크:", {
+        isSeller,
+        isBuyer,
+        currentUserId,
+        sellerUid: item.sellerUid,
+        buyerUid: item.buyerUid,
+        status: item.status,
+      });
+
       if (!isSeller && !isBuyer) {
-        alert("거래중인 상품입니다.");
-        return;
+        // buyerUid가 null이고 아직 수정을 시도하지 않은 경우에만 데이터 수정 시도
+        if (item.buyerUid === null && !hasTriedFix) {
+          console.log("⚠️ buyerUid가 null입니다. 디버깅 정보를 확인합니다.");
+
+          try {
+            // 먼저 디버깅 정보 확인
+            const debugResponse = await fetch(
+              `/api/debug-item?itemId=${item.id}`
+            );
+            const debugResult = await debugResponse.json();
+
+            if (debugResult.success) {
+              console.log("🔍 디버깅 정보:", debugResult.data.summary);
+
+              // buyerId가 있으면 buyerUid로 복사
+              if (
+                debugResult.data.item.buyerId &&
+                !debugResult.data.item.buyerUid
+              ) {
+                console.log(
+                  "🔧 buyerId를 buyerUid로 복사합니다:",
+                  debugResult.data.item.buyerId
+                );
+
+                const { fixBuyerUid } = await import(
+                  "../../lib/api/fix-buyer-uid"
+                );
+                const fixResult = await fixBuyerUid(item.id);
+
+                if (fixResult.success && fixResult.data.buyerUid) {
+                  console.log("✅ buyerUid 수정 완료:", fixResult.data);
+                  item.buyerUid = fixResult.data.buyerUid;
+                  return handleClick(true);
+                }
+              }
+
+              // 거래 내역에서 구매자 정보 찾기
+              const firstTransaction =
+                debugResult.data.summary.firstTransaction;
+              if (firstTransaction && firstTransaction.buyerId) {
+                console.log(
+                  "🔧 거래 내역에서 buyerId 발견:",
+                  firstTransaction.buyerId
+                );
+
+                const { fixBuyerUid } = await import(
+                  "../../lib/api/fix-buyer-uid"
+                );
+                const fixResult = await fixBuyerUid(item.id);
+
+                if (fixResult.success && fixResult.data.buyerUid) {
+                  console.log("✅ buyerUid 수정 완료:", fixResult.data);
+                  item.buyerUid = fixResult.data.buyerUid;
+                  return handleClick(true);
+                }
+              }
+            }
+
+            console.error(
+              "❌ buyerUid 수정 불가능 - 구매자 정보를 찾을 수 없습니다."
+            );
+          } catch (error) {
+            console.error("❌ 디버깅 중 오류:", error);
+          }
+        }
+
+        // 거래중인 상품은 판매자와 구매자만 접근 가능
+        const isSeller = user?.uid === item.sellerUid;
+        const isBuyer = user?.uid === item.buyerUid;
+
+        if (!isSeller && !isBuyer) {
+          alert("거래중인 상품은 판매자와 구매자만 볼 수 있습니다.");
+          return;
+        }
+
+        console.log("거래중인 상품 클릭 - 판매자/구매자 접근 허용");
       }
     }
 
@@ -169,7 +281,7 @@ export function ItemCard({
               ? "cursor-pointer hover:shadow-lg hover:bg-blue-50 transition-all"
               : "cursor-pointer"
       }`}
-      onClick={isSold ? undefined : handleClick}
+      onClick={isSold ? undefined : () => handleClick()}
     >
       {/* 썸네일 */}
       <div
@@ -262,6 +374,23 @@ export function ItemCard({
             <span className="text-sm font-bold text-orange-600">거래중</span>
           </div>
         )}
+
+        {/* 채팅 버튼 - 거래중인 상품과 거래완료된 상품에 표시 */}
+        {(item.status === "reserved" ||
+          item.status === "escrow_completed" ||
+          item.status === "shipping" ||
+          item.status === "sold") &&
+          user && (
+            <Button
+              onClick={handleChat}
+              size="sm"
+              variant="outline"
+              className="w-full mt-2 h-8 text-xs"
+            >
+              <MessageCircle className="w-3 h-3 mr-1" />
+              채팅하기
+            </Button>
+          )}
 
         {/* 거래완료 상태 표시 */}
         {item.status === "sold" && (

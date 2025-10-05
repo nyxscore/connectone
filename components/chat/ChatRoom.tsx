@@ -90,7 +90,9 @@ export function ChatRoom({ chatId, otherUser, item, onBack }: ChatRoomProps) {
 
     const unreadMessages = messages.filter(
       message =>
-        message.senderUid !== user.uid && !message.readBy.includes(user.uid)
+        message.senderUid !== user.uid &&
+        message.senderUid !== "system" && // 시스템 메시지는 자동으로 읽음 처리
+        !message.readBy.includes(user.uid)
     );
 
     // 읽지 않은 메시지들을 읽음 처리

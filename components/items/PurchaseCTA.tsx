@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { StartChatButton } from "../chat/StartChatButton";
 import { deleteItem, updateItem } from "../../lib/api/products";
 import { EditItemModal } from "./EditItemModal";
+import { getOrCreateChat } from "../../lib/chat/api";
 import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 
@@ -75,14 +76,34 @@ export function PurchaseCTA({
     };
   }, [showStatusDropdown]);
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (escrowEnabled && itemId) {
       // 안전결제인 경우 결제 페이지로 이동
       router.push(`/payment?itemId=${itemId}&escrow=true`);
     } else if (onPurchase) {
       onPurchase();
     } else {
-      // 기본 핸들러 - 실제 구현에서는 결제 로직으로 연결
+      // 기본 핸들러 - 일반 구매 시 시스템 메시지 전송
+      if (itemId && currentUserId && sellerUid) {
+        try {
+          const { getOrCreateChat } = await import("../../lib/chat/api");
+          const chatResult = await getOrCreateChat(
+            itemId,
+            currentUserId,
+            sellerUid,
+            "🛒 구매자가 구매를 진행했습니다. 거래를 시작해주세요."
+          );
+
+          if (chatResult.success) {
+            console.log(
+              "구매 진행 시스템 메시지 전송 완료:",
+              chatResult.chatId
+            );
+          }
+        } catch (error) {
+          console.error("구매 진행 시스템 메시지 전송 실패:", error);
+        }
+      }
       console.log("구매하기 클릭");
     }
   };
@@ -205,6 +226,65 @@ export function PurchaseCTA({
           `상품 상태가 "${statusLabels[newStatus as keyof typeof statusLabels]}"로 변경되었습니다!`
         );
         setShowStatusDropdown(false);
+
+        // 거래 상태 변경 시 채팅 메시지 전송
+        if (sellerUid && itemId) {
+          try {
+            // 상품 데이터에서 buyerUid 조회
+            const { getItem } = await import("../../lib/api/products");
+            const itemResult = await getItem(itemId);
+
+            if (!itemResult.success || !itemResult.item) {
+              console.error("상품 정보 조회 실패:", itemResult.error);
+              return;
+            }
+
+            const actualBuyerUid = itemResult.item.buyerUid;
+
+            if (!actualBuyerUid) {
+              console.log(
+                "buyerUid가 없어서 시스템 메시지를 전송하지 않습니다."
+              );
+              return;
+            }
+
+            let systemMessage = "";
+
+            switch (newStatus) {
+              case "reserved":
+                systemMessage =
+                  "거래가 시작되었습니다. 구매자와 소통을 시작해주세요.";
+                break;
+              case "shipped":
+                systemMessage =
+                  "🚚 상품이 발송되었습니다! 택배사에서 상품을 배송중입니다.";
+                break;
+              case "sold":
+                systemMessage =
+                  "✅ 구매확인이 완료되었습니다! 거래가 성공적으로 완료되었습니다.";
+                break;
+            }
+
+            if (systemMessage) {
+              const chatResult = await getOrCreateChat(
+                itemId,
+                actualBuyerUid,
+                sellerUid,
+                systemMessage
+              );
+
+              if (chatResult.success) {
+                console.log(
+                  `${newStatus} 상태 시스템 메시지 전송 완료:`,
+                  chatResult.chatId
+                );
+              }
+            }
+          } catch (error) {
+            console.error("상태 변경 시스템 메시지 전송 실패:", error);
+          }
+        }
+
         // 페이지 새로고침으로 최신 데이터 반영
         window.location.reload();
       } else {
@@ -251,7 +331,13 @@ export function PurchaseCTA({
             disabled: true,
             onClick: () => {},
           },
-          secondaryButton: null,
+          secondaryButton: {
+            text: "판매자와 채팅",
+            icon: MessageCircle,
+            variant: "outline" as const,
+            disabled: false,
+            onClick: handleChat,
+          },
         };
       case "paid_hold":
         return {
@@ -262,7 +348,13 @@ export function PurchaseCTA({
             disabled: true,
             onClick: () => {},
           },
-          secondaryButton: null,
+          secondaryButton: {
+            text: "판매자와 채팅",
+            icon: MessageCircle,
+            variant: "outline" as const,
+            disabled: false,
+            onClick: handleChat,
+          },
         };
       case "shipped":
         return {
@@ -273,7 +365,13 @@ export function PurchaseCTA({
             disabled: true,
             onClick: () => {},
           },
-          secondaryButton: null,
+          secondaryButton: {
+            text: "판매자와 채팅",
+            icon: MessageCircle,
+            variant: "outline" as const,
+            disabled: false,
+            onClick: handleChat,
+          },
         };
       case "sold":
         return {
@@ -290,6 +388,23 @@ export function PurchaseCTA({
             variant: "primary" as const,
             disabled: false,
             onClick: handleSimilarItems,
+          },
+        };
+      case "escrow_completed":
+        return {
+          primaryButton: {
+            text: "안전결제 완료",
+            icon: Shield,
+            variant: "outline" as const,
+            disabled: true,
+            onClick: () => {},
+          },
+          secondaryButton: {
+            text: "판매자와 채팅",
+            icon: MessageCircle,
+            variant: "outline" as const,
+            disabled: false,
+            onClick: handleChat,
           },
         };
       default:
@@ -314,11 +429,20 @@ export function PurchaseCTA({
   // 자신이 작성한 글인지 확인
   const isOwnItem = currentUserId && sellerUid && currentUserId === sellerUid;
 
+  // 구매자인지 확인 (거래중인 상품의 구매자)
+  const isBuyer = currentUserId && buyerUid && currentUserId === buyerUid;
+
+  // 거래중인 상품인지 확인 (reserved, paid_hold, shipped 상태)
+  const isTradingItem =
+    status === "reserved" || status === "paid_hold" || status === "shipped";
+
   // 디버깅 로그
   console.log("PurchaseCTA 디버깅:", {
     currentUserId,
     sellerUid,
+    buyerUid,
     isOwnItem,
+    isBuyer,
     status,
     itemId,
   });

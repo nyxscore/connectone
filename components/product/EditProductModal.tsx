@@ -290,6 +290,16 @@ export default function EditProductModal({
           return;
         }
 
+        // 거래가 시작된 후에는 상품 수정 불가 (거래 진행하기 이후)
+        if (
+          productData.status === "reserved" ||
+          productData.status === "escrow_completed"
+        ) {
+          toast.error("거래가 시작된 상품은 수정할 수 없습니다.");
+          onClose();
+          return;
+        }
+
         setProduct(productData);
         // 거래방식 변환 (tradeOptions -> shippingTypes)
         const shippingTypes =
@@ -452,6 +462,11 @@ export default function EditProductModal({
 
     setSaving(true);
     try {
+      // 가격 변경 감지
+      const priceChanged = product.price !== formData.price;
+      const oldPrice = product.price;
+      const newPrice = formData.price;
+
       // 거래방식 변환 (shippingTypes -> tradeOptions)
       const tradeOptions = formData.shippingTypes.map(type => {
         switch (type) {
@@ -478,6 +493,67 @@ export default function EditProductModal({
         categoryId: formData.categoryId,
         updatedAt: new Date(),
       });
+
+      // 상품 정보가 변경된 경우 채팅에 시스템 메시지 전송 (거래 시작 전에만)
+      const titleChanged = product.title !== formData.title;
+      const descriptionChanged = product.description !== formData.description;
+      const categoryChanged = product.category !== formData.category;
+
+      if (
+        priceChanged ||
+        titleChanged ||
+        descriptionChanged ||
+        categoryChanged
+      ) {
+        try {
+          const { getOrCreateChat, sendMessage } = await import(
+            "@/lib/chat/api"
+          );
+
+          // 상품과 관련된 채팅방 찾기
+          const chatResult = await getOrCreateChat(
+            productId,
+            product.buyerUid || "unknown", // 구매자가 없으면 unknown
+            product.sellerUid,
+            "📝 상품 정보가 변경되었습니다."
+          );
+
+          if (chatResult.success && chatResult.chatId) {
+            let changeMessage = "📝 판매자가 상품 정보를 변경했습니다:\n";
+
+            if (priceChanged) {
+              changeMessage += `• 가격: ${oldPrice.toLocaleString()}원 → ${newPrice.toLocaleString()}원\n`;
+            }
+            if (titleChanged) {
+              changeMessage += `• 제목: ${product.title} → ${formData.title}\n`;
+            }
+            if (descriptionChanged) {
+              changeMessage += `• 설명이 변경되었습니다\n`;
+            }
+            if (categoryChanged) {
+              changeMessage += `• 카테고리가 변경되었습니다\n`;
+            }
+
+            const messageResult = await sendMessage({
+              chatId: chatResult.chatId,
+              senderUid: "system",
+              content: changeMessage,
+            });
+
+            if (messageResult.success) {
+              console.log("상품 변경 시스템 메시지 전송 완료");
+            } else {
+              console.error(
+                "상품 변경 시스템 메시지 전송 실패:",
+                messageResult.error
+              );
+            }
+          }
+        } catch (error) {
+          console.error("상품 변경 알림 전송 실패:", error);
+          // 시스템 메시지 전송 실패해도 상품 수정은 성공으로 처리
+        }
+      }
 
       toast.success("상품이 성공적으로 수정되었습니다!");
       onSuccess?.();

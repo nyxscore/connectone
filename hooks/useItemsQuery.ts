@@ -5,6 +5,7 @@ import {
   ItemListOptions,
 } from "../lib/api/products";
 import { SellItem } from "../data/types";
+import { useAuth } from "../lib/hooks/useAuth";
 
 export interface UseItemsQueryOptions {
   initialFilters?: ItemListFilters;
@@ -29,6 +30,7 @@ export function useItemsQuery(
   options: UseItemsQueryOptions = {}
 ): UseItemsQueryReturn {
   const { initialFilters = {}, limit = 20 } = options;
+  const { user } = useAuth();
 
   const [items, setItems] = useState<SellItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +63,7 @@ export function useItemsQuery(
           limit,
           lastDoc: reset ? undefined : lastDoc,
           filters,
+          currentUserId: user?.uid, // 현재 사용자 ID 전달
         };
 
         const result = await getItemList(queryOptions);
@@ -85,7 +88,7 @@ export function useItemsQuery(
         setFiltering(false);
       }
     },
-    [filters, lastDoc, limit]
+    [filters, lastDoc, limit, user?.uid]
   );
 
   // 필터 변경 시 디바운싱 적용

@@ -81,23 +81,78 @@ export async function POST(request: NextRequest) {
     // 플레이스홀더 결제 처리 (실제 PG 연동 대신)
     const paymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // 트랜잭션 생성
-    const transactionData = {
-      productId,
-      buyerId,
-      sellerId: product.sellerUid, // sellerUid 사용
-      amount,
-      status: "paid_hold" as const, // 플레이스홀더에서는 바로 paid_hold로 설정
-      paymentMethod,
-      paymentId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
+    // 기존 취소된 거래 내역 확인 및 정리
+    try {
+      const existingTransactionRef = doc(
+        db,
+        "transactions",
+        `${productId}_${buyerId}`
+      );
+      const existingTransactionSnap = await getDoc(existingTransactionRef);
 
-    const docRef = await addDoc(
-      collection(db, "transactions"),
-      transactionData
-    );
+      if (existingTransactionSnap.exists()) {
+        const existingData = existingTransactionSnap.data();
+        console.log("기존 거래 내역 발견:", existingData);
+
+        // 취소된 거래인 경우 새 거래로 업데이트
+        if (existingData.status === "cancelled") {
+          await updateDoc(existingTransactionRef, {
+            status: "paid_hold",
+            amount,
+            paymentMethod,
+            paymentId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            // 취소 관련 필드 초기화
+            cancelledAt: null,
+            cancelReason: null,
+            cancelledBy: null,
+          });
+          console.log("취소된 거래를 새 거래로 업데이트 완료");
+        } else {
+          // 다른 상태의 거래가 있으면 새 문서 생성
+          const transactionData = {
+            productId,
+            buyerId,
+            sellerId: product.sellerUid,
+            amount,
+            status: "paid_hold" as const,
+            paymentMethod,
+            paymentId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          };
+
+          const docRef = await addDoc(
+            collection(db, "transactions"),
+            transactionData
+          );
+          console.log("새 거래 내역 생성:", docRef.id);
+        }
+      } else {
+        // 기존 거래 내역이 없으면 새로 생성
+        const transactionData = {
+          productId,
+          buyerId,
+          sellerId: product.sellerUid,
+          amount,
+          status: "paid_hold" as const,
+          paymentMethod,
+          paymentId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        const docRef = await addDoc(
+          collection(db, "transactions"),
+          transactionData
+        );
+        console.log("새 거래 내역 생성:", docRef.id);
+      }
+    } catch (error) {
+      console.error("거래 내역 처리 중 오류:", error);
+      // 거래 내역 처리 실패해도 상품 상태 변경은 계속 진행
+    }
 
     // 상품 상태 변경 - 안전결제면 'escrow_completed', 일반결제면 'pending'
     const productStatus = isEscrow ? "escrow_completed" : "pending";
@@ -132,7 +187,7 @@ export async function POST(request: NextRequest) {
           console.log("🔔 결제 완료 시 채팅 메시지 추가 시작:", {
             productId,
             buyerId,
-            sellerUid: product.sellerUid
+            sellerUid: product.sellerUid,
           });
 
           const { getOrCreateChat, addMessage } = await import(

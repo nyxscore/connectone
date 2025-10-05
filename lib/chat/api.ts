@@ -114,14 +114,25 @@ export async function getOrCreateChat(
   firstMessage?: string
 ): Promise<{ success: boolean; chatId?: string; error?: string }> {
   try {
-    // 자기 자신과의 채팅 방지
+    // 자기 자신과의 채팅 방지 (단, 시스템 메시지만 있는 경우는 허용)
     if (buyerUid === sellerUid) {
       console.warn("자기 자신과의 채팅 생성 시도:", {
         buyerUid,
         sellerUid,
         itemId,
       });
-      return { success: false, error: "자기 자신과는 채팅할 수 없습니다." };
+
+      // 시스템 메시지만 있는 경우는 허용 (거래 상태 변경 알림용)
+      if (
+        (firstMessage && firstMessage.includes("시스템")) ||
+        (firstMessage && firstMessage.includes("거래")) ||
+        (firstMessage && firstMessage.includes("안전결제")) ||
+        (firstMessage && firstMessage.includes("배송"))
+      ) {
+        console.log("시스템 메시지를 위한 자기 자신 채팅 허용");
+      } else {
+        return { success: false, error: "자기 자신과는 채팅할 수 없습니다." };
+      }
     }
 
     const chatId = `${buyerUid}_${sellerUid}_${itemId}`;
@@ -132,8 +143,8 @@ export async function getOrCreateChat(
 
     if (chatSnap.exists()) {
       // 기존 채팅이 있으면 첫 메시지가 있을 때만 전송 (시스템 메시지로)
-      // 단, 이미 시스템 메시지가 있는지 확인
       if (firstMessage) {
+        // 모든 시스템 메시지에 대해 중복 체크
         const messagesRef = collection(db, "messages");
         const messagesQuery = query(
           messagesRef,
@@ -461,7 +472,7 @@ export async function sendMessage(
             if (sellerProfile && itemResult.item) {
               await notificationTrigger.triggerNewMessage({
                 userId: sellerUid,
-                senderName: "시스템",
+                senderName: "", // 시스템 메시지는 senderName을 빈 문자열로 설정
                 productTitle: itemResult.item.title,
                 messagePreview: data.content,
                 chatId: data.chatId,
@@ -642,7 +653,7 @@ export async function deleteChat(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     console.log("🔍 deleteChat 호출됨:", { chatId, userId });
-    
+
     if (!chatId || !userId) {
       console.error("❌ 필수 파라미터 누락:", { chatId, userId });
       return { success: false, error: "필수 파라미터가 누락되었습니다." };
@@ -650,12 +661,12 @@ export async function deleteChat(
 
     const chatRef = doc(db, "chats", chatId);
     console.log("🔍 채팅 문서 참조 생성:", chatRef.path);
-    
+
     const chatSnap = await getDoc(chatRef);
     console.log("🔍 채팅 문서 조회 결과:", {
       exists: chatSnap.exists(),
       id: chatSnap.id,
-      data: chatSnap.exists() ? chatSnap.data() : null
+      data: chatSnap.exists() ? chatSnap.data() : null,
     });
 
     if (!chatSnap.exists()) {
@@ -677,8 +688,9 @@ export async function deleteChat(
     // 또는 buyerUid와 sellerUid가 같은 경우 (자기 자신과의 채팅)도 허용
     const isBuyer = chatData.buyerUid === userId;
     const isSeller = chatData.sellerUid === userId;
-    const isSelfChat = chatData.buyerUid === chatData.sellerUid && chatData.buyerUid === userId;
-    
+    const isSelfChat =
+      chatData.buyerUid === chatData.sellerUid && chatData.buyerUid === userId;
+
     const isAuthorized = isBuyer || isSeller || isSelfChat;
 
     console.log("🔍 채팅 삭제 권한 상세 체크:", {
@@ -688,7 +700,7 @@ export async function deleteChat(
       isBuyer,
       isSeller,
       isSelfChat,
-      isAuthorized
+      isAuthorized,
     });
 
     if (!isAuthorized) {
@@ -702,18 +714,19 @@ export async function deleteChat(
     }
 
     // 채팅을 완전히 삭제하지 않고, 사용자별로 삭제 상태만 표시
-    const deletedByField = chatData.buyerUid === userId ? 'deletedByBuyer' : 'deletedBySeller';
-    
+    const deletedByField =
+      chatData.buyerUid === userId ? "deletedByBuyer" : "deletedBySeller";
+
     console.log("🔍 채팅 삭제 상태 업데이트 시작:", {
       deletedByField,
       chatId,
-      userId
+      userId,
     });
-    
+
     await updateDoc(chatRef, {
       [deletedByField]: true,
       deletedAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
     });
 
     console.log("✅ 채팅 삭제 상태 업데이트 완료:", `${deletedByField} = true`);
@@ -726,7 +739,7 @@ export async function deleteChat(
       chatId,
       userId,
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
     return {
       success: false,

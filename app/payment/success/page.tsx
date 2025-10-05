@@ -24,6 +24,7 @@ function PaymentSuccessContent() {
   });
   const [showChatModal, setShowChatModal] = useState(false);
   const [transactionSaved, setTransactionSaved] = useState(false);
+  const [autoChatOpened, setAutoChatOpened] = useState(false);
 
   useEffect(() => {
     const orderId = searchParams.get("orderId");
@@ -91,12 +92,32 @@ function PaymentSuccessContent() {
             const itemRef = doc(db, "items", orderInfo.itemId);
             await updateDoc(itemRef, {
               status: "escrow_completed", // 안전결제 완료 상태
-              buyerId: user.id,
+              buyerUid: user.uid, // buyerId 대신 buyerUid 사용
               escrowCompletedAt: new Date(),
               updatedAt: new Date(),
             });
 
             console.log("안전결제 완료 상태로 업데이트됨");
+
+            // 안전결제 완료 시스템 메시지 전송
+            try {
+              const { getOrCreateChat } = await import("@/lib/chat/api");
+              const chatResult = await getOrCreateChat(
+                orderInfo.itemId,
+                user.uid,
+                orderInfo.sellerUid,
+                "🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다."
+              );
+
+              if (chatResult.success) {
+                console.log(
+                  "안전결제 완료 시스템 메시지 전송 완료:",
+                  chatResult.chatId
+                );
+              }
+            } catch (error) {
+              console.error("안전결제 완료 시스템 메시지 전송 실패:", error);
+            }
 
             // 상품 상태 변경 이벤트 발생
             window.dispatchEvent(
@@ -114,13 +135,25 @@ function PaymentSuccessContent() {
 
         console.log("거래 내역 저장 완료");
         setTransactionSaved(true);
+
+        // 안전결제인 경우 자동으로 채팅창 열기
+        if (
+          orderInfo.escrow &&
+          orderInfo.sellerUid &&
+          orderInfo.itemId &&
+          !autoChatOpened
+        ) {
+          console.log("안전결제 완료 - 자동 채팅창 열기");
+          setShowChatModal(true);
+          setAutoChatOpened(true);
+        }
       } catch (error) {
         console.error("거래 내역 저장 실패:", error);
       }
     };
 
     saveTransaction();
-  }, [user, orderInfo, transactionSaved]);
+  }, [user, orderInfo, transactionSaved, autoChatOpened]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,6 +243,9 @@ function PaymentSuccessContent() {
           sellerUid={orderInfo.sellerUid}
           itemId={orderInfo.itemId}
           tradeType={orderInfo.escrow ? "안전결제" : "직거래"}
+          autoSendSystemMessage={
+            orderInfo.escrow ? "escrow_completed" : undefined
+          }
         />
       )}
     </div>

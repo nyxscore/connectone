@@ -315,7 +315,11 @@ export function ChatModal({
       if (result.success) {
         toast.success("채팅방이 삭제되었습니다.");
         // 전역 이벤트 발생시켜서 ChatList가 새로고침되도록 함
-        window.dispatchEvent(new CustomEvent("chatDeleted"));
+        window.dispatchEvent(
+          new CustomEvent("chatDeleted", {
+            detail: { chatId: chatData.chatId },
+          })
+        );
         onChatDeleted?.(); // 채팅 목록 새로고침
         onClose();
       } else {

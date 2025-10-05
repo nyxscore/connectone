@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../lib/hooks/useAuth";
-import { getUserItems } from "../../../lib/api/products";
 import { ItemDetailModal } from "../../../components/items/ItemDetailModal";
 import { ItemCard } from "../../../components/items/ItemCard";
 import EditProductModal from "../../../components/product/EditProductModal";
@@ -78,143 +77,60 @@ function MyItemsPageContent() {
       setLoading(true);
 
       if (activeTab === "buying") {
-        // 구매중인 상품 로드 (buyerUid와 buyerId 두 필드 모두 확인)
-        const { collection, query, where, getDocs, orderBy } = await import(
-          "firebase/firestore"
+        // 구매중인 상품 로드 - 새로운 API 사용
+        const response = await fetch(
+          `/api/profile/my-items?userId=${userId}&type=buying`
         );
-        const { db } = await import("../../../lib/api/firebase");
+        const result = await response.json();
 
-        const itemsRef = collection(db, "items");
-        // buyerUid와 buyerId 두 필드 모두 확인
-        const buyerUidQuery = query(
-          itemsRef,
-          where("buyerUid", "==", userId),
-          where("status", "in", ["reserved", "escrow_completed"])
-        );
-
-        const buyerIdQuery = query(
-          itemsRef,
-          where("buyerId", "==", userId),
-          where("status", "in", ["reserved", "escrow_completed"])
-        );
-
-        const [buyerUidSnapshot, buyerIdSnapshot] = await Promise.all([
-          getDocs(buyerUidQuery),
-          getDocs(buyerIdQuery),
-        ]);
-
-        // 두 결과를 합치고 중복 제거
-        const allItems = new Map();
-
-        buyerUidSnapshot.docs.forEach(doc => {
-          allItems.set(doc.id, { id: doc.id, ...doc.data() });
-        });
-
-        buyerIdSnapshot.docs.forEach(doc => {
-          allItems.set(doc.id, { id: doc.id, ...doc.data() });
-        });
-
-        const items = Array.from(allItems.values());
-
-        // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
-        const sortedItems = items.sort((a, b) => {
-          const aTime = a.createdAt?.seconds || 0;
-          const bTime = b.createdAt?.seconds || 0;
-          return bTime - aTime;
-        });
-
-        setMyItems(sortedItems);
-      } else if (activeTab === "trading") {
-        // 거래중인 상품 로드 (sellerId가 현재 사용자이고 status가 reserved인 상품들)
-        const { collection, query, where, getDocs, orderBy } = await import(
-          "firebase/firestore"
-        );
-        const { db } = await import("../../../lib/api/firebase");
-
-        const itemsRef = collection(db, "items");
-        const q = query(
-          itemsRef,
-          where("sellerId", "==", userId),
-          where("status", "==", "reserved")
-        );
-
-        const querySnapshot = await getDocs(q);
-        const items = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
-        const sortedItems = items.sort((a, b) => {
-          const aTime = a.createdAt?.seconds || 0;
-          const bTime = b.createdAt?.seconds || 0;
-          return bTime - aTime;
-        });
-
-        setMyItems(sortedItems);
-      } else if (activeTab === "sold") {
-        // 거래완료된 상품 로드 (판매완료 + 구매완료)
-        const { collection, query, where, getDocs } = await import(
-          "firebase/firestore"
-        );
-        const { db } = await import("../../../lib/api/firebase");
-
-        const itemsRef = collection(db, "items");
-
-        // 판매완료 상품 (sellerUid가 현재 사용자이고 status가 sold인 상품들)
-        const soldItemsQuery = query(
-          itemsRef,
-          where("sellerUid", "==", userId),
-          where("status", "in", ["sold", "paid_hold", "completed"])
-        );
-
-        // 구매완료 상품 (buyerUid가 현재 사용자이고 status가 sold인 상품들)
-        const boughtItemsQuery = query(
-          itemsRef,
-          where("buyerUid", "==", userId),
-          where("status", "in", ["sold", "paid_hold", "completed"])
-        );
-
-        const [soldSnapshot, boughtSnapshot] = await Promise.all([
-          getDocs(soldItemsQuery),
-          getDocs(boughtItemsQuery),
-        ]);
-
-        const items: any[] = [];
-
-        // 판매완료 상품 추가
-        soldSnapshot.docs.forEach(doc => {
-          items.push({
-            id: doc.id,
-            ...doc.data(),
-            transactionType: "sold",
-          });
-        });
-
-        // 구매완료 상품 추가
-        boughtSnapshot.docs.forEach(doc => {
-          items.push({
-            id: doc.id,
-            ...doc.data(),
-            transactionType: "bought",
-          });
-        });
-
-        // 클라이언트 사이드에서 정렬 (createdAt 기준 내림차순)
-        const sortedItems = items.sort((a, b) => {
-          const aTime = a.createdAt?.seconds || 0;
-          const bTime = b.createdAt?.seconds || 0;
-          return bTime - aTime;
-        });
-
-        setMyItems(sortedItems);
-      } else {
-        // 판매중인 상품 로드 (기존 로직)
-        const result = await getUserItems(userId, 50);
         if (result.success && result.items) {
           setMyItems(result.items);
+          console.log("구매중 상품 로드 완료:", result.items.length, "개");
         } else {
-          console.error("상품 로딩 실패:", result.error);
+          console.error("구매중 상품 로드 실패:", result.error);
+          setMyItems([]);
+        }
+      } else if (activeTab === "trading") {
+        // 거래중인 상품 로드 - 새로운 API 사용
+        const response = await fetch(
+          `/api/profile/my-items?userId=${userId}&type=trading`
+        );
+        const result = await response.json();
+
+        if (result.success && result.items) {
+          setMyItems(result.items);
+          console.log("거래중 상품 로드 완료:", result.items.length, "개");
+        } else {
+          console.error("거래중 상품 로드 실패:", result.error);
+          setMyItems([]);
+        }
+      } else if (activeTab === "sold") {
+        // 거래완료된 상품 로드 - 새로운 API 사용
+        const response = await fetch(
+          `/api/profile/my-items?userId=${userId}&type=sold`
+        );
+        const result = await response.json();
+
+        if (result.success && result.items) {
+          setMyItems(result.items);
+          console.log("거래완료 상품 로드 완료:", result.items.length, "개");
+        } else {
+          console.error("거래완료 상품 로드 실패:", result.error);
+          setMyItems([]);
+        }
+      } else {
+        // 판매중인 상품 로드 - 새로운 API 사용
+        const response = await fetch(
+          `/api/profile/my-items?userId=${userId}&type=selling`
+        );
+        const result = await response.json();
+
+        if (result.success && result.items) {
+          setMyItems(result.items);
+          console.log("판매중 상품 로드 완료:", result.items.length, "개");
+        } else {
+          console.error("판매중 상품 로드 실패:", result.error);
+          setMyItems([]);
         }
       }
     } catch (error) {

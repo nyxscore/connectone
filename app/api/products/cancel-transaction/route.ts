@@ -30,7 +30,8 @@ export async function POST(req: NextRequest) {
     if (itemData.status === "escrow_completed") {
       try {
         // 구매자와 판매자 구분 (buyerId와 buyerUid 모두 체크)
-        const isBuyer = itemData.buyerUid === userId || itemData.buyerId === userId;
+        const isBuyer =
+          itemData.buyerUid === userId || itemData.buyerId === userId;
         const isSeller = itemData.sellerUid === userId;
 
         if (!isBuyer && !isSeller) {
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     }
 
     await updateDoc(itemRef, {
-      status: "active", // '판매중'으로 되돌리기
+      status: "active", // '거래 대기' 상태로 변경 (active = 거래 대기)
       buyerId: null, // 구매자 정보 제거
       buyerUid: null, // buyerUid도 함께 초기화
       transactionCancelledAt: new Date(), // 거래 취소 시간 기록
@@ -105,12 +106,38 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date(),
     });
 
+    // 거래 내역 업데이트 (취소 상태로 변경)
+    try {
+      const { updateDoc: updateDocTransaction } = await import(
+        "firebase/firestore"
+      );
+      const transactionsRef = doc(
+        db,
+        "transactions",
+        `${itemId}_${itemData.buyerUid || itemData.buyerId}`
+      );
+      await updateDocTransaction(transactionsRef, {
+        status: "cancelled",
+        cancelledAt: new Date(),
+        cancelReason:
+          reason || (isBuyer ? "구매자 거래 취소" : "판매자 거래 취소"),
+        cancelledBy: userId,
+        updatedAt: new Date(),
+      }).catch(() => {
+        // 거래 내역이 없어도 상품 취소는 진행
+        console.log("거래 내역 업데이트 실패 (무시됨)");
+      });
+    } catch (error) {
+      console.error("거래 내역 업데이트 실패:", error);
+      // 거래 내역 업데이트 실패해도 상품 취소는 성공으로 처리
+    }
+
     // 채팅에 시스템 메시지 추가
     try {
       const { getOrCreateChat, addMessage } = await import(
         "../../../../lib/chat/api"
       );
-      
+
       // 채팅방 찾기 또는 생성
       const chatResult = await getOrCreateChat({
         itemId: itemId,
@@ -121,10 +148,10 @@ export async function POST(req: NextRequest) {
 
       if (chatResult.success && chatResult.chatId) {
         // 시스템 메시지 추가
-        const cancelMessage = isBuyer 
+        const cancelMessage = isBuyer
           ? "❌ 구매자가 거래를 취소했습니다. 거래가 종료되었습니다."
           : "❌ 판매자가 거래를 취소했습니다. 거래가 종료되었습니다.";
-          
+
         const systemMessageResult = await addMessage({
           chatId: chatResult.chatId,
           senderUid: "system",
@@ -133,8 +160,33 @@ export async function POST(req: NextRequest) {
 
         if (systemMessageResult.success) {
           console.log("✅ 거래 취소 시스템 메시지 추가 성공");
+
+          // 구매자에게 거래 취소 알림 전송
+          if (!isBuyer && itemData.buyerUid) {
+            try {
+              const { notificationTrigger } = await import(
+                "../../../../lib/notifications/trigger"
+              );
+              const { getItem } = await import("../../../../lib/api/products");
+
+              const itemResult = await getItem(itemId);
+              if (itemResult.success && itemResult.item) {
+                await notificationTrigger.triggerTransactionUpdate({
+                  userId: itemData.buyerUid,
+                  productTitle: itemResult.item.title,
+                  message: "판매자가 거래를 취소했습니다.",
+                });
+                console.log("✅ 구매자에게 거래 취소 알림 전송 완료");
+              }
+            } catch (error) {
+              console.error("❌ 거래 취소 알림 전송 실패:", error);
+            }
+          }
         } else {
-          console.error("❌ 거래 취소 시스템 메시지 추가 실패:", systemMessageResult.error);
+          console.error(
+            "❌ 거래 취소 시스템 메시지 추가 실패:",
+            systemMessageResult.error
+          );
         }
       } else {
         console.error("❌ 거래 취소 채팅방 찾기/생성 실패:", chatResult.error);

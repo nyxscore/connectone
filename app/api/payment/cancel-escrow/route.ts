@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
 
     // 권한 확인 - 판매자 또는 구매자만 취소 가능 (buyerId와 buyerUid 모두 체크)
     const isSeller = itemData.sellerUid === cancelledBy;
-    const isBuyer = itemData.buyerUid === cancelledBy || itemData.buyerId === cancelledBy;
+    const isBuyer =
+      itemData.buyerUid === cancelledBy || itemData.buyerId === cancelledBy;
 
     if (!isSeller && !isBuyer) {
       return NextResponse.json(
@@ -60,9 +61,9 @@ export async function POST(request: NextRequest) {
     const refundSuccess = true;
 
     if (refundSuccess) {
-      // 상품 상태를 '판매중'으로 변경하고 구매자 정보 제거
+      // 상품 상태를 '거래 대기'로 변경하고 구매자 정보 제거
       await updateDoc(itemRef, {
-        status: "active",
+        status: "active", // '거래 대기' 상태로 변경 (active = 거래 대기)
         buyerId: null,
         buyerUid: null, // buyerUid도 함께 초기화
         escrowCompletedAt: null,
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
         const { getOrCreateChat, addMessage } = await import(
           "../../../../lib/chat/api"
         );
-        
+
         // 채팅방 찾기 또는 생성
         const chatResult = await getOrCreateChat({
           itemId: itemId,
@@ -108,10 +109,10 @@ export async function POST(request: NextRequest) {
 
         if (chatResult.success && chatResult.chatId) {
           // 시스템 메시지 추가
-          const cancelMessage = isSeller 
+          const cancelMessage = isSeller
             ? "❌ 판매자가 안전결제를 취소했습니다. 환불이 처리됩니다."
             : "❌ 구매자가 안전결제를 취소했습니다. 환불이 처리됩니다.";
-            
+
           const systemMessageResult = await addMessage({
             chatId: chatResult.chatId,
             senderUid: "system",
@@ -120,14 +121,47 @@ export async function POST(request: NextRequest) {
 
           if (systemMessageResult.success) {
             console.log("✅ 안전결제 취소 시스템 메시지 추가 성공");
+
+            // 구매자에게 안전결제 취소 알림 전송
+            if (!isSeller && itemData.buyerUid) {
+              try {
+                const { notificationTrigger } = await import(
+                  "../../../../lib/notifications/trigger"
+                );
+                const { getItem } = await import(
+                  "../../../../lib/api/products"
+                );
+
+                const itemResult = await getItem(itemId);
+                if (itemResult.success && itemResult.item) {
+                  await notificationTrigger.triggerTransactionUpdate({
+                    userId: itemData.buyerUid,
+                    productTitle: itemResult.item.title,
+                    message: "판매자가 안전결제를 취소했습니다.",
+                  });
+                  console.log("✅ 구매자에게 안전결제 취소 알림 전송 완료");
+                }
+              } catch (error) {
+                console.error("❌ 안전결제 취소 알림 전송 실패:", error);
+              }
+            }
           } else {
-            console.error("❌ 안전결제 취소 시스템 메시지 추가 실패:", systemMessageResult.error);
+            console.error(
+              "❌ 안전결제 취소 시스템 메시지 추가 실패:",
+              systemMessageResult.error
+            );
           }
         } else {
-          console.error("❌ 안전결제 취소 채팅방 찾기/생성 실패:", chatResult.error);
+          console.error(
+            "❌ 안전결제 취소 채팅방 찾기/생성 실패:",
+            chatResult.error
+          );
         }
       } catch (chatError) {
-        console.error("❌ 안전결제 취소 채팅 시스템 메시지 추가 중 오류:", chatError);
+        console.error(
+          "❌ 안전결제 취소 채팅 시스템 메시지 추가 중 오류:",
+          chatError
+        );
         // 채팅 메시지 추가 실패해도 취소는 성공으로 처리
       }
 

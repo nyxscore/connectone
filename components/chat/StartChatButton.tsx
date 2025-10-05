@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
 import { MessageCircle } from "lucide-react";
-import { FirestoreChatModal } from "./FirestoreChatModal";
+import { EnhancedChatModal } from "./EnhancedChatModal";
 
 interface StartChatButtonProps {
   itemId: string;
@@ -43,7 +43,7 @@ export function StartChatButton({
       </Button>
 
       {/* 채팅 모달 */}
-      <FirestoreChatModal
+      <EnhancedChatModal
         isOpen={showChatModal}
         onClose={() => setShowChatModal(false)}
         itemId={itemId}
