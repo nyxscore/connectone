@@ -405,6 +405,159 @@ export function EnhancedChatModal({
     return courierMap[courierCode] || courierCode;
   };
 
+  // loadChatData 함수 정의 (useEffect보다 먼저)
+  const loadChatData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      if (chatId) {
+        // 기존 채팅 로드
+        console.log("기존 채팅 로드:", chatId);
+        const chatRef = doc(db, "chats", chatId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (!chatSnap.exists()) {
+          setError("채팅을 찾을 수 없습니다.");
+          return;
+        }
+
+        const chatData = chatSnap.data() as Chat;
+        console.log("채팅 데이터:", chatData);
+        console.log("현재 사용자 UID:", user?.uid);
+        console.log("채팅의 buyerUid:", chatData.buyerUid);
+        console.log("채팅의 sellerUid:", chatData.sellerUid);
+
+        const otherUid =
+          chatData.buyerUid === user?.uid
+            ? chatData.sellerUid
+            : chatData.buyerUid;
+
+        console.log("계산된 otherUid:", otherUid);
+        console.log("구매자 확인:", user?.uid === chatData.buyerUid);
+        console.log("판매자 확인:", user?.uid === chatData.sellerUid);
+
+        // 채팅 문서에 이미 저장된 otherUser 정보 사용 (우선순위)
+        const storedOtherUser = chatData.otherUser;
+
+        // 없으면 Firestore에서 가져오기
+        let otherUser = null;
+        console.log("저장된 상대방 정보:", storedOtherUser);
+
+        if (!storedOtherUser?.nickname || !storedOtherUser?.profileImage) {
+          console.log("상대방 프로필을 Firestore에서 가져오기:", otherUid);
+          const otherUserResult = await getUserProfile(otherUid);
+          console.log("상대방 프로필 로드 결과:", otherUserResult);
+          otherUser = otherUserResult.success ? otherUserResult.data : null;
+          setOtherUserProfile(otherUser);
+        } else {
+          console.log("저장된 상대방 정보 사용:", storedOtherUser);
+          setOtherUserProfile(storedOtherUser as any);
+        }
+
+        // 아이템 정보 가져오기
+        console.log("아이템 정보 가져오기:", chatData.itemId);
+        let itemResult = await getItem(chatData.itemId);
+        console.log("아이템 로드 결과:", itemResult);
+
+        if (!itemResult.success || !itemResult.item) {
+          console.log("아이템 로드 실패, 기본값 사용");
+          // 아이템 정보가 없으면 기본값 사용
+          itemResult = {
+            success: true,
+            item: {
+              id: chatData.itemId,
+              title: "알 수 없는 상품",
+              price: 0,
+              brand: "알 수 없음",
+              model: "",
+              images: [],
+            } as any,
+          };
+        }
+
+        // buyerUid 또는 buyerId 우선순위로 설정
+        const finalBuyerUid = itemResult.item.buyerUid || itemResult.item.buyerId || chatData.buyerUid;
+
+        console.log("최종 buyerUid 설정:", {
+          itemBuyerUid: itemResult.item.buyerUid,
+          itemBuyerId: itemResult.item.buyerId,
+          chatBuyerUid: chatData.buyerUid,
+          finalBuyerUid
+        });
+
+        setChatData({
+          chatId,
+          itemId: chatData.itemId,
+          sellerUid: chatData.sellerUid,
+          buyerUid: finalBuyerUid,
+          otherUser: {
+            uid: otherUid,
+            nickname: otherUser?.nickname || "알 수 없음",
+            profileImage: otherUser?.profileImage,
+          },
+          item: itemResult.item,
+          tradeType: itemResult.item.tradeOptions?.join(" + ") || "직거래",
+        });
+
+        // 메시지는 useEffect에서 자동으로 로드됨
+      } else if (itemId && sellerUid) {
+        // 새로운 채팅 생성
+        console.log("새 채팅 생성:", { itemId, sellerUid });
+        
+        if (user?.uid === sellerUid) {
+          setError("자신의 상품과는 채팅할 수 없습니다.");
+          return;
+        }
+
+        // 상대방 정보 가져오기
+        const otherUserResult = await getUserProfile(sellerUid);
+        if (!otherUserResult.success) {
+          setError("상대방 정보를 가져올 수 없습니다.");
+          return;
+        }
+
+        // 아이템 정보 가져오기
+        const itemResult = await getItem(itemId);
+        if (!itemResult.success || !itemResult.item) {
+          setError("상품 정보를 가져올 수 없습니다.");
+          return;
+        }
+
+        // buyerUid 또는 buyerId 우선순위로 설정
+        const finalBuyerUid = itemResult.item.buyerUid || itemResult.item.buyerId || user?.uid;
+
+        console.log("새 채팅 buyerUid 설정:", {
+          itemBuyerUid: itemResult.item.buyerUid,
+          itemBuyerId: itemResult.item.buyerId,
+          userUid: user?.uid,
+          finalBuyerUid
+        });
+
+        setChatData({
+          chatId: "", // 새 채팅이므로 빈 문자열
+          itemId,
+          sellerUid,
+          buyerUid: finalBuyerUid,
+          otherUser: {
+            uid: sellerUid,
+            nickname: otherUserResult.data.nickname,
+            profileImage: otherUserResult.data.profileImage,
+          },
+          item: itemResult.item,
+          tradeType: itemResult.item.tradeOptions?.join(" + ") || "직거래",
+        });
+      } else {
+        setError("채팅 정보가 부족합니다.");
+      }
+    } catch (error) {
+      console.error("채팅 데이터 로드 실패:", error);
+      setError("채팅 정보를 불러오는데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 메시지가 변경될 때마다 스크롤을 최하단으로
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -639,293 +792,6 @@ export function EnhancedChatModal({
     }
   }, [chatData?.chatId, user]);
 
-  const loadChatData = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      if (chatId) {
-        // 기존 채팅 로드
-        console.log("기존 채팅 로드:", chatId);
-        const chatRef = doc(db, "chats", chatId);
-        const chatSnap = await getDoc(chatRef);
-
-        if (!chatSnap.exists()) {
-          setError("채팅을 찾을 수 없습니다.");
-          return;
-        }
-
-        const chatData = chatSnap.data() as Chat;
-        console.log("채팅 데이터:", chatData);
-        console.log("현재 사용자 UID:", user?.uid);
-        console.log("채팅의 buyerUid:", chatData.buyerUid);
-        console.log("채팅의 sellerUid:", chatData.sellerUid);
-
-        const otherUid =
-          chatData.buyerUid === user?.uid
-            ? chatData.sellerUid
-            : chatData.buyerUid;
-
-        console.log("계산된 otherUid:", otherUid);
-        console.log("구매자 확인:", user?.uid === chatData.buyerUid);
-        console.log("판매자 확인:", user?.uid === chatData.sellerUid);
-
-        // 채팅 문서에 이미 저장된 otherUser 정보 사용 (우선순위)
-        const storedOtherUser = chatData.otherUser;
-
-        // 없으면 Firestore에서 가져오기
-        let otherUser = null;
-        console.log("저장된 상대방 정보:", storedOtherUser);
-
-        if (!storedOtherUser?.nickname || !storedOtherUser?.profileImage) {
-          console.log("상대방 프로필을 Firestore에서 가져오기:", otherUid);
-          const otherUserResult = await getUserProfile(otherUid);
-          console.log("상대방 프로필 로드 결과:", otherUserResult);
-          otherUser = otherUserResult.success ? otherUserResult.data : null;
-          setOtherUserProfile(otherUser);
-        } else {
-          console.log("저장된 상대방 정보 사용:", storedOtherUser);
-          setOtherUserProfile(storedOtherUser as any);
-        }
-
-        // 아이템 정보 가져오기
-        let itemResult = null;
-        if (chatData.itemId && chatData.itemId !== "unknown") {
-          itemResult = await getItem(chatData.itemId);
-          console.log("아이템 정보 로드 결과:", itemResult);
-          console.log("아이템 상태:", itemResult?.item?.status);
-        }
-
-        // 거래 유형 추론 (상품 상태 기반)
-        let inferredTradeType = "직거래";
-        if (itemResult?.success && itemResult?.item) {
-          console.log("상품 상태:", itemResult.item.status);
-          console.log("거래 옵션:", itemResult.item.tradeOptions);
-
-          const tradeOptions = itemResult.item.tradeOptions || [];
-
-          // 안전결제 감지: 상태가 escrow_completed, shipping이거나 tradeOptions에 안전결제 관련 옵션이 있으면
-          const isEscrow =
-            itemResult.item.status === "escrow_completed" ||
-            itemResult.item.status === "shipping" ||
-            tradeOptions.includes("안전결제") ||
-            tradeOptions.includes("안전거래") ||
-            tradeOptions.includes("escrow");
-
-          // 택배 감지: tradeOptions에 택배 관련 옵션이 있으면
-          const isDelivery =
-            tradeOptions.includes("택배") || tradeOptions.includes("parcel");
-
-          console.log("상품 상태:", itemResult.item.status);
-          console.log("거래 옵션:", tradeOptions);
-          console.log("안전결제 여부:", isEscrow);
-          console.log("택배 여부:", isDelivery);
-
-          // 배송중 상태는 안전결제로 간주 (이미 결제가 완료된 상태)
-          if (itemResult.item.status === "shipping") {
-            if (isDelivery) {
-              inferredTradeType = "택배 + 안전결제";
-            } else {
-              inferredTradeType = "안전결제";
-            }
-          } else if (isEscrow && isDelivery) {
-            inferredTradeType = "택배 + 안전결제";
-          } else if (isEscrow) {
-            inferredTradeType = "안전결제";
-          } else if (isDelivery) {
-            inferredTradeType = "택배";
-          }
-        }
-        console.log("추론된 거래 유형:", inferredTradeType);
-
-        console.log("=== loadChatData에서 setChatData 호출 ===");
-        console.log(
-          "itemResult.item.shippingInfo:",
-          itemResult.item.shippingInfo
-        );
-        console.log("itemResult.item.status:", itemResult.item.status);
-        console.log("itemResult.item 전체 데이터:", itemResult.item);
-
-        setChatData({
-          chatId,
-          sellerUid: chatData.sellerUid, // sellerUid 추가!
-          otherUser: {
-            uid: otherUid,
-            nickname:
-              storedOtherUser?.nickname ||
-              otherUser?.nickname ||
-              otherUser?.displayName ||
-              "알 수 없음",
-            profileImage:
-              storedOtherUser?.profileImage ||
-              otherUser?.profileImage ||
-              otherUser?.photoURL,
-          },
-          item: {
-            id: chatData.itemId || "unknown",
-            title:
-              itemResult?.success && itemResult?.item
-                ? itemResult.item.title ||
-                  `${itemResult.item.brand} ${itemResult.item.model}`
-                : "상품 정보 없음",
-            price:
-              itemResult?.success && itemResult?.item
-                ? itemResult.item.price
-                : 0,
-            imageUrl:
-              itemResult?.success && itemResult?.item
-                ? itemResult.item.images?.[0]
-                : undefined,
-            status:
-              itemResult?.success && itemResult?.item
-                ? itemResult.item.status
-                : "active",
-            transactionCancelledAt:
-              itemResult?.success && itemResult?.item
-                ? itemResult.item.transactionCancelledAt
-                : null,
-            shippingInfo:
-              itemResult?.success && itemResult?.item
-                ? itemResult.item.shippingInfo
-                : null,
-          },
-          tradeType: tradeType || chatData.tradeType || inferredTradeType, // 전달받은 거래 유형 우선 사용
-          buyerUid:
-            itemResult?.success && itemResult?.item
-              ? itemResult.item.buyerUid ||
-                itemResult.item.buyerId ||
-                chatData.buyerUid
-              : chatData.buyerUid, // 상품 정보의 buyerUid 우선 사용
-        });
-
-        console.log("=== setChatData 호출 완료 ===");
-        console.log(
-          "setChatData에 전달된 shippingInfo:",
-          itemResult.item.shippingInfo
-        );
-      } else if (itemId && sellerUid) {
-        // 새 채팅 생성
-        console.log("새 채팅 생성:", { itemId, sellerUid });
-        try {
-          const itemInfo = await getItem(itemId);
-          const itemTitle =
-            itemInfo.success && itemInfo.item
-              ? itemInfo.item.title ||
-                itemInfo.item.brand + " " + itemInfo.item.model
-              : itemId;
-
-          const result = await getOrCreateChat(
-            itemId,
-            user.uid,
-            sellerUid,
-            "" // 자동 메시지 제거
-          );
-
-          if (!result.success || !result.chatId) {
-            setError(result.error || "채팅을 생성할 수 없습니다.");
-            return;
-          }
-
-          // 상대방 정보 가져오기
-          const otherUserResult = await getUserProfile(sellerUid);
-          const otherUser = otherUserResult.success
-            ? otherUserResult.data
-            : null;
-          setOtherUserProfile(otherUser);
-
-          // 아이템 정보 가져오기
-          const itemResult = await getItem(itemId);
-          console.log("새 채팅 아이템 정보 로드 결과:", itemResult);
-
-          // 새 채팅용 거래 유형 추론
-          let newInferredTradeType = "직거래";
-          if (itemResult?.success && itemResult?.item) {
-            const tradeOptions = itemResult.item.tradeOptions || [];
-
-            const isEscrow =
-              itemResult.item.status === "escrow_completed" ||
-              itemResult.item.status === "shipping" ||
-              tradeOptions.includes("안전결제") ||
-              tradeOptions.includes("안전거래") ||
-              tradeOptions.includes("escrow");
-
-            const isDelivery =
-              tradeOptions.includes("택배") || tradeOptions.includes("parcel");
-
-            if (itemResult.item.status === "shipping") {
-              if (isDelivery) {
-                newInferredTradeType = "택배 + 안전결제";
-              } else {
-                newInferredTradeType = "안전결제";
-              }
-            } else if (isEscrow && isDelivery) {
-              newInferredTradeType = "택배 + 안전결제";
-            } else if (isEscrow) {
-              newInferredTradeType = "안전결제";
-            } else if (isDelivery) {
-              newInferredTradeType = "택배";
-            }
-          }
-
-          setChatData({
-            chatId: result.chatId,
-            sellerUid: sellerUid,
-            otherUser: {
-              uid: sellerUid,
-              nickname:
-                otherUser?.nickname || otherUser?.displayName || "알 수 없음",
-              profileImage: otherUser?.profileImage || otherUser?.photoURL,
-            },
-            item: {
-              id: itemId,
-              title:
-                itemResult?.success && itemResult?.item
-                  ? itemResult.item.title ||
-                    `${itemResult.item.brand} ${itemResult.item.model}`
-                  : "상품 정보 없음",
-              price:
-                itemResult?.success && itemResult?.item
-                  ? itemResult.item.price
-                  : 0,
-              imageUrl:
-                itemResult?.success && itemResult?.item
-                  ? itemResult.item.images?.[0]
-                  : undefined,
-              status:
-                itemResult?.success && itemResult?.item
-                  ? itemResult.item.status
-                  : "active",
-              transactionCancelledAt:
-                itemResult?.success && itemResult?.item
-                  ? itemResult.item.transactionCancelledAt
-                  : null,
-              shippingInfo:
-                itemResult?.success && itemResult?.item
-                  ? itemResult.item.shippingInfo
-                  : null,
-            },
-            tradeType: tradeType || newInferredTradeType, // 전달받은 거래 유형 우선, 없으면 추론된 유형 사용
-            buyerUid:
-              itemResult?.success && itemResult?.item
-                ? itemResult.item.buyerUid ||
-                  itemResult.item.buyerId ||
-                  user?.uid
-                : user?.uid, // 현재 사용자가 구매자
-          });
-        } catch (error) {
-          console.error("채팅 생성 실패:", error);
-          setError("채팅을 생성하는데 실패했습니다.");
-        }
-      } else {
-        setError("채팅 정보가 부족합니다.");
-      }
-    } catch (error) {
-      console.error("loadChatData 실패:", error);
-      setError("채팅을 불러오는데 실패했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadMessages = async (chatId: string) => {
     try {
