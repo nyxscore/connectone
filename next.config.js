@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Firebase Hosting용 서버 모드 (API 라우트 지원)
-  
+  // Firebase Hosting용 정적 내보내기
+  output: "export",
+
   // 이미지 최적화 설정 (정적 내보내기에서는 비활성화)
   images: {
     unoptimized: true,
