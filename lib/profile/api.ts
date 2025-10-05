@@ -10,6 +10,7 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
+import { calculateResponseRate } from "./responseRate";
 import {
   ref,
   uploadBytes,
@@ -56,7 +57,7 @@ export async function getUserProfile(
     // 응답률이 없거나 오래된 경우 업데이트
     if (!userData.responseRate || !userData.lastResponseRateUpdate) {
       try {
-        const { calculateResponseRate } = await import("./responseRate");
+        // calculateResponseRate는 이미 import됨
         const responseRate = await calculateResponseRate(uid);
 
         // 응답률 업데이트

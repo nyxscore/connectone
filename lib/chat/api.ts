@@ -27,10 +27,11 @@ import { getItem } from "../api/products";
 import { getUserProfile } from "../auth";
 import { notificationTrigger } from "../notifications/trigger";
 
+import { updateUserResponseRate } from "../profile/responseRate";
+
 // 응답률 업데이트 (비동기)
 async function updateResponseRateAsync(sellerUid: string) {
   try {
-    const { updateUserResponseRate } = await import("../profile/responseRate");
     await updateUserResponseRate(sellerUid);
     console.log("응답률 업데이트 완료:", sellerUid);
   } catch (error) {
