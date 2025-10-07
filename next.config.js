@@ -33,9 +33,6 @@ const nextConfig = {
     serverComponentsExternalPackages: ['firebase', '@firebase/auth', '@firebase/firestore'],
   },
 
-  // Firebase 초기화 최적화
-  transpilePackages: ["firebase"],
-
   // 소스맵 활성화 (디버깅용)
   productionBrowserSourceMaps: true,
 
