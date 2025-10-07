@@ -521,13 +521,16 @@ export function EnhancedChatModal({
           },
           item: itemResult.item,
           tradeType: (() => {
-            const options = itemResult.item.tradeOptions || ["직거래"];
-            const baseType = options.join(" + ");
-            // escrowEnabled가 true면 안전결제 추가
-            if (itemResult.item.escrowEnabled || itemResult.item.status === "escrow_completed") {
-              return baseType.includes("안전결제") ? baseType : `${baseType} + 안전결제`;
+            // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
+            if (
+              itemResult.item.escrowEnabled ||
+              itemResult.item.status === "escrow_completed"
+            ) {
+              return "안전결제";
             }
-            return baseType;
+            // 아니면 tradeOptions에서 가져오기
+            const options = itemResult.item.tradeOptions || ["직거래"];
+            return options.join(" + ");
           })(),
         });
 
@@ -604,13 +607,16 @@ export function EnhancedChatModal({
           },
           item: itemResult.item,
           tradeType: (() => {
-            const options = itemResult.item.tradeOptions || ["직거래"];
-            const baseType = options.join(" + ");
-            // escrowEnabled가 true면 안전결제 추가
-            if (itemResult.item.escrowEnabled || itemResult.item.status === "escrow_completed") {
-              return baseType.includes("안전결제") ? baseType : `${baseType} + 안전결제`;
+            // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
+            if (
+              itemResult.item.escrowEnabled ||
+              itemResult.item.status === "escrow_completed"
+            ) {
+              return "안전결제";
             }
-            return baseType;
+            // 아니면 tradeOptions에서 가져오기
+            const options = itemResult.item.tradeOptions || ["직거래"];
+            return options.join(" + ");
           })(),
         });
       } else {
@@ -2369,16 +2375,9 @@ export function EnhancedChatModal({
 
                       console.log("현재 거래 유형:", currentTradeType); // 디버그용
 
-                      // 복합 거래 유형 처리
-                      if (currentTradeType === "택배 + 안전결제") {
-                        tradeTypes.push(
-                          <span
-                            key="delivery"
-                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                          >
-                            택배
-                          </span>
-                        );
+                      // 거래 유형 표시 (간단하게)
+                      if (currentTradeType === "안전결제") {
+                        // 안전결제만 표시 (택배는 당연하니까)
                         tradeTypes.push(
                           <span
                             key="escrow"
@@ -2387,45 +2386,24 @@ export function EnhancedChatModal({
                             안전결제
                           </span>
                         );
-                      } else {
-                        // 단일 거래 유형 처리
-                        if (currentTradeType.includes("직거래")) {
-                          tradeTypes.push(
-                            <span
-                              key="direct"
-                              className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800 border border-green-200"
-                            >
-                              직거래
-                            </span>
-                          );
-                        }
-                        if (
-                          currentTradeType.includes("택배") &&
-                          !currentTradeType.includes("안전결제")
-                        ) {
-                          tradeTypes.push(
-                            <span
-                              key="delivery"
-                              className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                            >
-                              택배
-                            </span>
-                          );
-                        }
-                        if (
-                          (currentTradeType.includes("안전거래") ||
-                            currentTradeType.includes("안전결제")) &&
-                          !currentTradeType.includes("택배")
-                        ) {
-                          tradeTypes.push(
-                            <span
-                              key="escrow"
-                              className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200"
-                            >
-                              안전결제
-                            </span>
-                          );
-                        }
+                      } else if (currentTradeType.includes("직거래")) {
+                        tradeTypes.push(
+                          <span
+                            key="direct"
+                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800 border border-green-200"
+                          >
+                            직거래
+                          </span>
+                        );
+                      } else if (currentTradeType.includes("택배")) {
+                        tradeTypes.push(
+                          <span
+                            key="delivery"
+                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                          >
+                            택배
+                          </span>
+                        );
                       }
                       return tradeTypes;
                     })()}
