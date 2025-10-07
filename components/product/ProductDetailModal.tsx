@@ -122,6 +122,11 @@ export default function ProductDetailModal({
   const [isLiked, setIsLiked] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showSellerProfileModal, setShowSellerProfileModal] = useState(false);
+
+  // showChatModal 상태 추적
+  useEffect(() => {
+    console.log("🟢 showChatModal 상태 변경됨:", showChatModal);
+  }, [showChatModal]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTradeType, setSelectedTradeType] = useState<string>("");
   const [showShippingModal, setShowShippingModal] = useState(false);
@@ -1199,7 +1204,12 @@ export default function ProductDetailModal({
                                 }
 
                                 // 채팅 기능 - 채팅 모달 열기
+                                console.log("🔵 채팅하기 버튼 클릭됨!");
+                                console.log("🔵 actualProductId:", actualProductId);
+                                console.log("🔵 item?.sellerUid:", item?.sellerUid);
+                                console.log("🔵 setShowChatModal(true) 호출 전");
                                 setShowChatModal(true);
+                                console.log("🔵 setShowChatModal(true) 호출 후");
                               }}
                             >
                               <MessageCircle
@@ -1474,9 +1484,18 @@ export default function ProductDetailModal({
         )}
 
       {/* 채팅 모달 */}
+      {console.log("🟡 EnhancedChatModal 렌더링:", {
+        showChatModal,
+        actualProductId,
+        itemSellerUid: item?.sellerUid,
+        productSellerId: product?.sellerId,
+      })}
       <EnhancedChatModal
         isOpen={showChatModal}
-        onClose={() => setShowChatModal(false)}
+        onClose={() => {
+          console.log("🟡 EnhancedChatModal onClose 호출됨");
+          setShowChatModal(false);
+        }}
         itemId={actualProductId || product?.id}
         sellerUid={item?.sellerUid || product?.sellerId}
       />
