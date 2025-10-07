@@ -102,7 +102,8 @@ export async function updateUserResponseRate(userId: string): Promise<{
     const responseRate = await calculateResponseRate(userId);
 
     // Firestore에서 사용자 프로필 업데이트
-    const { doc, setDoc, getDoc } = await import("firebase/firestore");
+    const { doc, setDoc, getDoc, updateDoc } = await import("firebase/firestore");
+    const db = await getDb();
     const userProfileRef = doc(db, "profiles", userId);
 
     // 문서가 존재하는지 확인
@@ -110,7 +111,6 @@ export async function updateUserResponseRate(userId: string): Promise<{
 
     if (userProfileSnap.exists()) {
       // 문서가 존재하면 업데이트
-      const { updateDoc } = await import("firebase/firestore");
       await updateDoc(userProfileRef, {
         responseRate,
         updatedAt: new Date(),
@@ -153,6 +153,7 @@ export async function updateAllUsersResponseRate(): Promise<{
   try {
     console.log("전체 사용자 응답률 업데이트 시작");
 
+    const db = await getDb();
     // 모든 프로필 가져오기
     const profilesRef = collection(db, "profiles");
     const profilesSnapshot = await getDocs(profilesRef);

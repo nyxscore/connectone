@@ -33,17 +33,12 @@ export default function AdminDashboard() {
   const handleUpdateResponseRates = async () => {
     setIsUpdatingResponseRate(true);
     try {
-      const response = await fetch("/api/admin/update-response-rates", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const result = await response.json();
+      // Firestore에서 직접 응답률 업데이트
+      const { updateAllUsersResponseRate } = await import("../../lib/profile/responseRate");
+      const result = await updateAllUsersResponseRate();
 
       if (result.success) {
-        toast.success(result.message);
+        toast.success(`전체 사용자 응답률 업데이트 완료! (${result.updatedCount}명)`);
       } else {
         toast.error(result.error || "응답률 업데이트에 실패했습니다.");
       }
