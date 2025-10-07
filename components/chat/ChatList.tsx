@@ -140,15 +140,15 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
 
     console.log("실시간 채팅 구독 시작:", user.uid);
 
-    // 비동기로 db를 가져와서 구독 설정
-    getDb()
-      .then(db => {
-        // 사용자가 참여한 모든 채팅 구독
-        const chatsRef = collection(db, "chats");
-        const buyerQuery = query(chatsRef, where("buyerUid", "==", user.uid));
-        const sellerQuery = query(chatsRef, where("sellerUid", "==", user.uid));
+    // 동기적으로 db를 가져와서 구독 설정
+    try {
+      const db = getDb();
+      // 사용자가 참여한 모든 채팅 구독
+      const chatsRef = collection(db, "chats");
+      const buyerQuery = query(chatsRef, where("buyerUid", "==", user.uid));
+      const sellerQuery = query(chatsRef, where("sellerUid", "==", user.uid));
 
-        let unsubscribers: (() => void)[] = [];
+      let unsubscribers: (() => void)[] = [];
 
         const updateChatsFromSnapshot = (snapshot: any, isBuyer: boolean) => {
           console.log(
@@ -353,16 +353,15 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
           error => console.error("Seller 채팅 구독 오류:", error)
         );
 
-        unsubscribers.push(unsubscribeBuyer, unsubscribeSeller);
+      unsubscribers.push(unsubscribeBuyer, unsubscribeSeller);
 
-        return () => {
-          console.log("채팅 구독 해제");
-          unsubscribers.forEach(unsub => unsub());
-        };
-      })
-      .catch(error => {
-        console.error("❌ DB 초기화 오류:", error);
-      });
+      return () => {
+        console.log("채팅 구독 해제");
+        unsubscribers.forEach(unsub => unsub());
+      };
+    } catch (error) {
+      console.error("❌ DB 초기화 오류:", error);
+    }
   }, [user]);
 
   const handleChatClick = (chatId: string) => {
