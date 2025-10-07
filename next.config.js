@@ -1,11 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Firebase Hosting용 정적 내보내기
-  output: "export",
+  // Vercel 배포용 설정 (정적 내보내기 제거)
 
-  // 이미지 최적화 설정 (정적 내보내기에서는 비활성화)
+  // 이미지 최적화 설정
   images: {
-    unoptimized: true,
     domains: [
       "firebasestorage.googleapis.com",
       "res.cloudinary.com",
@@ -28,6 +26,31 @@ const nextConfig = {
 
   // 트레일링 슬래시
   trailingSlash: false,
+
+  // 동적 import 최적화
+  experimental: {
+    esmExternals: false,
+  },
+
+  // Firebase 초기화 최적화
+  transpilePackages: ["firebase"],
+
+  // 소스맵 활성화 (디버깅용)
+  productionBrowserSourceMaps: true,
+
+  // 웹팩 설정
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+
+    return config;
+  },
 };
 
 module.exports = nextConfig;

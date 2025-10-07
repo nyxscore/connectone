@@ -11,7 +11,7 @@ import {
   serverTimestamp,
   getDocs,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { getDb } from "./firebase";
 
 export interface Question {
   id: string;
@@ -37,6 +37,7 @@ export interface CreateQuestionInput {
 export async function createQuestion(
   input: CreateQuestionInput
 ): Promise<{ success: boolean; questionId?: string; error?: string }> {
+  const db = await getDb();
   try {
     const docRef = await addDoc(collection(db, "questions"), {
       ...input,
@@ -64,6 +65,7 @@ export async function deleteQuestion(
   questionId: string,
   authorId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     const docRef = doc(db, "questions", questionId);
     await deleteDoc(docRef);
@@ -84,6 +86,7 @@ export async function addAnswer(
   questionId: string,
   answer: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     const docRef = doc(db, "questions", questionId);
     await updateDoc(docRef, {
@@ -108,6 +111,7 @@ export async function addAnswer(
 export async function getQuestionsByItem(
   itemId: string
 ): Promise<{ success: boolean; questions?: Question[]; error?: string }> {
+  const db = await getDb();
   try {
     const q = query(
       collection(db, "questions"),
