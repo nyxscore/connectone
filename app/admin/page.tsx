@@ -31,16 +31,45 @@ export default function AdminDashboard() {
 
   // 응답률 업데이트 함수
   const handleUpdateResponseRates = async () => {
+    if (!user) return;
+
     setIsUpdatingResponseRate(true);
     try {
+      // 감사 로그 기록
+      const { logAdminAction } = await import("../../lib/admin/auditLog");
+      
       // Firestore에서 직접 응답률 업데이트
-      const { updateAllUsersResponseRate } = await import("../../lib/profile/responseRate");
+      const { updateAllUsersResponseRate } = await import(
+        "../../lib/profile/responseRate"
+      );
       const result = await updateAllUsersResponseRate();
 
       if (result.success) {
-        toast.success(`전체 사용자 응답률 업데이트 완료! (${result.updatedCount}명)`);
+        toast.success(
+          `전체 사용자 응답률 업데이트 완료! (${result.updatedCount}명)`
+        );
+        
+        // 성공 감사 로그
+        await logAdminAction({
+          adminUid: user.uid,
+          adminNickname: user.nickname || "관리자",
+          action: "RESPONSE_RATE_UPDATE_ALL",
+          targetType: "system",
+          details: { updatedCount: result.updatedCount },
+          status: "success",
+        });
       } else {
         toast.error(result.error || "응답률 업데이트에 실패했습니다.");
+        
+        // 실패 감사 로그
+        await logAdminAction({
+          adminUid: user.uid,
+          adminNickname: user.nickname || "관리자",
+          action: "RESPONSE_RATE_UPDATE_ALL",
+          targetType: "system",
+          status: "failure",
+          errorMessage: result.error,
+        });
       }
     } catch (error) {
       console.error("응답률 업데이트 실패:", error);

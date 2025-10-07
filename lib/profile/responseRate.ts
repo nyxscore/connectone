@@ -102,7 +102,9 @@ export async function updateUserResponseRate(userId: string): Promise<{
     const responseRate = await calculateResponseRate(userId);
 
     // Firestore에서 사용자 프로필 업데이트
-    const { doc, setDoc, getDoc, updateDoc } = await import("firebase/firestore");
+    const { doc, setDoc, getDoc, updateDoc } = await import(
+      "firebase/firestore"
+    );
     const db = await getDb();
     const userProfileRef = doc(db, "profiles", userId);
 
