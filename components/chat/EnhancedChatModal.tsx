@@ -121,6 +121,8 @@ export function EnhancedChatModal({
     useState(false);
   const [showBuyerShippingInfoModal, setShowBuyerShippingInfoModal] =
     useState(false);
+  const [systemMessagesInitialized, setSystemMessagesInitialized] =
+    useState(false);
   const [showShippingAddressModal, setShowShippingAddressModal] =
     useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -623,9 +625,7 @@ export function EnhancedChatModal({
     systemMessagesInitialized,
   ]);
 
-  // 시스템 메시지 초기화 플래그 (한 번만 실행되도록)
-  const [systemMessagesInitialized, setSystemMessagesInitialized] =
-    useState(false);
+  // 시스템 메시지 초기화 플래그는 이미 최상단에 선언됨
 
   // 채팅 데이터 로드 시 상태별 알림 초기화 (autoSendSystemMessage가 없을 때만 실행)
   useEffect(() => {
