@@ -143,12 +143,14 @@ function ChatPageContent() {
 
         {/* 원래 채팅 모달 - 모든 기능 포함 */}
         {selectedChatId && showChatModal && isClient && (
-          <EnhancedChatModal
-            isOpen={true}
-            onClose={handleCloseModal}
-            chatId={selectedChatId}
-            onChatDeleted={handleChatDeleted}
-          />
+          <div key={selectedChatId}>
+            <EnhancedChatModal
+              isOpen={true}
+              onClose={handleCloseModal}
+              chatId={selectedChatId}
+              onChatDeleted={handleChatDeleted}
+            />
+          </div>
         )}
       </div>
     </ErrorBoundary>

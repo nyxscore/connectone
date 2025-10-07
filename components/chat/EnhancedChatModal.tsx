@@ -71,9 +71,15 @@ export function EnhancedChatModal({
   onChatDeleted,
   autoSendSystemMessage,
 }: EnhancedChatModalProps) {
+  // 클라이언트 사이드에서만 렌더링
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const [error, setError] = useState("");
   const [chatData, setChatData] = useState<{
     chatId: string;
