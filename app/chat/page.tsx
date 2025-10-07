@@ -140,15 +140,42 @@ function ChatPageContent() {
                     </button>
                   </div>
                 </div>
-                <div className="p-4">
-                  <p>채팅 ID: {selectedChatId}</p>
-                  <p>모달이 열렸습니다!</p>
-                  <EnhancedChatModal
+                <div className="p-4 h-full">
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600">채팅 ID: {selectedChatId}</p>
+                    <p className="text-green-600 font-medium">✅ 모달이 성공적으로 열렸습니다!</p>
+                  </div>
+                  
+                  {/* 간단한 채팅 인터페이스 */}
+                  <div className="border rounded-lg h-96 flex flex-col">
+                    <div className="p-3 border-b bg-gray-50">
+                      <h3 className="font-medium">채팅방</h3>
+                    </div>
+                    <div className="flex-1 p-3 overflow-y-auto">
+                      <p className="text-gray-500">채팅 내용이 여기에 표시됩니다.</p>
+                      <p className="text-sm text-gray-400 mt-2">Chat ID: {selectedChatId}</p>
+                    </div>
+                    <div className="p-3 border-t">
+                      <div className="flex space-x-2">
+                        <input 
+                          type="text" 
+                          placeholder="메시지를 입력하세요..." 
+                          className="flex-1 px-3 py-2 border rounded-lg"
+                        />
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                          전송
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 원래 EnhancedChatModal은 주석 처리 */}
+                  {/* <EnhancedChatModal
                     isOpen={true}
                     onClose={handleCloseModal}
                     chatId={selectedChatId}
                     onChatDeleted={handleChatDeleted}
-                  />
+                  /> */}
                 </div>
               </div>
             </div>
