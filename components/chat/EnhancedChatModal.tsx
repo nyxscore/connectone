@@ -1467,12 +1467,19 @@ export function EnhancedChatModal({
     },
   });
 
-  if (!isOpen) {
-    console.log("EnhancedChatModal: isOpen이 false이므로 null 반환", {
-      isOpen,
-    });
-    return null;
-  }
+  console.log("EnhancedChatModal: 렌더링 상태 확인", { 
+    isOpen, 
+    chatId,
+    showChatModal: true // 강제로 true로 설정
+  });
+
+  // 임시로 isOpen 조건을 제거하여 모달이 항상 렌더링되도록 함
+  // if (!isOpen) {
+  //   console.log("EnhancedChatModal: isOpen이 false이므로 null 반환", {
+  //     isOpen,
+  //   });
+  //   return null;
+  // }
 
   console.log("EnhancedChatModal: 모달 렌더링 시작", { isOpen, chatId });
 

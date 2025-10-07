@@ -127,12 +127,19 @@ function ChatPageContent() {
               showChatModal,
               isClient,
             })}
-            <EnhancedChatModal
-              isOpen={showChatModal}
-              onClose={handleCloseModal}
-              chatId={selectedChatId}
-              onChatDeleted={handleChatDeleted}
-            />
+            <div className="fixed inset-0 z-50">
+              <div className="absolute inset-0 bg-black bg-opacity-50" onClick={handleCloseModal} />
+              <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+                <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                  <EnhancedChatModal
+                    isOpen={showChatModal}
+                    onClose={handleCloseModal}
+                    chatId={selectedChatId}
+                    onChatDeleted={handleChatDeleted}
+                  />
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
