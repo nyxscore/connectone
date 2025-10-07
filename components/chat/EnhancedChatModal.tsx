@@ -73,7 +73,7 @@ export function EnhancedChatModal({
 }: EnhancedChatModalProps) {
   // 클라이언트 사이드에서만 렌더링
   const [isClient, setIsClient] = useState(false);
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
