@@ -375,22 +375,18 @@ export function ItemCard({
           </div>
         )}
 
-        {/* 채팅 버튼 - 거래중인 상품과 거래완료된 상품에 표시 */}
-        {(item.status === "reserved" ||
-          item.status === "escrow_completed" ||
-          item.status === "shipping" ||
-          item.status === "sold") &&
-          user && (
-            <Button
-              onClick={handleChat}
-              size="sm"
-              variant="outline"
-              className="w-full mt-2 h-8 text-xs"
-            >
-              <MessageCircle className="w-3 h-3 mr-1" />
-              채팅하기
-            </Button>
-          )}
+        {/* 채팅 버튼 - 모든 상품에 표시 (자신의 상품 제외) */}
+        {user && item.sellerUid !== user.uid && (
+          <Button
+            onClick={handleChat}
+            size="sm"
+            variant="outline"
+            className="w-full mt-2 h-8 text-xs"
+          >
+            <MessageCircle className="w-3 h-3 mr-1" />
+            채팅하기
+          </Button>
+        )}
 
         {/* 거래완료 상태 표시 */}
         {item.status === "sold" && (
