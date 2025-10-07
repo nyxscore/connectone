@@ -137,7 +137,9 @@ export const loginWithNaverRedirect = () => signInWithNaverRedirect();
 export const handleRedirectResult =
   async (): Promise<SNSUserProfile | null> => {
     try {
-      const auth = (await import("@/lib/api/firebase-ultra-safe")).getFirebaseAuth();
+      const auth = (
+        await import("@/lib/api/firebase-ultra-safe")
+      ).getFirebaseAuth();
       const result = await firebaseGetRedirectResult(auth);
       if (result && result.user) {
         const provider = result.providerId?.includes("google")

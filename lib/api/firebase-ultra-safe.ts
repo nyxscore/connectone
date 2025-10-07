@@ -27,7 +27,8 @@ const getFirebaseConfig = () => {
     authDomain:
       process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
       "connectone-8b414.firebaseapp.com",
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "connectone-8b414",
+    projectId:
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "connectone-8b414",
     storageBucket:
       process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
       "connectone-8b414.firebasestorage.app",
@@ -237,9 +238,11 @@ export const signInWithGoogle = async () => {
 
   const auth = getFirebaseAuth();
   const provider = getGoogleProvider();
-  
+
   if (!auth || !provider) {
-    throw new Error("Firebase Auth 또는 Google Provider가 초기화되지 않았습니다.");
+    throw new Error(
+      "Firebase Auth 또는 Google Provider가 초기화되지 않았습니다."
+    );
   }
 
   try {
@@ -259,9 +262,11 @@ export const signInWithKakao = async () => {
 
   const auth = getFirebaseAuth();
   const provider = getKakaoProvider();
-  
+
   if (!auth || !provider) {
-    throw new Error("Firebase Auth 또는 Kakao Provider가 초기화되지 않았습니다.");
+    throw new Error(
+      "Firebase Auth 또는 Kakao Provider가 초기화되지 않았습니다."
+    );
   }
 
   try {
@@ -281,9 +286,11 @@ export const signInWithNaver = async () => {
 
   const auth = getFirebaseAuth();
   const provider = getNaverProvider();
-  
+
   if (!auth || !provider) {
-    throw new Error("Firebase Auth 또는 Naver Provider가 초기화되지 않았습니다.");
+    throw new Error(
+      "Firebase Auth 또는 Naver Provider가 초기화되지 않았습니다."
+    );
   }
 
   try {
@@ -303,7 +310,9 @@ export const handleRedirectResult = async () => {
 
   const auth = getFirebaseAuth();
   if (!auth) {
-    console.log("⚠️ Firebase Auth가 초기화되지 않음 - 리다이렉트 결과 처리 건너옴");
+    console.log(
+      "⚠️ Firebase Auth가 초기화되지 않음 - 리다이렉트 결과 처리 건너옴"
+    );
     return null;
   }
 

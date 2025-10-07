@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { ChatList } from "../../components/chat/ChatList";
-import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal"; // Full-featured chat modal with ultra-safe Firebase
+import { UltraSafeChatModal } from "../../components/chat/UltraSafeChatModal"; // Ultra-safe chat modal with all features
 import { ProtectedRoute } from "../../lib/auth/ProtectedRoute";
 import { MessageCircle, Plus, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -28,15 +28,15 @@ function ChatPageContent() {
   // 클라이언트 사이드에서만 실행되도록 보장
   useEffect(() => {
     setIsClient(true);
-    
+
     // 배포 환경 안전장치 - Firebase 초기화 확인
     const checkDeploymentReady = () => {
       try {
         // Firebase 환경변수 확인
-        const hasRequiredEnvVars = 
+        const hasRequiredEnvVars =
           process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
           typeof window !== "undefined";
-        
+
         if (hasRequiredEnvVars) {
           console.log("✅ 배포 환경 준비 완료");
         } else {
@@ -141,10 +141,10 @@ function ChatPageContent() {
           </ErrorBoundary>
         </div>
 
-        {/* 완전한 기능을 가진 채팅 모달 - Ultra-safe Firebase */}
+        {/* Ultra-safe 채팅 모달 - 모든 기능 포함 */}
         {selectedChatId && showChatModal && isClient && (
           <div key={selectedChatId}>
-            <EnhancedChatModal
+            <UltraSafeChatModal
               isOpen={true}
               onClose={handleCloseModal}
               chatId={selectedChatId}
