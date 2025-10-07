@@ -23,7 +23,6 @@ import {
   blockUser,
 } from "../../lib/chat/api";
 import { Chat, Message } from "../../data/chat/types";
-import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb as getDb } from "../../lib/api/firebase-safe";
 import {
   ArrowLeft,
@@ -415,6 +414,13 @@ export function EnhancedChatModal({
         // 기존 채팅 로드
         console.log("기존 채팅 로드:", chatId);
         const db = await getDb();
+        if (!db) {
+          setError("데이터베이스 연결에 실패했습니다.");
+          return;
+        }
+        
+        // 동적 import로 Firebase 함수 가져오기
+        const { doc, getDoc } = await import("firebase/firestore");
         const chatRef = doc(db, "chats", chatId);
         const chatSnap = await getDoc(chatRef);
 
