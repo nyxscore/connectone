@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { ChatList } from "../../components/chat/ChatList";
-import { UltraSafeChatModal } from "../../components/chat/UltraSafeChatModal"; // Ultra-safe chat modal with all features
+import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal"; // 우리가 개발한 완전한 기능
 import { ProtectedRoute } from "../../lib/auth/ProtectedRoute";
 import { MessageCircle, Plus, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -141,10 +141,10 @@ function ChatPageContent() {
           </ErrorBoundary>
         </div>
 
-        {/* Ultra-safe 채팅 모달 - 모든 기능 포함 */}
+        {/* 우리가 개발한 완전한 채팅 모달 - 모든 기능 포함 */}
         {selectedChatId && showChatModal && isClient && (
           <div key={selectedChatId}>
-            <UltraSafeChatModal
+            <EnhancedChatModal
               isOpen={true}
               onClose={handleCloseModal}
               chatId={selectedChatId}

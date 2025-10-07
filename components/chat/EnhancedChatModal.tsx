@@ -71,13 +71,6 @@ export function EnhancedChatModal({
   onChatDeleted,
   autoSendSystemMessage,
 }: EnhancedChatModalProps) {
-  // 클라이언트 사이드에서만 렌더링
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -423,13 +416,17 @@ export function EnhancedChatModal({
 
         // 클라이언트 사이드에서만 실행
         if (typeof window === "undefined") {
+          console.log("⚠️ 서버 사이드에서 loadChatData 실행 시도 - 건너뜀");
           setError("클라이언트 사이드에서만 실행 가능합니다.");
           return;
         }
 
         const db = getDb();
         if (!db) {
-          setError("데이터베이스 연결에 실패했습니다.");
+          console.log("⚠️ Firebase DB가 초기화되지 않음 - 재시도 중...");
+          setTimeout(() => {
+            loadChatData();
+          }, 1000);
           return;
         }
 
