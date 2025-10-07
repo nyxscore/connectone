@@ -11,13 +11,11 @@ import {
   Truck,
   Package,
   Shield,
-  MessageCircle,
 } from "lucide-react";
 import { WatermarkImage } from "../ui/WatermarkImage";
 import { Button } from "../ui/Button";
 // date-fns 제거 - 성능 최적화
 import { useRouter } from "next/navigation";
-import { getOrCreateChat } from "../../lib/chat/api";
 import { useAuth } from "../../lib/hooks/useAuth";
 
 interface ItemCardProps {
@@ -40,31 +38,6 @@ export function ItemCard({
 
   // 구매자인지 확인
   const isBuyer = currentUserId && buyerUid && currentUserId === buyerUid;
-
-  // 채팅 시작 함수
-  const handleChat = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // 카드 클릭 이벤트 방지
-
-    if (!user || !item.sellerUid) return;
-
-    try {
-      const chatResult = await getOrCreateChat(
-        item.id,
-        user.uid,
-        item.sellerUid,
-        "안전결제가 완료되었습니다. 거래를 시작해주세요."
-      );
-
-      if (chatResult.success && chatResult.chatId) {
-        // 채팅 페이지로 이동
-        router.push(`/chat?chatId=${chatResult.chatId}`);
-      } else {
-        console.error("채팅 생성 실패:", chatResult.error);
-      }
-    } catch (error) {
-      console.error("채팅 생성 중 오류:", error);
-    }
-  };
 
   // 택배사 코드를 한글 이름으로 변환
   const getCourierName = (courierCode: string) => {
@@ -385,19 +358,6 @@ export function ItemCard({
             <Clock className="w-4 h-4 mr-1 text-orange-600" />
             <span className="text-sm font-bold text-orange-600">거래중</span>
           </div>
-        )}
-
-        {/* 채팅 버튼 - 모든 상품에 표시 (자신의 상품 제외) */}
-        {user && item.sellerUid !== user.uid && (
-          <Button
-            onClick={handleChat}
-            size="sm"
-            variant="outline"
-            className="w-full mt-2 h-8 text-xs"
-          >
-            <MessageCircle className="w-3 h-3 mr-1" />
-            채팅하기
-          </Button>
         )}
 
         {/* 거래완료 상태 표시 */}
