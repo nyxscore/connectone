@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { ChatList } from "../../components/chat/ChatList";
-// import { SimpleChatModal } from "../../components/chat/SimpleChatModal";
+import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal";
 import { ProtectedRoute } from "../../lib/auth/ProtectedRoute";
 import { MessageCircle, Plus, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -119,44 +119,14 @@ function ChatPageContent() {
           </ErrorBoundary>
         </div>
 
-        {/* 초간단 모달 테스트 */}
+        {/* 실제 채팅 모달 */}
         {selectedChatId && showChatModal && (
-          <div
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              backgroundColor: "white",
-              border: "3px solid #ff0000",
-              borderRadius: "8px",
-              padding: "20px",
-              zIndex: 99999,
-              boxShadow: "0 0 20px rgba(0,0,0,0.5)",
-              minWidth: "300px",
-              textAlign: "center",
-            }}
-          >
-            <h2 style={{ color: "#ff0000", marginBottom: "10px" }}>
-              🚨 모달이 열렸습니다! 🚨
-            </h2>
-            <p style={{ marginBottom: "10px" }}>
-              채팅 ID: {selectedChatId}
-            </p>
-            <button
-              onClick={handleCloseModal}
-              style={{
-                backgroundColor: "#ff0000",
-                color: "white",
-                border: "none",
-                padding: "8px 16px",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              닫기
-            </button>
-          </div>
+          <EnhancedChatModal
+            isOpen={true}
+            onClose={handleCloseModal}
+            chatId={selectedChatId}
+            onChatDeleted={handleChatDeleted}
+          />
         )}
       </div>
     </ErrorBoundary>
