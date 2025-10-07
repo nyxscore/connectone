@@ -259,32 +259,44 @@ export async function getReservedItemsForBuyer(
     console.log("getReservedItemsForBuyer 호출:", { buyerUid });
 
     // 구매자가 구매한 상품들 중에서 거래중인 상품 조회
-    // buyerId 필드가 있는 상품들을 조회 (구매자가 구매한 상품)
-    const q = query(
-      collection(db, "items"),
-      where("buyerId", "==", buyerUid),
-      where("status", "==", "reserved")
-    );
+    // buyerId 또는 buyerUid 필드가 있는 상품들을 조회
+    // status가 reserved, escrow_completed, shipping 중 하나인 상품
+    const statuses = ["reserved", "escrow_completed", "shipping"];
+    const allItems: Item[] = [];
 
-    const querySnapshot = await getDocs(q);
-    const items: Item[] = [];
-
-    console.log("구매자 거래중 상품 쿼리 결과:", querySnapshot.size, "개");
-
-    querySnapshot.forEach(doc => {
-      const itemData = doc.data();
-      console.log("구매자 거래중 상품:", {
-        id: doc.id,
-        title: itemData.title,
-        buyerId: itemData.buyerId,
-        status: itemData.status,
-        sellerId: itemData.sellerId,
+    for (const status of statuses) {
+      // buyerId로 조회
+      const q1 = query(
+        collection(db, "items"),
+        where("buyerId", "==", buyerUid),
+        where("status", "==", status)
+      );
+      const querySnapshot1 = await getDocs(q1);
+      querySnapshot1.forEach(doc => {
+        const data = doc.data();
+        console.log(`구매중 상품 (buyerId, ${status}):`, doc.id, data);
+        allItems.push({ id: doc.id, ...data } as Item);
       });
-      items.push({ id: doc.id, ...itemData } as Item);
-    });
 
-    console.log("구매자 거래중 상품 최종 결과:", items.length, "개");
-    return { success: true, items };
+      // buyerUid로 조회
+      const q2 = query(
+        collection(db, "items"),
+        where("buyerUid", "==", buyerUid),
+        where("status", "==", status)
+      );
+      const querySnapshot2 = await getDocs(q2);
+      querySnapshot2.forEach(doc => {
+        const data = doc.data();
+        console.log(`구매중 상품 (buyerUid, ${status}):`, doc.id, data);
+        // 중복 제거 (이미 추가된 아이템은 스킵)
+        if (!allItems.find(item => item.id === doc.id)) {
+          allItems.push({ id: doc.id, ...data } as Item);
+        }
+      });
+    }
+
+    console.log("구매자 거래중 상품 최종 결과:", allItems.length, "개");
+    return { success: true, items: allItems };
   } catch (error) {
     console.error("구매자 거래중 상품 조회 실패:", error);
     return {

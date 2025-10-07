@@ -534,8 +534,12 @@ export function EnhancedChatModal({
         }
 
         // 채팅 생성 또는 기존 채팅 가져오기
-        const chatResult = await getOrCreateChat(itemId, user?.uid || "", sellerUid);
-        
+        const chatResult = await getOrCreateChat(
+          itemId,
+          user?.uid || "",
+          sellerUid
+        );
+
         if (!chatResult.success || !chatResult.chatId) {
           console.error("채팅 생성 실패:", chatResult.error);
           setError("채팅을 생성하는데 실패했습니다.");
