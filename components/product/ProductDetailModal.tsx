@@ -1477,8 +1477,8 @@ export default function ProductDetailModal({
       <EnhancedChatModal
         isOpen={showChatModal}
         onClose={() => setShowChatModal(false)}
-        itemId={product?.id}
-        sellerUid={product?.sellerId}
+        itemId={actualProductId || product?.id}
+        sellerUid={item?.sellerUid || product?.sellerId}
       />
 
       {/* 판매자 프로필 모달 */}
