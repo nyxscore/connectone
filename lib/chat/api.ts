@@ -87,36 +87,35 @@ export function subscribeToUserOnlineStatus(
 
   let unsubscribe: (() => void) | null = null;
 
-  // 비동기로 db를 가져와서 구독 설정
-  getDb()
-    .then(db => {
-      const userRef = doc(db, "users", userId);
+  // 동기적으로 db를 가져와서 구독 설정
+  try {
+    const db = getDb();
+    const userRef = doc(db, "users", userId);
 
-      unsubscribe = onSnapshot(
-        userRef,
-        doc => {
-          if (doc.exists()) {
-            const data = doc.data();
-            const isOnline = data.isOnline || false;
-            console.log(
-              `📡 온라인 상태 업데이트: ${userId} -> ${isOnline ? "온라인" : "오프라인"}`
-            );
-            callback(isOnline, data.lastSeen);
-          } else {
-            console.log(`❌ 사용자 문서 없음: ${userId}`);
-            callback(false);
-          }
-        },
-        error => {
-          console.error("❌ 온라인 상태 구독 오류:", error);
+    unsubscribe = onSnapshot(
+      userRef,
+      doc => {
+        if (doc.exists()) {
+          const data = doc.data();
+          const isOnline = data.isOnline || false;
+          console.log(
+            `📡 온라인 상태 업데이트: ${userId} -> ${isOnline ? "온라인" : "오프라인"}`
+          );
+          callback(isOnline, data.lastSeen);
+        } else {
+          console.log(`❌ 사용자 문서 없음: ${userId}`);
           callback(false);
         }
-      );
-    })
-    .catch(error => {
-      console.error("❌ DB 초기화 오류:", error);
-      callback(false);
-    });
+      },
+      error => {
+        console.error("❌ 온라인 상태 구독 오류:", error);
+        callback(false);
+      }
+    );
+  } catch (error) {
+    console.error("❌ DB 초기화 오류:", error);
+    callback(false);
+  }
 
   // 구독 해제 함수 반환
   return () => {
@@ -588,36 +587,35 @@ export function subscribeToMessages(
 ): () => void {
   let unsubscribe: (() => void) | null = null;
 
-  // 비동기로 db를 가져와서 구독 설정
-  getDb()
-    .then(db => {
-      const messagesRef = collection(db, "messages");
-      const q = query(
-        messagesRef,
-        where("chatId", "==", chatId),
-        orderBy("createdAt", "asc")
-      );
+  // 동기적으로 db를 가져와서 구독 설정
+  try {
+    const db = getDb();
+    const messagesRef = collection(db, "messages");
+    const q = query(
+      messagesRef,
+      where("chatId", "==", chatId),
+      orderBy("createdAt", "asc")
+    );
 
-      unsubscribe = onSnapshot(
-        q,
-        snapshot => {
-          const messages = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as Message[];
+    unsubscribe = onSnapshot(
+      q,
+      snapshot => {
+        const messages = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Message[];
 
-          callback(messages);
-        },
-        error => {
-          console.error("메시지 스트림 오류:", error);
-          onError?.(error);
-        }
-      );
-    })
-    .catch(error => {
-      console.error("❌ DB 초기화 오류:", error);
-      onError?.(error);
-    });
+        callback(messages);
+      },
+      error => {
+        console.error("메시지 스트림 오류:", error);
+        onError?.(error);
+      }
+    );
+  } catch (error) {
+    console.error("❌ DB 초기화 오류:", error);
+    onError?.(error);
+  }
 
   return () => {
     if (unsubscribe) {
@@ -859,68 +857,67 @@ export function subscribeToUnreadCount(
   let buyerUnreadCount = 0;
   let sellerUnreadCount = 0;
 
-  // 비동기로 db를 가져와서 구독 설정
-  getDb()
-    .then(db => {
-      // 사용자가 참여한 모든 채팅 구독
-      const chatsRef = collection(db, "chats");
-      const buyerQuery = query(chatsRef, where("buyerUid", "==", userId));
-      const sellerQuery = query(chatsRef, where("sellerUid", "==", userId));
+  // 동기적으로 db를 가져와서 구독 설정
+  try {
+    const db = getDb();
+    // 사용자가 참여한 모든 채팅 구독
+    const chatsRef = collection(db, "chats");
+    const buyerQuery = query(chatsRef, where("buyerUid", "==", userId));
+    const sellerQuery = query(chatsRef, where("sellerUid", "==", userId));
 
-      const updateTotalUnreadCount = () => {
-        const totalUnreadCount = buyerUnreadCount + sellerUnreadCount;
-        console.log(
-          "전체 읽지 않은 메시지 개수:",
-          totalUnreadCount,
-          "(buyer:",
-          buyerUnreadCount,
-          "seller:",
-          sellerUnreadCount,
-          ")"
-        );
-        callback(totalUnreadCount);
-      };
-
-      const unsubscribeBuyer = onSnapshot(
-        buyerQuery,
-        snapshot => {
-          buyerUnreadCount = 0;
-          snapshot.docs.forEach(doc => {
-            const chatData = doc.data() as Chat;
-            buyerUnreadCount += chatData.buyerUnreadCount || 0;
-          });
-          console.log("Buyer 읽지 않은 메시지 개수:", buyerUnreadCount);
-          updateTotalUnreadCount();
-        },
-        error => {
-          console.error("Buyer 채팅 구독 오류:", error);
-          onError?.(error);
-        }
+    const updateTotalUnreadCount = () => {
+      const totalUnreadCount = buyerUnreadCount + sellerUnreadCount;
+      console.log(
+        "전체 읽지 않은 메시지 개수:",
+        totalUnreadCount,
+        "(buyer:",
+        buyerUnreadCount,
+        "seller:",
+        sellerUnreadCount,
+        ")"
       );
+      callback(totalUnreadCount);
+    };
 
-      const unsubscribeSeller = onSnapshot(
-        sellerQuery,
-        snapshot => {
-          sellerUnreadCount = 0;
-          snapshot.docs.forEach(doc => {
-            const chatData = doc.data() as Chat;
-            sellerUnreadCount += chatData.sellerUnreadCount || 0;
-          });
-          console.log("Seller 읽지 않은 메시지 개수:", sellerUnreadCount);
-          updateTotalUnreadCount();
-        },
-        error => {
-          console.error("Seller 채팅 구독 오류:", error);
-          onError?.(error);
-        }
-      );
+    const unsubscribeBuyer = onSnapshot(
+      buyerQuery,
+      snapshot => {
+        buyerUnreadCount = 0;
+        snapshot.docs.forEach(doc => {
+          const chatData = doc.data() as Chat;
+          buyerUnreadCount += chatData.buyerUnreadCount || 0;
+        });
+        console.log("Buyer 읽지 않은 메시지 개수:", buyerUnreadCount);
+        updateTotalUnreadCount();
+      },
+      error => {
+        console.error("Buyer 채팅 구독 오류:", error);
+        onError?.(error);
+      }
+    );
 
-      unsubscribers.push(unsubscribeBuyer, unsubscribeSeller);
-    })
-    .catch(error => {
-      console.error("❌ DB 초기화 오류:", error);
-      onError?.(error);
-    });
+    const unsubscribeSeller = onSnapshot(
+      sellerQuery,
+      snapshot => {
+        sellerUnreadCount = 0;
+        snapshot.docs.forEach(doc => {
+          const chatData = doc.data() as Chat;
+          sellerUnreadCount += chatData.sellerUnreadCount || 0;
+        });
+        console.log("Seller 읽지 않은 메시지 개수:", sellerUnreadCount);
+        updateTotalUnreadCount();
+      },
+      error => {
+        console.error("Seller 채팅 구독 오류:", error);
+        onError?.(error);
+      }
+    );
+
+    unsubscribers.push(unsubscribeBuyer, unsubscribeSeller);
+  } catch (error) {
+    console.error("❌ DB 초기화 오류:", error);
+    onError?.(error);
+  }
 
   return () => {
     console.log("읽지 않은 메시지 개수 구독 해제");
