@@ -554,14 +554,14 @@ export function UltraSafeChatModal({
                   <p className="text-red-500">{error}</p>
                 </div>
               </div>
-            ) : messages.length === 0 ? (
+            ) : !messages || !Array.isArray(messages) || messages.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
                 <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                 <p>메시지를 입력해보세요!</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((message) => (
+                {messages && Array.isArray(messages) && messages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.senderId === user?.uid ? "justify-end" : "justify-start"}`}

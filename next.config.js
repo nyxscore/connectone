@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Vercel 배포용 설정 (정적 내보내기 제거)
+  // Firebase 호스팅용 설정
+  output: "export", // Firebase 호스팅용 정적 내보내기
 
   // 이미지 최적화 설정
   images: {
