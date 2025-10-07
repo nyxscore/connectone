@@ -526,15 +526,48 @@ export function EnhancedChatModal({
         // 메시지는 useEffect에서 자동으로 로드됨
       } else if (itemId && sellerUid) {
         // 새로운 채팅 생성
-        console.log("새 채팅 생성:", { itemId, sellerUid });
+        console.log("새 채팅 생성:", { itemId, sellerUid, userUid: user?.uid });
 
         if (user?.uid === sellerUid) {
           setError("자신의 상품과는 채팅할 수 없습니다.");
           return;
         }
 
+        // 채팅 생성 또는 기존 채팅 가져오기
+        const chatResult = await getOrCreateChat(itemId, user?.uid || "", sellerUid);
+        
+        if (!chatResult.success || !chatResult.chatId) {
+          console.error("채팅 생성 실패:", chatResult.error);
+          setError("채팅을 생성하는데 실패했습니다.");
+          return;
+        }
+
+        console.log("채팅 생성/조회 성공:", chatResult.chatId);
+
+        // 이제 chatId를 사용하여 채팅 데이터 로드 (기존 로직 재사용)
+        const { doc, getDoc } = await import("firebase/firestore");
+        const db = getDb();
+        if (!db) {
+          setError("Firebase DB 초기화 실패");
+          return;
+        }
+
+        const chatRef = doc(db, "chats", chatResult.chatId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (!chatSnap.exists()) {
+          setError("채팅을 찾을 수 없습니다.");
+          return;
+        }
+
+        const chatData = chatSnap.data() as Chat;
+        const otherUid =
+          chatData.buyerUid === user?.uid
+            ? chatData.sellerUid
+            : chatData.buyerUid;
+
         // 상대방 정보 가져오기
-        const otherUserResult = await getUserProfile(sellerUid);
+        const otherUserResult = await getUserProfile(otherUid);
         if (!otherUserResult.success) {
           setError("상대방 정보를 가져올 수 없습니다.");
           return;
@@ -547,24 +580,13 @@ export function EnhancedChatModal({
           return;
         }
 
-        // buyerUid 또는 buyerId 우선순위로 설정
-        const finalBuyerUid =
-          itemResult.item.buyerUid || itemResult.item.buyerId || user?.uid;
-
-        console.log("새 채팅 buyerUid 설정:", {
-          itemBuyerUid: itemResult.item.buyerUid,
-          itemBuyerId: itemResult.item.buyerId,
-          userUid: user?.uid,
-          finalBuyerUid,
-        });
-
         setChatData({
-          chatId: "", // 새 채팅이므로 빈 문자열
+          chatId: chatResult.chatId,
           itemId,
-          sellerUid,
-          buyerUid: finalBuyerUid,
+          sellerUid: chatData.sellerUid,
+          buyerUid: chatData.buyerUid,
           otherUser: {
-            uid: sellerUid,
+            uid: otherUid,
             nickname: otherUserResult.data.nickname,
             profileImage: otherUserResult.data.profileImage,
           },
