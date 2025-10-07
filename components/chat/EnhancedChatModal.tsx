@@ -1123,61 +1123,62 @@ export function EnhancedChatModal({
       setIsCancelingTransaction(true);
 
       try {
-        // 상품 상태를 '판매중'으로 변경하고 구매자 정보 제거
-        const response = await fetch("/api/products/cancel-transaction", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            itemId: chatData.item.id,
-            userId: user.uid,
-          }),
+        // Firestore에서 직접 상품 상태를 '판매중'으로 변경하고 구매자 정보 제거
+        const { doc, updateDoc, deleteField } = await import("firebase/firestore");
+        const db = getDb();
+        if (!db) {
+          toast.error("데이터베이스 초기화 실패");
+          return;
+        }
+
+        const itemRef = doc(db, "items", chatData.item.id);
+        await updateDoc(itemRef, {
+          status: "active",
+          buyerUid: deleteField(),
+          buyerId: deleteField(),
+          transactionCancelledAt: new Date(),
+          updatedAt: new Date(),
         });
 
-        const result = await response.json();
+        console.log("✅ 상품 거래 취소 완료");
 
-        if (result.success) {
-          // 안전결제 취소인지 확인
-          if (result.escrowCancelled) {
-            toast.success("안전결제가 취소되었습니다! 환불이 처리됩니다.");
-          } else {
-            toast.success("거래가 취소되었습니다!");
-          }
-
-          // 거래 취소 시스템 메시지 전송
-          try {
-            const { sendMessage } = await import("../../lib/chat/api");
-            // 판매자/구매자 정확히 구분
-            const isSeller = user?.uid === chatData.sellerUid;
-            const cancelMessage = isSeller
-              ? "❌ 판매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다."
-              : "❌ 구매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다.";
-
-            const result = await sendMessage({
-              chatId: chatData.chatId,
-              senderUid: "system",
-              content: cancelMessage,
-            });
-
-            if (result.success) {
-              console.log("거래 취소 시스템 메시지 전송 완료");
-            } else {
-              console.error("거래 취소 시스템 메시지 전송 실패:", result.error);
-            }
-          } catch (error) {
-            console.error("거래 취소 시스템 메시지 전송 실패:", error);
-          }
-
-          // 전역 이벤트 발생으로 상품 목록 업데이트
-          window.dispatchEvent(
-            new CustomEvent("itemStatusChanged", {
-              detail: { itemId: chatData.item.id, status: "active" },
-            })
-          );
+        // 안전결제 취소인지 확인
+        if (isEscrowCompleted) {
+          toast.success("안전결제가 취소되었습니다! 환불이 처리됩니다.");
         } else {
-          toast.error(result.error || "거래 취소에 실패했습니다.");
+          toast.success("거래가 취소되었습니다!");
         }
+
+        // 거래 취소 시스템 메시지 전송
+        try {
+          const { sendMessage } = await import("../../lib/chat/api");
+          // 판매자/구매자 정확히 구분
+          const isSeller = user?.uid === chatData.sellerUid;
+          const cancelMessage = isSeller
+            ? "❌ 판매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다."
+            : "❌ 구매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다.";
+
+          const result = await sendMessage({
+            chatId: chatData.chatId,
+            senderUid: "system",
+            content: cancelMessage,
+          });
+
+          if (result.success) {
+            console.log("거래 취소 시스템 메시지 전송 완료");
+          } else {
+            console.error("거래 취소 시스템 메시지 전송 실패:", result.error);
+          }
+        } catch (error) {
+          console.error("거래 취소 시스템 메시지 전송 실패:", error);
+        }
+
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: chatData.item.id, status: "active" },
+          })
+        );
       } catch (error) {
         console.error("거래 취소 실패:", error);
         toast.error("거래 취소 중 오류가 발생했습니다.");
