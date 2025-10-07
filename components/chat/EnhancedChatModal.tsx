@@ -1076,31 +1076,29 @@ export function EnhancedChatModal({
       setChatData(prev =>
         prev
           ? {
-                ...prev,
-                item: {
-                  ...prev.item,
-                  status: "reserved",
-                },
-              }
-            : null
-        );
+              ...prev,
+              item: {
+                ...prev.item,
+                status: "reserved",
+                buyerUid: chatData.otherUser.uid,
+              },
+            }
+          : null
+      );
 
-        // 전역 이벤트 발생으로 상품 목록 업데이트
-        window.dispatchEvent(
-          new CustomEvent("itemStatusChanged", {
-            detail: { itemId: chatData.item.id, status: "reserved" },
-          })
-        );
+      // 전역 이벤트 발생으로 상품 목록 업데이트
+      window.dispatchEvent(
+        new CustomEvent("itemStatusChanged", {
+          detail: { itemId: chatData.item.id, status: "reserved" },
+        })
+      );
 
-        // 거래 시작 알림 추가
-        await addStatusSystemMessage("reserved");
+      // 거래 시작 알림 추가
+      await addStatusSystemMessage("reserved");
 
-        // 안전결제인 경우 구매자가 입력한 배송지 정보를 판매자에게 자동 표시
-        if (chatData.tradeType?.includes("안전결제")) {
-          await showShippingAddressToSeller();
-        }
-      } else {
-        toast.error(result.error || "거래 시작에 실패했습니다.");
+      // 안전결제인 경우 구매자가 입력한 배송지 정보를 판매자에게 자동 표시
+      if (chatData.tradeType?.includes("안전결제")) {
+        await showShippingAddressToSeller();
       }
     } catch (error) {
       console.error("거래 시작 실패:", error);
