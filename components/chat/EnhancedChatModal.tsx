@@ -1467,10 +1467,10 @@ export function EnhancedChatModal({
     },
   });
 
-  console.log("EnhancedChatModal: 렌더링 상태 확인", { 
-    isOpen, 
+  console.log("EnhancedChatModal: 렌더링 상태 확인", {
+    isOpen,
     chatId,
-    showChatModal: true // 강제로 true로 설정
+    showChatModal: true, // 강제로 true로 설정
   });
 
   // 임시로 isOpen 조건을 제거하여 모달이 항상 렌더링되도록 함

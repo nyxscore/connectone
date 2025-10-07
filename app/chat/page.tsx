@@ -127,12 +127,24 @@ function ChatPageContent() {
               showChatModal,
               isClient,
             })}
-            <div className="fixed inset-0 z-50">
-              <div className="absolute inset-0 bg-black bg-opacity-50" onClick={handleCloseModal} />
-              <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-                <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[90vh] overflow-hidden">
+                <div className="p-4 border-b">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">채팅</h2>
+                    <button 
+                      onClick={handleCloseModal}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <p>채팅 ID: {selectedChatId}</p>
+                  <p>모달이 열렸습니다!</p>
                   <EnhancedChatModal
-                    isOpen={showChatModal}
+                    isOpen={true}
                     onClose={handleCloseModal}
                     chatId={selectedChatId}
                     onChatDeleted={handleChatDeleted}
