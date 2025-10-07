@@ -3,6 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
+import { getFirebaseDb } from "../../lib/api/firebase-ultra-safe";
+import { doc, getDoc, collection, addDoc, updateDoc, query, orderBy, onSnapshot } from "firebase/firestore";
+import { getOrCreateChat, getChatMessages, subscribeToMessages } from "../../lib/chat/api";
+import { getItem } from "../../lib/api/products";
+import { getUserProfile } from "../../lib/profile/api";
 import {
   ArrowLeft,
   X,
@@ -154,83 +159,121 @@ export function UltraSafeChatModal({
       if (chatId) {
         // 기존 채팅 로드
         console.log("기존 채팅 로드:", chatId);
-        setChatData({
-          chatId,
-          otherUser: {
-            uid: "temp",
-            nickname: "임시 사용자",
-            profileImage: undefined,
-          },
-          item: {
-            id: "temp",
-            title: "임시 상품",
-            price: 50000,
-            imageUrl: undefined,
-            status: "active",
-            buyerUid: undefined,
-            transactionCancelledAt: undefined,
-            shippingInfo: undefined,
-            buyerShippingInfo: undefined,
-          },
-          tradeType: "buy",
-          sellerUid: "temp",
-          buyerUid: user?.uid || "temp",
-        });
         
-        // 임시 메시지 추가
-        setMessages([
-          {
-            id: "1",
-            text: "안녕하세요! 상품에 대해 문의드립니다.",
-            senderId: "temp",
-            timestamp: new Date(Date.now() - 60000),
-            type: "text",
-          },
-          {
-            id: "2",
-            text: "네, 무엇이 궁금하신가요?",
-            senderId: user?.uid || "",
-            timestamp: new Date(),
-            type: "text",
-          },
-        ]);
+        // Firebase에서 실제 채팅 데이터 로드
+        const db = getFirebaseDb();
+        if (db) {
+          const chatDoc = await getDoc(doc(db, "chats", chatId));
+          if (chatDoc.exists()) {
+            const chatData = chatDoc.data();
+            
+            // 실제 상품 정보 로드
+            let itemData = null;
+            if (chatData.itemId) {
+              try {
+                itemData = await getItem(chatData.itemId);
+              } catch (error) {
+                console.error("상품 정보 로드 실패:", error);
+              }
+            }
+            
+            // 실제 사용자 정보 로드
+            let otherUserData = null;
+            if (chatData.sellerUid && chatData.buyerUid) {
+              const otherUid = chatData.sellerUid === user?.uid ? chatData.buyerUid : chatData.sellerUid;
+              try {
+                otherUserData = await getUserProfile(otherUid);
+              } catch (error) {
+                console.error("사용자 정보 로드 실패:", error);
+              }
+            }
+            
+            setChatData({
+              chatId,
+              otherUser: {
+                uid: otherUserData?.uid || "unknown",
+                nickname: otherUserData?.nickname || "알 수 없는 사용자",
+                profileImage: otherUserData?.profileImage,
+              },
+              item: {
+                id: itemData?.id || chatData.itemId || "unknown",
+                title: itemData?.title || "상품 정보 없음",
+                price: itemData?.price || 0,
+                imageUrl: itemData?.imageUrl,
+                status: itemData?.status || "unknown",
+                buyerUid: chatData.buyerUid,
+                transactionCancelledAt: itemData?.transactionCancelledAt,
+                shippingInfo: itemData?.shippingInfo,
+                buyerShippingInfo: itemData?.buyerShippingInfo,
+              },
+              tradeType: chatData.tradeType || "buy",
+              sellerUid: chatData.sellerUid,
+              buyerUid: chatData.buyerUid,
+            });
+            
+            // 실제 메시지 로드
+            loadMessages(chatId);
+          } else {
+            throw new Error("채팅을 찾을 수 없습니다.");
+          }
+        } else {
+          throw new Error("Firebase가 초기화되지 않았습니다.");
+        }
       } else if (itemId && sellerUid && user) {
         // 새 채팅 생성
         console.log("새 채팅 생성:", { itemId, sellerUid });
-        setChatData({
-          chatId: "temp",
-          otherUser: {
-            uid: sellerUid,
-            nickname: "임시 판매자",
-            profileImage: undefined,
-          },
-          item: {
-            id: itemId,
-            title: "임시 상품",
-            price: 50000,
-            imageUrl: undefined,
-            status: "active",
-            buyerUid: undefined,
-            transactionCancelledAt: undefined,
-            shippingInfo: undefined,
-            buyerShippingInfo: undefined,
-          },
-          tradeType: tradeType || "buy",
-          sellerUid,
-          buyerUid: user.uid,
-        });
         
-        // 자동 시스템 메시지
-        if (autoSendSystemMessage) {
-          setMessages([
-            {
-              id: "system",
-              text: autoSendSystemMessage,
-              senderId: "system",
-              timestamp: new Date(),
-              type: "system",
+        try {
+          // 실제 상품 정보 로드
+          const itemData = await getItem(itemId);
+          
+          // 실제 사용자 정보 로드
+          const sellerData = await getUserProfile(sellerUid);
+          
+          // 새 채팅 생성
+          const newChatId = await getOrCreateChat(itemId, sellerUid, user.uid, tradeType);
+          
+          setChatData({
+            chatId: newChatId,
+            otherUser: {
+              uid: sellerUid,
+              nickname: sellerData?.nickname || "판매자",
+              profileImage: sellerData?.profileImage,
             },
-          ]);
+            item: {
+              id: itemData?.id || itemId,
+              title: itemData?.title || "상품 정보 없음",
+              price: itemData?.price || 0,
+              imageUrl: itemData?.imageUrl,
+              status: itemData?.status || "active",
+              buyerUid: user.uid,
+              transactionCancelledAt: itemData?.transactionCancelledAt,
+              shippingInfo: itemData?.shippingInfo,
+              buyerShippingInfo: itemData?.buyerShippingInfo,
+            },
+            tradeType: tradeType || "buy",
+            sellerUid,
+            buyerUid: user.uid,
+          });
+          
+          // 자동 시스템 메시지
+          if (autoSendSystemMessage) {
+            setMessages([
+              {
+                id: "system",
+                text: autoSendSystemMessage,
+                senderId: "system",
+                timestamp: new Date(),
+                type: "system",
+              },
+            ]);
+          }
+          
+          // 메시지 구독 시작
+          loadMessages(newChatId);
+        } catch (error) {
+          console.error("새 채팅 생성 실패:", error);
+          throw error;
         }
       }
     } catch (error) {
@@ -241,21 +284,49 @@ export function UltraSafeChatModal({
     }
   };
 
+  const loadMessages = async (chatId: string) => {
+    try {
+      setMessagesLoading(true);
+      
+      // Firebase에서 실제 메시지 로드
+      const db = getFirebaseDb();
+      if (db) {
+        // 기존 메시지 로드
+        const initialMessages = await getChatMessages(chatId);
+        setMessages(initialMessages);
+        
+        // 실시간 메시지 구독
+        subscribeToMessages(chatId, (newMessages) => {
+          setMessages(newMessages);
+        });
+      }
+    } catch (error) {
+      console.error("메시지 로드 실패:", error);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
   const handleSendMessage = async (messageText: string) => {
-    if (!messageText.trim() || !user) return;
+    if (!messageText.trim() || !user || !chatData?.chatId) return;
 
     try {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: messageText,
+      const db = getFirebaseDb();
+      if (!db) {
+        throw new Error("Firebase가 초기화되지 않았습니다.");
+      }
+
+      // Firebase에 실제 메시지 저장
+      const messageData = {
+        text: messageText.trim(),
         senderId: user.uid,
         timestamp: new Date(),
         type: "text",
       };
 
-      setMessages(prev => [...prev, newMessage]);
-      console.log("메시지 전송:", newMessage);
+      await addDoc(collection(db, "chats", chatData.chatId, "messages"), messageData);
       
+      console.log("메시지 전송 성공:", messageData);
       toast.success("메시지가 전송되었습니다.");
     } catch (error) {
       console.error("메시지 전송 실패:", error);
@@ -281,10 +352,34 @@ export function UltraSafeChatModal({
   };
 
   const handleStartTransaction = async () => {
+    if (!chatData?.item.id || !user) return;
+
     try {
       setIsStartingTransaction(true);
-      console.log("거래 시작:", chatData?.item.id);
-      toast.success("거래가 시작되었습니다.");
+      
+      // Firebase에서 실제 거래 시작
+      const db = getFirebaseDb();
+      if (db) {
+        // 상품 상태를 'reserved'로 변경
+        await updateDoc(doc(db, "items", chatData.item.id), {
+          status: "reserved",
+          buyerUid: user.uid,
+          reservedAt: new Date(),
+        });
+        
+        // 시스템 메시지 전송
+        const systemMessage = {
+          text: `${user.uid === chatData.sellerUid ? '판매자' : '구매자'}가 거래를 시작했습니다.`,
+          senderId: "system",
+          timestamp: new Date(),
+          type: "system",
+        };
+        
+        await addDoc(collection(db, "chats", chatData.chatId, "messages"), systemMessage);
+        
+        console.log("거래 시작 성공:", chatData.item.id);
+        toast.success("거래가 시작되었습니다.");
+      }
     } catch (error) {
       console.error("거래 시작 실패:", error);
       toast.error("거래 시작에 실패했습니다.");
@@ -294,10 +389,33 @@ export function UltraSafeChatModal({
   };
 
   const handleCompletePurchase = async () => {
+    if (!chatData?.item.id || !user) return;
+
     try {
       setIsCompletingPurchase(true);
-      console.log("구매 완료:", chatData?.item.id);
-      toast.success("구매가 완료되었습니다.");
+      
+      // Firebase에서 실제 구매 완료
+      const db = getFirebaseDb();
+      if (db) {
+        // 상품 상태를 'sold'로 변경
+        await updateDoc(doc(db, "items", chatData.item.id), {
+          status: "sold",
+          soldAt: new Date(),
+        });
+        
+        // 시스템 메시지 전송
+        const systemMessage = {
+          text: `거래가 완료되었습니다.`,
+          senderId: "system",
+          timestamp: new Date(),
+          type: "system",
+        };
+        
+        await addDoc(collection(db, "chats", chatData.chatId, "messages"), systemMessage);
+        
+        console.log("구매 완료 성공:", chatData.item.id);
+        toast.success("구매가 완료되었습니다.");
+      }
     } catch (error) {
       console.error("구매 완료 실패:", error);
       toast.error("구매 완료에 실패했습니다.");
