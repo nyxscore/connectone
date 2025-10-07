@@ -303,6 +303,7 @@ export async function updateItemStatus(
   status: "active" | "reserved" | "paid_hold" | "sold" | "inactive",
   buyerId?: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = getDb();
   try {
     console.log("updateItemStatus 호출:", { itemId, status });
 
@@ -379,6 +380,8 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       sortOrder = "desc",
       filters = {},
     } = options;
+
+    const db = getDb();
 
     // 상태 필터 처리
     let statusFilter = ["active", "reserved", "escrow_completed", "sold"]; // 기본값: 모든 거래 가능한 상태
@@ -598,6 +601,7 @@ export async function deleteItem(
   itemId: string,
   sellerUid: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = getDb();
   try {
     console.log("deleteItem 호출:", { itemId, sellerUid });
 
@@ -653,6 +657,7 @@ export async function submitBuyerShippingInfo(
   success: boolean;
   error?: string;
 }> {
+  const db = getDb();
   try {
     const itemRef = doc(db, "items", itemId);
     await updateDoc(itemRef, {
@@ -675,6 +680,7 @@ export async function updateItem(
   sellerUid: string,
   updateData: Partial<SellItemInput>
 ): Promise<{ success: boolean; error?: string }> {
+  const db = getDb();
   try {
     console.log("updateItem 호출:", { itemId, sellerUid, updateData });
 
@@ -724,6 +730,7 @@ export async function applyForItem(
   itemId: string,
   buyerUid: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = getDb();
   try {
     console.log("상품 신청 시작:", { itemId, buyerUid });
 
@@ -792,6 +799,7 @@ export async function getItemApplications(itemId: string): Promise<{
   applications?: ItemApplication[];
   error?: string;
 }> {
+  const db = getDb();
   try {
     console.log("구매신청자 목록 조회:", itemId);
 
@@ -829,6 +837,7 @@ export async function approveApplication(
   itemId: string,
   buyerUid: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = getDb();
   try {
     console.log("구매신청 승인 시작:", { applicationId, itemId, buyerUid });
 
@@ -883,6 +892,7 @@ export async function getUserApplicationStatus(
   itemId: string,
   buyerUid: string
 ): Promise<{ success: boolean; status?: string; error?: string }> {
+  const db = getDb();
   try {
     const applicationQuery = query(
       collection(db, "itemApplications"),
