@@ -389,33 +389,32 @@ export function subscribeToUnreadNotificationCount(
 
   let unsubscribe: (() => void) | null = null;
 
-  // 비동기로 db를 가져와서 구독 설정
-  getDb()
-    .then(db => {
-      const notificationsRef = collection(db, "notifications");
-      const q = query(
-        notificationsRef,
-        where("userId", "==", userId),
-        where("isRead", "==", false)
-      );
+  // 동기적으로 db를 가져와서 구독 설정
+  try {
+    const db = getDb();
+    const notificationsRef = collection(db, "notifications");
+    const q = query(
+      notificationsRef,
+      where("userId", "==", userId),
+      where("isRead", "==", false)
+    );
 
-      unsubscribe = onSnapshot(
-        q,
-        snapshot => {
-          const count = snapshot.docs.length;
-          console.log("실시간 읽지 않은 알림 개수:", count);
-          callback(count);
-        },
-        error => {
-          console.error("실시간 읽지 않은 알림 개수 구독 오류:", error);
-          onError?.(error);
-        }
-      );
-    })
-    .catch(error => {
-      console.error("❌ DB 초기화 오류:", error);
-      onError?.(error);
-    });
+    unsubscribe = onSnapshot(
+      q,
+      snapshot => {
+        const count = snapshot.docs.length;
+        console.log("실시간 읽지 않은 알림 개수:", count);
+        callback(count);
+      },
+      error => {
+        console.error("실시간 읽지 않은 알림 개수 구독 오류:", error);
+        onError?.(error);
+      }
+    );
+  } catch (error) {
+    console.error("❌ DB 초기화 오류:", error);
+    onError?.(error);
+  }
 
   return () => {
     if (unsubscribe) {
