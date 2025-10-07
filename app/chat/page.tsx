@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { ChatList } from "../../components/chat/ChatList";
-import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal";
+import { SimpleChatModal } from "../../components/chat/SimpleChatModal";
 import { ProtectedRoute } from "../../lib/auth/ProtectedRoute";
 import { MessageCircle, Plus, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -119,68 +119,17 @@ function ChatPageContent() {
           </ErrorBoundary>
         </div>
 
-        {/* 채팅 모달 */}
-        {selectedChatId && (
-          <>
-            {console.log("ChatPage: 모달 렌더링 조건 확인", {
-              selectedChatId,
-              showChatModal,
-              isClient,
-            })}
-            <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[90vh] overflow-hidden">
-                <div className="p-4 border-b">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">채팅</h2>
-                    <button 
-                      onClick={handleCloseModal}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-                <div className="p-4 h-full">
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600">채팅 ID: {selectedChatId}</p>
-                    <p className="text-green-600 font-medium">✅ 모달이 성공적으로 열렸습니다!</p>
-                  </div>
-                  
-                  {/* 간단한 채팅 인터페이스 */}
-                  <div className="border rounded-lg h-96 flex flex-col">
-                    <div className="p-3 border-b bg-gray-50">
-                      <h3 className="font-medium">채팅방</h3>
-                    </div>
-                    <div className="flex-1 p-3 overflow-y-auto">
-                      <p className="text-gray-500">채팅 내용이 여기에 표시됩니다.</p>
-                      <p className="text-sm text-gray-400 mt-2">Chat ID: {selectedChatId}</p>
-                    </div>
-                    <div className="p-3 border-t">
-                      <div className="flex space-x-2">
-                        <input 
-                          type="text" 
-                          placeholder="메시지를 입력하세요..." 
-                          className="flex-1 px-3 py-2 border rounded-lg"
-                        />
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg">
-                          전송
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* 원래 EnhancedChatModal은 주석 처리 */}
-                  {/* <EnhancedChatModal
-                    isOpen={true}
-                    onClose={handleCloseModal}
-                    chatId={selectedChatId}
-                    onChatDeleted={handleChatDeleted}
-                  /> */}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+        {/* 간단한 채팅 모달 */}
+        {console.log("ChatPage: 모달 렌더링 조건 확인", {
+          selectedChatId,
+          showChatModal,
+          isClient,
+        })}
+        <SimpleChatModal
+          isOpen={!!selectedChatId && showChatModal}
+          onClose={handleCloseModal}
+          chatId={selectedChatId || ""}
+        />
       </div>
     </ErrorBoundary>
   );
