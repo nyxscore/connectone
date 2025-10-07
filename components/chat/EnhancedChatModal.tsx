@@ -1053,28 +1053,29 @@ export function EnhancedChatModal({
     setIsStartingTransaction(true);
 
     try {
-      // 상품 상태를 '거래중'으로 변경하고 구매자 지정
-      const response = await fetch("/api/products/start-transaction", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          itemId: chatData.item.id,
-          buyerUid: chatData.otherUser.uid,
-          sellerUid: user.uid,
-        }),
+      // Firestore에서 직접 상품 상태를 '거래중'으로 변경하고 구매자 지정
+      const { doc, updateDoc } = await import("firebase/firestore");
+      const db = getDb();
+      if (!db) {
+        toast.error("데이터베이스 초기화 실패");
+        return;
+      }
+
+      const itemRef = doc(db, "items", chatData.item.id);
+      await updateDoc(itemRef, {
+        status: "reserved",
+        buyerUid: chatData.otherUser.uid,
+        buyerId: chatData.otherUser.uid, // 호환성을 위해
+        updatedAt: new Date(),
       });
 
-      const result = await response.json();
+      console.log("✅ 상품 상태 업데이트 완료");
+      toast.success("거래가 시작되었습니다!");
 
-      if (result.success) {
-        toast.success("거래가 시작되었습니다!");
-
-        // chatData의 item.status를 "reserved"로 업데이트
-        setChatData(prev =>
-          prev
-            ? {
+      // chatData의 item.status를 "reserved"로 업데이트
+      setChatData(prev =>
+        prev
+          ? {
                 ...prev,
                 item: {
                   ...prev.item,

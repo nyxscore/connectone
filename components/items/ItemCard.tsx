@@ -175,7 +175,7 @@ export function ItemCard({
       onClick(item);
       return; // onClick prop이 있으면 여기서 종료
     }
-    
+
     // onClick prop이 없을 때만 상품 상세 페이지로 이동
     router.push(`/item/${item.id}`);
   };
