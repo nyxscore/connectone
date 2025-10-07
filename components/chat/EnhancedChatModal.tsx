@@ -1856,9 +1856,26 @@ export function EnhancedChatModal({
               {/* 판매자 액션 버튼들 */}
               {user && chatData && user.uid === chatData.sellerUid && (
                 <div className="mb-4 space-y-2">
-                  {/* 거래 진행하기 버튼 */}
+                  {/* 거래 취소 이력 안내 */}
+                  {chatData.item.transactionCancelledAt && 
+                    chatData.item.status === "active" && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <X className="w-5 h-5 text-red-600" />
+                        <span className="text-sm font-bold text-red-800">
+                          거래 취소 이력 있음
+                        </span>
+                      </div>
+                      <p className="text-xs text-red-700">
+                        이 상품은 거래 취소 이력이 있어 재거래가 제한됩니다.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 거래 진행하기 버튼 - 취소 이력이 없을 때만 */}
                   {(chatData.item.status === "active" ||
-                    chatData.item.status === "escrow_completed") && (
+                    chatData.item.status === "escrow_completed") &&
+                    !chatData.item.transactionCancelledAt && (
                     <Button
                       onClick={() => {
                         if (
