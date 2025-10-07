@@ -30,6 +30,7 @@ const nextConfig = {
   // 동적 import 최적화
   experimental: {
     esmExternals: false,
+    serverComponentsExternalPackages: ['firebase', '@firebase/auth', '@firebase/firestore'],
   },
 
   // Firebase 초기화 최적화

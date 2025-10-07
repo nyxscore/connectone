@@ -138,80 +138,17 @@ function ChatPageContent() {
               onChatSelect={handleChatSelect}
               onChatDeleted={handleChatDeleted}
             />
-            
-            {/* 강제 모달 테스트 버튼 */}
-            <div className="p-4 border-t bg-yellow-50">
-              <button
-                onClick={() => {
-                  console.log("🚨 강제 모달 열기 버튼 클릭!");
-                  setSelectedChatId("TEST_CHAT_ID");
-                  setShowChatModal(true);
-                }}
-                className="w-full bg-red-500 text-white p-3 rounded-lg font-bold text-lg"
-              >
-                🚨 강제로 모달 열기 테스트
-              </button>
-            </div>
           </ErrorBoundary>
         </div>
 
-        {/* 절대 간단한 모달 테스트 */}
-        {(() => {
-          console.log("🔍 모달 렌더링 조건 체크:", {
-            selectedChatId,
-            showChatModal,
-            isClient,
-            allTrue: selectedChatId && showChatModal && isClient,
-          });
-          return selectedChatId && showChatModal && isClient;
-        })() && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100vw",
-              height: "100vh",
-              backgroundColor: "rgba(255, 0, 0, 0.9)",
-              zIndex: 999999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "50px",
-                borderRadius: "20px",
-                textAlign: "center",
-                border: "5px solid #ff0000",
-                fontSize: "24px",
-                fontWeight: "bold",
-              }}
-            >
-              <h1 style={{ color: "#ff0000", marginBottom: "20px" }}>
-                🚨 모달이 열렸습니다! 🚨
-              </h1>
-              <p style={{ marginBottom: "20px" }}>
-                채팅 ID: {selectedChatId}
-              </p>
-              <button
-                onClick={handleCloseModal}
-                style={{
-                  backgroundColor: "#ff0000",
-                  color: "white",
-                  border: "none",
-                  padding: "15px 30px",
-                  borderRadius: "10px",
-                  fontSize: "18px",
-                  cursor: "pointer",
-                }}
-              >
-                닫기
-              </button>
-            </div>
-          </div>
+        {/* 실제 채팅 모달 - 배포 환경 안전장치 */}
+        {selectedChatId && showChatModal && isClient && (
+          <EnhancedChatModal
+            isOpen={true}
+            onClose={handleCloseModal}
+            chatId={selectedChatId}
+            onChatDeleted={handleChatDeleted}
+          />
         )}
       </div>
     </ErrorBoundary>
