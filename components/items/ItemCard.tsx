@@ -281,7 +281,14 @@ export function ItemCard({
               ? "cursor-pointer hover:shadow-lg hover:bg-blue-50 transition-all"
               : "cursor-pointer"
       }`}
-      onClick={isSold ? undefined : () => handleClick()}
+      onClick={isSold ? undefined : (e) => {
+        // 버튼이나 링크 클릭인 경우 상품 상세로 이동하지 않음
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('a')) {
+          return;
+        }
+        handleClick();
+      }}
     >
       {/* 썸네일 */}
       <div
