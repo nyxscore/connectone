@@ -91,7 +91,19 @@ export const getFirebaseApp = () => {
 export const getFirebaseAuth = () => {
   if (!_auth) {
     try {
-      _auth = getAuth(getFirebaseApp());
+      // 서버 사이드에서는 초기화하지 않음
+      if (typeof window === "undefined") {
+        console.log("⚠️ 서버 사이드에서 Firebase Auth 초기화 시도 - 건너뜀");
+        return null;
+      }
+
+      const app = getFirebaseApp();
+      if (!app) {
+        console.log("⚠️ Firebase 앱이 초기화되지 않음 - Auth 초기화 건너뜀");
+        return null;
+      }
+
+      _auth = getAuth(app);
       console.log("✅ Firebase Auth 초기화 성공");
     } catch (error) {
       console.error("❌ Firebase Auth 초기화 실패:", error);
@@ -104,7 +116,19 @@ export const getFirebaseAuth = () => {
 export const getFirebaseDb = () => {
   if (!_db) {
     try {
-      _db = getFirestore(getFirebaseApp());
+      // 서버 사이드에서는 초기화하지 않음
+      if (typeof window === "undefined") {
+        console.log("⚠️ 서버 사이드에서 Firebase DB 초기화 시도 - 건너뜀");
+        return null;
+      }
+
+      const app = getFirebaseApp();
+      if (!app) {
+        console.log("⚠️ Firebase 앱이 초기화되지 않음 - DB 초기화 건너뜀");
+        return null;
+      }
+
+      _db = getFirestore(app);
       console.log("✅ Firebase Firestore 초기화 성공");
     } catch (error) {
       console.error("❌ Firebase Firestore 초기화 실패:", error);
@@ -117,7 +141,19 @@ export const getFirebaseDb = () => {
 export const getFirebaseStorage = () => {
   if (!_storage) {
     try {
-      _storage = getStorage(getFirebaseApp());
+      // 서버 사이드에서는 초기화하지 않음
+      if (typeof window === "undefined") {
+        console.log("⚠️ 서버 사이드에서 Firebase Storage 초기화 시도 - 건너뜀");
+        return null;
+      }
+
+      const app = getFirebaseApp();
+      if (!app) {
+        console.log("⚠️ Firebase 앱이 초기화되지 않음 - Storage 초기화 건너뜀");
+        return null;
+      }
+
+      _storage = getStorage(app);
       console.log("✅ Firebase Storage 초기화 성공");
     } catch (error) {
       console.error("❌ Firebase Storage 초기화 실패:", error);
@@ -135,6 +171,11 @@ let _naverProvider: any = null;
 export const getGoogleProvider = () => {
   if (!_googleProvider) {
     try {
+      // 서버 사이드에서는 초기화하지 않음
+      if (typeof window === "undefined") {
+        console.log("⚠️ 서버 사이드에서 Google Provider 초기화 시도 - 건너뜀");
+        return null;
+      }
       _googleProvider = new GoogleAuthProvider();
       _googleProvider.addScope("email");
       _googleProvider.addScope("profile");
@@ -150,6 +191,11 @@ export const getGoogleProvider = () => {
 export const getKakaoProvider = () => {
   if (!_kakaoProvider) {
     try {
+      // 서버 사이드에서는 초기화하지 않음
+      if (typeof window === "undefined") {
+        console.log("⚠️ 서버 사이드에서 Kakao Provider 초기화 시도 - 건너뜀");
+        return null;
+      }
       _kakaoProvider = new OAuthProvider("oidc.kakao");
       _kakaoProvider.addScope("profile_nickname");
       _kakaoProvider.addScope("account_email");
@@ -170,6 +216,11 @@ export const getKakaoProvider = () => {
 export const getNaverProvider = () => {
   if (!_naverProvider) {
     try {
+      // 서버 사이드에서는 초기화하지 않음
+      if (typeof window === "undefined") {
+        console.log("⚠️ 서버 사이드에서 Naver Provider 초기화 시도 - 건너뜀");
+        return null;
+      }
       _naverProvider = new OAuthProvider("oidc.naver");
       _naverProvider.addScope("email");
       _naverProvider.addScope("name");
