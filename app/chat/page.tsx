@@ -119,8 +119,8 @@ function ChatPageContent() {
           </ErrorBoundary>
         </div>
 
-        {/* 실제 채팅 모달 */}
-        {selectedChatId && showChatModal && (
+        {/* 실제 채팅 모달 - 배포 환경 안전장치 */}
+        {selectedChatId && showChatModal && isClient && (
           <EnhancedChatModal
             isOpen={true}
             onClose={handleCloseModal}
