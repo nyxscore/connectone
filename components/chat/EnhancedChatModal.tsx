@@ -520,7 +520,15 @@ export function EnhancedChatModal({
             profileImage: otherUser?.profileImage,
           },
           item: itemResult.item,
-          tradeType: itemResult.item.tradeOptions?.join(" + ") || "직거래",
+          tradeType: (() => {
+            const options = itemResult.item.tradeOptions || ["직거래"];
+            const baseType = options.join(" + ");
+            // escrowEnabled가 true면 안전결제 추가
+            if (itemResult.item.escrowEnabled || itemResult.item.status === "escrow_completed") {
+              return baseType.includes("안전결제") ? baseType : `${baseType} + 안전결제`;
+            }
+            return baseType;
+          })(),
         });
 
         // 메시지는 useEffect에서 자동으로 로드됨
@@ -595,7 +603,15 @@ export function EnhancedChatModal({
             profileImage: otherUserResult.data.profileImage,
           },
           item: itemResult.item,
-          tradeType: itemResult.item.tradeOptions?.join(" + ") || "직거래",
+          tradeType: (() => {
+            const options = itemResult.item.tradeOptions || ["직거래"];
+            const baseType = options.join(" + ");
+            // escrowEnabled가 true면 안전결제 추가
+            if (itemResult.item.escrowEnabled || itemResult.item.status === "escrow_completed") {
+              return baseType.includes("안전결제") ? baseType : `${baseType} + 안전결제`;
+            }
+            return baseType;
+          })(),
         });
       } else {
         setError("채팅 정보가 부족합니다.");
@@ -1124,7 +1140,9 @@ export function EnhancedChatModal({
 
       try {
         // Firestore에서 직접 상품 상태를 '판매중'으로 변경하고 구매자 정보 제거
-        const { doc, updateDoc, deleteField } = await import("firebase/firestore");
+        const { doc, updateDoc, deleteField } = await import(
+          "firebase/firestore"
+        );
         const db = getDb();
         if (!db) {
           toast.error("데이터베이스 초기화 실패");
