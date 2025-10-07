@@ -47,10 +47,12 @@ interface UltraSafeChatModalProps {
 
 interface Message {
   id: string;
-  text: string;
-  senderId: string;
-  timestamp: Date;
-  type: string;
+  chatId: string;
+  senderUid: string;
+  content: string;
+  imageUrl?: string;
+  createdAt: any; // Firebase Timestamp
+  readBy: string[];
 }
 
 interface ChatData {
@@ -230,8 +232,9 @@ export function UltraSafeChatModal({
           // 실제 사용자 정보 로드
           const sellerData = await getUserProfile(sellerUid);
           
-          // 새 채팅 생성
-          const newChatId = await getOrCreateChat(itemId, sellerUid, user.uid, tradeType);
+          // 새 채팅 생성 (itemId, buyerUid, sellerUid 순서)
+          const chatResult = await getOrCreateChat(itemId, user.uid, sellerUid);
+          const newChatId = chatResult.success ? chatResult.chatId : null;
           
           setChatData({
             chatId: newChatId,
@@ -261,10 +264,12 @@ export function UltraSafeChatModal({
             setMessages([
               {
                 id: "system",
-                text: autoSendSystemMessage,
-                senderId: "system",
-                timestamp: new Date(),
+                chatId: newChatId || "temp",
+                senderUid: "system",
+                content: autoSendSystemMessage,
                 type: "system",
+                createdAt: new Date(),
+                readBy: [],
               },
             ]);
           }
@@ -292,8 +297,10 @@ export function UltraSafeChatModal({
       const db = getFirebaseDb();
       if (db) {
         // 기존 메시지 로드
-        const initialMessages = await getChatMessages(chatId);
-        setMessages(initialMessages);
+        const messagesResult = await getChatMessages(chatId);
+        if (messagesResult.success && messagesResult.messages) {
+          setMessages(messagesResult.messages);
+        }
         
         // 실시간 메시지 구독
         subscribeToMessages(chatId, (newMessages) => {
@@ -318,13 +325,15 @@ export function UltraSafeChatModal({
 
       // Firebase에 실제 메시지 저장
       const messageData = {
-        text: messageText.trim(),
-        senderId: user.uid,
-        timestamp: new Date(),
+        chatId: chatData.chatId,
+        senderUid: user.uid,
+        content: messageText.trim(),
         type: "text",
+        createdAt: new Date(),
+        readBy: [user.uid],
       };
 
-      await addDoc(collection(db, "chats", chatData.chatId, "messages"), messageData);
+      await addDoc(collection(db, "messages"), messageData);
       
       console.log("메시지 전송 성공:", messageData);
       toast.success("메시지가 전송되었습니다.");
@@ -369,13 +378,15 @@ export function UltraSafeChatModal({
         
         // 시스템 메시지 전송
         const systemMessage = {
-          text: `${user.uid === chatData.sellerUid ? '판매자' : '구매자'}가 거래를 시작했습니다.`,
-          senderId: "system",
-          timestamp: new Date(),
+          chatId: chatData.chatId,
+          senderUid: "system",
+          content: `${user.uid === chatData.sellerUid ? '판매자' : '구매자'}가 거래를 시작했습니다.`,
           type: "system",
+          createdAt: new Date(),
+          readBy: [],
         };
         
-        await addDoc(collection(db, "chats", chatData.chatId, "messages"), systemMessage);
+        await addDoc(collection(db, "messages"), systemMessage);
         
         console.log("거래 시작 성공:", chatData.item.id);
         toast.success("거래가 시작되었습니다.");
@@ -405,13 +416,15 @@ export function UltraSafeChatModal({
         
         // 시스템 메시지 전송
         const systemMessage = {
-          text: `거래가 완료되었습니다.`,
-          senderId: "system",
-          timestamp: new Date(),
+          chatId: chatData.chatId,
+          senderUid: "system",
+          content: `거래가 완료되었습니다.`,
           type: "system",
+          createdAt: new Date(),
+          readBy: [],
         };
         
-        await addDoc(collection(db, "chats", chatData.chatId, "messages"), systemMessage);
+        await addDoc(collection(db, "messages"), systemMessage);
         
         console.log("구매 완료 성공:", chatData.item.id);
         toast.success("구매가 완료되었습니다.");
@@ -564,20 +577,23 @@ export function UltraSafeChatModal({
                 {messages && Array.isArray(messages) && messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.senderId === user?.uid ? "justify-end" : "justify-start"}`}
+                    className={`flex ${message.senderUid === user?.uid ? "justify-end" : "justify-start"}`}
                   >
                     <div
                       className={`max-w-[70%] p-3 rounded-lg ${
-                        message.senderId === user?.uid
+                        message.senderUid === user?.uid
                           ? "bg-blue-500 text-white"
-                          : message.senderId === "system"
+                          : message.senderUid === "system"
                           ? "bg-gray-200 text-gray-700 text-center mx-auto"
                           : "bg-gray-100 text-gray-900"
                       }`}
                     >
-                      <p className="text-sm">{message.text}</p>
+                      <p className="text-sm">{message.content}</p>
                       <p className="text-xs opacity-70 mt-1">
-                        {format(message.timestamp, "HH:mm", { locale: ko })}
+                        {message.createdAt?.toDate ? 
+                          format(message.createdAt.toDate(), "HH:mm", { locale: ko }) :
+                          format(new Date(message.createdAt), "HH:mm", { locale: ko })
+                        }
                       </p>
                     </div>
                   </div>
