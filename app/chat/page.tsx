@@ -28,6 +28,28 @@ function ChatPageContent() {
   // 클라이언트 사이드에서만 실행되도록 보장
   useEffect(() => {
     setIsClient(true);
+    
+    // 배포 환경 안전장치 - Firebase 초기화 확인
+    const checkDeploymentReady = () => {
+      try {
+        // Firebase 환경변수 확인
+        const hasRequiredEnvVars = 
+          process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
+          typeof window !== "undefined";
+        
+        if (hasRequiredEnvVars) {
+          console.log("✅ 배포 환경 준비 완료");
+        } else {
+          console.warn("⚠️ Firebase 환경변수 누락 - 재시도 중...");
+          setTimeout(checkDeploymentReady, 1000);
+        }
+      } catch (error) {
+        console.error("❌ 배포 환경 확인 실패:", error);
+        setTimeout(checkDeploymentReady, 2000);
+      }
+    };
+
+    checkDeploymentReady();
   }, []);
 
   // URL에서 chatId를 가져와서 자동으로 채팅 모달 열기

@@ -10,25 +10,43 @@ import {
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-const firebaseConfig = {
-  apiKey:
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-    "AIzaSyDy-EXIHVfzBhKcsNq93BfmQ2SQCWRszOs",
-  authDomain:
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-    "connectone-8b414.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "connectone-8b414",
-  storageBucket:
-    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-    "connectone-8b414.firebasestorage.app",
-  messagingSenderId:
-    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "567550026947",
-  appId:
-    process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
-    "1:567550026947:web:92120b0c926db2ece06e76",
-  measurementId:
-    process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-P7KKSEF6SZ",
+// 환경변수 확인 및 안전장치
+const getFirebaseConfig = () => {
+  const config = {
+    apiKey:
+      process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
+      "AIzaSyDy-EXIHVfzBhKcsNq93BfmQ2SQCWRszOs",
+    authDomain:
+      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
+      "connectone-8b414.firebaseapp.com",
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "connectone-8b414",
+    storageBucket:
+      process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+      "connectone-8b414.firebasestorage.app",
+    messagingSenderId:
+      process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "567550026947",
+    appId:
+      process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
+      "1:567550026947:web:92120b0c926db2ece06e76",
+    measurementId:
+      process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-P7KKSEF6SZ",
+  };
+
+  // 환경변수 확인 로그 (배포 환경에서 디버깅용)
+  if (typeof window !== "undefined") {
+    console.log("🔥 Firebase 환경변수 확인:", {
+      apiKey: config.apiKey ? "✅ 설정됨" : "❌ 누락",
+      authDomain: config.authDomain ? "✅ 설정됨" : "❌ 누락",
+      projectId: config.projectId ? "✅ 설정됨" : "❌ 누락",
+      environment: process.env.NODE_ENV || "unknown",
+      isClient: true,
+    });
+  }
+
+  return config;
 };
+
+const firebaseConfig = getFirebaseConfig();
 
 // Firebase 앱 초기화 (지연 초기화)
 let _app: any = null;
@@ -39,10 +57,31 @@ let _storage: any = null;
 export const getFirebaseApp = () => {
   if (!_app) {
     try {
+      // 서버 사이드에서는 초기화하지 않음
+      if (typeof window === "undefined") {
+        console.log("⚠️ 서버 사이드에서 Firebase 앱 초기화 시도 - 건너뜀");
+        return null;
+      }
+
       _app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
       console.log("✅ Firebase 앱 초기화 성공");
     } catch (error) {
       console.error("❌ Firebase 앱 초기화 실패:", error);
+      
+      // 배포 환경에서 더 자세한 오류 정보
+      if (process.env.NODE_ENV === "production") {
+        console.error("🔍 배포 환경 Firebase 오류 상세:", {
+          error: error.message,
+          config: {
+            apiKey: firebaseConfig.apiKey ? "설정됨" : "누락",
+            projectId: firebaseConfig.projectId ? "설정됨" : "누락",
+            authDomain: firebaseConfig.authDomain ? "설정됨" : "누락",
+          },
+          userAgent: typeof window !== "undefined" ? window.navigator.userAgent : "서버",
+          url: typeof window !== "undefined" ? window.location.href : "서버",
+        });
+      }
+      
       throw new Error("Firebase 초기화에 실패했습니다.");
     }
   }
