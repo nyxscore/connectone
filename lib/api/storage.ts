@@ -5,7 +5,10 @@ import {
   deleteObject,
   uploadBytesResumable,
 } from "firebase/storage";
-import { storage } from "./firebase";
+import { getFirebaseStorage } from "./firebase-safe";
+
+// Storage 인스턴스 가져오기
+const storage = getFirebaseStorage();
 
 export interface UploadResult {
   success: boolean;

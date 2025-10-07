@@ -17,7 +17,10 @@ import {
   getDownloadURL,
   deleteObject,
 } from "firebase/storage";
-import { db, storage } from "../api/firebase";
+import {
+  getFirebaseDb as getDb,
+  getFirebaseStorage as getStorage,
+} from "../api/firebase-safe";
 import {
   UserProfile,
   ProfileUpdateData,
@@ -36,6 +39,7 @@ export async function getUserProfile(
 ): Promise<ApiResponse<UserProfile>> {
   try {
     console.log("getUserProfile 호출:", uid);
+    const db = await getDb();
     const userDoc = await getDoc(doc(db, "users", uid));
     console.log("getUserProfile getDoc 완료:", userDoc.exists());
 
@@ -95,6 +99,7 @@ export async function updateUserProfile(
   updateData: ProfileUpdateData
 ): Promise<ApiResponse<void>> {
   try {
+    const db = await getDb();
     const userRef = doc(db, "users", uid);
 
     await updateDoc(userRef, {
@@ -115,6 +120,8 @@ export async function uploadAvatar(
   file: File
 ): Promise<ApiResponse<string>> {
   try {
+    const storage = await getStorage();
+
     // 이미지 압축 및 WebP 변환
     const compressedFile = await compressImage(file);
 
@@ -139,21 +146,24 @@ export async function deleteAvatar(
   photoURL?: string
 ): Promise<ApiResponse<void>> {
   try {
+    const db = await getDb();
+    const storage = await getStorage();
+
     // Firebase Storage에서 이미지 삭제
     if (photoURL) {
       try {
         // Storage URL에서 파일 경로 추출
         const urlParts = photoURL.split("/");
         let fileName = urlParts[urlParts.length - 1];
-        
+
         // URL 파라미터 제거 (?alt=media&token=...)
         if (fileName.includes("?")) {
           fileName = fileName.split("?")[0];
         }
-        
+
         // URL 디코딩 (avatars%2F... -> avatars/...)
         fileName = decodeURIComponent(fileName);
-        
+
         const storageRef = ref(storage, fileName);
         await deleteObject(storageRef);
         console.log("Firebase Storage에서 아바타 삭제 완료:", fileName);
@@ -236,6 +246,7 @@ export async function getRecentTrades(
   limitCount: number = 5
 ): Promise<ApiResponse<TradeItem[]>> {
   try {
+    const db = await getDb();
     // transactions 컬렉션에서 해당 사용자가 참여한 거래 조회
     const transactionsRef = collection(db, "transactions");
     const q = query(transactionsRef, where("buyerUid", "==", uid));

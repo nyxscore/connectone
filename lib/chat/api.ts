@@ -16,7 +16,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "../api/firebase";
+import { getFirebaseDb as getDb } from "../api/firebase-safe";
 import {
   Chat,
   Message,
@@ -45,6 +45,7 @@ export async function setUserOnlineStatus(
   isOnline: boolean
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const db = await getDb();
     console.log(
       `🟢 온라인 상태 설정: ${userId} -> ${isOnline ? "온라인" : "오프라인"}`
     );
@@ -83,28 +84,46 @@ export function subscribeToUserOnlineStatus(
   callback: (isOnline: boolean, lastSeen?: Timestamp) => void
 ): () => void {
   console.log(`👀 온라인 상태 구독 시작: ${userId}`);
-  const userRef = doc(db, "users", userId);
 
-  return onSnapshot(
-    userRef,
-    doc => {
-      if (doc.exists()) {
-        const data = doc.data();
-        const isOnline = data.isOnline || false;
-        console.log(
-          `📡 온라인 상태 업데이트: ${userId} -> ${isOnline ? "온라인" : "오프라인"}`
-        );
-        callback(isOnline, data.lastSeen);
-      } else {
-        console.log(`❌ 사용자 문서 없음: ${userId}`);
-        callback(false);
-      }
-    },
-    error => {
-      console.error("❌ 온라인 상태 구독 오류:", error);
+  let unsubscribe: (() => void) | null = null;
+
+  // 비동기로 db를 가져와서 구독 설정
+  getDb()
+    .then(db => {
+      const userRef = doc(db, "users", userId);
+
+      unsubscribe = onSnapshot(
+        userRef,
+        doc => {
+          if (doc.exists()) {
+            const data = doc.data();
+            const isOnline = data.isOnline || false;
+            console.log(
+              `📡 온라인 상태 업데이트: ${userId} -> ${isOnline ? "온라인" : "오프라인"}`
+            );
+            callback(isOnline, data.lastSeen);
+          } else {
+            console.log(`❌ 사용자 문서 없음: ${userId}`);
+            callback(false);
+          }
+        },
+        error => {
+          console.error("❌ 온라인 상태 구독 오류:", error);
+          callback(false);
+        }
+      );
+    })
+    .catch(error => {
+      console.error("❌ DB 초기화 오류:", error);
       callback(false);
+    });
+
+  // 구독 해제 함수 반환
+  return () => {
+    if (unsubscribe) {
+      unsubscribe();
     }
-  );
+  };
 }
 
 // 채팅 생성 또는 가져오기
@@ -115,6 +134,8 @@ export async function getOrCreateChat(
   firstMessage?: string
 ): Promise<{ success: boolean; chatId?: string; error?: string }> {
   try {
+    const db = await getDb();
+
     // 자기 자신과의 채팅 방지 (단, 시스템 메시지만 있는 경우는 허용)
     if (buyerUid === sellerUid) {
       console.warn("자기 자신과의 채팅 생성 시도:", {
@@ -214,6 +235,7 @@ export async function getUserChats(
   error?: string;
 }> {
   try {
+    const db = await getDb();
     console.log("getUserChats 호출됨, userId:", userId);
     const chatsRef = collection(db, "chats");
 
@@ -326,6 +348,8 @@ export async function sendMessage(
   data: SendMessageData
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const db = await getDb();
+
     // 시스템 메시지인 경우 senderUid 검증 생략
     if (data.senderUid !== "system" && !data.senderUid) {
       console.error("sendMessage: senderUid가 없습니다:", data);
@@ -508,6 +532,7 @@ export async function getChatMessages(
   lastDoc?: any;
   error?: string;
 }> {
+  const db = await getDb();
   try {
     const messagesRef = collection(db, "messages");
     let q = query(
@@ -561,28 +586,44 @@ export function subscribeToMessages(
   callback: (messages: Message[]) => void,
   onError?: (error: Error) => void
 ): () => void {
-  const messagesRef = collection(db, "messages");
-  const q = query(
-    messagesRef,
-    where("chatId", "==", chatId),
-    orderBy("createdAt", "asc")
-  );
+  let unsubscribe: (() => void) | null = null;
 
-  return onSnapshot(
-    q,
-    snapshot => {
-      const messages = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Message[];
+  // 비동기로 db를 가져와서 구독 설정
+  getDb()
+    .then(db => {
+      const messagesRef = collection(db, "messages");
+      const q = query(
+        messagesRef,
+        where("chatId", "==", chatId),
+        orderBy("createdAt", "asc")
+      );
 
-      callback(messages);
-    },
-    error => {
-      console.error("메시지 스트림 오류:", error);
+      unsubscribe = onSnapshot(
+        q,
+        snapshot => {
+          const messages = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Message[];
+
+          callback(messages);
+        },
+        error => {
+          console.error("메시지 스트림 오류:", error);
+          onError?.(error);
+        }
+      );
+    })
+    .catch(error => {
+      console.error("❌ DB 초기화 오류:", error);
       onError?.(error);
+    });
+
+  return () => {
+    if (unsubscribe) {
+      unsubscribe();
     }
-  );
+  };
 }
 
 // 메시지 읽음 처리
@@ -591,6 +632,7 @@ export async function markMessageAsRead(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const db = await getDb();
     const messageRef = doc(db, "messages", messageId);
     const messageSnap = await getDoc(messageRef);
 
@@ -623,6 +665,7 @@ export async function getUnreadMessageCount(
   userId: string
 ): Promise<number> {
   try {
+    const db = await getDb();
     const messagesRef = collection(db, "messages");
     const q = query(messagesRef, where("chatId", "==", chatId));
 
@@ -652,6 +695,7 @@ export async function deleteChat(
   chatId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     console.log("🔍 deleteChat 호출됨:", { chatId, userId });
 
@@ -755,6 +799,7 @@ export async function getTotalUnreadMessageCount(
   userId: string
 ): Promise<{ success: boolean; count?: number; error?: string }> {
   try {
+    const db = await getDb();
     console.log("읽지 않은 메시지 개수 조회:", userId);
 
     // 사용자가 참여한 모든 채팅 조회
@@ -810,64 +855,72 @@ export function subscribeToUnreadCount(
 ): () => void {
   console.log("읽지 않은 메시지 개수 실시간 구독 시작:", userId);
 
-  // 사용자가 참여한 모든 채팅 구독
-  const chatsRef = collection(db, "chats");
-  const buyerQuery = query(chatsRef, where("buyerUid", "==", userId));
-  const sellerQuery = query(chatsRef, where("sellerUid", "==", userId));
-
   let unsubscribers: (() => void)[] = [];
   let buyerUnreadCount = 0;
   let sellerUnreadCount = 0;
 
-  const updateTotalUnreadCount = () => {
-    const totalUnreadCount = buyerUnreadCount + sellerUnreadCount;
-    console.log(
-      "전체 읽지 않은 메시지 개수:",
-      totalUnreadCount,
-      "(buyer:",
-      buyerUnreadCount,
-      "seller:",
-      sellerUnreadCount,
-      ")"
-    );
-    callback(totalUnreadCount);
-  };
+  // 비동기로 db를 가져와서 구독 설정
+  getDb()
+    .then(db => {
+      // 사용자가 참여한 모든 채팅 구독
+      const chatsRef = collection(db, "chats");
+      const buyerQuery = query(chatsRef, where("buyerUid", "==", userId));
+      const sellerQuery = query(chatsRef, where("sellerUid", "==", userId));
 
-  const unsubscribeBuyer = onSnapshot(
-    buyerQuery,
-    snapshot => {
-      buyerUnreadCount = 0;
-      snapshot.docs.forEach(doc => {
-        const chatData = doc.data() as Chat;
-        buyerUnreadCount += chatData.buyerUnreadCount || 0;
-      });
-      console.log("Buyer 읽지 않은 메시지 개수:", buyerUnreadCount);
-      updateTotalUnreadCount();
-    },
-    error => {
-      console.error("Buyer 채팅 구독 오류:", error);
+      const updateTotalUnreadCount = () => {
+        const totalUnreadCount = buyerUnreadCount + sellerUnreadCount;
+        console.log(
+          "전체 읽지 않은 메시지 개수:",
+          totalUnreadCount,
+          "(buyer:",
+          buyerUnreadCount,
+          "seller:",
+          sellerUnreadCount,
+          ")"
+        );
+        callback(totalUnreadCount);
+      };
+
+      const unsubscribeBuyer = onSnapshot(
+        buyerQuery,
+        snapshot => {
+          buyerUnreadCount = 0;
+          snapshot.docs.forEach(doc => {
+            const chatData = doc.data() as Chat;
+            buyerUnreadCount += chatData.buyerUnreadCount || 0;
+          });
+          console.log("Buyer 읽지 않은 메시지 개수:", buyerUnreadCount);
+          updateTotalUnreadCount();
+        },
+        error => {
+          console.error("Buyer 채팅 구독 오류:", error);
+          onError?.(error);
+        }
+      );
+
+      const unsubscribeSeller = onSnapshot(
+        sellerQuery,
+        snapshot => {
+          sellerUnreadCount = 0;
+          snapshot.docs.forEach(doc => {
+            const chatData = doc.data() as Chat;
+            sellerUnreadCount += chatData.sellerUnreadCount || 0;
+          });
+          console.log("Seller 읽지 않은 메시지 개수:", sellerUnreadCount);
+          updateTotalUnreadCount();
+        },
+        error => {
+          console.error("Seller 채팅 구독 오류:", error);
+          onError?.(error);
+        }
+      );
+
+      unsubscribers.push(unsubscribeBuyer, unsubscribeSeller);
+    })
+    .catch(error => {
+      console.error("❌ DB 초기화 오류:", error);
       onError?.(error);
-    }
-  );
-
-  const unsubscribeSeller = onSnapshot(
-    sellerQuery,
-    snapshot => {
-      sellerUnreadCount = 0;
-      snapshot.docs.forEach(doc => {
-        const chatData = doc.data() as Chat;
-        sellerUnreadCount += chatData.sellerUnreadCount || 0;
-      });
-      console.log("Seller 읽지 않은 메시지 개수:", sellerUnreadCount);
-      updateTotalUnreadCount();
-    },
-    error => {
-      console.error("Seller 채팅 구독 오류:", error);
-      onError?.(error);
-    }
-  );
-
-  unsubscribers.push(unsubscribeBuyer, unsubscribeSeller);
+    });
 
   return () => {
     console.log("읽지 않은 메시지 개수 구독 해제");
@@ -880,6 +933,7 @@ export async function markChatAsRead(
   chatId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     const chatRef = doc(db, "chats", chatId);
     const chatDoc = await getDoc(chatRef);
@@ -921,6 +975,7 @@ export async function reportUser(
   reason: string,
   description?: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     console.log("사용자 신고 시작:", { reporterUid, reportedUid, reason });
 
@@ -950,6 +1005,7 @@ export async function blockUser(
   blockerUid: string,
   blockedUid: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     console.log("사용자 차단 시작:", { blockerUid, blockedUid });
 
@@ -1050,6 +1106,7 @@ export async function isUserBlocked(
   blockerUid: string,
   blockedUid: string
 ): Promise<{ success: boolean; isBlocked?: boolean; error?: string }> {
+  const db = await getDb();
   try {
     const blocksRef = collection(db, "blocks");
     const blockQuery = query(blocksRef, where("blockerUid", "==", blockerUid));
@@ -1075,6 +1132,7 @@ export async function isUserBlocked(
 export async function getBlockedUsers(
   blockerUid: string
 ): Promise<{ success: boolean; blockedUsers?: any[]; error?: string }> {
+  const db = await getDb();
   try {
     console.log("차단된 사용자 목록 조회 시작:", blockerUid);
 

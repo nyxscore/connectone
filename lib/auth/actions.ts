@@ -8,10 +8,14 @@ import {
   RecaptchaVerifier,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
-import { auth, db } from "../api/firebase";
+import { getFirebaseAuth, getFirebaseDb } from "../api/firebase-safe";
 import { useAuthStore } from "./store";
 import { User } from "../../data/types";
 import { loginSchema, signupSchema } from "../../data/schemas/auth";
+
+// Firebase 인스턴스 가져오기
+const auth = getFirebaseAuth();
+const getDb = getFirebaseDb;
 
 export const authActions = {
   // 로그인
@@ -30,6 +34,7 @@ export const authActions = {
       );
 
       // 사용자 정보 가져오기
+      const db = await getDb();
       const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
       if (!userDoc.exists()) {
         throw new Error("사용자 정보를 찾을 수 없습니다.");
@@ -96,6 +101,7 @@ export const authActions = {
         updatedAt: new Date(),
       };
 
+      const db = await getDb();
       await setDoc(doc(db, "users", userCredential.user.uid), userData);
 
       useAuthStore.getState().setUser(userData);
@@ -135,6 +141,7 @@ export const authActions = {
       const user = auth.currentUser;
       if (!user) return null;
 
+      const db = await getDb();
       const userDoc = await getDoc(doc(db, "users", user.uid));
       if (!userDoc.exists()) return null;
 
@@ -156,6 +163,7 @@ export const authActions = {
       }
 
       // Firestore 업데이트
+      const db = await getDb();
       await updateDoc(doc(db, "users", currentUser.uid), {
         ...updates,
         updatedAt: new Date(),
@@ -232,6 +240,7 @@ export const authActions = {
       // 실제 구현에서는 confirmationResult.confirm(verificationCode)를 사용
 
       // Firestore에서 사용자 정보 업데이트
+      const db = await getDb();
       await updateDoc(doc(db, "users", currentUser.uid), {
         isPhoneVerified: true,
         updatedAt: new Date(),

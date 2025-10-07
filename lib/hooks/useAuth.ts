@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { auth } from "../api/firebase";
+import { getFirebaseAuth as getAuth } from "../api/firebase-safe";
+import { User as FirebaseUser } from "firebase/auth";
 import { User } from "../../data/types";
 import { UserProfile } from "../../data/profile/types";
 import { getUserProfile } from "../profile/api";
@@ -54,7 +54,10 @@ export const useAuth = () => {
   };
 
   // processUser 함수를 useEffect 밖으로 이동
-  const processUser = async (firebaseUser: FirebaseUser | null, isMounted: boolean) => {
+  const processUser = async (
+    firebaseUser: FirebaseUser | null,
+    isMounted: boolean
+  ) => {
     console.log("useAuth: processUser 호출", {
       firebaseUser: !!firebaseUser,
     });
@@ -71,10 +74,7 @@ export const useAuth = () => {
           if (!isMounted) return;
 
           if (userData && userData.success && userData.data) {
-            const user = convertUserProfileToUser(
-              userData.data,
-              firebaseUser
-            );
+            const user = convertUserProfileToUser(userData.data, firebaseUser);
             setUser(user);
           } else {
             // Firestore에서 사용자 정보를 가져오지 못한 경우, Firebase 사용자 정보로 임시 사용자 생성
@@ -153,14 +153,44 @@ export const useAuth = () => {
     let isMounted = true;
     console.log("useAuth: 초기화 시작");
 
-    console.log("useAuth: onAuthStateChanged 구독 시작");
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      processUser(firebaseUser, isMounted);
-    });
+    const initializeAuth = async () => {
+      try {
+        const authInstance = await getAuth();
+        if (!authInstance) {
+          throw new Error("Firebase Auth not initialized");
+        }
+
+        console.log("useAuth: onAuthStateChanged 구독 시작");
+        const unsubscribe = authInstance.onAuthStateChanged(
+          firebaseUser => {
+            processUser(firebaseUser, isMounted);
+          },
+          error => {
+            console.error("❌ Firebase 인증 상태 변경 오류:", error);
+            if (isMounted) {
+              setUser(null);
+              setLoading(false);
+            }
+          }
+        );
+
+        return () => {
+          isMounted = false;
+          unsubscribe();
+        };
+      } catch (error) {
+        console.error("❌ Firebase Auth 초기화 실패:", error);
+        if (isMounted) {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
 
     return () => {
       isMounted = false;
-      unsubscribe();
     };
   }, []);
 

@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { Transaction, TransactionStatus } from "../../../data/types";
 // import { getUserTransactions } from "../../../lib/api/payment";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../../lib/api/firebase";
+import { getFirebaseDb as getDb } from "../../../lib/api/firebase-safe";
 import {
   CreditCard,
   Package,
@@ -92,6 +92,7 @@ export default function TransactionsPage() {
     setError("");
 
     try {
+      const db = await getDb();
       // Firestore에서 직접 거래 내역 조회
       const transactionsRef = collection(db, "transactions");
       const q = query(transactionsRef, where("buyerUid", "==", user.id));

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/api/firebase";
+import { getFirebaseDb as getDb } from "@/lib/api/firebase-safe";
 
 function PaymentContent() {
   const router = useRouter();
@@ -53,6 +53,7 @@ function PaymentContent() {
       }
 
       // Firestore에서 실제 상품 정보 가져오기
+      const db = await getDb();
       const itemRef = doc(db, "items", itemId);
       const itemDoc = await getDoc(itemRef);
 

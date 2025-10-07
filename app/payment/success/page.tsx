@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { EnhancedChatModal } from "@/components/chat/EnhancedChatModal";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/api/firebase";
+import { getFirebaseDb as getDb } from "@/lib/api/firebase-safe";
 
 function PaymentSuccessContent() {
   const router = useRouter();
@@ -63,6 +63,7 @@ function PaymentSuccessContent() {
 
     const saveTransaction = async () => {
       try {
+        const db = await getDb();
         console.log("거래 내역 저장 시작:", {
           buyerUid: user.id,
           sellerUid: orderInfo.sellerUid,
@@ -87,7 +88,7 @@ function PaymentSuccessContent() {
         if (orderInfo.escrow && orderInfo.itemId) {
           try {
             const { doc, updateDoc } = await import("firebase/firestore");
-            const { db } = await import("@/lib/api/firebase");
+            const db = await getDb();
 
             const itemRef = doc(db, "items", orderInfo.itemId);
             await updateDoc(itemRef, {

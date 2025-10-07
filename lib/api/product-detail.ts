@@ -1,4 +1,4 @@
-import { db } from "@/lib/api/firebase";
+import { getFirebaseDb as getDb } from "@/lib/api/firebase-safe";
 import { doc, getDoc } from "firebase/firestore";
 import { ProductDetail, SellerInfo } from "@/data/schemas/product";
 
@@ -8,6 +8,7 @@ export async function getProductDetail(productId: string): Promise<{
   error?: string;
 }> {
   try {
+    const db = await getDb();
     const productDoc = await getDoc(doc(db, "products", productId));
 
     if (!productDoc.exists()) {
@@ -77,6 +78,7 @@ export async function getSellerInfo(sellerId: string): Promise<{
   error?: string;
 }> {
   try {
+    const db = await getDb();
     const sellerDoc = await getDoc(doc(db, "users", sellerId));
 
     if (!sellerDoc.exists()) {

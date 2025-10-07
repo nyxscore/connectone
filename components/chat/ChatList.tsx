@@ -14,7 +14,7 @@ import {
   getDocs,
   onSnapshot,
 } from "firebase/firestore";
-import { db } from "../../lib/api/firebase";
+import { getFirebaseDb as getDb } from "../../lib/api/firebase-safe";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import toast from "react-hot-toast";
@@ -140,220 +140,229 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
 
     console.log("실시간 채팅 구독 시작:", user.uid);
 
-    // 사용자가 참여한 모든 채팅 구독
-    const chatsRef = collection(db, "chats");
-    const buyerQuery = query(chatsRef, where("buyerUid", "==", user.uid));
-    const sellerQuery = query(chatsRef, where("sellerUid", "==", user.uid));
+    // 비동기로 db를 가져와서 구독 설정
+    getDb()
+      .then(db => {
+        // 사용자가 참여한 모든 채팅 구독
+        const chatsRef = collection(db, "chats");
+        const buyerQuery = query(chatsRef, where("buyerUid", "==", user.uid));
+        const sellerQuery = query(chatsRef, where("sellerUid", "==", user.uid));
 
-    let unsubscribers: (() => void)[] = [];
+        let unsubscribers: (() => void)[] = [];
 
-    const updateChatsFromSnapshot = (snapshot: any, isBuyer: boolean) => {
-      console.log(
-        `${isBuyer ? "Buyer" : "Seller"} 채팅 업데이트:`,
-        snapshot.docs.length,
-        "개"
-      );
+        const updateChatsFromSnapshot = (snapshot: any, isBuyer: boolean) => {
+          console.log(
+            `${isBuyer ? "Buyer" : "Seller"} 채팅 업데이트:`,
+            snapshot.docs.length,
+            "개"
+          );
 
-      // 삭제된 채팅 필터링
-      const filteredDocs = snapshot.docs.filter((doc: any) => {
-        const chatData = doc.data();
-        const userId = user?.uid;
+          // 삭제된 채팅 필터링
+          const filteredDocs = snapshot.docs.filter((doc: any) => {
+            const chatData = doc.data();
+            const userId = user?.uid;
 
-        if (!userId) return false;
+            if (!userId) return false;
 
-        // 현재 사용자가 삭제하지 않은 채팅만 표시
-        if (chatData.buyerUid === userId) {
-          return !chatData.deletedByBuyer;
-        } else if (chatData.sellerUid === userId) {
-          return !chatData.deletedBySeller;
-        }
-        return true;
-      });
-
-      console.log(
-        `${isBuyer ? "Buyer" : "Seller"} 필터링 후:`,
-        filteredDocs.length,
-        "개"
-      );
-
-      const updatedChats: ChatWithDetails[] = [];
-
-      // Promise.all을 사용하여 모든 프로필 정보를 병렬로 가져오기
-      const profilePromises = filteredDocs.map(async (doc: any) => {
-        const chatData = { ...doc.data(), id: doc.id };
-        const otherUid = isBuyer ? chatData.sellerUid : chatData.buyerUid;
-
-        try {
-          console.log(`상대방 프로필 정보 가져오기 시작: ${otherUid}`);
-          console.log(`아이템 ID: ${chatData.itemId}`);
-
-          const [otherUserResult, itemResult] = await Promise.all([
-            getUserProfile(otherUid),
-            getItem(chatData.itemId),
-          ]);
-
-          console.log(`상대방 프로필 정보 결과:`, otherUserResult);
-          console.log(`아이템 정보:`, itemResult);
-          console.log(`아이템 상태:`, itemResult?.item?.status);
-          console.log(`아이템 성공 여부:`, itemResult?.success);
-
-          const otherUser = otherUserResult.success
-            ? otherUserResult.data
-            : null;
-
-          console.log(`상대방 사용자 데이터:`, {
-            uid: otherUid,
-            nickname: otherUser?.nickname,
-            displayName: otherUser?.displayName,
-            photoURL: otherUser?.photoURL,
-            profileImage: otherUser?.profileImage,
+            // 현재 사용자가 삭제하지 않은 채팅만 표시
+            if (chatData.buyerUid === userId) {
+              return !chatData.deletedByBuyer;
+            } else if (chatData.sellerUid === userId) {
+              return !chatData.deletedBySeller;
+            }
+            return true;
           });
 
-          // 상품 정보 처리 개선
-          let itemInfo = {
-            id: chatData.itemId,
-            title: "상품 정보 없음",
-            price: 0,
-            imageUrl: null,
-            status: "unknown",
-            shippingInfo: null,
-          };
+          console.log(
+            `${isBuyer ? "Buyer" : "Seller"} 필터링 후:`,
+            filteredDocs.length,
+            "개"
+          );
 
-          if (itemResult?.success && itemResult?.item) {
-            itemInfo = {
-              id: itemResult.item.id,
-              title: itemResult.item.title || "상품명 없음",
-              price: itemResult.item.price || 0,
-              imageUrl: itemResult.item.images?.[0] || null,
-              status: itemResult.item.status || "unknown",
-              shippingInfo: itemResult.item.shippingInfo || null,
-            };
-            console.log(`아이템 정보 생성 완료:`, itemInfo);
-          } else {
-            // 상품이 삭제되었거나 존재하지 않는 경우 기본값 사용
-            console.log(`상품 정보를 가져올 수 없음 (상품 삭제됨):`, {
-              itemId: chatData.itemId,
-              error: itemResult?.error,
-            });
-            itemInfo = {
-              id: chatData.itemId,
-              title: "삭제된 상품",
-              price: 0,
-              imageUrl: null,
-              status: "deleted",
-              shippingInfo: null,
-            };
-          }
+          const updatedChats: ChatWithDetails[] = [];
 
-          return {
-            ...chatData,
-            otherUser: {
-              uid: otherUid,
-              nickname:
-                otherUser?.nickname || otherUser?.displayName || "알 수 없음",
-              profileImage: otherUser?.photoURL || otherUser?.profileImage,
-            },
-            item: itemInfo,
-            unreadCount: isBuyer
-              ? chatData.buyerUnreadCount || 0
-              : chatData.sellerUnreadCount || 0,
-          };
-        } catch (error) {
-          console.error(`채팅 ${doc.id} 정보 로드 실패:`, error);
-          console.error(`아이템 ID: ${chatData.itemId}`);
-          return {
-            ...chatData,
-            otherUser: {
-              uid: otherUid,
-              nickname: "알 수 없음",
-              profileImage: null,
-            },
-            item: {
-              id: chatData.itemId,
-              title: "상품 정보 없음",
-              price: 0,
-              imageUrl: null,
-              status: "unknown",
-            },
-            unreadCount: isBuyer
-              ? chatData.buyerUnreadCount || 0
-              : chatData.sellerUnreadCount || 0,
-          };
-        }
-      });
+          // Promise.all을 사용하여 모든 프로필 정보를 병렬로 가져오기
+          const profilePromises = filteredDocs.map(async (doc: any) => {
+            const chatData = { ...doc.data(), id: doc.id };
+            const otherUid = isBuyer ? chatData.sellerUid : chatData.buyerUid;
 
-      // 모든 프로필 정보를 가져온 후 처리
-      Promise.all(profilePromises).then(chatDetails => {
-        console.log(`모든 채팅 데이터 로드 완료:`, chatDetails);
+            try {
+              console.log(`상대방 프로필 정보 가져오기 시작: ${otherUid}`);
+              console.log(`아이템 ID: ${chatData.itemId}`);
 
-        // 시간순으로 정렬
-        chatDetails.sort((a, b) => {
-          const aTime = a.updatedAt?.seconds || 0;
-          const bTime = b.updatedAt?.seconds || 0;
-          return bTime - aTime;
-        });
+              const [otherUserResult, itemResult] = await Promise.all([
+                getUserProfile(otherUid),
+                getItem(chatData.itemId),
+              ]);
 
-        // 채팅 목록 업데이트
-        setChats(prevChats => {
-          const allChats = [...prevChats];
+              console.log(`상대방 프로필 정보 결과:`, otherUserResult);
+              console.log(`아이템 정보:`, itemResult);
+              console.log(`아이템 상태:`, itemResult?.item?.status);
+              console.log(`아이템 성공 여부:`, itemResult?.success);
 
-          chatDetails.forEach(updatedChat => {
-            const existingIndex = allChats.findIndex(
-              chat => chat.id === updatedChat.id
-            );
-            if (existingIndex >= 0) {
-              allChats[existingIndex] = updatedChat;
-            } else {
-              allChats.push(updatedChat);
+              const otherUser = otherUserResult.success
+                ? otherUserResult.data
+                : null;
+
+              console.log(`상대방 사용자 데이터:`, {
+                uid: otherUid,
+                nickname: otherUser?.nickname,
+                displayName: otherUser?.displayName,
+                photoURL: otherUser?.photoURL,
+                profileImage: otherUser?.profileImage,
+              });
+
+              // 상품 정보 처리 개선
+              let itemInfo = {
+                id: chatData.itemId,
+                title: "상품 정보 없음",
+                price: 0,
+                imageUrl: null,
+                status: "unknown",
+                shippingInfo: null,
+              };
+
+              if (itemResult?.success && itemResult?.item) {
+                itemInfo = {
+                  id: itemResult.item.id,
+                  title: itemResult.item.title || "상품명 없음",
+                  price: itemResult.item.price || 0,
+                  imageUrl: itemResult.item.images?.[0] || null,
+                  status: itemResult.item.status || "unknown",
+                  shippingInfo: itemResult.item.shippingInfo || null,
+                };
+                console.log(`아이템 정보 생성 완료:`, itemInfo);
+              } else {
+                // 상품이 삭제되었거나 존재하지 않는 경우 기본값 사용
+                console.log(`상품 정보를 가져올 수 없음 (상품 삭제됨):`, {
+                  itemId: chatData.itemId,
+                  error: itemResult?.error,
+                });
+                itemInfo = {
+                  id: chatData.itemId,
+                  title: "삭제된 상품",
+                  price: 0,
+                  imageUrl: null,
+                  status: "deleted",
+                  shippingInfo: null,
+                };
+              }
+
+              return {
+                ...chatData,
+                otherUser: {
+                  uid: otherUid,
+                  nickname:
+                    otherUser?.nickname ||
+                    otherUser?.displayName ||
+                    "알 수 없음",
+                  profileImage: otherUser?.photoURL || otherUser?.profileImage,
+                },
+                item: itemInfo,
+                unreadCount: isBuyer
+                  ? chatData.buyerUnreadCount || 0
+                  : chatData.sellerUnreadCount || 0,
+              };
+            } catch (error) {
+              console.error(`채팅 ${doc.id} 정보 로드 실패:`, error);
+              console.error(`아이템 ID: ${chatData.itemId}`);
+              return {
+                ...chatData,
+                otherUser: {
+                  uid: otherUid,
+                  nickname: "알 수 없음",
+                  profileImage: null,
+                },
+                item: {
+                  id: chatData.itemId,
+                  title: "상품 정보 없음",
+                  price: 0,
+                  imageUrl: null,
+                  status: "unknown",
+                },
+                unreadCount: isBuyer
+                  ? chatData.buyerUnreadCount || 0
+                  : chatData.sellerUnreadCount || 0,
+              };
             }
           });
 
-          // 중복 제거 및 정렬
-          const uniqueChats = allChats.filter(
-            (chat, index, self) =>
-              index === self.findIndex(c => c.id === chat.id)
-          );
+          // 모든 프로필 정보를 가져온 후 처리
+          Promise.all(profilePromises).then(chatDetails => {
+            console.log(`모든 채팅 데이터 로드 완료:`, chatDetails);
 
-          return uniqueChats.sort((a, b) => {
-            const aTime = a.updatedAt?.seconds || 0;
-            const bTime = b.updatedAt?.seconds || 0;
-            return bTime - aTime;
+            // 시간순으로 정렬
+            chatDetails.sort((a, b) => {
+              const aTime = a.updatedAt?.seconds || 0;
+              const bTime = b.updatedAt?.seconds || 0;
+              return bTime - aTime;
+            });
+
+            // 채팅 목록 업데이트
+            setChats(prevChats => {
+              const allChats = [...prevChats];
+
+              chatDetails.forEach(updatedChat => {
+                const existingIndex = allChats.findIndex(
+                  chat => chat.id === updatedChat.id
+                );
+                if (existingIndex >= 0) {
+                  allChats[existingIndex] = updatedChat;
+                } else {
+                  allChats.push(updatedChat);
+                }
+              });
+
+              // 중복 제거 및 정렬
+              const uniqueChats = allChats.filter(
+                (chat, index, self) =>
+                  index === self.findIndex(c => c.id === chat.id)
+              );
+
+              return uniqueChats.sort((a, b) => {
+                const aTime = a.updatedAt?.seconds || 0;
+                const bTime = b.updatedAt?.seconds || 0;
+                return bTime - aTime;
+              });
+            });
+
+            // 미읽음 메시지 수 업데이트
+            const counts: Record<string, number> = {};
+            chatDetails.forEach(chat => {
+              counts[chat.id] = isBuyer
+                ? chat.buyerUnreadCount || 0
+                : chat.sellerUnreadCount || 0;
+            });
+
+            setUnreadCounts(prevCounts => ({
+              ...prevCounts,
+              ...counts,
+            }));
           });
-        });
+        };
 
-        // 미읽음 메시지 수 업데이트
-        const counts: Record<string, number> = {};
-        chatDetails.forEach(chat => {
-          counts[chat.id] = isBuyer
-            ? chat.buyerUnreadCount || 0
-            : chat.sellerUnreadCount || 0;
-        });
+        const unsubscribeBuyer = onSnapshot(
+          buyerQuery,
+          snapshot => updateChatsFromSnapshot(snapshot, true),
+          error => console.error("Buyer 채팅 구독 오류:", error)
+        );
 
-        setUnreadCounts(prevCounts => ({
-          ...prevCounts,
-          ...counts,
-        }));
+        const unsubscribeSeller = onSnapshot(
+          sellerQuery,
+          snapshot => updateChatsFromSnapshot(snapshot, false),
+          error => console.error("Seller 채팅 구독 오류:", error)
+        );
+
+        unsubscribers.push(unsubscribeBuyer, unsubscribeSeller);
+
+        return () => {
+          console.log("채팅 구독 해제");
+          unsubscribers.forEach(unsub => unsub());
+        };
+      })
+      .catch(error => {
+        console.error("❌ DB 초기화 오류:", error);
       });
-    };
-
-    const unsubscribeBuyer = onSnapshot(
-      buyerQuery,
-      snapshot => updateChatsFromSnapshot(snapshot, true),
-      error => console.error("Buyer 채팅 구독 오류:", error)
-    );
-
-    const unsubscribeSeller = onSnapshot(
-      sellerQuery,
-      snapshot => updateChatsFromSnapshot(snapshot, false),
-      error => console.error("Seller 채팅 구독 오류:", error)
-    );
-
-    unsubscribers.push(unsubscribeBuyer, unsubscribeSeller);
-
-    return () => {
-      console.log("채팅 구독 해제");
-      unsubscribers.forEach(unsub => unsub());
-    };
   }, [user]);
 
   const handleChatClick = (chatId: string) => {

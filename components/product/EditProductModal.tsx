@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/api/firebase";
+import { getFirebaseDb as getDb } from "@/lib/api/firebase-safe";
 import { toast } from "react-hot-toast";
 import { uploadImages } from "@/lib/api/storage";
 import { Button } from "../ui/Button";
@@ -271,6 +271,7 @@ export default function EditProductModal({
 
       setLoading(true);
       try {
+        const db = await getDb();
         const productRef = doc(db, "items", productId);
         const productDoc = await getDoc(productRef);
 
@@ -462,6 +463,7 @@ export default function EditProductModal({
 
     setSaving(true);
     try {
+      const db = await getDb();
       // 가격 변경 감지
       const priceChanged = product.price !== formData.price;
       const oldPrice = product.price;

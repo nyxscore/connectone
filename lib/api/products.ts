@@ -14,7 +14,7 @@ import {
   getDocs,
   deleteField,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { getFirebaseDb as getDb } from "./firebase-safe";
 import { SellItemInput } from "../../data/schemas/product";
 
 export interface Item extends SellItemInput {
@@ -66,6 +66,7 @@ export async function createItem(
     tradeOptions?: string[];
   }
 ): Promise<{ success: boolean; itemId?: string; error?: string }> {
+  const db = await getDb();
   try {
     console.log("createItem 호출:", itemData);
 
@@ -130,6 +131,7 @@ export async function createItem(
 export async function getItem(
   itemId: string
 ): Promise<{ success: boolean; item?: Item; error?: string }> {
+  const db = await getDb();
   try {
     console.log("getItem 호출:", itemId);
     const docRef = doc(db, "items", itemId);
@@ -168,6 +170,7 @@ export async function getUserItems(
   limitCount: number = 20,
   lastDoc?: any
 ): Promise<{ success: boolean; items?: Item[]; error?: string }> {
+  const db = await getDb();
   try {
     let q = query(
       collection(db, "items"),
@@ -212,6 +215,7 @@ export async function getUserItems(
 export async function getReservedItemsBySeller(
   sellerUid: string
 ): Promise<{ success: boolean; items?: Item[]; error?: string }> {
+  const db = await getDb();
   try {
     console.log("getReservedItemsBySeller 호출:", sellerUid);
 
@@ -250,6 +254,7 @@ export async function getReservedItemsBySeller(
 export async function getReservedItemsForBuyer(
   buyerUid: string
 ): Promise<{ success: boolean; items?: Item[]; error?: string }> {
+  const db = await getDb();
   try {
     console.log("getReservedItemsForBuyer 호출:", { buyerUid });
 

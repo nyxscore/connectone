@@ -1,5 +1,5 @@
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { db } from "../api/firebase";
+import { getFirebaseDb as getDb } from "../api/firebase-safe";
 import { Message, Chat } from "../../data/types/chat";
 
 /**
@@ -7,6 +7,7 @@ import { Message, Chat } from "../../data/types/chat";
  * 응답률 = (답장한 메시지 수 / 받은 메시지 수) * 100
  */
 export async function calculateResponseRate(userId: string): Promise<number> {
+  const db = await getDb();
   try {
     console.log("응답률 계산 시작:", userId);
 
@@ -106,7 +107,7 @@ export async function updateUserResponseRate(userId: string): Promise<{
 
     // 문서가 존재하는지 확인
     const userProfileSnap = await getDoc(userProfileRef);
-    
+
     if (userProfileSnap.exists()) {
       // 문서가 존재하면 업데이트
       const { updateDoc } = await import("firebase/firestore");

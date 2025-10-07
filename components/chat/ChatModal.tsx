@@ -19,7 +19,7 @@ import {
   Message,
 } from "../../lib/chat/api";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../lib/api/firebase";
+import { getFirebaseDb as getDb } from "../../lib/api/firebase-safe";
 import {
   ArrowLeft,
   X,
@@ -104,6 +104,7 @@ export function ChatModal({
       if (chatId) {
         console.log("기존 채팅 로드:", chatId);
         try {
+          const db = await getDb();
           // 채팅 정보 가져오기
           const chatRef = doc(db, "chats", chatId);
           const chatSnap = await getDoc(chatRef);

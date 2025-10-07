@@ -5,11 +5,14 @@ import {
   signInWithGoogleRedirect,
   signInWithKakaoRedirect,
   signInWithNaverRedirect,
-  getRedirectResult,
-} from "@/lib/api/firebase";
+  getRedirectResult as firebaseGetRedirectResult,
+} from "@/lib/api/firebase-safe";
 import { User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/api/firebase";
+import { getFirebaseDb } from "@/lib/api/firebase-safe";
+
+// Firebase 인스턴스 가져오기
+const getDb = getFirebaseDb;
 
 export interface SNSUserProfile {
   uid: string;
@@ -28,6 +31,7 @@ export const handleSNSLogin = async (
   provider: "google" | "kakao" | "naver"
 ): Promise<SNSUserProfile> => {
   try {
+    const db = await getDb();
     // 사용자 프로필 정보 추출
     const profile: SNSUserProfile = {
       uid: user.uid,
@@ -133,7 +137,8 @@ export const loginWithNaverRedirect = () => signInWithNaverRedirect();
 export const handleRedirectResult =
   async (): Promise<SNSUserProfile | null> => {
     try {
-      const result = await getRedirectResult();
+      const auth = (await import("@/lib/api/firebase-safe")).getFirebaseAuth();
+      const result = await firebaseGetRedirectResult(auth);
       if (result && result.user) {
         const provider = result.providerId?.includes("google")
           ? "google"

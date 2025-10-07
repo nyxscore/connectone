@@ -15,7 +15,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { getFirebaseDb as getDb } from "./firebase-safe";
 import {
   Notification,
   CreateNotificationData,
@@ -26,6 +26,7 @@ import {
 export async function createNotification(
   data: CreateNotificationData
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
+  const db = await getDb();
   try {
     console.log("알림 생성 시작:", data);
 
@@ -67,6 +68,7 @@ export async function getUserNotifications(
   lastDoc?: any;
   error?: string;
 }> {
+  const db = await getDb();
   try {
     console.log("사용자 알림 목록 조회:", userId);
 
@@ -125,6 +127,7 @@ export async function getUserNotifications(
 export async function getUnreadNotificationCount(
   userId: string
 ): Promise<{ success: boolean; count?: number; error?: string }> {
+  const db = await getDb();
   try {
     console.log("읽지 않은 알림 개수 조회:", userId);
 
@@ -157,6 +160,7 @@ export async function markNotificationAsRead(
   notificationId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     console.log("알림 읽음 처리:", notificationId, userId);
 
@@ -203,6 +207,7 @@ export async function markNotificationAsRead(
 export async function markAllNotificationsAsRead(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     console.log("모든 알림 읽음 처리:", userId);
 
@@ -248,6 +253,7 @@ export async function deleteNotification(
   notificationId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     console.log("알림 삭제:", notificationId, userId);
 
@@ -283,6 +289,7 @@ export async function deleteNotification(
 export async function deleteAllNotifications(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const db = await getDb();
   try {
     console.log("모든 알림 삭제:", userId);
 
@@ -321,40 +328,56 @@ export function subscribeToNotifications(
 ): () => void {
   console.log("실시간 알림 구독 시작:", userId);
 
-  const notificationsRef = collection(db, "notifications");
-  // 인덱스 문제를 피하기 위해 orderBy를 제거하고 클라이언트에서 정렬
-  const q = query(
-    notificationsRef,
-    where("userId", "==", userId),
-    limit(100) // 더 많이 가져와서 클라이언트에서 정렬
-  );
+  let unsubscribe: (() => void) | null = null;
 
-  return onSnapshot(
-    q,
-    snapshot => {
-      let notifications = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Notification[];
+  // 비동기로 db를 가져와서 구독 설정
+  getDb()
+    .then(db => {
+      const notificationsRef = collection(db, "notifications");
+      // 인덱스 문제를 피하기 위해 orderBy를 제거하고 클라이언트에서 정렬
+      const q = query(
+        notificationsRef,
+        where("userId", "==", userId),
+        limit(100) // 더 많이 가져와서 클라이언트에서 정렬
+      );
 
-      // 클라이언트에서 시간순 정렬
-      notifications = notifications.sort((a, b) => {
-        const aTime = a.createdAt?.seconds || 0;
-        const bTime = b.createdAt?.seconds || 0;
-        return bTime - aTime; // 최신순
-      });
+      unsubscribe = onSnapshot(
+        q,
+        snapshot => {
+          let notifications = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Notification[];
 
-      // 최근 50개만 반환
-      notifications = notifications.slice(0, 50);
+          // 클라이언트에서 시간순 정렬
+          notifications = notifications.sort((a, b) => {
+            const aTime = a.createdAt?.seconds || 0;
+            const bTime = b.createdAt?.seconds || 0;
+            return bTime - aTime; // 최신순
+          });
 
-      console.log("실시간 알림 업데이트:", notifications.length, "개");
-      callback(notifications);
-    },
-    error => {
-      console.error("실시간 알림 구독 오류:", error);
+          // 최근 50개만 반환
+          notifications = notifications.slice(0, 50);
+
+          console.log("실시간 알림 업데이트:", notifications.length, "개");
+          callback(notifications);
+        },
+        error => {
+          console.error("실시간 알림 구독 오류:", error);
+          onError?.(error);
+        }
+      );
+    })
+    .catch(error => {
+      console.error("❌ DB 초기화 오류:", error);
       onError?.(error);
+    });
+
+  return () => {
+    if (unsubscribe) {
+      unsubscribe();
     }
-  );
+  };
 }
 
 // 실시간 읽지 않은 알림 개수 구독
@@ -365,25 +388,41 @@ export function subscribeToUnreadNotificationCount(
 ): () => void {
   console.log("실시간 읽지 않은 알림 개수 구독 시작:", userId);
 
-  const notificationsRef = collection(db, "notifications");
-  const q = query(
-    notificationsRef,
-    where("userId", "==", userId),
-    where("isRead", "==", false)
-  );
+  let unsubscribe: (() => void) | null = null;
 
-  return onSnapshot(
-    q,
-    snapshot => {
-      const count = snapshot.docs.length;
-      console.log("실시간 읽지 않은 알림 개수:", count);
-      callback(count);
-    },
-    error => {
-      console.error("실시간 읽지 않은 알림 개수 구독 오류:", error);
+  // 비동기로 db를 가져와서 구독 설정
+  getDb()
+    .then(db => {
+      const notificationsRef = collection(db, "notifications");
+      const q = query(
+        notificationsRef,
+        where("userId", "==", userId),
+        where("isRead", "==", false)
+      );
+
+      unsubscribe = onSnapshot(
+        q,
+        snapshot => {
+          const count = snapshot.docs.length;
+          console.log("실시간 읽지 않은 알림 개수:", count);
+          callback(count);
+        },
+        error => {
+          console.error("실시간 읽지 않은 알림 개수 구독 오류:", error);
+          onError?.(error);
+        }
+      );
+    })
+    .catch(error => {
+      console.error("❌ DB 초기화 오류:", error);
       onError?.(error);
+    });
+
+  return () => {
+    if (unsubscribe) {
+      unsubscribe();
     }
-  );
+  };
 }
 
 // 알림 생성 헬퍼 함수들 (타입별)

@@ -7,8 +7,12 @@ import {
   AuthError as FirebaseAuthError,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "./api/firebase";
+import { getFirebaseAuth, getFirebaseDb } from "./api/firebase-safe";
 import { User, SignUpData, LoginData, AuthError } from "./types";
+
+// Firebase 인스턴스 가져오기
+const auth = getFirebaseAuth();
+const getDb = getFirebaseDb;
 
 // 아이디를 이메일로 변환하는 함수
 const usernameToEmail = (username: string): string => {
@@ -53,6 +57,7 @@ export const signUp = async (data: SignUpData): Promise<User> => {
     const firebaseUser = userCredential.user;
 
     // Firestore에 사용자 프로필 생성
+    const db = await getDb();
     const userData: Omit<User, "createdAt" | "updatedAt"> = {
       uid: firebaseUser.uid,
       username: data.username,
@@ -112,6 +117,7 @@ export const logout = async (): Promise<void> => {
 export const getUserProfile = async (uid: string): Promise<User | null> => {
   try {
     console.log("getUserProfile 호출:", uid);
+    const db = await getDb();
     const userDoc = await getDoc(doc(db, "users", uid));
     console.log("Firestore 문서 존재 여부:", userDoc.exists());
 

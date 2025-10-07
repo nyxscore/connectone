@@ -24,7 +24,7 @@ import {
 } from "../../lib/chat/api";
 import { Chat, Message } from "../../data/chat/types";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../lib/api/firebase";
+import { getFirebaseDb as getDb } from "../../lib/api/firebase-safe";
 import {
   ArrowLeft,
   X,
@@ -223,7 +223,7 @@ export function EnhancedChatModal({
         // 시스템 메시지 전송 후 채팅 알림 업데이트 (빨간점 표시)
         try {
           const { updateDoc, doc } = await import("firebase/firestore");
-          const { db } = await import("../../lib/api/firebase");
+          const db = await getDb();
 
           const chatRef = doc(db, "chats", chatData.chatId);
 
@@ -414,6 +414,7 @@ export function EnhancedChatModal({
       if (chatId) {
         // 기존 채팅 로드
         console.log("기존 채팅 로드:", chatId);
+        const db = await getDb();
         const chatRef = doc(db, "chats", chatId);
         const chatSnap = await getDoc(chatRef);
 
@@ -1452,7 +1453,28 @@ export function EnhancedChatModal({
     }).format(price);
   };
 
-  if (!isOpen) return null;
+  console.log("EnhancedChatModal 렌더링:", {
+    isOpen,
+    chatId,
+    user: user?.uid,
+    props: {
+      isOpen,
+      onClose,
+      chatId,
+      tradeType,
+      onChatDeleted,
+      autoSendSystemMessage,
+    },
+  });
+
+  if (!isOpen) {
+    console.log("EnhancedChatModal: isOpen이 false이므로 null 반환", {
+      isOpen,
+    });
+    return null;
+  }
+
+  console.log("EnhancedChatModal: 모달 렌더링 시작", { isOpen, chatId });
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
