@@ -8,12 +8,16 @@ import { useItemsQuery } from "../../hooks/useItemsQuery";
 import { SellItem } from "../../data/types";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
 import ProductDetailModal from "../../components/product/ProductDetailModal";
+import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal";
 
 export default function ListPage() {
   const [selectedItem, setSelectedItem] = useState<SellItem | null>(null);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatItemId, setChatItemId] = useState<string | null>(null);
+  const [chatSellerUid, setChatSellerUid] = useState<string | null>(null);
 
   const {
     items,
@@ -48,6 +52,20 @@ export default function ListPage() {
   const handleCloseProductModal = () => {
     setShowProductModal(false);
     setSelectedItem(null);
+  };
+
+  const handleOpenChat = (itemId: string, sellerUid: string) => {
+    console.log("📱 채팅 열기 요청:", { itemId, sellerUid });
+    setChatItemId(itemId);
+    setChatSellerUid(sellerUid);
+    setShowChatModal(true);
+  };
+
+  const handleCloseChat = () => {
+    console.log("📱 채팅 닫기");
+    setShowChatModal(false);
+    setChatItemId(null);
+    setChatSellerUid(null);
   };
 
   if (loading) {
@@ -156,7 +174,18 @@ export default function ListPage() {
         item={selectedItem}
         isOpen={showProductModal}
         onClose={handleCloseProductModal}
+        onOpenChat={handleOpenChat}
       />
+
+      {/* 채팅 모달 (상품 상세 모달 외부) */}
+      {chatItemId && chatSellerUid && (
+        <EnhancedChatModal
+          isOpen={showChatModal}
+          onClose={handleCloseChat}
+          itemId={chatItemId}
+          sellerUid={chatSellerUid}
+        />
+      )}
     </div>
   );
 }

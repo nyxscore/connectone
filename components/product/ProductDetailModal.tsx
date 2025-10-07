@@ -35,7 +35,6 @@ import { getGradeInfo } from "@/lib/profile/api";
 import { doc, deleteDoc } from "firebase/firestore";
 import { getFirebaseDb as getDb } from "@/lib/api/firebase-ultra-safe";
 import { Card } from "@/components/ui/Card";
-import { EnhancedChatModal } from "@/components/chat/EnhancedChatModal";
 import { getUserProfile } from "@/lib/profile/api";
 import { UserProfile } from "@/data/profile/types";
 import { SellerProfileCard } from "@/components/profile/SellerProfileCard";
@@ -74,6 +73,7 @@ interface ProductDetailModalProps {
   item?: SellItem | null;
   isOpen: boolean;
   onClose: () => void;
+  onOpenChat?: (itemId: string, sellerUid: string) => void;
 }
 
 export default function ProductDetailModal({
@@ -81,6 +81,7 @@ export default function ProductDetailModal({
   item,
   isOpen,
   onClose,
+  onOpenChat,
 }: ProductDetailModalProps) {
   const { user } = useAuth();
   const router = useRouter();
@@ -120,13 +121,7 @@ export default function ProductDetailModal({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
   const [showSellerProfileModal, setShowSellerProfileModal] = useState(false);
-
-  // showChatModal 상태 추적
-  useEffect(() => {
-    console.log("🟢 showChatModal 상태 변경됨:", showChatModal);
-  }, [showChatModal]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTradeType, setSelectedTradeType] = useState<string>("");
   const [showShippingModal, setShowShippingModal] = useState(false);
@@ -1207,9 +1202,21 @@ export default function ProductDetailModal({
                                 console.log("🔵 채팅하기 버튼 클릭됨!");
                                 console.log("🔵 actualProductId:", actualProductId);
                                 console.log("🔵 item?.sellerUid:", item?.sellerUid);
-                                console.log("🔵 setShowChatModal(true) 호출 전");
-                                setShowChatModal(true);
-                                console.log("🔵 setShowChatModal(true) 호출 후");
+                                console.log("🔵 product?.sellerId:", product?.sellerId);
+                                
+                                const itemId = actualProductId || product?.id;
+                                const sellerId = item?.sellerUid || product?.sellerId;
+                                
+                                if (onOpenChat && itemId && sellerId) {
+                                  console.log("🔵 onOpenChat 호출:", { itemId, sellerId });
+                                  onOpenChat(itemId, sellerId);
+                                } else {
+                                  console.error("🔵 채팅 열기 실패:", {
+                                    hasOnOpenChat: !!onOpenChat,
+                                    itemId,
+                                    sellerId,
+                                  });
+                                }
                               }}
                             >
                               <MessageCircle
@@ -1482,23 +1489,6 @@ export default function ProductDetailModal({
             </div>
           </div>
         )}
-
-      {/* 채팅 모달 */}
-      {console.log("🟡 EnhancedChatModal 렌더링:", {
-        showChatModal,
-        actualProductId,
-        itemSellerUid: item?.sellerUid,
-        productSellerId: product?.sellerId,
-      })}
-      <EnhancedChatModal
-        isOpen={showChatModal}
-        onClose={() => {
-          console.log("🟡 EnhancedChatModal onClose 호출됨");
-          setShowChatModal(false);
-        }}
-        itemId={actualProductId || product?.id}
-        sellerUid={item?.sellerUid || product?.sellerId}
-      />
 
       {/* 판매자 프로필 모달 */}
       {sellerProfile && (
