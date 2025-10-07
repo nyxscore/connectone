@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { ChatList } from "../../components/chat/ChatList";
-import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal";
+import { SimpleChatModal } from "../../components/chat/SimpleChatModal";
 import { ProtectedRoute } from "../../lib/auth/ProtectedRoute";
 import { MessageCircle, Plus, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -141,9 +141,9 @@ function ChatPageContent() {
           </ErrorBoundary>
         </div>
 
-        {/* 실제 채팅 모달 - 배포 환경 안전장치 */}
+        {/* 간단한 채팅 모달 - 오류 해결용 */}
         {selectedChatId && showChatModal && isClient && (
-          <EnhancedChatModal
+          <SimpleChatModal
             isOpen={true}
             onClose={handleCloseModal}
             chatId={selectedChatId}

@@ -74,15 +74,6 @@ export function EnhancedChatModal({
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
-
-  // 클라이언트 사이드에서만 렌더링
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return null;
-  }
   const [error, setError] = useState("");
   const [chatData, setChatData] = useState<{
     chatId: string;
@@ -423,19 +414,19 @@ export function EnhancedChatModal({
       if (chatId) {
         // 기존 채팅 로드
         console.log("기존 채팅 로드:", chatId);
-        
+
         // 클라이언트 사이드에서만 실행
         if (typeof window === "undefined") {
           setError("클라이언트 사이드에서만 실행 가능합니다.");
           return;
         }
-        
+
         const db = getDb();
         if (!db) {
           setError("데이터베이스 연결에 실패했습니다.");
           return;
         }
-        
+
         // 동적 import로 Firebase 함수 가져오기
         const { doc, getDoc } = await import("firebase/firestore");
         const chatRef = doc(db, "chats", chatId);
