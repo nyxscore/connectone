@@ -330,23 +330,23 @@ export function subscribeToNotifications(
 
   let unsubscribe: (() => void) | null = null;
 
-  // 비동기로 db를 가져와서 구독 설정
-  getDb()
-    .then(db => {
-      const notificationsRef = collection(db, "notifications");
-      // 인덱스 문제를 피하기 위해 orderBy를 제거하고 클라이언트에서 정렬
-      const q = query(
-        notificationsRef,
-        where("userId", "==", userId),
-        limit(100) // 더 많이 가져와서 클라이언트에서 정렬
-      );
+  // 동기적으로 db를 가져와서 구독 설정
+  try {
+    const db = getDb();
+    const notificationsRef = collection(db, "notifications");
+    // 인덱스 문제를 피하기 위해 orderBy를 제거하고 클라이언트에서 정렬
+    const q = query(
+      notificationsRef,
+      where("userId", "==", userId),
+      limit(100) // 더 많이 가져와서 클라이언트에서 정렬
+    );
 
-      unsubscribe = onSnapshot(
-        q,
-        snapshot => {
-          let notifications = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
+    unsubscribe = onSnapshot(
+      q,
+      snapshot => {
+        let notifications = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
           })) as Notification[];
 
           // 클라이언트에서 시간순 정렬
@@ -367,11 +367,10 @@ export function subscribeToNotifications(
           onError?.(error);
         }
       );
-    })
-    .catch(error => {
-      console.error("❌ DB 초기화 오류:", error);
-      onError?.(error);
-    });
+  } catch (error) {
+    console.error("❌ DB 초기화 오류:", error);
+    onError?.(error);
+  }
 
   return () => {
     if (unsubscribe) {
