@@ -14,7 +14,7 @@ import {
   getDocs,
   deleteField,
 } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "./firebase-safe";
+import { getFirebaseDb as getDb } from "./firebase-ultra-safe";
 import { SellItemInput } from "../../data/schemas/product";
 
 export interface Item extends SellItemInput {

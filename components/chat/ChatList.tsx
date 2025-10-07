@@ -14,7 +14,7 @@ import {
   getDocs,
   onSnapshot,
 } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "../../lib/api/firebase-safe";
+import { getFirebaseDb as getDb } from "../../lib/api/firebase-ultra-safe";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import toast from "react-hot-toast";

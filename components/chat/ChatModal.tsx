@@ -19,7 +19,7 @@ import {
   Message,
 } from "../../lib/chat/api";
 import { doc, getDoc } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "../../lib/api/firebase-safe";
+import { getFirebaseDb as getDb } from "../../lib/api/firebase-ultra-safe";
 import {
   ArrowLeft,
   X,

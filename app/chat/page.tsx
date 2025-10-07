@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { ChatList } from "../../components/chat/ChatList";
-import { SafeChatModal } from "../../components/chat/SafeChatModal"; // Safe version without Firebase conflicts
+import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal"; // Full-featured chat modal with ultra-safe Firebase
 import { ProtectedRoute } from "../../lib/auth/ProtectedRoute";
 import { MessageCircle, Plus, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -141,10 +141,10 @@ function ChatPageContent() {
           </ErrorBoundary>
         </div>
 
-        {/* 안전한 채팅 모달 - Firebase 충돌 해결 */}
+        {/* 완전한 기능을 가진 채팅 모달 - Ultra-safe Firebase */}
         {selectedChatId && showChatModal && isClient && (
           <div key={selectedChatId}>
-            <SafeChatModal
+            <EnhancedChatModal
               isOpen={true}
               onClose={handleCloseModal}
               chatId={selectedChatId}

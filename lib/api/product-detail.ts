@@ -1,4 +1,4 @@
-import { getFirebaseDb as getDb } from "@/lib/api/firebase-safe";
+import { getFirebaseDb as getDb } from "@/lib/api/firebase-ultra-safe";
 import { doc, getDoc } from "firebase/firestore";
 import { ProductDetail, SellerInfo } from "@/data/schemas/product";
 

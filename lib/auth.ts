@@ -7,7 +7,7 @@ import {
   AuthError as FirebaseAuthError,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { getFirebaseAuth, getFirebaseDb } from "./api/firebase-safe";
+import { getFirebaseAuth, getFirebaseDb } from "./api/firebase-ultra-safe";
 import { User, SignUpData, LoginData, AuthError } from "./types";
 
 // Firebase 인스턴스 가져오기

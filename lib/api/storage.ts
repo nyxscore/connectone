@@ -5,7 +5,7 @@ import {
   deleteObject,
   uploadBytesResumable,
 } from "firebase/storage";
-import { getFirebaseStorage } from "./firebase-safe";
+import { getFirebaseStorage } from "./firebase-ultra-safe";
 
 // Storage 인스턴스 가져오기
 const storage = getFirebaseStorage();

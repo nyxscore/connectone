@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { doc, getDoc } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "@/lib/api/firebase-safe";
+import { getFirebaseDb as getDb } from "@/lib/api/firebase-ultra-safe";
 
 function PaymentContent() {
   const router = useRouter();

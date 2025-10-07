@@ -1,5 +1,5 @@
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "../api/firebase-safe";
+import { getFirebaseDb as getDb } from "../api/firebase-ultra-safe";
 import { Message, Chat } from "../../data/types/chat";
 
 /**

@@ -33,7 +33,7 @@ import { INSTRUMENT_CATEGORIES } from "@/data/constants";
 import { Button } from "@/components/ui/Button";
 import { getGradeInfo } from "@/lib/profile/api";
 import { doc, deleteDoc } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "@/lib/api/firebase-safe";
+import { getFirebaseDb as getDb } from "@/lib/api/firebase-ultra-safe";
 import { Card } from "@/components/ui/Card";
 import { EnhancedChatModal } from "@/components/chat/EnhancedChatModal";
 import { getUserProfile } from "@/lib/profile/api";

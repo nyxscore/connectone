@@ -23,7 +23,7 @@ import {
   blockUser,
 } from "../../lib/chat/api";
 import { Chat, Message } from "../../data/chat/types";
-import { getFirebaseDb as getDb } from "../../lib/api/firebase-safe";
+import { getFirebaseDb as getDb } from "../../lib/api/firebase-ultra-safe";
 import {
   ArrowLeft,
   X,

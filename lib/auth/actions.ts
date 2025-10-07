@@ -8,7 +8,7 @@ import {
   RecaptchaVerifier,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
-import { getFirebaseAuth, getFirebaseDb } from "../api/firebase-safe";
+import { getFirebaseAuth, getFirebaseDb } from "../api/firebase-ultra-safe";
 import { useAuthStore } from "./store";
 import { User } from "../../data/types";
 import { loginSchema, signupSchema } from "../../data/schemas/auth";

@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { Transaction, TransactionStatus } from "../../../data/types";
 // import { getUserTransactions } from "../../../lib/api/payment";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "../../../lib/api/firebase-safe";
+import { getFirebaseDb as getDb } from "../../../lib/api/firebase-ultra-safe";
 import {
   CreditCard,
   Package,

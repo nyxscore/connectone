@@ -6,10 +6,10 @@ import {
   signInWithKakaoRedirect,
   signInWithNaverRedirect,
   getRedirectResult as firebaseGetRedirectResult,
-} from "@/lib/api/firebase-safe";
+} from "@/lib/api/firebase-ultra-safe";
 import { User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/api/firebase-safe";
+import { getFirebaseDb } from "@/lib/api/firebase-ultra-safe";
 
 // Firebase 인스턴스 가져오기
 const getDb = getFirebaseDb;
@@ -137,7 +137,7 @@ export const loginWithNaverRedirect = () => signInWithNaverRedirect();
 export const handleRedirectResult =
   async (): Promise<SNSUserProfile | null> => {
     try {
-      const auth = (await import("@/lib/api/firebase-safe")).getFirebaseAuth();
+      const auth = (await import("@/lib/api/firebase-ultra-safe")).getFirebaseAuth();
       const result = await firebaseGetRedirectResult(auth);
       if (result && result.user) {
         const provider = result.providerId?.includes("google")

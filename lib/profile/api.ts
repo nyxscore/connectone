@@ -20,7 +20,7 @@ import {
 import {
   getFirebaseDb as getDb,
   getFirebaseStorage as getStorage,
-} from "../api/firebase-safe";
+} from "../api/firebase-ultra-safe";
 import {
   UserProfile,
   ProfileUpdateData,

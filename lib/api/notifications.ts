@@ -15,7 +15,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "./firebase-safe";
+import { getFirebaseDb as getDb } from "./firebase-ultra-safe";
 import {
   Notification,
   CreateNotificationData,

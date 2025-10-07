@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "@/lib/api/firebase-safe";
+import { getFirebaseDb as getDb } from "@/lib/api/firebase-ultra-safe";
 import { toast } from "react-hot-toast";
 import { uploadImages } from "@/lib/api/storage";
 import { Button } from "../ui/Button";

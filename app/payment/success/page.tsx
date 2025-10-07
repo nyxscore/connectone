@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { EnhancedChatModal } from "@/components/chat/EnhancedChatModal";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "@/lib/api/firebase-safe";
+import { getFirebaseDb as getDb } from "@/lib/api/firebase-ultra-safe";
 
 function PaymentSuccessContent() {
   const router = useRouter();

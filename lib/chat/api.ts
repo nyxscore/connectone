@@ -16,7 +16,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-import { getFirebaseDb as getDb } from "../api/firebase-safe";
+import { getFirebaseDb as getDb } from "../api/firebase-ultra-safe";
 import {
   Chat,
   Message,

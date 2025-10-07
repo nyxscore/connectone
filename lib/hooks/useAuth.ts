@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getFirebaseAuth as getAuth } from "../api/firebase-safe";
+import { getFirebaseAuth as getAuth } from "../api/firebase-ultra-safe";
 import { User as FirebaseUser } from "firebase/auth";
 import { User } from "../../data/types";
 import { UserProfile } from "../../data/profile/types";
