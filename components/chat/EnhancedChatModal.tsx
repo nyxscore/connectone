@@ -168,19 +168,19 @@ export function EnhancedChatModal({
         case "reserved":
           // 거래 시작 메시지 (모든 거래 유형 공통)
           if (isEscrow) {
-            return "🚀 안전거래가 시작되었습니다! 판매자가 거래를 진행하기 시작했습니다.";
+            return "🚀 안전거래가 시작되었습니다!";
           } else if (
             tradeType?.includes("택배") &&
             !tradeType?.includes("안전결제")
           ) {
-            return "🚀 택배거래가 시작되었습니다! 판매자가 거래를 진행하기 시작했습니다.";
+            return "🚀 택배거래가 시작되었습니다!";
           } else {
-            return "🚀 직거래가 시작되었습니다! 판매자가 거래를 진행하기 시작했습니다.";
+            return "🚀 직거래가 시작되었습니다!";
           }
         case "shipping":
           // 배송중 메시지 (안전결제인 경우에만 표시)
           if (isEscrow) {
-            return "📦 상품이 발송되었습니다! 판매자가 상품을 발송했습니다.";
+            return "📦 상품이 발송되었습니다!";
           } else {
             // 직거래/택배인 경우 배송중 단계가 없으므로 메시지 없음
             return "";
@@ -1164,7 +1164,7 @@ export function EnhancedChatModal({
         try {
           const { sendMessage } = await import("../../lib/chat/api");
           const shippingRequestMessage =
-            "📦 구매자님께서 배송지 정보를 입력해주세요. 채팅창 하단의 '배송지 등록' 버튼을 클릭해주세요.";
+            "📦 배송지 정보를 입력해주세요. 하단 '배송지 등록' 버튼을 클릭하세요.";
 
           const result = await sendMessage({
             chatId: chatData.chatId,
@@ -1246,8 +1246,8 @@ export function EnhancedChatModal({
           // 판매자/구매자 정확히 구분
           const isSeller = user?.uid === chatData.sellerUid;
           const cancelMessage = isSeller
-            ? "❌ 판매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다. 판매자와 구매자 모두 거래가 취소되었습니다."
-            : "❌ 구매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다. 판매자와 구매자 모두 거래가 취소되었습니다.";
+            ? "❌ 판매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다."
+            : "❌ 구매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다.";
 
           const result = await sendMessage({
             chatId: chatData.chatId,
@@ -1395,7 +1395,7 @@ export function EnhancedChatModal({
           try {
             const { sendMessage } = await import("../../lib/chat/api");
             const cancelMessage =
-              "✅ 판매자가 취소 요청을 승인했습니다. 거래가 취소되고 상품이 다시 판매중으로 변경되었습니다.";
+              "✅ 판매자가 취소 요청을 승인했습니다. 상품이 다시 판매중으로 변경되었습니다.";
 
             const result = await sendMessage({
               chatId: chatData.chatId,
@@ -1639,26 +1639,26 @@ export function EnhancedChatModal({
         {/* 채팅 영역 */}
         <div className={`flex-1 flex flex-col ${showSidebar ? "mr-4" : ""}`}>
           {/* 헤더 */}
-          <div className="flex items-center justify-between p-3 border-b bg-gray-50">
-            <div className="flex items-center space-x-2 flex-1 min-w-0">
+          <div className="flex items-center justify-between p-2 border-b bg-gray-50">
+            <div className="flex items-center space-x-1 flex-1 min-w-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="p-2 flex-shrink-0"
+                className="p-1 flex-shrink-0"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4" />
               </Button>
               {chatData && (
                 <button
-                  className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer flex-1 min-w-0"
+                  className="flex items-center space-x-1 hover:opacity-80 transition-opacity cursor-pointer flex-1 min-w-0"
                   onClick={() => {
                     // 상품 상세 페이지로 이동
                     window.location.href = `/item/${chatData.item.id}`;
                   }}
                 >
                   {/* 상품 썸네일 */}
-                  <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                     {chatData.item.imageUrl ? (
                       <img
                         src={chatData.item.imageUrl}
@@ -1666,13 +1666,15 @@ export function EnhancedChatModal({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <MessageCircle className="w-5 h-5 text-gray-500" />
+                      <MessageCircle className="w-4 h-4 text-gray-500" />
                     )}
                   </div>
                   {/* 상품명과 가격 */}
                   <div className="text-left flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 text-sm leading-tight truncate">
-                      {chatData.item.title}
+                    <h3 className="font-semibold text-gray-900 text-xs leading-tight">
+                      {chatData.item.title.length > 35 
+                        ? `${chatData.item.title.substring(0, 35)}...` 
+                        : chatData.item.title}
                     </h3>
                     <p className="text-xs text-gray-500">
                       {formatPrice(chatData.item.price)}
@@ -1682,14 +1684,14 @@ export function EnhancedChatModal({
               )}
             </div>
 
-            <div className="flex items-center space-x-1 flex-shrink-0">
+            <div className="flex items-center flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                className="p-2"
+                className="p-1"
               >
-                <Settings className="w-5 h-5" />
+                <Settings className="w-4 h-4" />
               </Button>
             </div>
           </div>
