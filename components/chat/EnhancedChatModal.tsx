@@ -1732,12 +1732,13 @@ export function EnhancedChatModal({
                   <MessageCircle className="w-4 h-4" />
                   <span>상대방 정보</span>
                 </button>
+                {/* 모바일에서만 신고하기/차단하기 표시 */}
                 <button
                   onClick={() => {
                     setShowReportModal(true);
                     setShowSettingsMenu(false);
                   }}
-                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2"
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2 md:hidden"
                 >
                   <AlertCircle className="w-4 h-4" />
                   <span>신고하기</span>
@@ -1747,7 +1748,7 @@ export function EnhancedChatModal({
                     setShowBlockModal(true);
                     setShowSettingsMenu(false);
                   }}
-                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2"
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2 md:hidden"
                 >
                   <X className="w-4 h-4" />
                   <span>차단하기</span>
@@ -1794,10 +1795,9 @@ export function EnhancedChatModal({
                     }
                     setShowSettingsMenu(false);
                   }}
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center space-x-2"
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md"
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>채팅방 나가기</span>
+                  채팅방 나가기
                 </button>
               </div>
             </div>
