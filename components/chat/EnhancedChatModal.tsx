@@ -35,6 +35,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Settings,
   Truck,
   ChevronDown,
   ChevronRight,
@@ -100,7 +101,7 @@ export function EnhancedChatModal({
   const [messagesLoading, setMessagesLoading] = useState(false);
   // 모바일에서는 사이드바 기본 숨김, 데스크톱에서는 표시
   const [showSidebar, setShowSidebar] = useState(
-    typeof window !== 'undefined' ? window.innerWidth >= 768 : false
+    typeof window !== "undefined" ? window.innerWidth >= 768 : false
   );
   const [showReportModal, setShowReportModal] = useState(false);
   const [isStartingTransaction, setIsStartingTransaction] = useState(false);
@@ -124,6 +125,8 @@ export function EnhancedChatModal({
     useState(false);
   const [showShippingAddressModal, setShowShippingAddressModal] =
     useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [expandedShippingAddresses, setExpandedShippingAddresses] = useState<
     Set<string>
@@ -138,8 +141,8 @@ export function EnhancedChatModal({
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [showSidebar]);
 
   // 상태 변경 시 시스템 메시지로 알림 추가
@@ -1636,26 +1639,26 @@ export function EnhancedChatModal({
         {/* 채팅 영역 */}
         <div className={`flex-1 flex flex-col ${showSidebar ? "mr-4" : ""}`}>
           {/* 헤더 */}
-          <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between p-3 border-b bg-gray-50">
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="p-2"
+                className="p-2 flex-shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               {chatData && (
                 <button
-                  className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
+                  className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer flex-1 min-w-0"
                   onClick={() => {
                     // 상품 상세 페이지로 이동
                     window.location.href = `/item/${chatData.item.id}`;
                   }}
                 >
                   {/* 상품 썸네일 */}
-                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                     {chatData.item.imageUrl ? (
                       <img
                         src={chatData.item.imageUrl}
@@ -1663,15 +1666,15 @@ export function EnhancedChatModal({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <MessageCircle className="w-6 h-6 text-gray-500" />
+                      <MessageCircle className="w-5 h-5 text-gray-500" />
                     )}
                   </div>
                   {/* 상품명과 가격 */}
-                  <div className="text-left">
-                    <h3 className="font-semibold text-gray-900">
+                  <div className="text-left flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-sm leading-tight truncate">
                       {chatData.item.title}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-gray-500">
                       {formatPrice(chatData.item.price)}
                     </p>
                   </div>
@@ -1679,38 +1682,117 @@ export function EnhancedChatModal({
               )}
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowSidebar(!showSidebar)}
+                onClick={() => setShowSettingsMenu(!showSettingsMenu)}
                 className="p-2"
               >
-                <MoreVertical className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDeleteChat}
-                className="p-2 text-red-600 hover:text-red-700"
-                title="채팅 삭제"
-              >
-                <Trash2 className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="p-2 text-gray-600 hover:text-gray-700"
-                title="창 닫기"
-              >
-                <X className="w-5 h-5" />
+                <Settings className="w-5 h-5" />
               </Button>
             </div>
           </div>
 
+          {/* 설정 메뉴 오버레이 */}
+          {showSettingsMenu && (
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-20 z-40"
+              onClick={() => setShowSettingsMenu(false)}
+            />
+          )}
+
+          {/* 설정 메뉴 */}
+          {showSettingsMenu && (
+            <div className="bg-white border-b shadow-sm relative z-50">
+              <div className="p-3 space-y-2">
+                <button
+                  onClick={() => {
+                    setShowSidebar(true);
+                    setShowSettingsMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>상대방 정보</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowReportModal(true);
+                    setShowSettingsMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>신고하기</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBlockModal(true);
+                    setShowSettingsMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2"
+                >
+                  <X className="w-4 h-4" />
+                  <span>차단하기</span>
+                </button>
+                <div className="px-3 py-2">
+                  <div className="text-xs text-gray-500 mb-2">글자 크기</div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setFontSize('small')}
+                      className={`px-2 py-1 text-xs rounded ${
+                        fontSize === 'small' 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      작게
+                    </button>
+                    <button
+                      onClick={() => setFontSize('medium')}
+                      className={`px-2 py-1 text-xs rounded ${
+                        fontSize === 'medium' 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      보통
+                    </button>
+                    <button
+                      onClick={() => setFontSize('large')}
+                      className={`px-2 py-1 text-xs rounded ${
+                        fontSize === 'large' 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      크게
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (confirm("채팅방을 나가시겠습니까?")) {
+                      onClose();
+                    }
+                    setShowSettingsMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center space-x-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>채팅방 나가기</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* 메시지 영역 */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${
+            fontSize === 'small' ? 'text-sm' : 
+            fontSize === 'large' ? 'text-lg' : 
+            'text-base'
+          }`}>
             {/* 사기 경고 메시지 */}
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
               <div className="flex items-start space-x-2">
