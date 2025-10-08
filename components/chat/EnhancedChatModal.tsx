@@ -98,7 +98,10 @@ export function EnhancedChatModal({
   const [showOtherProfileModal, setShowOtherProfileModal] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
+  // 모바일에서는 사이드바 기본 숨김, 데스크톱에서는 표시
+  const [showSidebar, setShowSidebar] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : false
+  );
   const [showReportModal, setShowReportModal] = useState(false);
   const [isStartingTransaction, setIsStartingTransaction] = useState(false);
   const [isCancelingTransaction, setIsCancelingTransaction] = useState(false);
@@ -125,6 +128,19 @@ export function EnhancedChatModal({
   const [expandedShippingAddresses, setExpandedShippingAddresses] = useState<
     Set<string>
   >(new Set());
+
+  // 화면 크기 변경 감지하여 사이드바 자동 조절
+  useEffect(() => {
+    const handleResize = () => {
+      // 데스크톱(768px 이상)에서는 사이드바 자동 표시
+      if (window.innerWidth >= 768 && !showSidebar) {
+        setShowSidebar(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [showSidebar]);
 
   // 상태 변경 시 시스템 메시지로 알림 추가
   const addStatusSystemMessage = async (
