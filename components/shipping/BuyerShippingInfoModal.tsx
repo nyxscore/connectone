@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { X, MapPin, User, Phone, MessageSquare } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, MapPin, User, Phone, MessageSquare, Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { submitBuyerShippingInfo } from "@/lib/api/products";
 import toast from "react-hot-toast";
+
+// Daum Postcode 타입 정의
+declare global {
+  interface Window {
+    daum: any;
+  }
+}
 
 interface BuyerShippingInfoModalProps {
   isOpen: boolean;
@@ -24,11 +31,47 @@ export default function BuyerShippingInfoModal({
 }: BuyerShippingInfoModalProps) {
   const [formData, setFormData] = useState({
     recipientName: "",
+    zipCode: "",
     address: "",
+    addressDetail: "",
     phoneNumber: "",
     deliveryMemo: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Daum Postcode 스크립트 로드
+  useEffect(() => {
+    if (!window.daum) {
+      const script = document.createElement("script");
+      script.src =
+        "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // 주소 검색 팝업 열기
+  const openAddressSearch = () => {
+    if (!window.daum) {
+      toast.error(
+        "주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요."
+      );
+      return;
+    }
+
+    new window.daum.Postcode({
+      oncomplete: function (data: any) {
+        // 도로명 주소 또는 지번 주소 선택
+        const fullAddress = data.roadAddress || data.jibunAddress;
+
+        setFormData(prev => ({
+          ...prev,
+          zipCode: data.zonecode,
+          address: fullAddress,
+        }));
+      },
+    }).open();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +79,7 @@ export default function BuyerShippingInfoModal({
     if (
       !formData.recipientName.trim() ||
       !formData.address.trim() ||
+      !formData.addressDetail.trim() ||
       !formData.phoneNumber.trim()
     ) {
       toast.error("필수 정보를 모두 입력해주세요.");
@@ -45,7 +89,15 @@ export default function BuyerShippingInfoModal({
     setIsSubmitting(true);
 
     try {
-      const result = await submitBuyerShippingInfo(itemId, buyerUid, formData);
+      // 주소를 합쳐서 전송
+      const fullAddress = `[${formData.zipCode}] ${formData.address} ${formData.addressDetail}`;
+
+      const result = await submitBuyerShippingInfo(itemId, buyerUid, {
+        recipientName: formData.recipientName,
+        address: fullAddress,
+        phoneNumber: formData.phoneNumber,
+        deliveryMemo: formData.deliveryMemo,
+      });
 
       if (result.success) {
         toast.success("배송지 정보가 등록되었습니다.");
@@ -107,11 +159,43 @@ export default function BuyerShippingInfoModal({
               <MapPin className="w-4 h-4 mr-2" />
               배송 주소 *
             </label>
-            <textarea
+
+            {/* 우편번호 검색 */}
+            <div className="flex space-x-2">
+              <Input
+                type="text"
+                value={formData.zipCode}
+                placeholder="우편번호"
+                className="w-32"
+                readOnly
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={openAddressSearch}
+                className="flex items-center space-x-1"
+              >
+                <Search className="w-4 h-4" />
+                <span>주소 검색</span>
+              </Button>
+            </div>
+
+            {/* 기본 주소 */}
+            <Input
+              type="text"
               value={formData.address}
-              onChange={e => handleInputChange("address", e.target.value)}
-              placeholder="상세 주소를 입력하세요"
-              className="w-full min-h-[80px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="주소 검색 버튼을 클릭하세요"
+              className="w-full"
+              readOnly
+            />
+
+            {/* 상세 주소 */}
+            <Input
+              type="text"
+              value={formData.addressDetail}
+              onChange={e => handleInputChange("addressDetail", e.target.value)}
+              placeholder="상세 주소를 입력하세요 (동/호수 등)"
+              className="w-full"
               required
             />
           </div>

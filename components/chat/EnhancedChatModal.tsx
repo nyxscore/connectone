@@ -3,11 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
-import { Card } from "../ui/Card";
 import { MessageInput } from "./MessageInput";
 import { SellerProfileModal } from "../profile/SellerProfileModal";
 import { SellerProfileCard } from "../profile/SellerProfileCard";
-import { SellItem } from "../../data/types";
 import { UserProfile } from "../../data/profile/types";
 import { getUserProfile } from "../../lib/profile/api";
 import { getItem } from "../../lib/api/products";
@@ -27,21 +25,16 @@ import { getFirebaseDb as getDb } from "../../lib/api/firebase-ultra-safe";
 import {
   ArrowLeft,
   X,
-  User,
-  Star,
   MapPin,
-  Calendar,
   Loader2,
   AlertCircle,
   MessageCircle,
   Trash2,
   MoreVertical,
-  Shield,
   AlertTriangle,
   CheckCircle,
   XCircle,
   Clock,
-  Settings,
   Truck,
   ChevronDown,
   ChevronRight,
@@ -76,6 +69,7 @@ export function EnhancedChatModal({
   const [error, setError] = useState("");
   const [chatData, setChatData] = useState<{
     chatId: string;
+    itemId?: string;
     otherUser: {
       uid: string;
       nickname: string;
@@ -95,6 +89,8 @@ export function EnhancedChatModal({
     tradeType?: string;
     sellerUid?: string;
     buyerUid?: string;
+    buyerUnreadCount?: number;
+    sellerUnreadCount?: number;
   } | null>(null);
   const [otherUserProfile, setOtherUserProfile] = useState<UserProfile | null>(
     null
@@ -113,7 +109,7 @@ export function EnhancedChatModal({
   const [isCompletingPurchase, setIsCompletingPurchase] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
-  const [showShippingModal, setShowShippingModal] = useState(false);
+  // const [showShippingModal, setShowShippingModal] = useState(false);
   const [isRegisteringShipping, setIsRegisteringShipping] = useState(false);
   const [courier, setCourier] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
@@ -458,21 +454,26 @@ export function EnhancedChatModal({
         console.log("판매자 확인:", user?.uid === chatData.sellerUid);
 
         // 채팅 문서에 이미 저장된 otherUser 정보 사용 (우선순위)
-        const storedOtherUser = chatData.otherUser;
+        const storedOtherUser = (chatData as any).otherUser;
 
         // 없으면 Firestore에서 가져오기
-        let otherUser = null;
+        let otherUser: UserProfile | null = null;
         console.log("저장된 상대방 정보:", storedOtherUser);
 
         if (!storedOtherUser?.nickname || !storedOtherUser?.profileImage) {
           console.log("상대방 프로필을 Firestore에서 가져오기:", otherUid);
           const otherUserResult = await getUserProfile(otherUid);
           console.log("상대방 프로필 로드 결과:", otherUserResult);
-          otherUser = otherUserResult.success ? otherUserResult.data : null;
-          setOtherUserProfile(otherUser);
+          otherUser =
+            otherUserResult.success && otherUserResult.data
+              ? otherUserResult.data
+              : null;
+          if (otherUser) {
+            setOtherUserProfile(otherUser);
+          }
         } else {
           console.log("저장된 상대방 정보 사용:", storedOtherUser);
-          setOtherUserProfile(storedOtherUser as any);
+          setOtherUserProfile(storedOtherUser as UserProfile);
         }
 
         // 아이템 정보 가져오기
@@ -496,15 +497,11 @@ export function EnhancedChatModal({
           };
         }
 
-        // buyerUid 또는 buyerId 우선순위로 설정
-        const finalBuyerUid =
-          itemResult.item.buyerUid ||
-          itemResult.item.buyerId ||
-          chatData.buyerUid;
+        // buyerUid 우선순위로 설정
+        const finalBuyerUid = itemResult.item?.buyerUid || chatData.buyerUid;
 
         console.log("최종 buyerUid 설정:", {
-          itemBuyerUid: itemResult.item.buyerUid,
-          itemBuyerId: itemResult.item.buyerId,
+          itemBuyerUid: itemResult.item?.buyerUid,
           chatBuyerUid: chatData.buyerUid,
           finalBuyerUid,
         });
@@ -517,19 +514,30 @@ export function EnhancedChatModal({
           otherUser: {
             uid: otherUid,
             nickname: otherUser?.nickname || "알 수 없음",
-            profileImage: otherUser?.profileImage,
+            profileImage: (otherUser as any)?.profileImage,
           },
-          item: itemResult.item,
+          item: {
+            ...itemResult.item,
+            id: itemResult.item?.id || chatData.itemId,
+            title: itemResult.item?.title || "알 수 없는 상품",
+            price: itemResult.item?.price || 0,
+            // imageUrl이 없으면 images 배열의 첫 번째 이미지 사용
+            imageUrl:
+              (itemResult.item as any)?.imageUrl ||
+              (itemResult.item?.images && itemResult.item.images.length > 0
+                ? itemResult.item.images[0]
+                : undefined),
+          },
           tradeType: (() => {
             // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
             if (
-              itemResult.item.escrowEnabled ||
-              itemResult.item.status === "escrow_completed"
+              itemResult.item?.escrowEnabled ||
+              itemResult.item?.status === "escrow_completed"
             ) {
               return "안전결제";
             }
             // 아니면 tradeOptions에서 가져오기
-            const options = itemResult.item.tradeOptions || ["직거래"];
+            const options = itemResult.item?.tradeOptions || ["직거래"];
             return options.join(" + ");
           })(),
         });
@@ -602,20 +610,31 @@ export function EnhancedChatModal({
           buyerUid: chatData.buyerUid,
           otherUser: {
             uid: otherUid,
-            nickname: otherUserResult.data.nickname,
-            profileImage: otherUserResult.data.profileImage,
+            nickname: otherUserResult.data?.nickname || "알 수 없음",
+            profileImage: (otherUserResult.data as any)?.profileImage,
           },
-          item: itemResult.item,
+          item: {
+            ...itemResult.item,
+            id: itemResult.item?.id || itemId,
+            title: itemResult.item?.title || "알 수 없는 상품",
+            price: itemResult.item?.price || 0,
+            // imageUrl이 없으면 images 배열의 첫 번째 이미지 사용
+            imageUrl:
+              (itemResult.item as any)?.imageUrl ||
+              (itemResult.item?.images && itemResult.item.images.length > 0
+                ? itemResult.item.images[0]
+                : undefined),
+          },
           tradeType: (() => {
             // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
             if (
-              itemResult.item.escrowEnabled ||
-              itemResult.item.status === "escrow_completed"
+              itemResult.item?.escrowEnabled ||
+              itemResult.item?.status === "escrow_completed"
             ) {
               return "안전결제";
             }
             // 아니면 tradeOptions에서 가져오기
-            const options = itemResult.item.tradeOptions || ["직거래"];
+            const options = itemResult.item?.tradeOptions || ["직거래"];
             return options.join(" + ");
           })(),
         });
@@ -1118,6 +1137,35 @@ export function EnhancedChatModal({
       // 거래 시작 알림 추가
       await addStatusSystemMessage("reserved");
 
+      // 배송지 입력 요청 시스템 메시지 전송 (택배 거래인 경우)
+      if (
+        chatData.tradeType?.includes("택배") ||
+        chatData.tradeType?.includes("안전결제")
+      ) {
+        try {
+          const { sendMessage } = await import("../../lib/chat/api");
+          const shippingRequestMessage =
+            "📦 구매자님께서 배송지 정보를 입력해주세요. 채팅창 하단의 '배송지 등록' 버튼을 클릭해주세요.";
+
+          const result = await sendMessage({
+            chatId: chatData.chatId,
+            senderUid: "system",
+            content: shippingRequestMessage,
+          });
+
+          if (result.success) {
+            console.log("배송지 입력 요청 시스템 메시지 전송 완료");
+          } else {
+            console.error(
+              "배송지 입력 요청 시스템 메시지 전송 실패:",
+              result.error
+            );
+          }
+        } catch (error) {
+          console.error("배송지 입력 요청 시스템 메시지 전송 실패:", error);
+        }
+      }
+
       // 안전결제인 경우 구매자가 입력한 배송지 정보를 판매자에게 자동 표시
       if (chatData.tradeType?.includes("안전결제")) {
         await showShippingAddressToSeller();
@@ -1173,14 +1221,14 @@ export function EnhancedChatModal({
           toast.success("거래가 취소되었습니다!");
         }
 
-        // 거래 취소 시스템 메시지 전송
+        // 거래 취소 시스템 메시지 전송 - 양측 모두에게 알림
         try {
           const { sendMessage } = await import("../../lib/chat/api");
           // 판매자/구매자 정확히 구분
           const isSeller = user?.uid === chatData.sellerUid;
           const cancelMessage = isSeller
-            ? "❌ 판매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다."
-            : "❌ 구매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다.";
+            ? "❌ 판매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다. 판매자와 구매자 모두 거래가 취소되었습니다."
+            : "❌ 구매자가 거래를 취소했습니다. 상품이 다시 판매중으로 변경되었습니다. 판매자와 구매자 모두 거래가 취소되었습니다.";
 
           const result = await sendMessage({
             chatId: chatData.chatId,
@@ -1189,7 +1237,23 @@ export function EnhancedChatModal({
           });
 
           if (result.success) {
-            console.log("거래 취소 시스템 메시지 전송 완료");
+            console.log(
+              "거래 취소 시스템 메시지 전송 완료 - 양측 모두에게 알림"
+            );
+
+            // chatData 업데이트하여 UI 즉시 반영
+            setChatData(prev =>
+              prev
+                ? {
+                    ...prev,
+                    item: {
+                      ...prev.item,
+                      status: "active",
+                      buyerUid: undefined,
+                    },
+                  }
+                : null
+            );
           } else {
             console.error("거래 취소 시스템 메시지 전송 실패:", result.error);
           }
@@ -1403,7 +1467,7 @@ export function EnhancedChatModal({
         await addStatusSystemMessage("shipping");
 
         // 송장 등록 모달 닫기
-        setShowShippingModal(false);
+        // setShowShippingModal(false);
 
         // 채팅 데이터 새로고침 (shippingInfo 포함)
         await loadChatData();
@@ -1567,7 +1631,13 @@ export function EnhancedChatModal({
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               {chatData && (
-                <div className="flex items-center space-x-3">
+                <button
+                  className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
+                  onClick={() => {
+                    // 상품 상세 페이지로 이동
+                    window.location.href = `/item/${chatData.item.id}`;
+                  }}
+                >
                   {/* 상품 썸네일 */}
                   <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                     {chatData.item.imageUrl ? (
@@ -1581,7 +1651,7 @@ export function EnhancedChatModal({
                     )}
                   </div>
                   {/* 상품명과 가격 */}
-                  <div>
+                  <div className="text-left">
                     <h3 className="font-semibold text-gray-900">
                       {chatData.item.title}
                     </h3>
@@ -1589,7 +1659,7 @@ export function EnhancedChatModal({
                       {formatPrice(chatData.item.price)}
                     </p>
                   </div>
-                </div>
+                </button>
               )}
             </div>
 

@@ -73,7 +73,7 @@ export function MessageInput({
       const result = await sendMessage({
         chatId,
         senderUid,
-        content: message.trim() || (imageUrls.length > 0 ? "이미지" : ""), // 이미지만 있으면 "이미지" 텍스트 추가
+        content: message.trim() || "", // 이미지만 있을 경우 content는 빈 문자열
         imageUrl: imageUrls[0], // 첫 번째 이미지만 사용 (단일 이미지)
       });
 

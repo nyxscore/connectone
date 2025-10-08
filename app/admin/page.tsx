@@ -37,7 +37,7 @@ export default function AdminDashboard() {
     try {
       // 감사 로그 기록
       const { logAdminAction } = await import("../../lib/admin/auditLog");
-      
+
       // Firestore에서 직접 응답률 업데이트
       const { updateAllUsersResponseRate } = await import(
         "../../lib/profile/responseRate"
@@ -48,7 +48,7 @@ export default function AdminDashboard() {
         toast.success(
           `전체 사용자 응답률 업데이트 완료! (${result.updatedCount}명)`
         );
-        
+
         // 성공 감사 로그
         await logAdminAction({
           adminUid: user.uid,
@@ -60,7 +60,7 @@ export default function AdminDashboard() {
         });
       } else {
         toast.error(result.error || "응답률 업데이트에 실패했습니다.");
-        
+
         // 실패 감사 로그
         await logAdminAction({
           adminUid: user.uid,

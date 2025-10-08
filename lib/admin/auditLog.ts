@@ -37,7 +37,8 @@ export async function logAdminAction(params: {
 
     // 클라이언트 정보 수집
     const ipAddress = await getClientIP();
-    const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const userAgent =
+      typeof navigator !== "undefined" ? navigator.userAgent : "";
 
     const logEntry: AuditLogEntry = {
       adminUid: params.adminUid,
@@ -98,17 +99,17 @@ export async function withAdminAudit<T>(
   actionFunc: () => Promise<T>
 ): Promise<T> {
   const startTime = Date.now();
-  
+
   try {
     const result = await actionFunc();
-    
+
     // 성공 로그 기록
     await logAdminAction({
       ...params,
       status: "success",
       details: { duration: Date.now() - startTime },
     });
-    
+
     return result;
   } catch (error) {
     // 실패 로그 기록
@@ -118,8 +119,9 @@ export async function withAdminAudit<T>(
       errorMessage: error instanceof Error ? error.message : "알 수 없는 오류",
       details: { duration: Date.now() - startTime },
     });
-    
+
     throw error;
   }
 }
+
 

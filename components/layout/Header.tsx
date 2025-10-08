@@ -12,7 +12,7 @@ import { MessageCircle, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export function Header() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -238,6 +238,18 @@ export function Header() {
                 >
                   거래 내역
                 </Link>
+                <button
+                  onClick={async () => {
+                    if (confirm("로그아웃 하시겠습니까?")) {
+                      await logout();
+                      setIsMobileMenuOpen(false);
+                      window.location.href = "/";
+                    }
+                  }}
+                  className="block w-full text-center px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md font-medium"
+                >
+                  로그아웃
+                </button>
               </div>
             )}
           </div>
