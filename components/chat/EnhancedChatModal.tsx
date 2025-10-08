@@ -135,9 +135,13 @@ export function EnhancedChatModal({
   // 화면 크기 변경 감지하여 사이드바 자동 조절
   useEffect(() => {
     const handleResize = () => {
-      // 데스크톱(768px 이상)에서는 사이드바 자동 표시
+      // 모바일에서 데스크톱으로 전환 시에만 사이드바 자동 표시
       if (window.innerWidth >= 768 && !showSidebar) {
         setShowSidebar(true);
+      }
+      // 데스크톱에서 모바일로 전환 시 사이드바 숨김
+      if (window.innerWidth < 768 && showSidebar) {
+        setShowSidebar(false);
       }
     };
 
@@ -1637,7 +1641,7 @@ export function EnhancedChatModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-6xl h-[90vh] flex">
         {/* 채팅 영역 */}
-        <div className={`flex-1 flex flex-col ${showSidebar ? "mr-4" : ""}`}>
+        <div className={`flex-1 flex flex-col ${showSidebar ? "mr-4" : "mr-0"}`}>
           {/* 헤더 */}
           <div className="flex items-center justify-between p-2 border-b bg-gray-50">
             <div className="flex items-center space-x-1 flex-1 min-w-0">
@@ -1684,7 +1688,17 @@ export function EnhancedChatModal({
               )}
             </div>
 
-            <div className="flex items-center flex-shrink-0">
+            <div className="flex items-center space-x-1 flex-shrink-0">
+              {/* 웹 환경에서만 사이드바 토글 버튼 표시 */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="p-1 hidden md:flex"
+                title={showSidebar ? "상대방 정보 숨기기" : "상대방 정보 보기"}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -1976,11 +1990,12 @@ export function EnhancedChatModal({
             {/* 사이드바 헤더 */}
             <div className="flex items-center justify-between p-4 border-b bg-white">
               <h3 className="font-semibold text-gray-900">상대방 정보</h3>
+              {/* 모바일에서만 닫기 버튼 표시 */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSidebar(false)}
-                className="p-2"
+                className="p-2 md:hidden"
               >
                 <X className="w-4 h-4" />
               </Button>
