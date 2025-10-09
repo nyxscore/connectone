@@ -549,11 +549,13 @@ export function ItemDetailModal({
         <EnhancedChatModal
           isOpen={showChatModal}
           onClose={() => {
+            console.log("채팅 모달 닫기 요청");
             setShowChatModal(false);
             setSelectedChatId(null);
           }}
           chatId={selectedChatId}
           onChatDeleted={() => {
+            console.log("채팅 삭제됨 - 모달 닫기");
             setShowChatModal(false);
             setSelectedChatId(null);
           }}

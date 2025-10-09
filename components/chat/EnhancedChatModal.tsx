@@ -1648,7 +1648,10 @@ export function EnhancedChatModal({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onClose}
+                onClick={() => {
+                  console.log("뒤로가기 버튼 클릭됨");
+                  onClose();
+                }}
                 className="p-1 flex-shrink-0"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -1711,7 +1714,10 @@ export function EnhancedChatModal({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onClose}
+                onClick={() => {
+                  console.log("채팅창 닫기 버튼 클릭됨");
+                  onClose();
+                }}
                 className="p-1"
                 title="채팅창 닫기"
               >
