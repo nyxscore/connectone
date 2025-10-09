@@ -331,8 +331,12 @@ export default function MyProfilePage() {
                 <div className="flex items-center space-x-2 sm:space-x-3">
                   <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                   <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-900">이메일</p>
-                    <p className="text-xs sm:text-sm text-gray-600 truncate">{profile.email}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">
+                      이메일
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                      {profile.email}
+                    </p>
                   </div>
                 </div>
                 <span className="text-xs text-gray-400">변경 불가</span>
@@ -390,8 +394,12 @@ export default function MyProfilePage() {
                   onClick={() => toast.info("핸드폰 인증 기능은 준비중입니다.")}
                   className="text-xs sm:text-sm"
                 >
-                  <span className="hidden sm:inline">{profile.phoneVerified ? "변경" : "인증하기"}</span>
-                  <span className="sm:hidden">{profile.phoneVerified ? "변경" : "인증"}</span>
+                  <span className="hidden sm:inline">
+                    {profile.phoneVerified ? "변경" : "인증하기"}
+                  </span>
+                  <span className="sm:hidden">
+                    {profile.phoneVerified ? "변경" : "인증"}
+                  </span>
                 </Button>
               </div>
             </div>

@@ -141,11 +141,11 @@ export function Header() {
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                 </div>
               ) : user ? (
-                <div className="space-y-3">
+                <div className="flex items-center justify-between">
                   <Link
                     href="/profile"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-3 transition-colors"
+                    className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-3 transition-colors flex-1"
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                       {user.photoURL || user.profileImage ? (
@@ -164,9 +164,22 @@ export function Header() {
                       <div className="text-base font-medium text-gray-700">
                         {user.nickname}
                       </div>
-                      <div className="text-sm text-gray-500">프로필 보기</div>
                     </div>
                   </Link>
+                  
+                  {/* 로그아웃 버튼 */}
+                  <button
+                    onClick={async () => {
+                      if (confirm("로그아웃 하시겠습니까?")) {
+                        await logout();
+                        setIsMobileMenuOpen(false);
+                        window.location.href = "/";
+                      }
+                    }}
+                    className="px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md font-medium transition-colors"
+                  >
+                    로그아웃
+                  </button>
                 </div>
               ) : (
                 <div>
@@ -183,73 +196,29 @@ export function Header() {
             </div>
 
             {/* 메뉴 항목들 */}
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link
-                href="/list"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                상품 목록
-              </Link>
-              <Link
-                href={user ? "/product/new" : "/auth/login?next=/product/new"}
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                상품 등록
-              </Link>
-              <Link
-                href={user ? "/chat" : "/auth/login?next=/chat"}
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <div className="flex items-center justify-between">
-                  <span>채팅</span>
-                  {user && unreadCount > 0 && (
-                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </div>
-
-            {/* 로그아웃 버튼 (로그인한 사용자만) */}
             {user && (
-              <div className="px-4 py-3 border-t border-gray-200">
-                <Link
-                  href="/profile"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full text-center px-3 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md mb-2"
-                >
-                  프로필 보기
-                </Link>
+              <div className="px-4 py-3 space-y-1">
                 <Link
                   href="/profile/items"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full text-center px-3 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md mb-2"
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
                 >
                   내 상품
                 </Link>
                 <Link
                   href="/profile/transactions"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full text-center px-3 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md mb-2"
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
                 >
-                  거래 내역
+                  거래 현황
                 </Link>
-                <button
-                  onClick={async () => {
-                    if (confirm("로그아웃 하시겠습니까?")) {
-                      await logout();
-                      setIsMobileMenuOpen(false);
-                      window.location.href = "/";
-                    }
-                  }}
-                  className="block w-full text-center px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md font-medium"
+                <Link
+                  href="/profile/transactions"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
                 >
-                  로그아웃
-                </button>
+                  거래내역
+                </Link>
               </div>
             )}
           </div>
