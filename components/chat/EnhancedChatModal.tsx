@@ -1707,6 +1707,16 @@ export function EnhancedChatModal({
               >
                 <Settings className="w-4 h-4" />
               </Button>
+              {/* 채팅창 닫기 버튼 */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="p-1"
+                title="채팅창 닫기"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           </div>
 
