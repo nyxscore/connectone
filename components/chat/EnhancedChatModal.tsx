@@ -65,6 +65,13 @@ export function EnhancedChatModal({
   onChatDeleted,
   autoSendSystemMessage,
 }: EnhancedChatModalProps) {
+  // 디버깅: onClose 함수 확인
+  console.log("EnhancedChatModal 렌더링:", {
+    isOpen,
+    onClose: typeof onClose,
+    chatId,
+  });
+  
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -1650,7 +1657,13 @@ export function EnhancedChatModal({
                 size="sm"
                 onClick={() => {
                   console.log("뒤로가기 버튼 클릭됨");
-                  onClose();
+                  console.log("onClose 함수 타입:", typeof onClose);
+                  if (typeof onClose === 'function') {
+                    console.log("onClose 함수 호출 중...");
+                    onClose();
+                  } else {
+                    console.error("onClose가 함수가 아닙니다:", onClose);
+                  }
                 }}
                 className="p-1 flex-shrink-0"
               >
@@ -1716,7 +1729,13 @@ export function EnhancedChatModal({
                 size="sm"
                 onClick={() => {
                   console.log("채팅창 닫기 버튼 클릭됨");
-                  onClose();
+                  console.log("onClose 함수 타입:", typeof onClose);
+                  if (typeof onClose === 'function') {
+                    console.log("onClose 함수 호출 중...");
+                    onClose();
+                  } else {
+                    console.error("onClose가 함수가 아닙니다:", onClose);
+                  }
                 }}
                 className="p-1"
                 title="채팅창 닫기"
