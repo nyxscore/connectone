@@ -6,6 +6,7 @@ import { User as FirebaseUser } from "firebase/auth";
 import { User } from "../../data/types";
 import { UserProfile } from "../../data/profile/types";
 import { getUserProfile } from "../profile/api";
+import { logout as firebaseLogout } from "../api/auth";
 
 // UserProfile을 User 타입으로 변환하는 함수
 const convertUserProfileToUser = (
@@ -143,9 +144,22 @@ export const useAuth = () => {
 
   // 사용자 정보 새로고침 함수
   const refreshUser = async () => {
-    const firebaseUser = auth.currentUser;
+    const authInstance = await getAuth();
+    const firebaseUser = authInstance?.currentUser;
     if (firebaseUser) {
       await processUser(firebaseUser, true);
+    }
+  };
+
+  // 로그아웃 함수
+  const logout = async () => {
+    try {
+      await firebaseLogout();
+      setUser(null);
+      console.log("로그아웃 성공");
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+      throw error;
     }
   };
 
@@ -201,5 +215,6 @@ export const useAuth = () => {
     isLoading: loading,
     updateUser,
     refreshUser,
+    logout,
   };
 };
