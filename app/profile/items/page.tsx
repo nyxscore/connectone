@@ -74,14 +74,18 @@ function MyItemsPageContent() {
         console.log("결제 완료 상품 표시:", paymentCompletedItems.length, "개");
       } else {
         // 새로운 API 사용
-        const result = await getMyItems({ 
-          userId, 
-          type: activeTab as "selling" | "trading" | "buying" | "sold"
+        const result = await getMyItems({
+          userId,
+          type: activeTab as "selling" | "trading" | "buying" | "sold",
         });
 
         if (result.success && result.items) {
           setMyItems(result.items);
-          console.log(`${activeTab} 상품 로드 완료:`, result.items.length, "개");
+          console.log(
+            `${activeTab} 상품 로드 완료:`,
+            result.items.length,
+            "개"
+          );
         } else {
           console.error(`${activeTab} 상품 로드 실패:`, result.error);
           setMyItems([]);
@@ -100,9 +104,9 @@ function MyItemsPageContent() {
     if (!userId) return;
 
     try {
-      const result = await getMyItems({ 
-        userId, 
-        type: "payment_completed"
+      const result = await getMyItems({
+        userId,
+        type: "payment_completed",
       });
 
       if (result.success && result.items) {
@@ -299,18 +303,6 @@ function MyItemsPageContent() {
                 )}
               </div>
             </div>
-            {!isViewingOtherUser &&
-              (activeTab === "selling" || activeTab === "trading") && (
-                <Button
-                  onClick={() => router.push("/sell")}
-                  variant="primary"
-                  className="text-xs sm:text-sm w-full sm:w-auto"
-                >
-                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">새 상품 등록</span>
-                  <span className="sm:hidden">상품 등록</span>
-                </Button>
-              )}
           </div>
         </div>
       </div>
@@ -419,19 +411,6 @@ function MyItemsPageContent() {
                             : "완료된 거래가 없습니다."}
                 </p>
               </div>
-              {!isViewingOtherUser &&
-                (activeTab === "selling" || activeTab === "trading") && (
-                  <Button
-                    onClick={() => router.push("/sell")}
-                    variant="primary"
-                    size="lg"
-                    className="w-full sm:w-auto text-xs sm:text-sm"
-                  >
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">첫 상품 등록하기</span>
-                    <span className="sm:hidden">상품 등록</span>
-                  </Button>
-                )}
             </div>
           </Card>
         ) : (

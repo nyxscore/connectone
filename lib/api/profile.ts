@@ -63,7 +63,9 @@ export async function getMyItems({ userId, type }: MyItemsParams) {
         items.push({ id: doc.id, ...doc.data() });
       });
 
-      console.log(`거래중 상품: 판매자 ${sellerTradingSnapshot.size}개, 구매자 ${buyerTradingSnapshot.size}개`);
+      console.log(
+        `거래중 상품: 판매자 ${sellerTradingSnapshot.size}개, 구매자 ${buyerTradingSnapshot.size}개`
+      );
     }
 
     if (type === "all" || type === "buying") {
@@ -126,8 +128,8 @@ export async function getMyItems({ userId, type }: MyItemsParams) {
     }
 
     // 중복 제거 (같은 상품이 여러 카테고리에 포함될 수 있음)
-    const uniqueItems = items.filter((item, index, self) => 
-      index === self.findIndex(t => t.id === item.id)
+    const uniqueItems = items.filter(
+      (item, index, self) => index === self.findIndex(t => t.id === item.id)
     );
 
     // 최신순으로 정렬
@@ -145,7 +147,10 @@ export async function getMyItems({ userId, type }: MyItemsParams) {
     console.error("상품 조회 실패:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.",
       items: [],
     };
   }
