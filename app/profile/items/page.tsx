@@ -78,29 +78,6 @@ function MyItemsPageContent() {
     };
   }, [showItemMenu]);
 
-  // 결제 완료된 상품 로드
-  const loadPaymentCompletedItems = useCallback(async () => {
-    const userId = targetUserId || currentUser?.uid;
-    if (!userId) return;
-
-    try {
-      const response = await fetch(
-        `/api/profile/my-items?userId=${userId}&type=payment_completed`
-      );
-      const result = await response.json();
-
-      if (result.success && result.items) {
-        setPaymentCompletedItems(result.items);
-        console.log("결제 완료 상품 로드 완료:", result.items.length, "개");
-      } else {
-        setPaymentCompletedItems([]);
-      }
-    } catch (error) {
-      console.error("결제 완료 상품 로드 실패:", error);
-      setPaymentCompletedItems([]);
-    }
-  }, [targetUserId, currentUser?.uid]);
-
   const loadMyItems = useCallback(async () => {
     const userId = targetUserId || currentUser?.uid;
     if (!userId) return;
@@ -175,6 +152,29 @@ function MyItemsPageContent() {
       setLoading(false);
     }
   }, [targetUserId, currentUser?.uid, activeTab]);
+
+  // 결제 완료된 상품 로드
+  const loadPaymentCompletedItems = useCallback(async () => {
+    const userId = targetUserId || currentUser?.uid;
+    if (!userId) return;
+
+    try {
+      const response = await fetch(
+        `/api/profile/my-items?userId=${userId}&type=payment_completed`
+      );
+      const result = await response.json();
+
+      if (result.success && result.items) {
+        setPaymentCompletedItems(result.items);
+        console.log("결제 완료 상품 로드 완료:", result.items.length, "개");
+      } else {
+        setPaymentCompletedItems([]);
+      }
+    } catch (error) {
+      console.error("결제 완료 상품 로드 실패:", error);
+      setPaymentCompletedItems([]);
+    }
+  }, [targetUserId, currentUser?.uid]);
 
   // 상태별 필터링
   useEffect(() => {
