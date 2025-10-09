@@ -89,13 +89,13 @@ export function PriceRangeSlider({
   // 특정 가격으로 이동하는 함수
   const handlePriceClick = (targetPrice: number) => {
     const targetPercentage = getPercentage(targetPrice);
-    
+
     // 클릭한 가격이 현재 범위 내에 있는지 확인
     if (targetPrice >= minValue && targetPrice <= maxValue) {
       // 범위 내에 있으면 가장 가까운 핸들을 해당 위치로 이동
       const distanceToMin = Math.abs(targetPrice - minValue);
       const distanceToMax = Math.abs(targetPrice - maxValue);
-      
+
       if (distanceToMin < distanceToMax) {
         // 최소값 핸들을 이동
         const newMinValue = Math.min(targetPrice, maxValue - STEP);
@@ -189,37 +189,37 @@ export function PriceRangeSlider({
         {/* 가격 눈금 */}
         <div className="relative mt-4">
           <div className="flex justify-between text-xs text-gray-500">
-            <span 
+            <span
               className="cursor-pointer hover:text-blue-600 hover:font-medium transition-colors"
               onClick={() => handlePriceClick(0)}
             >
               0원
             </span>
-            <span 
+            <span
               className="cursor-pointer hover:text-blue-600 hover:font-medium transition-colors"
               onClick={() => handlePriceClick(100000)}
             >
               10만원
             </span>
-            <span 
+            <span
               className="cursor-pointer hover:text-blue-600 hover:font-medium transition-colors"
               onClick={() => handlePriceClick(500000)}
             >
               50만원
             </span>
-            <span 
+            <span
               className="cursor-pointer hover:text-blue-600 hover:font-medium transition-colors"
               onClick={() => handlePriceClick(1000000)}
             >
               100만원
             </span>
-            <span 
+            <span
               className="cursor-pointer hover:text-blue-600 hover:font-medium transition-colors"
               onClick={() => handlePriceClick(5000000)}
             >
               500만원
             </span>
-            <span 
+            <span
               className="cursor-pointer hover:text-blue-600 hover:font-medium transition-colors"
               onClick={() => handlePriceClick(10000000)}
             >

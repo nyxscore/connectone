@@ -452,16 +452,19 @@ function MyItemsPageContent() {
                           <Edit className="w-4 h-4" />
                           <span>수정</span>
                         </button>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleItemBump(item);
-                          }}
-                          className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
-                        >
-                          <ArrowUp className="w-4 h-4" />
-                          <span>끌어올리기</span>
-                        </button>
+                        {/* 끌어올리기 버튼 - 판매중(active) 상태일 때만 표시 */}
+                        {item.status === "active" && (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleItemBump(item);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                            <span>끌어올리기</span>
+                          </button>
+                        )}
                         <button
                           onClick={e => {
                             e.stopPropagation();

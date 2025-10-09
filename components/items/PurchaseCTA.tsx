@@ -592,18 +592,9 @@ export function PurchaseCTA({
                     <Edit className="w-5 h-5 mr-2" />
                     상품 수정
                   </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={handleBump}
-                    className="w-full"
-                  >
-                    <ArrowUp className="w-5 h-5 mr-2" />
-                    끌어올리기
-                  </Button>
                   <div className="text-center py-2">
                     <p className="text-xs text-gray-500">
-                      예약된 상품은 삭제할 수 없습니다
+                      거래중인 상품은 끌어올리기/삭제할 수 없습니다
                     </p>
                   </div>
                 </>
