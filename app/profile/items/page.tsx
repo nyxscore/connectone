@@ -31,6 +31,7 @@ function MyItemsPageContent() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showItemMenu, setShowItemMenu] = useState<string | null>(null);
+  const [paymentCompletedItems, setPaymentCompletedItems] = useState<any[]>([]);
 
   // URL에서 userId 파라미터 가져오기
   const targetUserId = searchParams.get("userId");
@@ -38,7 +39,7 @@ function MyItemsPageContent() {
 
   // 탭 상태 관리
   const [activeTab, setActiveTab] = useState<
-    "selling" | "trading" | "buying" | "sold"
+    "selling" | "trading" | "buying" | "sold" | "payment_completed"
   >("selling");
 
   useEffect(() => {
@@ -49,8 +50,16 @@ function MyItemsPageContent() {
 
     if (currentUser || targetUserId) {
       loadMyItems();
+      loadPaymentCompletedItems();
     }
-  }, [currentUser, authLoading, targetUserId, activeTab]);
+  }, [
+    currentUser,
+    authLoading,
+    targetUserId,
+    activeTab,
+    loadMyItems,
+    loadPaymentCompletedItems,
+  ]);
 
   // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
@@ -68,6 +77,29 @@ function MyItemsPageContent() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showItemMenu]);
+
+  // 결제 완료된 상품 로드
+  const loadPaymentCompletedItems = useCallback(async () => {
+    const userId = targetUserId || currentUser?.uid;
+    if (!userId) return;
+
+    try {
+      const response = await fetch(
+        `/api/profile/my-items?userId=${userId}&type=payment_completed`
+      );
+      const result = await response.json();
+
+      if (result.success && result.items) {
+        setPaymentCompletedItems(result.items);
+        console.log("결제 완료 상품 로드 완료:", result.items.length, "개");
+      } else {
+        setPaymentCompletedItems([]);
+      }
+    } catch (error) {
+      console.error("결제 완료 상품 로드 실패:", error);
+      setPaymentCompletedItems([]);
+    }
+  }, [targetUserId, currentUser?.uid]);
 
   const loadMyItems = useCallback(async () => {
     const userId = targetUserId || currentUser?.uid;
@@ -118,6 +150,10 @@ function MyItemsPageContent() {
           console.error("거래완료 상품 로드 실패:", result.error);
           setMyItems([]);
         }
+      } else if (activeTab === "payment_completed") {
+        // 결제 완료된 상품 로드
+        setMyItems(paymentCompletedItems);
+        console.log("결제 완료 상품 표시:", paymentCompletedItems.length, "개");
       } else {
         // 판매중인 상품 로드 - 새로운 API 사용
         const response = await fetch(
@@ -259,35 +295,47 @@ function MyItemsPageContent() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 프로필로 돌아가기
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {(() => {
-                  const status = searchParams.get("status");
-                  const baseTitle = isViewingOtherUser
-                    ? "판매 상품"
-                    : "내 상품";
+              <div className="flex items-center space-x-3">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {(() => {
+                    const status = searchParams.get("status");
+                    const baseTitle = isViewingOtherUser
+                      ? "판매 상품"
+                      : "내 상품";
 
-                  switch (status) {
-                    case "sold":
-                      return isViewingOtherUser
-                        ? "판매 완료된 상품"
-                        : "판매 완료된 상품";
-                    case "reserved":
-                      return isViewingOtherUser
-                        ? "거래중인 상품"
-                        : "거래중인 상품";
-                    case "active":
-                      return isViewingOtherUser
-                        ? "판매중인 상품"
-                        : "판매중인 상품";
-                    case "inactive":
-                      return isViewingOtherUser
-                        ? "판매중단된 상품"
-                        : "판매중단된 상품";
-                    default:
-                      return baseTitle;
-                  }
-                })()}
-              </h1>
+                    switch (status) {
+                      case "sold":
+                        return isViewingOtherUser
+                          ? "판매 완료된 상품"
+                          : "판매 완료된 상품";
+                      case "reserved":
+                        return isViewingOtherUser
+                          ? "거래중인 상품"
+                          : "거래중인 상품";
+                      case "active":
+                        return isViewingOtherUser
+                          ? "판매중인 상품"
+                          : "판매중인 상품";
+                      case "inactive":
+                        return isViewingOtherUser
+                          ? "판매중단된 상품"
+                          : "판매중단된 상품";
+                      default:
+                        return baseTitle;
+                    }
+                  })()}
+                </h1>
+
+                {/* 결제 완료된 상품 알림 */}
+                {!isViewingOtherUser && paymentCompletedItems.length > 0 && (
+                  <div className="flex items-center space-x-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>
+                      결제 완료된 상품 {paymentCompletedItems.length}개
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
             {!isViewingOtherUser &&
               (activeTab === "selling" || activeTab === "trading") && (
@@ -344,6 +392,23 @@ function MyItemsPageContent() {
               >
                 거래완료된 상품
               </button>
+              {/* 결제 완료된 상품 탭 */}
+              {paymentCompletedItems.length > 0 && (
+                <button
+                  onClick={() => setActiveTab("payment_completed")}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                    activeTab === "payment_completed"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <span>결제 완료된 상품</span>
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">
+                    {paymentCompletedItems.length}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -362,7 +427,9 @@ function MyItemsPageContent() {
                     ? "거래중인 상품이 없습니다."
                     : activeTab === "buying"
                       ? "구매중인 상품이 없습니다."
-                      : "거래완료된 상품이 없습니다."}
+                      : activeTab === "payment_completed"
+                        ? "결제 완료된 상품이 없습니다."
+                        : "거래완료된 상품이 없습니다."}
             </p>
             {!isViewingOtherUser &&
               (activeTab === "selling" || activeTab === "trading") && (

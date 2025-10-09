@@ -155,6 +155,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (type === "payment_completed") {
+      // 안전결제로 결제 완료된 상품 (판매자 관점)
+      const paymentCompletedQuery = query(
+        collection(db, "items"),
+        where("sellerUid", "==", userId),
+        where("status", "==", "escrow_completed")
+      );
+      const paymentCompletedSnapshot = await getDocs(paymentCompletedQuery);
+      paymentCompletedSnapshot.forEach(doc => {
+        items.push({ id: doc.id, ...doc.data() });
+      });
+
+      console.log(`결제 완료 상품: ${paymentCompletedSnapshot.size}개`);
+    }
+
     // 중복 제거 (같은 상품이 여러 카테고리에 속할 수 있음)
     const uniqueItems = items.filter(
       (item, index, self) => index === self.findIndex(t => t.id === item.id)
