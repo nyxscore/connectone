@@ -308,13 +308,6 @@ export function PurchaseCTA({
             onClick: handlePurchase,
           },
           secondaryButton: {
-            text: "채팅으로 문의",
-            icon: MessageCircle,
-            variant: "outline" as const,
-            disabled: false,
-            onClick: handleChat,
-          },
-          tertiaryButton: {
             text: "운송 견적 받기",
             icon: Truck,
             variant: "outline" as const,
@@ -325,52 +318,52 @@ export function PurchaseCTA({
       case "reserved":
         return {
           primaryButton: {
+            text: "거래 상대방과 채팅",
+            icon: MessageCircle,
+            variant: "primary" as const,
+            disabled: false,
+            onClick: handleChat,
+          },
+          secondaryButton: {
             text: "거래중 · 예약중",
             icon: Clock,
             variant: "outline" as const,
             disabled: true,
             onClick: () => {},
           },
-          secondaryButton: {
-            text: "판매자와 채팅",
-            icon: MessageCircle,
-            variant: "outline" as const,
-            disabled: false,
-            onClick: handleChat,
-          },
         };
       case "paid_hold":
         return {
           primaryButton: {
+            text: "거래 상대방과 채팅",
+            icon: MessageCircle,
+            variant: "primary" as const,
+            disabled: false,
+            onClick: handleChat,
+          },
+          secondaryButton: {
             text: "결제완료 · 대기",
             icon: CheckCircle,
             variant: "outline" as const,
             disabled: true,
             onClick: () => {},
           },
-          secondaryButton: {
-            text: "판매자와 채팅",
-            icon: MessageCircle,
-            variant: "outline" as const,
-            disabled: false,
-            onClick: handleChat,
-          },
         };
       case "shipped":
         return {
           primaryButton: {
+            text: "거래 상대방과 채팅",
+            icon: MessageCircle,
+            variant: "primary" as const,
+            disabled: false,
+            onClick: handleChat,
+          },
+          secondaryButton: {
             text: "운송 진행중",
             icon: Clock,
             variant: "outline" as const,
             disabled: true,
             onClick: () => {},
-          },
-          secondaryButton: {
-            text: "판매자와 채팅",
-            icon: MessageCircle,
-            variant: "outline" as const,
-            disabled: false,
-            onClick: handleChat,
           },
         };
       case "sold":

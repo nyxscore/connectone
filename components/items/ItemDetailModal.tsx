@@ -483,12 +483,25 @@ export function ItemDetailModal({
                   // 채팅 생성 후 모달 열기
                   if (user && item?.sellerUid && item?.id) {
                     try {
+                      // 거래 상태에 따라 채팅 상대방 결정
+                      let chatPartnerUid: string;
+                      let firstMessage: string;
+                      
+                      if (item.sellerUid === user.uid) {
+                        // 내가 판매자인 경우 → 구매자와 채팅
+                        chatPartnerUid = item.buyerUid || "";
+                        firstMessage = "거래 진행 상황을 안내드리겠습니다.";
+                      } else {
+                        // 내가 구매자인 경우 → 판매자와 채팅
+                        chatPartnerUid = item.sellerUid;
+                        firstMessage = "거래에 대해 문의드립니다.";
+                      }
+
                       const chatResult = await getOrCreateChat({
                         itemId: item.id,
-                        buyerUid: user.uid,
+                        buyerUid: item.buyerUid || user.uid,
                         sellerUid: item.sellerUid,
-                        firstMessage:
-                          "안녕하세요! 상품에 대해 문의드리고 싶습니다.",
+                        firstMessage: firstMessage,
                       });
 
                       if (chatResult.success && chatResult.chatId) {
