@@ -22,6 +22,7 @@ import {
 } from "../../lib/chat/api";
 import { Chat, Message } from "../../data/chat/types";
 import { getFirebaseDb as getDb } from "../../lib/api/firebase-ultra-safe";
+import { PurchaseCTA } from "../items/PurchaseCTA";
 import {
   ArrowLeft,
   X,
@@ -2000,6 +2001,46 @@ export function EnhancedChatModal({
             {/* 스크롤 자동 이동을 위한 참조점 */}
             <div ref={messagesEndRef} />
           </div>
+
+          {/* 거래 진행 버튼 (escrow_completed 상태일 때만) */}
+          {chatData && chatData.item && chatData.item.status === "escrow_completed" && user && (
+            <div className="p-4 border-t bg-blue-50">
+              <PurchaseCTA
+                status={chatData.item.status as "escrow_completed"}
+                sellerUid={chatData.item.sellerUid || ""}
+                buyerUid={chatData.item.buyerUid || ""}
+                currentUserId={user.uid}
+                escrowEnabled={true}
+                onStartTransaction={async () => {
+                  // 거래 진행하기 로직
+                  if (user && chatData.item?.sellerUid && chatData.item?.id && chatData.item?.buyerUid) {
+                    try {
+                      const { updateItemStatus } = await import("../../lib/api/products");
+                      const result = await updateItemStatus(
+                        chatData.item.id,
+                        "reserved",
+                        chatData.item.buyerUid
+                      );
+
+                      if (result.success) {
+                        toast.success("거래가 시작되었습니다!");
+                        // 페이지 새로고침하여 상태 업데이트
+                        window.location.reload();
+                      } else {
+                        toast.error("거래 시작에 실패했습니다.");
+                      }
+                    } catch (error) {
+                      console.error("거래 시작 실패:", error);
+                      toast.error("거래 시작 중 오류가 발생했습니다.");
+                    }
+                  }
+                }}
+                onChat={() => {
+                  // 이미 채팅창이 열려있으므로 아무것도 하지 않음
+                }}
+              />
+            </div>
+          )}
 
           {/* 메시지 입력 */}
           {chatData && user && (
