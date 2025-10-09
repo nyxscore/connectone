@@ -261,8 +261,8 @@ export default function MyProfilePage() {
     <div className="min-h-screen bg-gray-50">
       <ProfileHeader user={profile} isOwnProfile={true} onEdit={handleEdit} />
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="space-y-6">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="space-y-4 sm:space-y-6">
           {/* 프로필 통계 (아바타 포함) */}
           <ProfileStats
             user={profile}
@@ -271,15 +271,16 @@ export default function MyProfilePage() {
           />
 
           {/* 회원 등급 정보 */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+          <Card className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                 나의 회원 등급
               </h3>
               <Button
                 onClick={() => setShowGradeModal(true)}
                 size="sm"
                 variant="outline"
+                className="text-xs sm:text-sm"
               >
                 등급 혜택 보기
               </Button>
@@ -295,11 +296,11 @@ export default function MyProfilePage() {
           />
 
           {/* 배송지 관리 */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
+          <Card className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center space-x-2">
-                <MapPin className="w-6 h-6 text-blue-600" />
-                <h2 className="text-lg font-semibold text-gray-900">
+                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                   배송지 관리
                 </h2>
               </div>
@@ -307,60 +308,61 @@ export default function MyProfilePage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowShippingAddress(true)}
-                className="flex items-center"
+                className="flex items-center text-xs sm:text-sm"
               >
-                <MapPin className="w-4 h-4 mr-2" />
-                배송지 관리
+                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">배송지 관리</span>
+                <span className="sm:hidden">관리</span>
               </Button>
             </div>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 text-xs sm:text-sm">
               거래 시 사용할 배송지 정보를 관리하세요.
             </p>
           </Card>
 
           {/* 계정 설정 */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <Card className="p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
               계정 설정
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {/* 이메일 */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">이메일</p>
-                    <p className="text-sm text-gray-600">{profile.email}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">이메일</p>
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">{profile.email}</p>
                   </div>
                 </div>
                 <span className="text-xs text-gray-400">변경 불가</span>
               </div>
 
               {/* 비밀번호 */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
-                <div className="flex items-center space-x-3">
-                  <Lock className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">
                       비밀번호
                     </p>
-                    <p className="text-sm text-gray-600">••••••••</p>
+                    <p className="text-xs sm:text-sm text-gray-600">••••••••</p>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost">
-                  <Edit2 className="w-4 h-4" />
+                <Button size="sm" variant="ghost" className="p-1 sm:p-2">
+                  <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>
               </div>
 
               {/* 지역 */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <MapPin className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">
                       거래 지역
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600">
                       {profile.region || "설정되지 않음"}
                     </p>
                   </div>
@@ -368,14 +370,14 @@ export default function MyProfilePage() {
               </div>
 
               {/* 핸드폰 인증 */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Smartphone className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">
                       핸드폰 인증
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600">
                       {profile.phoneVerified
                         ? `인증완료 ${profile.phoneNumber || ""}`
                         : "인증되지 않음"}
@@ -386,23 +388,25 @@ export default function MyProfilePage() {
                   size="sm"
                   variant={profile.phoneVerified ? "outline" : "primary"}
                   onClick={() => toast.info("핸드폰 인증 기능은 준비중입니다.")}
+                  className="text-xs sm:text-sm"
                 >
-                  {profile.phoneVerified ? "변경" : "인증하기"}
+                  <span className="hidden sm:inline">{profile.phoneVerified ? "변경" : "인증하기"}</span>
+                  <span className="sm:hidden">{profile.phoneVerified ? "변경" : "인증"}</span>
                 </Button>
               </div>
             </div>
           </Card>
 
           {/* 차단된 사용자 관리 */}
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Shield className="w-6 h-6 text-orange-500" />
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                     차단된 사용자 관리
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     차단한 사용자를 확인하고 해제할 수 있습니다
                   </p>
                 </div>
@@ -410,10 +414,11 @@ export default function MyProfilePage() {
               <Button
                 onClick={() => setShowBlockedUsers(true)}
                 variant="outline"
-                className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                className="border-orange-300 text-orange-600 hover:bg-orange-50 text-xs sm:text-sm"
               >
-                <Shield className="w-4 h-4 mr-2" />
-                차단 관리
+                <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">차단 관리</span>
+                <span className="sm:hidden">관리</span>
               </Button>
             </div>
           </Card>

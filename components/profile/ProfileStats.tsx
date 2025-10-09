@@ -118,12 +118,13 @@ export function ProfileStats({
 
   return (
     <Card>
-      <div className="p-6">
-        <div className="flex items-center space-x-6 mb-6">
+      <div className="p-4 sm:p-6">
+        {/* 모바일: 세로 레이아웃, 데스크톱: 가로 레이아웃 */}
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
           {/* 아바타 */}
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 self-center sm:self-auto">
             <div
-              className={`w-24 h-24 rounded-full overflow-hidden bg-gray-100 ${
+              className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-gray-100 ${
                 isOwnProfile
                   ? "cursor-pointer hover:opacity-80 transition-opacity"
                   : ""
@@ -138,7 +139,7 @@ export function ProfileStats({
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                  <span className="text-3xl font-bold mb-1">
+                  <span className="text-2xl sm:text-3xl font-bold mb-1">
                     {user.nickname.charAt(0).toUpperCase()}
                   </span>
                   {isOwnProfile && (
@@ -188,22 +189,23 @@ export function ProfileStats({
           </div>
 
           {/* 기본 정보 */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-3 mb-3">
-              <h1 className="text-3xl font-bold text-gray-900 truncate">
+          <div className="flex-1 min-w-0 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                 {user.nickname}
               </h1>
 
               {/* 등급 배지 */}
               <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${gradeInfo.bgColor} ${gradeInfo.color} flex-shrink-0`}
+                className={`px-3 py-1 rounded-full text-sm font-medium ${gradeInfo.bgColor} ${gradeInfo.color} flex-shrink-0 self-center sm:self-auto mt-2 sm:mt-0`}
               >
                 <span className="mr-1">{gradeInfo.emoji}</span>
                 {gradeInfo.displayName}
               </span>
             </div>
 
-            <div className="flex items-center text-gray-600 space-x-6 mb-4">
+            {/* 모바일에서 간소화된 정보 */}
+            <div className="flex items-center justify-center sm:justify-start text-gray-600 space-x-4 sm:space-x-6 mb-4">
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-1" />
                 <span className="text-sm">{user.region}</span>
@@ -217,33 +219,31 @@ export function ProfileStats({
               </div>
             </div>
 
-            {/* 활동 지표 */}
-            <div className="grid grid-cols-3 gap-6">
+            {/* 활동 지표 - 모바일에서 더 간소화 */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-lg sm:text-2xl font-bold text-gray-900">
                   {user.tradesCount}
                 </div>
-                <div className="text-sm text-gray-600">총 거래</div>
+                <div className="text-xs sm:text-sm text-gray-600">총 거래</div>
               </div>
 
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-lg sm:text-2xl font-bold text-gray-900">
                   {user.reviewsCount}
                 </div>
-                <div className="text-sm text-gray-600">받은 후기</div>
+                <div className="text-xs sm:text-sm text-gray-600">받은 후기</div>
               </div>
 
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-lg sm:text-2xl font-bold text-gray-900">
                   {user.responseRate || 0}%
                 </div>
-                <div className="text-sm text-gray-600">응답률</div>
+                <div className="text-xs sm:text-sm text-gray-600">응답률</div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* 등급표 모달 제거됨 - 응답률로 변경 */}
       </div>
     </Card>
   );
