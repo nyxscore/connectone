@@ -285,19 +285,22 @@ function MyItemsPageContent() {
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          {/* 모바일: 세로 레이아웃, 데스크톱: 가로 레이아웃 */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <Button
                 onClick={() => router.push("/profile")}
                 size="sm"
                 variant="outline"
+                className="text-xs sm:text-sm"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                프로필로 돌아가기
+                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">프로필로 돌아가기</span>
+                <span className="sm:hidden">뒤로</span>
               </Button>
-              <div className="flex items-center space-x-3">
-                <h1 className="text-2xl font-bold text-gray-900">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
                   {(() => {
                     const status = searchParams.get("status");
                     const baseTitle = isViewingOtherUser
@@ -329,19 +332,23 @@ function MyItemsPageContent() {
 
                 {/* 결제 완료된 상품 알림 */}
                 {!isViewingOtherUser && paymentCompletedItems.length > 0 && (
-                  <div className="flex items-center space-x-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span>
-                      결제 완료된 상품 {paymentCompletedItems.length}개
-                    </span>
+                  <div className="flex items-center space-x-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>결제 완료 {paymentCompletedItems.length}개</span>
                   </div>
                 )}
               </div>
             </div>
             {!isViewingOtherUser &&
               (activeTab === "selling" || activeTab === "trading") && (
-                <Button onClick={() => router.push("/sell")} variant="primary">
-                  <Plus className="w-4 h-4 mr-2" />새 상품 등록
+                <Button
+                  onClick={() => router.push("/sell")}
+                  variant="primary"
+                  className="text-xs sm:text-sm w-full sm:w-auto"
+                >
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">새 상품 등록</span>
+                  <span className="sm:hidden">상품 등록</span>
                 </Button>
               )}
           </div>
@@ -351,61 +358,62 @@ function MyItemsPageContent() {
       {/* 탭 메뉴 (다른 사용자 상품 보기일 때는 숨김) */}
       {!isViewingOtherUser && (
         <div className="bg-white border-b border-gray-200">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="flex space-x-8">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4">
+            <div className="flex space-x-2 sm:space-x-8 overflow-x-auto">
               <button
                 onClick={() => setActiveTab("selling")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                   activeTab === "selling"
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                판매중인 상품
+                판매중
               </button>
               <button
                 onClick={() => setActiveTab("trading")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                   activeTab === "trading"
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                거래중인 상품
+                거래중
               </button>
               <button
                 onClick={() => setActiveTab("buying")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                   activeTab === "buying"
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                구매중인 상품
+                구매중
               </button>
               <button
                 onClick={() => setActiveTab("sold")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                   activeTab === "sold"
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                거래완료된 상품
+                거래완료
               </button>
               {/* 결제 완료된 상품 탭 */}
               {paymentCompletedItems.length > 0 && (
                 <button
                   onClick={() => setActiveTab("payment_completed")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 whitespace-nowrap ${
                     activeTab === "payment_completed"
                       ? "border-green-500 text-green-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
-                  <span>결제 완료된 상품</span>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">
+                  <span className="hidden sm:inline">결제 완료된 상품</span>
+                  <span className="sm:hidden">결제완료</span>
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full text-xs">
                     {paymentCompletedItems.length}
                   </span>
                 </button>
@@ -416,35 +424,58 @@ function MyItemsPageContent() {
       )}
 
       {/* 상품 목록 */}
-      <div className="max-w-6xl mx-auto px-4 pt-8 pb-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-8 pb-4 sm:pb-8">
         {filteredItems.length === 0 ? (
-          <Card className="p-12 text-center">
-            <p className="text-gray-500 mb-6 text-lg">
-              {isViewingOtherUser
-                ? "등록한 상품이 없습니다."
-                : activeTab === "selling"
-                  ? "등록한 상품이 없습니다."
-                  : activeTab === "trading"
-                    ? "거래중인 상품이 없습니다."
-                    : activeTab === "buying"
-                      ? "구매중인 상품이 없습니다."
-                      : activeTab === "payment_completed"
-                        ? "결제 완료된 상품이 없습니다."
-                        : "거래완료된 상품이 없습니다."}
-            </p>
-            {!isViewingOtherUser &&
-              (activeTab === "selling" || activeTab === "trading") && (
-                <Button
-                  onClick={() => router.push("/sell")}
-                  variant="primary"
-                  size="lg"
-                >
-                  <Plus className="w-5 h-5 mr-2" />첫 상품 등록하기
-                </Button>
-              )}
+          <Card className="p-6 sm:p-12 text-center">
+            <div className="flex flex-col items-center space-y-3 sm:space-y-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                <Package className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+              </div>
+              <div>
+                <p className="text-gray-500 mb-3 sm:mb-6 text-sm sm:text-lg font-medium">
+                  {isViewingOtherUser
+                    ? "등록한 상품이 없습니다."
+                    : activeTab === "selling"
+                      ? "등록한 상품이 없습니다."
+                      : activeTab === "trading"
+                        ? "거래중인 상품이 없습니다."
+                        : activeTab === "buying"
+                          ? "구매중인 상품이 없습니다."
+                          : activeTab === "payment_completed"
+                            ? "결제 완료된 상품이 없습니다."
+                            : "거래완료된 상품이 없습니다."}
+                </p>
+                <p className="text-gray-400 text-xs sm:text-sm">
+                  {isViewingOtherUser
+                    ? ""
+                    : activeTab === "selling"
+                      ? "새로운 상품을 등록해보세요."
+                      : activeTab === "trading"
+                        ? "현재 진행중인 거래가 없습니다."
+                        : activeTab === "buying"
+                          ? "구매중인 상품이 없습니다."
+                          : activeTab === "payment_completed"
+                            ? "결제가 완료된 상품이 없습니다."
+                            : "완료된 거래가 없습니다."}
+                </p>
+              </div>
+              {!isViewingOtherUser &&
+                (activeTab === "selling" || activeTab === "trading") && (
+                  <Button
+                    onClick={() => router.push("/sell")}
+                    variant="primary"
+                    size="lg"
+                    className="w-full sm:w-auto text-xs sm:text-sm"
+                  >
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">첫 상품 등록하기</span>
+                    <span className="sm:hidden">상품 등록</span>
+                  </Button>
+                )}
+            </div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {filteredItems.map(item => (
               <div key={item.id} className="relative group">
                 <ItemCard
