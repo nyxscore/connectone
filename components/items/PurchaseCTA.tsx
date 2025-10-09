@@ -299,6 +299,15 @@ export function PurchaseCTA({
   };
 
   const getStatusConfig = () => {
+    // 디버깅: 상태와 사용자 정보 확인
+    console.log("PurchaseCTA 디버깅:", {
+      status,
+      sellerUid,
+      buyerUid,
+      currentUserId,
+      isOwnItem: sellerUid === currentUserId,
+    });
+    
     switch (status) {
       case "active":
         return {
@@ -386,22 +395,43 @@ export function PurchaseCTA({
           },
         };
       case "escrow_completed":
-        return {
-          primaryButton: {
-            text: "거래 진행하기",
-            icon: CheckCircle,
-            variant: "primary" as const,
-            disabled: false,
-            onClick: onStartTransaction || (() => {}),
-          },
-          secondaryButton: {
-            text: "거래 상대방과 채팅",
-            icon: MessageCircle,
-            variant: "outline" as const,
-            disabled: false,
-            onClick: handleChat,
-          },
-        };
+        // 판매자에게만 거래 진행하기 버튼 표시
+        if (sellerUid === currentUserId) {
+          return {
+            primaryButton: {
+              text: "거래 진행하기",
+              icon: CheckCircle,
+              variant: "primary" as const,
+              disabled: false,
+              onClick: onStartTransaction || (() => {}),
+            },
+            secondaryButton: {
+              text: "거래 상대방과 채팅",
+              icon: MessageCircle,
+              variant: "outline" as const,
+              disabled: false,
+              onClick: handleChat,
+            },
+          };
+        } else {
+          // 구매자에게는 채팅만 표시
+          return {
+            primaryButton: {
+              text: "거래 상대방과 채팅",
+              icon: MessageCircle,
+              variant: "primary" as const,
+              disabled: false,
+              onClick: handleChat,
+            },
+            secondaryButton: {
+              text: "안전결제 완료",
+              icon: Shield,
+              variant: "outline" as const,
+              disabled: true,
+              onClick: () => {},
+            },
+          };
+        }
       default:
         return {
           primaryButton: {
