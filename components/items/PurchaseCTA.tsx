@@ -23,7 +23,7 @@ import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 
 interface PurchaseCTAProps {
-  status: "active" | "reserved" | "paid_hold" | "shipped" | "sold";
+  status: "active" | "reserved" | "paid_hold" | "shipped" | "sold" | "escrow_completed";
   escrowEnabled: boolean;
   isLoggedIn: boolean;
   itemId?: string;
@@ -37,6 +37,7 @@ interface PurchaseCTAProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onBump?: () => void;
+  onStartTransaction?: () => void; // 거래 진행하기
 }
 
 export function PurchaseCTA({
@@ -54,6 +55,7 @@ export function PurchaseCTA({
   onEdit,
   onDelete,
   onBump,
+  onStartTransaction,
 }: PurchaseCTAProps) {
   const router = useRouter();
   const [showEditModal, setShowEditModal] = useState(false);
@@ -386,18 +388,18 @@ export function PurchaseCTA({
       case "escrow_completed":
         return {
           primaryButton: {
-            text: "거래 상대방과 채팅",
-            icon: MessageCircle,
+            text: "거래 진행하기",
+            icon: CheckCircle,
             variant: "primary" as const,
             disabled: false,
-            onClick: handleChat,
+            onClick: onStartTransaction || (() => {}),
           },
           secondaryButton: {
-            text: "안전결제 완료",
-            icon: Shield,
+            text: "거래 상대방과 채팅",
+            icon: MessageCircle,
             variant: "outline" as const,
-            disabled: true,
-            onClick: () => {},
+            disabled: false,
+            onClick: handleChat,
           },
         };
       default:
@@ -628,26 +630,35 @@ export function PurchaseCTA({
         /* 다른 사람의 글인 경우 - 기존 UI */
         <>
           {/* 거래 상대방 정보 (거래 상태일 때만) */}
-          {(status === "reserved" || status === "paid_hold" || status === "shipped" || status === "escrow_completed") && buyerUid && sellerUid && currentUserId && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-blue-900">거래 상대방</h3>
-                  <p className="text-sm text-blue-700">
-                    {currentUserId === sellerUid ? "구매자" : "판매자"}와 거래 중
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-blue-600">
-                    {status === "reserved" && "거래 대기 중"}
-                    {status === "paid_hold" && "결제 완료"}
-                    {status === "shipped" && "배송 중"}
-                    {status === "escrow_completed" && "안전결제 완료"}
-                  </p>
+          {(status === "reserved" ||
+            status === "paid_hold" ||
+            status === "shipped" ||
+            status === "escrow_completed") &&
+            buyerUid &&
+            sellerUid &&
+            currentUserId && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-900">
+                      거래 상대방
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      {currentUserId === sellerUid ? "구매자" : "판매자"}와 거래
+                      중
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-blue-600">
+                      {status === "reserved" && "거래 대기 중"}
+                      {status === "paid_hold" && "결제 완료"}
+                      {status === "shipped" && "배송 중"}
+                      {status === "escrow_completed" && "안전결제 완료"}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* 메인 버튼들 */}
           <div className="flex space-x-4">

@@ -429,6 +429,7 @@ export function ItemDetailModal({
                     | "paid_hold"
                     | "shipped"
                     | "sold"
+                    | "escrow_completed"
                 }
                 escrowEnabled={item.escrowEnabled}
                 isLoggedIn={!!user}
@@ -516,6 +517,49 @@ export function ItemDetailModal({
                   }
                 }}
                 onLogisticsQuote={handleLogisticsQuote}
+                onStartTransaction={async () => {
+                  // 거래 진행하기 - 안전결제 완료 후 판매자가 거래를 시작
+                  if (user && item?.sellerUid && item?.id && item?.buyerUid) {
+                    try {
+                      const { updateItemStatus } = await import(
+                        "../../lib/api/products"
+                      );
+                      const result = await updateItemStatus(
+                        item.id,
+                        "reserved",
+                        item.buyerUid
+                      );
+
+                      if (result.success) {
+                        // 거래 시작 메시지 전송
+                        try {
+                          const chatResult = await getOrCreateChat({
+                            itemId: item.id,
+                            buyerUid: item.buyerUid,
+                            sellerUid: item.sellerUid,
+                            firstMessage: "✅ 거래가 시작되었습니다! 안전하게 거래를 진행해주세요.",
+                          });
+
+                          if (chatResult.success && chatResult.chatId) {
+                            setSelectedChatId(chatResult.chatId);
+                            setShowChatModal(true);
+                          }
+                        } catch (error) {
+                          console.error("거래 시작 메시지 전송 실패:", error);
+                        }
+
+                        toast.success("거래가 시작되었습니다!");
+                        // 페이지 새로고침하여 상태 업데이트
+                        window.location.reload();
+                      } else {
+                        toast.error("거래 시작에 실패했습니다.");
+                      }
+                    } catch (error) {
+                      console.error("거래 시작 실패:", error);
+                      toast.error("거래 시작 중 오류가 발생했습니다.");
+                    }
+                  }
+                }}
               />
             </div>
           </div>
