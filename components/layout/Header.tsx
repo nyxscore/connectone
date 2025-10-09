@@ -242,13 +242,6 @@ export function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
                 >
-                  거래 현황
-                </Link>
-                <Link
-                  href="/profile/transactions"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
-                >
                   거래내역
                 </Link>
               </div>
