@@ -42,25 +42,6 @@ function MyItemsPageContent() {
     "selling" | "trading" | "buying" | "sold" | "payment_completed"
   >("selling");
 
-  useEffect(() => {
-    if (!authLoading && !currentUser && !targetUserId) {
-      router.push("/auth/login?next=/profile/items");
-      return;
-    }
-
-    if (currentUser || targetUserId) {
-      loadMyItems();
-      loadPaymentCompletedItems();
-    }
-  }, [
-    currentUser,
-    authLoading,
-    targetUserId,
-    activeTab,
-    loadMyItems,
-    loadPaymentCompletedItems,
-  ]);
-
   // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -175,6 +156,26 @@ function MyItemsPageContent() {
       setPaymentCompletedItems([]);
     }
   }, [targetUserId, currentUser?.uid]);
+
+  // 데이터 로드 useEffect (함수 정의 후에 위치)
+  useEffect(() => {
+    if (!authLoading && !currentUser && !targetUserId) {
+      router.push("/auth/login?next=/profile/items");
+      return;
+    }
+
+    if (currentUser || targetUserId) {
+      loadMyItems();
+      loadPaymentCompletedItems();
+    }
+  }, [
+    currentUser,
+    authLoading,
+    targetUserId,
+    activeTab,
+    loadMyItems,
+    loadPaymentCompletedItems,
+  ]);
 
   // 상태별 필터링
   useEffect(() => {
