@@ -71,7 +71,7 @@ export function EnhancedChatModal({
     onClose: typeof onClose,
     chatId,
   });
-  
+
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -133,7 +133,9 @@ export function EnhancedChatModal({
   const [showShippingAddressModal, setShowShippingAddressModal] =
     useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(
+    "medium"
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [expandedShippingAddresses, setExpandedShippingAddresses] = useState<
     Set<string>
@@ -1631,16 +1633,14 @@ export function EnhancedChatModal({
   console.log("EnhancedChatModal: 렌더링 상태 확인", {
     isOpen,
     chatId,
-    showChatModal: true, // 강제로 true로 설정
   });
 
-  // 임시로 isOpen 조건을 제거하여 모달이 항상 렌더링되도록 함
-  // if (!isOpen) {
-  //   console.log("EnhancedChatModal: isOpen이 false이므로 null 반환", {
-  //     isOpen,
-  //   });
-  //   return null;
-  // }
+  if (!isOpen) {
+    console.log("EnhancedChatModal: isOpen이 false이므로 null 반환", {
+      isOpen,
+    });
+    return null;
+  }
 
   console.log("EnhancedChatModal: 모달 렌더링 시작", { isOpen, chatId });
 
@@ -1648,7 +1648,9 @@ export function EnhancedChatModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-6xl h-[90vh] flex">
         {/* 채팅 영역 */}
-        <div className={`flex-1 flex flex-col ${showSidebar ? "mr-4" : "mr-0"}`}>
+        <div
+          className={`flex-1 flex flex-col ${showSidebar ? "mr-4" : "mr-0"}`}
+        >
           {/* 헤더 */}
           <div className="flex items-center justify-between p-2 border-b bg-gray-50">
             <div className="flex items-center space-x-1 flex-1 min-w-0">
@@ -1658,7 +1660,7 @@ export function EnhancedChatModal({
                 onClick={() => {
                   console.log("뒤로가기 버튼 클릭됨");
                   console.log("onClose 함수 타입:", typeof onClose);
-                  if (typeof onClose === 'function') {
+                  if (typeof onClose === "function") {
                     console.log("onClose 함수 호출 중...");
                     onClose();
                   } else {
@@ -1692,8 +1694,8 @@ export function EnhancedChatModal({
                   {/* 상품명과 가격 */}
                   <div className="text-left flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 text-xs leading-tight">
-                      {chatData.item.title.length > 35 
-                        ? `${chatData.item.title.substring(0, 35)}...` 
+                      {chatData.item.title.length > 35
+                        ? `${chatData.item.title.substring(0, 35)}...`
                         : chatData.item.title}
                     </h3>
                     <p className="text-xs text-gray-500">
@@ -1730,7 +1732,7 @@ export function EnhancedChatModal({
                 onClick={() => {
                   console.log("채팅창 닫기 버튼 클릭됨");
                   console.log("onClose 함수 타입:", typeof onClose);
-                  if (typeof onClose === 'function') {
+                  if (typeof onClose === "function") {
                     console.log("onClose 함수 호출 중...");
                     onClose();
                   } else {
@@ -1747,7 +1749,7 @@ export function EnhancedChatModal({
 
           {/* 설정 메뉴 오버레이 */}
           {showSettingsMenu && (
-            <div 
+            <div
               className="fixed inset-0 bg-black bg-opacity-20 z-40"
               onClick={() => setShowSettingsMenu(false)}
             />
@@ -1792,31 +1794,31 @@ export function EnhancedChatModal({
                   <div className="text-xs text-gray-500 mb-2">글자 크기</div>
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => setFontSize('small')}
+                      onClick={() => setFontSize("small")}
                       className={`px-2 py-1 text-xs rounded ${
-                        fontSize === 'small' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-gray-100 text-gray-600'
+                        fontSize === "small"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       작게
                     </button>
                     <button
-                      onClick={() => setFontSize('medium')}
+                      onClick={() => setFontSize("medium")}
                       className={`px-2 py-1 text-xs rounded ${
-                        fontSize === 'medium' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-gray-100 text-gray-600'
+                        fontSize === "medium"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       보통
                     </button>
                     <button
-                      onClick={() => setFontSize('large')}
+                      onClick={() => setFontSize("large")}
                       className={`px-2 py-1 text-xs rounded ${
-                        fontSize === 'large' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-gray-100 text-gray-600'
+                        fontSize === "large"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       크게
@@ -1839,11 +1841,15 @@ export function EnhancedChatModal({
           )}
 
           {/* 메시지 영역 */}
-          <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${
-            fontSize === 'small' ? 'text-sm' : 
-            fontSize === 'large' ? 'text-lg' : 
-            'text-base'
-          }`}>
+          <div
+            className={`flex-1 overflow-y-auto p-4 space-y-4 ${
+              fontSize === "small"
+                ? "text-sm"
+                : fontSize === "large"
+                  ? "text-lg"
+                  : "text-base"
+            }`}
+          >
             {/* 사기 경고 메시지 */}
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
               <div className="flex items-start space-x-2">

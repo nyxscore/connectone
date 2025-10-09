@@ -545,11 +545,11 @@ export function ItemDetailModal({
       />
 
       {/* 채팅 모달 */}
-      {selectedChatId && (
+      {showChatModal && selectedChatId && (
         <EnhancedChatModal
           isOpen={showChatModal}
           onClose={() => {
-            console.log("채팅 모달 닫기 요청");
+            console.log("채팅 모달 닫기 요청 - ItemDetailModal");
             setShowChatModal(false);
             setSelectedChatId(null);
           }}
