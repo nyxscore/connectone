@@ -196,8 +196,40 @@ export function Header() {
             </div>
 
             {/* 메뉴 항목들 */}
+            <div className="px-4 py-3 space-y-1">
+              <Link
+                href="/list"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                상품 목록
+              </Link>
+              <Link
+                href={user ? "/product/new" : "/auth/login?next=/product/new"}
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                상품 등록
+              </Link>
+              <Link
+                href={user ? "/chat" : "/auth/login?next=/chat"}
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <div className="flex items-center justify-between">
+                  <span>채팅</span>
+                  {user && unreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            </div>
+
+            {/* 프로필 관련 메뉴 */}
             {user && (
-              <div className="px-4 py-3 space-y-1">
+              <div className="px-4 py-3 border-t border-gray-200 space-y-1">
                 <Link
                   href="/profile/items"
                   onClick={() => setIsMobileMenuOpen(false)}
