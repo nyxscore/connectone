@@ -406,9 +406,6 @@ export default function MyProfilePage() {
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                     차단된 사용자 관리
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    차단한 사용자를 확인하고 해제할 수 있습니다
-                  </p>
                 </div>
               </div>
               <Button
