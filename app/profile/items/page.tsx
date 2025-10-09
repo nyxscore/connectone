@@ -8,6 +8,7 @@ import { ItemCard } from "../../../components/items/ItemCard";
 import EditProductModal from "../../../components/product/EditProductModal";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
+import { getMyItems } from "../../../lib/api/profile";
 import {
   Loader2,
   ArrowLeft,
@@ -16,6 +17,7 @@ import {
   Trash2,
   ArrowUp,
   Plus,
+  Package,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -66,64 +68,22 @@ function MyItemsPageContent() {
     try {
       setLoading(true);
 
-      if (activeTab === "buying") {
-        // 구매중인 상품 로드 - 새로운 API 사용
-        const response = await fetch(
-          `/api/profile/my-items?userId=${userId}&type=buying`
-        );
-        const result = await response.json();
-
-        if (result.success && result.items) {
-          setMyItems(result.items);
-          console.log("구매중 상품 로드 완료:", result.items.length, "개");
-        } else {
-          console.error("구매중 상품 로드 실패:", result.error);
-          setMyItems([]);
-        }
-      } else if (activeTab === "trading") {
-        // 거래중인 상품 로드 - 새로운 API 사용
-        const response = await fetch(
-          `/api/profile/my-items?userId=${userId}&type=trading`
-        );
-        const result = await response.json();
-
-        if (result.success && result.items) {
-          setMyItems(result.items);
-          console.log("거래중 상품 로드 완료:", result.items.length, "개");
-        } else {
-          console.error("거래중 상품 로드 실패:", result.error);
-          setMyItems([]);
-        }
-      } else if (activeTab === "sold") {
-        // 거래완료된 상품 로드 - 새로운 API 사용
-        const response = await fetch(
-          `/api/profile/my-items?userId=${userId}&type=sold`
-        );
-        const result = await response.json();
-
-        if (result.success && result.items) {
-          setMyItems(result.items);
-          console.log("거래완료 상품 로드 완료:", result.items.length, "개");
-        } else {
-          console.error("거래완료 상품 로드 실패:", result.error);
-          setMyItems([]);
-        }
-      } else if (activeTab === "payment_completed") {
+      if (activeTab === "payment_completed") {
         // 결제 완료된 상품 로드
         setMyItems(paymentCompletedItems);
         console.log("결제 완료 상품 표시:", paymentCompletedItems.length, "개");
       } else {
-        // 판매중인 상품 로드 - 새로운 API 사용
-        const response = await fetch(
-          `/api/profile/my-items?userId=${userId}&type=selling`
-        );
-        const result = await response.json();
+        // 새로운 API 사용
+        const result = await getMyItems({ 
+          userId, 
+          type: activeTab as "selling" | "trading" | "buying" | "sold"
+        });
 
         if (result.success && result.items) {
           setMyItems(result.items);
-          console.log("판매중 상품 로드 완료:", result.items.length, "개");
+          console.log(`${activeTab} 상품 로드 완료:`, result.items.length, "개");
         } else {
-          console.error("판매중 상품 로드 실패:", result.error);
+          console.error(`${activeTab} 상품 로드 실패:`, result.error);
           setMyItems([]);
         }
       }
@@ -140,10 +100,10 @@ function MyItemsPageContent() {
     if (!userId) return;
 
     try {
-      const response = await fetch(
-        `/api/profile/my-items?userId=${userId}&type=payment_completed`
-      );
-      const result = await response.json();
+      const result = await getMyItems({ 
+        userId, 
+        type: "payment_completed"
+      });
 
       if (result.success && result.items) {
         setPaymentCompletedItems(result.items);
