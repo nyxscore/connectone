@@ -1699,9 +1699,46 @@ export function EnhancedChatModal({
                         ? `${chatData.item.title.substring(0, 35)}...`
                         : chatData.item.title}
                     </h3>
-                    <p className="text-xs text-gray-500">
-                      {formatPrice(chatData.item.price)}
-                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <p className="text-xs text-gray-500">
+                        {formatPrice(chatData.item.price)}
+                      </p>
+                      {/* 모바일에서만 거래 유형과 상태 표시 */}
+                      <div className="flex items-center gap-1 md:hidden">
+                        {/* 거래 유형 배지 */}
+                        {chatData.tradeType && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">
+                            {chatData.tradeType}
+                          </span>
+                        )}
+                        {/* 거래 상태 배지 */}
+                        {chatData.item.status === "reserved" && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded">
+                            거래중
+                          </span>
+                        )}
+                        {chatData.item.status === "escrow_completed" && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-700 rounded">
+                            결제완료
+                          </span>
+                        )}
+                        {chatData.item.status === "shipping" && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded">
+                            배송중
+                          </span>
+                        )}
+                        {chatData.item.status === "sold" && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-700 rounded">
+                            거래완료
+                          </span>
+                        )}
+                        {chatData.item.status === "active" && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">
+                            판매중
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </button>
               )}
