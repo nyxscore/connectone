@@ -1703,40 +1703,110 @@ export function EnhancedChatModal({
                       <p className="text-xs text-gray-500">
                         {formatPrice(chatData.item.price)}
                       </p>
-                      {/* 모바일에서만 거래 유형과 상태 표시 */}
-                      <div className="flex items-center gap-1 md:hidden">
-                        {/* 거래 유형 배지 */}
-                        {chatData.tradeType && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">
-                            {chatData.tradeType}
-                          </span>
-                        )}
-                        {/* 거래 상태 배지 */}
-                        {chatData.item.status === "reserved" && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded">
-                            거래중
-                          </span>
-                        )}
-                        {chatData.item.status === "escrow_completed" && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-700 rounded">
-                            결제완료
-                          </span>
-                        )}
-                        {chatData.item.status === "shipping" && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded">
-                            배송중
-                          </span>
-                        )}
-                        {chatData.item.status === "sold" && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-700 rounded">
-                            거래완료
-                          </span>
-                        )}
-                        {chatData.item.status === "active" && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">
-                            판매중
-                          </span>
-                        )}
+                      {/* 모바일에서만 거래 현황 표시 */}
+                      <div className="md:hidden">
+                        {(() => {
+                          const isSeller = user?.uid === chatData.sellerUid;
+                          const status = chatData.item.status;
+                          
+                          // 판매자 관점 거래 현황
+                          if (isSeller) {
+                            if (status === "active") {
+                              return (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">
+                                  판매중
+                                </span>
+                              );
+                            } else if (status === "escrow_completed") {
+                              return (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-700 rounded">
+                                  결제완료 · 택배발송 필요
+                                </span>
+                              );
+                            } else if (status === "reserved") {
+                              if (!chatData.item.buyerShippingInfo) {
+                                return (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-medium bg-yellow-100 text-yellow-700 rounded">
+                                    배송지 입력 대기중
+                                  </span>
+                                );
+                              } else if (!chatData.item.shippingInfo) {
+                                return (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded">
+                                    택배발송 필요
+                                  </span>
+                                );
+                              } else {
+                                return (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">
+                                    발송완료 · 구매확정 대기
+                                  </span>
+                                );
+                              }
+                            } else if (status === "shipping") {
+                              return (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">
+                                  배송중 · 구매확정 대기
+                                </span>
+                              );
+                            } else if (status === "sold") {
+                              return (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded">
+                                  거래완료
+                                </span>
+                              );
+                            }
+                          } 
+                          // 구매자 관점 거래 현황
+                          else {
+                            if (status === "active") {
+                              return (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">
+                                  거래 대기
+                                </span>
+                              );
+                            } else if (status === "escrow_completed") {
+                              return (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-700 rounded">
+                                  결제완료 · 배송 대기중
+                                </span>
+                              );
+                            } else if (status === "reserved") {
+                              if (!chatData.item.buyerShippingInfo) {
+                                return (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-medium bg-yellow-100 text-yellow-700 rounded">
+                                    배송지 입력 필요
+                                  </span>
+                                );
+                              } else if (!chatData.item.shippingInfo) {
+                                return (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">
+                                    배송 대기중
+                                  </span>
+                                );
+                              } else {
+                                return (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded">
+                                    배송중 · 수령확인 필요
+                                  </span>
+                                );
+                              }
+                            } else if (status === "shipping") {
+                              return (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded">
+                                  배송중 · 수령확인 필요
+                                </span>
+                              );
+                            } else if (status === "sold") {
+                              return (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded">
+                                  거래완료
+                                </span>
+                              );
+                            }
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                   </div>
