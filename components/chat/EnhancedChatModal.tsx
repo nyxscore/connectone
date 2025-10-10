@@ -2633,28 +2633,6 @@ export function EnhancedChatModal({
                   </div>
                 )}
 
-              {/* 액션 버튼들 */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReport}
-                  className="flex items-center space-x-1 text-red-600 border-red-300 hover:bg-red-50"
-                >
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>신고하기</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBlock}
-                  className="flex items-center space-x-1 text-gray-600 border-gray-300 hover:bg-gray-50"
-                >
-                  <X className="w-4 h-4" />
-                  <span>차단하기</span>
-                </Button>
-              </div>
-
               {/* 거래 상태 */}
               <div>
                 {/* 거래 유형 표시 */}
