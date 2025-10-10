@@ -561,18 +561,21 @@ export function EnhancedChatModal({
                 ? itemResult.item.images[0]
                 : undefined),
           },
-          tradeType: (() => {
-            // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
-            if (
-              itemResult.item?.escrowEnabled ||
-              itemResult.item?.status === "escrow_completed"
-            ) {
-              return "안전결제";
-            }
-            // 아니면 tradeOptions에서 가져오기
-            const options = itemResult.item?.tradeOptions || ["직거래"];
-            return options.join(" + ");
-          })(),
+          tradeType:
+            chatData.tradeType ||
+            tradeType ||
+            (() => {
+              // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
+              if (
+                itemResult.item?.escrowEnabled ||
+                itemResult.item?.status === "escrow_completed"
+              ) {
+                return "안전결제";
+              }
+              // 아니면 tradeOptions에서 가져오기
+              const options = itemResult.item?.tradeOptions || ["직거래"];
+              return options.join(" + ");
+            })(),
         });
 
         // 메시지는 useEffect에서 자동으로 로드됨
@@ -589,7 +592,9 @@ export function EnhancedChatModal({
         const chatResult = await getOrCreateChat(
           itemId,
           user?.uid || "",
-          sellerUid
+          sellerUid,
+          undefined,
+          tradeType || undefined
         );
 
         if (!chatResult.success || !chatResult.chatId) {
@@ -658,18 +663,21 @@ export function EnhancedChatModal({
                 ? itemResult.item.images[0]
                 : undefined),
           },
-          tradeType: (() => {
-            // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
-            if (
-              itemResult.item?.escrowEnabled ||
-              itemResult.item?.status === "escrow_completed"
-            ) {
-              return "안전결제";
-            }
-            // 아니면 tradeOptions에서 가져오기
-            const options = itemResult.item?.tradeOptions || ["직거래"];
-            return options.join(" + ");
-          })(),
+          tradeType:
+            chatData.tradeType ||
+            tradeType ||
+            (() => {
+              // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
+              if (
+                itemResult.item?.escrowEnabled ||
+                itemResult.item?.status === "escrow_completed"
+              ) {
+                return "안전결제";
+              }
+              // 아니면 tradeOptions에서 가져오기
+              const options = itemResult.item?.tradeOptions || ["직거래"];
+              return options.join(" + ");
+            })(),
         });
       } else {
         setError("채팅 정보가 부족합니다.");
@@ -1715,7 +1723,7 @@ export function EnhancedChatModal({
                         {(() => {
                           const isSeller = user?.uid === chatData.sellerUid;
                           const status = chatData.item.status;
-                          
+
                           // 판매자 관점 거래 현황
                           if (isSeller) {
                             if (status === "active") {
@@ -1763,7 +1771,7 @@ export function EnhancedChatModal({
                                 </span>
                               );
                             }
-                          } 
+                          }
                           // 구매자 관점 거래 현황
                           else {
                             if (status === "active") {

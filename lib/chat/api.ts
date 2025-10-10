@@ -130,7 +130,8 @@ export async function getOrCreateChat(
   itemId: string,
   buyerUid: string,
   sellerUid: string,
-  firstMessage?: string
+  firstMessage?: string,
+  tradeType?: string
 ): Promise<{ success: boolean; chatId?: string; error?: string }> {
   try {
     const db = await getDb();
@@ -189,7 +190,7 @@ export async function getOrCreateChat(
     }
 
     // 새 채팅 생성
-    const chatData: Chat = {
+    const chatData: any = {
       id: chatId,
       itemId,
       buyerUid,
@@ -197,6 +198,11 @@ export async function getOrCreateChat(
       lastMessage: firstMessage || "",
       updatedAt: serverTimestamp() as Timestamp,
     };
+
+    // tradeType이 있으면 저장
+    if (tradeType) {
+      chatData.tradeType = tradeType;
+    }
 
     console.log("새 채팅 생성:", { chatId, chatData });
     await setDoc(chatRef, chatData);
