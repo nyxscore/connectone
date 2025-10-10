@@ -8,4 +8,3 @@ if (!getApps().length) {
 
 // Firestore 인스턴스
 export const db = getFirestore();
-
