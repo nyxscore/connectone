@@ -40,13 +40,18 @@ export function PriceRangeSlider({
     setIsDragging(type);
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || !sliderRef.current) return;
+  const handleTouchStart = (type: "min" | "max") => (e: React.TouchEvent) => {
+    e.preventDefault();
+    setIsDragging(type);
+  };
+
+  const updateSliderValue = (clientX: number) => {
+    if (!sliderRef.current) return;
 
     const rect = sliderRef.current.getBoundingClientRect();
     const percentage = Math.max(
       0,
-      Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)
+      Math.min(100, ((clientX - rect.left) / rect.width) * 100)
     );
     const newValue = getValueFromPercentage(percentage);
 
@@ -61,7 +66,23 @@ export function PriceRangeSlider({
     }
   };
 
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    updateSliderValue(e.clientX);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isDragging) return;
+    if (e.touches.length > 0) {
+      updateSliderValue(e.touches[0].clientX);
+    }
+  };
+
   const handleMouseUp = () => {
+    setIsDragging(null);
+  };
+
+  const handleTouchEnd = () => {
     setIsDragging(null);
   };
 
@@ -69,9 +90,13 @@ export function PriceRangeSlider({
     if (isDragging) {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("touchmove", handleTouchMove, { passive: false });
+      document.addEventListener("touchend", handleTouchEnd);
       return () => {
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener("touchmove", handleTouchMove);
+        document.removeEventListener("touchend", handleTouchEnd);
       };
     }
   }, [isDragging, minValue, maxValue]);
@@ -161,10 +186,26 @@ export function PriceRangeSlider({
               setIsDragging("max");
             }
           }}
+          onTouchStart={e => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const touch = e.touches[0];
+            const percentage = ((touch.clientX - rect.left) / rect.width) * 100;
+            const clickValue = getValueFromPercentage(percentage);
+
+            // 터치한 위치가 어느 핸들에 더 가까운지 판단
+            const distanceToMin = Math.abs(clickValue - minValue);
+            const distanceToMax = Math.abs(clickValue - maxValue);
+
+            if (distanceToMin < distanceToMax) {
+              setIsDragging("min");
+            } else {
+              setIsDragging("max");
+            }
+          }}
         >
           {/* 선택된 범위 표시 */}
           <div
-            className="absolute h-2 bg-blue-500 rounded-lg"
+            className="absolute h-2 bg-blue-500 rounded-lg pointer-events-none"
             style={{
               left: `${minPercentage}%`,
               width: `${maxPercentage - minPercentage}%`,
@@ -173,16 +214,18 @@ export function PriceRangeSlider({
 
           {/* 최소값 핸들 */}
           <div
-            className="absolute w-5 h-5 bg-white border-2 border-blue-500 rounded-full cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1.5"
+            className="absolute w-6 h-6 md:w-5 md:h-5 bg-white border-2 border-blue-500 rounded-full cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-2 md:-translate-y-1.5 touch-none"
             style={{ left: `${minPercentage}%` }}
             onMouseDown={handleMouseDown("min")}
+            onTouchStart={handleTouchStart("min")}
           />
 
           {/* 최대값 핸들 */}
           <div
-            className="absolute w-5 h-5 bg-white border-2 border-blue-500 rounded-full cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1.5"
+            className="absolute w-6 h-6 md:w-5 md:h-5 bg-white border-2 border-blue-500 rounded-full cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-2 md:-translate-y-1.5 touch-none"
             style={{ left: `${maxPercentage}%` }}
             onMouseDown={handleMouseDown("max")}
+            onTouchStart={handleTouchStart("max")}
           />
         </div>
 
