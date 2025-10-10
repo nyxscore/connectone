@@ -100,7 +100,7 @@ export function SafeChatModal({
             status: "active",
           },
         });
-        
+
         // 임시 메시지 추가
         setMessages([
           {
@@ -136,7 +136,7 @@ export function SafeChatModal({
             status: "active",
           },
         });
-        
+
         // 자동 시스템 메시지
         if (autoSendSystemMessage) {
           setMessages([
@@ -172,7 +172,7 @@ export function SafeChatModal({
 
       setMessages(prev => [...prev, newMessage]);
       console.log("메시지 전송:", newMessage);
-      
+
       toast.success("메시지가 전송되었습니다.");
     } catch (error) {
       console.error("메시지 전송 실패:", error);
@@ -201,16 +201,11 @@ export function SafeChatModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col">
+      <div className="bg-white md:rounded-lg w-full md:max-w-4xl mx-0 md:mx-4 h-full md:max-h-[90vh] flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="sm"
-              className="p-1"
-            >
+            <Button onClick={onClose} variant="ghost" size="sm" className="p-1">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
@@ -231,12 +226,7 @@ export function SafeChatModal({
             >
               <Trash2 className="w-5 h-5" />
             </Button>
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="sm"
-              className="p-1"
-            >
+            <Button onClick={onClose} variant="ghost" size="sm" className="p-1">
               <X className="w-5 h-5" />
             </Button>
           </div>
@@ -262,15 +252,15 @@ export function SafeChatModal({
             </div>
           ) : (
             <div className="space-y-2">
-              {messages.map((message) => (
+              {messages.map(message => (
                 <div
                   key={message.id}
                   className={`p-3 rounded-lg max-w-[80%] ${
                     message.senderId === user?.uid
                       ? "bg-blue-500 text-white ml-auto"
                       : message.senderId === "system"
-                      ? "bg-gray-200 text-gray-700 text-center mx-auto"
-                      : "bg-gray-100 text-gray-900"
+                        ? "bg-gray-200 text-gray-700 text-center mx-auto"
+                        : "bg-gray-100 text-gray-900"
                   }`}
                 >
                   <p className="text-sm">{message.text}</p>
@@ -291,20 +281,21 @@ export function SafeChatModal({
               type="text"
               placeholder="메시지를 입력하세요..."
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+              onKeyPress={e => {
+                if (e.key === "Enter" && e.currentTarget.value.trim()) {
                   handleSendMessage(e.currentTarget.value);
-                  e.currentTarget.value = '';
+                  e.currentTarget.value = "";
                 }
               }}
               disabled={loading}
             />
             <Button
-              onClick={(e) => {
-                const input = e.currentTarget.parentElement?.querySelector('input');
+              onClick={e => {
+                const input =
+                  e.currentTarget.parentElement?.querySelector("input");
                 if (input?.value.trim()) {
                   handleSendMessage(input.value);
-                  input.value = '';
+                  input.value = "";
                 }
               }}
               disabled={loading}

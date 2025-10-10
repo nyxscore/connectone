@@ -31,7 +31,7 @@ export function SimpleChatModal({
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user) return;
-    
+
     setLoading(true);
     try {
       // 간단한 메시지 추가
@@ -41,7 +41,7 @@ export function SimpleChatModal({
         senderId: user.uid,
         timestamp: new Date(),
       };
-      
+
       setMessages(prev => [...prev, message]);
       setNewMessage("");
       console.log("메시지 전송:", message);
@@ -56,19 +56,14 @@ export function SimpleChatModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+      <div className="bg-white md:rounded-lg w-full md:max-w-md mx-0 md:mx-4 h-full md:max-h-[80vh] flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-blue-500" />
             <h2 className="text-lg font-semibold">채팅</h2>
           </div>
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="sm"
-            className="p-1"
-          >
+          <Button onClick={onClose} variant="ghost" size="sm" className="p-1">
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -82,7 +77,7 @@ export function SimpleChatModal({
             </div>
           ) : (
             <div className="space-y-2">
-              {messages.map((message) => (
+              {messages.map(message => (
                 <div
                   key={message.id}
                   className={`p-2 rounded-lg max-w-[80%] ${
@@ -107,8 +102,8 @@ export function SimpleChatModal({
             <input
               type="text"
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              onChange={e => setNewMessage(e.target.value)}
+              onKeyPress={e => e.key === "Enter" && handleSendMessage()}
               placeholder="메시지를 입력하세요..."
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={loading}

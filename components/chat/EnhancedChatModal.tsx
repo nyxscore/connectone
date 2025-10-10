@@ -1646,8 +1646,8 @@ export function EnhancedChatModal({
   console.log("EnhancedChatModal: 모달 렌더링 시작", { isOpen, chatId });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-6xl h-[90vh] flex">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 md:p-4">
+      <div className="bg-white md:rounded-lg w-full md:max-w-6xl h-full md:h-[90vh] flex">
         {/* 채팅 영역 */}
         <div
           className={`flex-1 flex flex-col ${showSidebar ? "mr-4" : "mr-0"}`}
@@ -2003,44 +2003,54 @@ export function EnhancedChatModal({
           </div>
 
           {/* 거래 진행 버튼 (escrow_completed 상태일 때만) */}
-          {chatData && chatData.item && chatData.item.status === "escrow_completed" && user && (
-            <div className="p-4 border-t bg-blue-50">
-              <PurchaseCTA
-                status={chatData.item.status as "escrow_completed"}
-                sellerUid={chatData.item.sellerUid || ""}
-                buyerUid={chatData.item.buyerUid || ""}
-                currentUserId={user.uid}
-                escrowEnabled={true}
-                onStartTransaction={async () => {
-                  // 거래 진행하기 로직
-                  if (user && chatData.item?.sellerUid && chatData.item?.id && chatData.item?.buyerUid) {
-                    try {
-                      const { updateItemStatus } = await import("../../lib/api/products");
-                      const result = await updateItemStatus(
-                        chatData.item.id,
-                        "reserved",
-                        chatData.item.buyerUid
-                      );
+          {chatData &&
+            chatData.item &&
+            chatData.item.status === "escrow_completed" &&
+            user && (
+              <div className="p-4 border-t bg-blue-50">
+                <PurchaseCTA
+                  status={chatData.item.status as "escrow_completed"}
+                  sellerUid={chatData.item.sellerUid || ""}
+                  buyerUid={chatData.item.buyerUid || ""}
+                  currentUserId={user.uid}
+                  escrowEnabled={true}
+                  onStartTransaction={async () => {
+                    // 거래 진행하기 로직
+                    if (
+                      user &&
+                      chatData.item?.sellerUid &&
+                      chatData.item?.id &&
+                      chatData.item?.buyerUid
+                    ) {
+                      try {
+                        const { updateItemStatus } = await import(
+                          "../../lib/api/products"
+                        );
+                        const result = await updateItemStatus(
+                          chatData.item.id,
+                          "reserved",
+                          chatData.item.buyerUid
+                        );
 
-                      if (result.success) {
-                        toast.success("거래가 시작되었습니다!");
-                        // 페이지 새로고침하여 상태 업데이트
-                        window.location.reload();
-                      } else {
-                        toast.error("거래 시작에 실패했습니다.");
+                        if (result.success) {
+                          toast.success("거래가 시작되었습니다!");
+                          // 페이지 새로고침하여 상태 업데이트
+                          window.location.reload();
+                        } else {
+                          toast.error("거래 시작에 실패했습니다.");
+                        }
+                      } catch (error) {
+                        console.error("거래 시작 실패:", error);
+                        toast.error("거래 시작 중 오류가 발생했습니다.");
                       }
-                    } catch (error) {
-                      console.error("거래 시작 실패:", error);
-                      toast.error("거래 시작 중 오류가 발생했습니다.");
                     }
-                  }
-                }}
-                onChat={() => {
-                  // 이미 채팅창이 열려있으므로 아무것도 하지 않음
-                }}
-              />
-            </div>
-          )}
+                  }}
+                  onChat={() => {
+                    // 이미 채팅창이 열려있으므로 아무것도 하지 않음
+                  }}
+                />
+              </div>
+            )}
 
           {/* 메시지 입력 */}
           {chatData && user && (

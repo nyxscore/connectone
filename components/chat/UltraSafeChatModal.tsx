@@ -4,8 +4,21 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
 import { getFirebaseDb } from "../../lib/api/firebase-ultra-safe";
-import { doc, getDoc, collection, addDoc, updateDoc, query, orderBy, onSnapshot } from "firebase/firestore";
-import { getOrCreateChat, getChatMessages, subscribeToMessages } from "../../lib/chat/api";
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  updateDoc,
+  query,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
+import {
+  getOrCreateChat,
+  getChatMessages,
+  subscribeToMessages,
+} from "../../lib/chat/api";
 import { getItem } from "../../lib/api/products";
 import { getUserProfile } from "../../lib/profile/api";
 import {
@@ -91,7 +104,7 @@ export function UltraSafeChatModal({
   // 모든 Hook을 컴포넌트 최상단에 선언
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   // 상태 관리
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -113,15 +126,19 @@ export function UltraSafeChatModal({
   const [isRegisteringShipping, setIsRegisteringShipping] = useState(false);
   const [courier, setCourier] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
-  const [showShippingTrackingModal, setShowShippingTrackingModal] = useState(false);
-  const [showBuyerShippingInfoModal, setShowBuyerShippingInfoModal] = useState(false);
+  const [showShippingTrackingModal, setShowShippingTrackingModal] =
+    useState(false);
+  const [showBuyerShippingInfoModal, setShowBuyerShippingInfoModal] =
+    useState(false);
   const [isConfirmingDelivery, setIsConfirmingDelivery] = useState(false);
-  const [showConfirmDeliveryModal, setShowConfirmDeliveryModal] = useState(false);
+  const [showConfirmDeliveryModal, setShowConfirmDeliveryModal] =
+    useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [systemMessagesInitialized, setSystemMessagesInitialized] = useState(false);
+  const [systemMessagesInitialized, setSystemMessagesInitialized] =
+    useState(false);
 
   // 채팅 데이터 로드
   useEffect(() => {
@@ -161,14 +178,14 @@ export function UltraSafeChatModal({
       if (chatId) {
         // 기존 채팅 로드
         console.log("기존 채팅 로드:", chatId);
-        
+
         // Firebase에서 실제 채팅 데이터 로드
         const db = getFirebaseDb();
         if (db) {
           const chatDoc = await getDoc(doc(db, "chats", chatId));
           if (chatDoc.exists()) {
             const chatData = chatDoc.data();
-            
+
             // 실제 상품 정보 로드
             let itemData = null;
             if (chatData.itemId) {
@@ -178,18 +195,21 @@ export function UltraSafeChatModal({
                 console.error("상품 정보 로드 실패:", error);
               }
             }
-            
+
             // 실제 사용자 정보 로드
             let otherUserData = null;
             if (chatData.sellerUid && chatData.buyerUid) {
-              const otherUid = chatData.sellerUid === user?.uid ? chatData.buyerUid : chatData.sellerUid;
+              const otherUid =
+                chatData.sellerUid === user?.uid
+                  ? chatData.buyerUid
+                  : chatData.sellerUid;
               try {
                 otherUserData = await getUserProfile(otherUid);
               } catch (error) {
                 console.error("사용자 정보 로드 실패:", error);
               }
             }
-            
+
             setChatData({
               chatId,
               otherUser: {
@@ -212,7 +232,7 @@ export function UltraSafeChatModal({
               sellerUid: chatData.sellerUid,
               buyerUid: chatData.buyerUid,
             });
-            
+
             // 실제 메시지 로드
             loadMessages(chatId);
           } else {
@@ -224,18 +244,18 @@ export function UltraSafeChatModal({
       } else if (itemId && sellerUid && user) {
         // 새 채팅 생성
         console.log("새 채팅 생성:", { itemId, sellerUid });
-        
+
         try {
           // 실제 상품 정보 로드
           const itemData = await getItem(itemId);
-          
+
           // 실제 사용자 정보 로드
           const sellerData = await getUserProfile(sellerUid);
-          
+
           // 새 채팅 생성 (itemId, buyerUid, sellerUid 순서)
           const chatResult = await getOrCreateChat(itemId, user.uid, sellerUid);
           const newChatId = chatResult.success ? chatResult.chatId : null;
-          
+
           setChatData({
             chatId: newChatId,
             otherUser: {
@@ -258,7 +278,7 @@ export function UltraSafeChatModal({
             sellerUid,
             buyerUid: user.uid,
           });
-          
+
           // 자동 시스템 메시지
           if (autoSendSystemMessage) {
             setMessages([
@@ -273,7 +293,7 @@ export function UltraSafeChatModal({
               },
             ]);
           }
-          
+
           // 메시지 구독 시작
           loadMessages(newChatId);
         } catch (error) {
@@ -292,7 +312,7 @@ export function UltraSafeChatModal({
   const loadMessages = async (chatId: string) => {
     try {
       setMessagesLoading(true);
-      
+
       // Firebase에서 실제 메시지 로드
       const db = getFirebaseDb();
       if (db) {
@@ -301,9 +321,9 @@ export function UltraSafeChatModal({
         if (messagesResult.success && messagesResult.messages) {
           setMessages(messagesResult.messages);
         }
-        
+
         // 실시간 메시지 구독
-        subscribeToMessages(chatId, (newMessages) => {
+        subscribeToMessages(chatId, newMessages => {
           setMessages(newMessages);
         });
       }
@@ -334,7 +354,7 @@ export function UltraSafeChatModal({
       };
 
       await addDoc(collection(db, "messages"), messageData);
-      
+
       console.log("메시지 전송 성공:", messageData);
       toast.success("메시지가 전송되었습니다.");
     } catch (error) {
@@ -365,7 +385,7 @@ export function UltraSafeChatModal({
 
     try {
       setIsStartingTransaction(true);
-      
+
       // Firebase에서 실제 거래 시작
       const db = getFirebaseDb();
       if (db) {
@@ -375,19 +395,19 @@ export function UltraSafeChatModal({
           buyerUid: user.uid,
           reservedAt: new Date(),
         });
-        
+
         // 시스템 메시지 전송
         const systemMessage = {
           chatId: chatData.chatId,
           senderUid: "system",
-          content: `${user.uid === chatData.sellerUid ? '판매자' : '구매자'}가 거래를 시작했습니다.`,
+          content: `${user.uid === chatData.sellerUid ? "판매자" : "구매자"}가 거래를 시작했습니다.`,
           type: "system",
           createdAt: new Date(),
           readBy: [],
         };
-        
+
         await addDoc(collection(db, "messages"), systemMessage);
-        
+
         console.log("거래 시작 성공:", chatData.item.id);
         toast.success("거래가 시작되었습니다.");
       }
@@ -404,7 +424,7 @@ export function UltraSafeChatModal({
 
     try {
       setIsCompletingPurchase(true);
-      
+
       // Firebase에서 실제 구매 완료
       const db = getFirebaseDb();
       if (db) {
@@ -413,7 +433,7 @@ export function UltraSafeChatModal({
           status: "sold",
           soldAt: new Date(),
         });
-        
+
         // 시스템 메시지 전송
         const systemMessage = {
           chatId: chatData.chatId,
@@ -423,9 +443,9 @@ export function UltraSafeChatModal({
           createdAt: new Date(),
           readBy: [],
         };
-        
+
         await addDoc(collection(db, "messages"), systemMessage);
-        
+
         console.log("구매 완료 성공:", chatData.item.id);
         toast.success("구매가 완료되었습니다.");
       }
@@ -441,7 +461,7 @@ export function UltraSafeChatModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-6xl mx-4 max-h-[90vh] flex">
+      <div className="bg-white md:rounded-lg w-full md:max-w-6xl mx-0 md:mx-4 h-full md:max-h-[90vh] flex">
         {/* 사이드바 */}
         {showSidebar && chatData && (
           <div className="w-80 border-r border-gray-200 flex flex-col">
@@ -474,7 +494,7 @@ export function UltraSafeChatModal({
                 )}
                 거래 시작
               </Button>
-              
+
               <Button
                 onClick={handleCompletePurchase}
                 disabled={isCompletingPurchase || loading}
@@ -567,37 +587,44 @@ export function UltraSafeChatModal({
                   <p className="text-red-500">{error}</p>
                 </div>
               </div>
-            ) : !messages || !Array.isArray(messages) || messages.length === 0 ? (
+            ) : !messages ||
+              !Array.isArray(messages) ||
+              messages.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
                 <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                 <p>메시지를 입력해보세요!</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {messages && Array.isArray(messages) && messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.senderUid === user?.uid ? "justify-end" : "justify-start"}`}
-                  >
+                {messages &&
+                  Array.isArray(messages) &&
+                  messages.map(message => (
                     <div
-                      className={`max-w-[70%] p-3 rounded-lg ${
-                        message.senderUid === user?.uid
-                          ? "bg-blue-500 text-white"
-                          : message.senderUid === "system"
-                          ? "bg-gray-200 text-gray-700 text-center mx-auto"
-                          : "bg-gray-100 text-gray-900"
-                      }`}
+                      key={message.id}
+                      className={`flex ${message.senderUid === user?.uid ? "justify-end" : "justify-start"}`}
                     >
-                      <p className="text-sm">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {message.createdAt?.toDate ? 
-                          format(message.createdAt.toDate(), "HH:mm", { locale: ko }) :
-                          format(new Date(message.createdAt), "HH:mm", { locale: ko })
-                        }
-                      </p>
+                      <div
+                        className={`max-w-[70%] p-3 rounded-lg ${
+                          message.senderUid === user?.uid
+                            ? "bg-blue-500 text-white"
+                            : message.senderUid === "system"
+                              ? "bg-gray-200 text-gray-700 text-center mx-auto"
+                              : "bg-gray-100 text-gray-900"
+                        }`}
+                      >
+                        <p className="text-sm">{message.content}</p>
+                        <p className="text-xs opacity-70 mt-1">
+                          {message.createdAt?.toDate
+                            ? format(message.createdAt.toDate(), "HH:mm", {
+                                locale: ko,
+                              })
+                            : format(new Date(message.createdAt), "HH:mm", {
+                                locale: ko,
+                              })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -610,20 +637,21 @@ export function UltraSafeChatModal({
                 type="text"
                 placeholder="메시지를 입력하세요..."
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                onKeyPress={e => {
+                  if (e.key === "Enter" && e.currentTarget.value.trim()) {
                     handleSendMessage(e.currentTarget.value);
-                    e.currentTarget.value = '';
+                    e.currentTarget.value = "";
                   }
                 }}
                 disabled={loading}
               />
               <Button
-                onClick={(e) => {
-                  const input = e.currentTarget.parentElement?.querySelector('input');
+                onClick={e => {
+                  const input =
+                    e.currentTarget.parentElement?.querySelector("input");
                   if (input?.value.trim()) {
                     handleSendMessage(input.value);
-                    input.value = '';
+                    input.value = "";
                   }
                 }}
                 disabled={loading}
