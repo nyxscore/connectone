@@ -1522,7 +1522,7 @@ export function EnhancedChatModal({
 
       const itemRef = doc(db, "items", chatData.item.id);
       const { deleteField } = await import("firebase/firestore");
-      
+
       await updateDoc(itemRef, {
         status: "active", // 취소 시 다시 판매중으로
         buyerUid: deleteField(), // 구매자 정보 제거
@@ -1532,7 +1532,9 @@ export function EnhancedChatModal({
         cancelledAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      toast.success("거래가 취소되었습니다. 상품이 다시 판매중으로 변경되었습니다!");
+      toast.success(
+        "거래가 취소되었습니다. 상품이 다시 판매중으로 변경되었습니다!"
+      );
       setShowCancelModal(false);
       setCancelReason("");
 
