@@ -995,15 +995,20 @@ export function EnhancedChatModal({
     };
   }, [chatData?.item?.id]);
 
+  // 초기 메시지 로드 (한 번만)
   useEffect(() => {
     if (chatData?.chatId && !messagesLoaded) {
-      console.log("메시지 로드 및 구독 시작:", chatData.chatId);
-      
-      // 초기 메시지 로드
+      console.log("초기 메시지 로드:", chatData.chatId);
       loadMessages(chatData.chatId);
       setMessagesLoaded(true);
+    }
+  }, [chatData?.chatId, messagesLoaded]);
 
-      // 실시간 메시지 구독
+  // 실시간 메시지 구독 (항상 실행)
+  useEffect(() => {
+    if (chatData?.chatId) {
+      console.log("실시간 메시지 구독 시작:", chatData.chatId);
+      
       const unsubscribe = subscribeToMessages(
         chatData.chatId,
         messages => {
@@ -1089,7 +1094,7 @@ export function EnhancedChatModal({
         }
       };
     }
-  }, [chatData?.chatId, user, messagesLoaded]);
+  }, [chatData?.chatId, user]);
 
   const loadMessages = async (chatId: string) => {
     try {
@@ -2543,7 +2548,9 @@ export function EnhancedChatModal({
           )}
 
           {/* 메시지 영역 */}
-          <div className={`flex-1 overflow-y-auto p-4 space-y-4 pb-safe ${chatData?.tradeType === "안전결제" ? "pt-24 md:pt-4" : ""}`}>
+          <div
+            className={`flex-1 overflow-y-auto p-4 space-y-4 pb-safe ${chatData?.tradeType === "안전결제" ? "pt-24 md:pt-4" : ""}`}
+          >
             {/* 사기 경고 메시지 */}
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
               <div className="flex items-start space-x-2">
