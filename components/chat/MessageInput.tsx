@@ -44,20 +44,31 @@ export const MessageInput = memo(function MessageInput({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // blur 방지 - 키보드가 내려가는 것을 막음
-    const preventBlur = (e: FocusEvent) => {
-      e.preventDefault();
-      // 즉시 다시 포커스
-      requestAnimationFrame(() => {
+    let isFocused = true;
+
+    // 포커스 유지 루프 - 모바일에서 강제 포커스
+    const keepFocused = () => {
+      if (isFocused && document.activeElement !== textarea) {
         textarea.focus();
-      });
+      }
+      requestAnimationFrame(keepFocused);
     };
 
-    // textarea에서 포커스가 벗어나려고 할 때 막음
-    textarea.addEventListener("blur", preventBlur);
+    // 포커스 유지 루프 시작
+    requestAnimationFrame(keepFocused);
+
+    // blur 이벤트 완전 차단
+    const preventBlur = (e: FocusEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      textarea.focus();
+    };
+
+    textarea.addEventListener("blur", preventBlur, { capture: true });
 
     return () => {
-      textarea.removeEventListener("blur", preventBlur);
+      isFocused = false;
+      textarea.removeEventListener("blur", preventBlur, { capture: true });
     };
   }, []);
 
@@ -127,17 +138,28 @@ export const MessageInput = memo(function MessageInput({
       // 새로고침 없이 메시지 목록만 업데이트
       onMessageSent?.();
 
-      // 키보드 절대 내려가지 않도록 즉시 포커스 복원
-      requestAnimationFrame(() => {
-        textareaRef.current?.focus();
-      });
+      // 키보드 절대 내려가지 않도록 강제 포커스 (즉시 + 반복)
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.focus();
+        requestAnimationFrame(() => {
+          textarea.focus();
+          setTimeout(() => textarea.focus(), 10);
+          setTimeout(() => textarea.focus(), 50);
+          setTimeout(() => textarea.focus(), 100);
+        });
+      }
     } catch (error) {
       console.error("메시지 전송 실패:", error);
       toast.error("메시지 전송 중 오류가 발생했습니다.");
     } finally {
       isSendingRef.current = false;
-      // 전송 완료 후 키보드 절대 내려가지 않도록 포커스 유지
-      textareaRef.current?.focus();
+      // 전송 완료 후 키보드 절대 내려가지 않도록 강제 포커스
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.focus();
+        requestAnimationFrame(() => textarea.focus());
+      }
     }
   };
 
