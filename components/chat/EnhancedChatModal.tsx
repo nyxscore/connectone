@@ -267,6 +267,7 @@ export function EnhancedChatModal({
     };
 
     const message = getSystemMessage(type, chatData?.tradeType);
+    console.log(`📝 생성된 메시지: "${message}"`);
 
     // 메시지가 비어있으면 전송하지 않음 (해당 거래 유형에서 발생하지 않는 단계)
     if (!message) {
@@ -283,13 +284,19 @@ export function EnhancedChatModal({
 
     // 시스템 메시지 중복 체크 (메시지 로드 완료 후에만)
     if (messages.length > 0) {
+      console.log(`📝 현재 메시지 개수: ${messages.length}`);
+      console.log(`📝 검색할 메시지: "${message}"`);
+      
       const isDuplicate = messages.some(
         msg => msg.senderUid === "system" && msg.content === message
       );
 
       if (isDuplicate) {
         console.log(`⏭️ 중복 시스템 메시지 감지: ${type}, 전송하지 않음`);
+        console.log(`📝 기존 시스템 메시지들:`, messages.filter(msg => msg.senderUid === "system").map(msg => msg.content));
         return;
+      } else {
+        console.log(`✅ 중복되지 않음, 시스템 메시지 전송 진행`);
       }
     } else {
       console.log("📝 메시지 목록이 아직 로드되지 않음, 중복 체크 건너뜀");
@@ -1773,9 +1780,16 @@ export function EnhancedChatModal({
       const db = getDb();
       const itemRef = doc(db, "items", chatData.item.id);
 
-      // 상품 상태를 shipped로 업데이트
+      // 기존 발송 정보가 있는지 확인 (송장 수정인지 새 발송인지 구분)
+      const isShippingUpdate =
+        chatData.item.shippingInfo &&
+        (chatData.item.shippingInfo.courier !== shippingInfo.courier ||
+          chatData.item.shippingInfo.trackingNumber !==
+            shippingInfo.trackingNumber);
+
+      // 상품 상태를 shipping으로 업데이트 (addStatusSystemMessage와 일치)
       await updateDoc(itemRef, {
-        status: "shipped",
+        status: "shipping",
         shippingInfo: {
           courier: shippingInfo.courier,
           trackingNumber: shippingInfo.trackingNumber,
@@ -1784,38 +1798,22 @@ export function EnhancedChatModal({
         updatedAt: serverTimestamp(),
       });
 
-      // 기존 발송 정보가 있는지 확인 (송장 수정인지 새 발송인지 구분)
-      const isShippingUpdate =
-        chatData.item.shippingInfo &&
-        (chatData.item.shippingInfo.courier !== shippingInfo.courier ||
-          chatData.item.shippingInfo.trackingNumber !==
-            shippingInfo.trackingNumber);
-
-      // 채팅에 시스템 메시지 전송
-      if (chatData.item.buyerUid) {
+      // 상태 변경 시스템 메시지 전송
+      if (!isShippingUpdate) {
+        await addStatusSystemMessage("shipping");
+      } else {
+        // 송장 수정인 경우 별도 메시지
         try {
-          const chatResult = await getOrCreateChat(
-            chatData.item.id,
-            chatData.item.buyerUid,
-            user.uid,
-            isShippingUpdate
-              ? "송장 정보가 수정되었습니다."
-              : "상품이 발송되었습니다."
-          );
+          const { sendMessage } = await import("../../lib/chat/api");
+          const messageContent = `📝 송장 정보가 수정되었습니다!\n택배사: ${getCourierName(shippingInfo.courier)}\n송장번호: ${shippingInfo.trackingNumber}\n배송 추적이 가능합니다.`;
 
-          if (chatResult.success && chatResult.chatId) {
-            const messageContent = isShippingUpdate
-              ? `송장 정보가 수정되었습니다!\n택배사: ${getCourierName(shippingInfo.courier)}\n송장번호: ${shippingInfo.trackingNumber}\n배송 추적이 가능합니다.`
-              : `상품이 발송되었습니다!\n택배사: ${getCourierName(shippingInfo.courier)}\n송장번호: ${shippingInfo.trackingNumber}\n배송 추적이 가능합니다.`;
-
-            await sendMessage({
-              chatId: chatResult.chatId,
-              senderUid: "system",
-              content: messageContent,
-            });
-          }
-        } catch (chatError) {
-          console.error("발송/수정 시스템 메시지 전송 실패:", chatError);
+          await sendMessage({
+            chatId: chatData.chatId,
+            senderUid: "system",
+            content: messageContent,
+          });
+        } catch (error) {
+          console.error("송장 수정 시스템 메시지 전송 실패:", error);
         }
       }
 
@@ -1830,17 +1828,17 @@ export function EnhancedChatModal({
         prev
           ? {
               ...prev,
-              item: { ...prev.item, status: "shipped" },
+              item: { ...prev.item, status: "shipping" },
             }
           : null
       );
 
-      console.log("상품 상태를 shipped로 변경:", chatData.item.id);
+      console.log("상품 상태를 shipping으로 변경:", chatData.item.id);
 
       // 전역 이벤트 발생으로 상품 목록 업데이트
       window.dispatchEvent(
         new CustomEvent("itemStatusChanged", {
-          detail: { itemId: chatData.item.id, status: "shipped" },
+          detail: { itemId: chatData.item.id, status: "shipping" },
         })
       );
 
