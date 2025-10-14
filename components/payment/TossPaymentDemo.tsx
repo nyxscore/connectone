@@ -53,19 +53,43 @@ export function TossPaymentDemo({
     const initializeTossPayments = async () => {
       try {
         console.log("토스페이먼츠 SDK 초기화 시작...");
-        const tossPayments = await loadTossPayments(
-          "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq" // 테스트 클라이언트 키
-        );
-        tossPaymentsRef.current = tossPayments;
-        console.log("토스페이먼츠 SDK 초기화 완료");
+        
+        // 재시도 로직 추가
+        let retries = 0;
+        const maxRetries = 3;
+        
+        while (retries < maxRetries) {
+          try {
+            const tossPayments = await loadTossPayments(
+              "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq" // 테스트 클라이언트 키
+            );
+            tossPaymentsRef.current = tossPayments;
+            console.log("✅ 토스페이먼츠 SDK 초기화 완료");
+            return; // 성공하면 종료
+          } catch (err) {
+            retries++;
+            console.warn(`토스페이먼츠 SDK 로딩 실패 (시도 ${retries}/${maxRetries})`, err);
+            
+            if (retries < maxRetries) {
+              // 재시도 전 대기
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }
+        
+        // 모든 재시도 실패
+        throw new Error("SDK 로딩 최대 재시도 초과");
+        
       } catch (error) {
-        console.error("토스페이먼츠 SDK 초기화 실패:", error);
-
-        // Mock 결제로 자동 전환
-        console.log("Mock 결제 모드로 전환됨");
-        toast.error(
-          "결제 시스템 로딩 실패. 테스트 결제 모드로 진행합니다.",
-          { duration: 3000 }
+        console.error("❌ 토스페이먼츠 SDK 초기화 최종 실패:", error);
+        
+        // Mock 결제 안내 (에러가 아닌 정보로)
+        toast(
+          "💡 테스트용 Mock 결제를 사용하세요",
+          { 
+            icon: "ℹ️",
+            duration: 4000,
+          }
         );
       }
     };
@@ -216,16 +240,7 @@ export function TossPaymentDemo({
         </div>
       </div>
 
-      {/* 실제 토스 결제 버튼 */}
-      <Button
-        onClick={handlePayment}
-        className="w-full h-12 text-base font-medium bg-blue-600 hover:bg-blue-700"
-      >
-        <CreditCard className="w-4 h-4 mr-2" />
-        토스페이먼츠로 결제하기
-      </Button>
-
-      {/* Mock 결제 버튼 (테스트용) */}
+      {/* Mock 결제 버튼 (테스트용) - 메인 버튼 */}
       <Button
         onClick={handleMockPayment}
         className={`w-full h-14 text-lg font-semibold ${
@@ -236,6 +251,16 @@ export function TossPaymentDemo({
       >
         <CreditCard className="w-5 h-5 mr-2" />
         {escrowEnabled ? "안전결제하기 (테스트)" : "결제하기 (테스트)"}
+      </Button>
+
+      {/* 실제 토스 결제 버튼 (선택사항) */}
+      <Button
+        onClick={handlePayment}
+        variant="outline"
+        className="w-full h-12 text-base font-medium"
+      >
+        <CreditCard className="w-4 h-4 mr-2" />
+        토스페이먼츠로 결제하기 (선택사항)
       </Button>
 
       {/* 안내 문구 */}
