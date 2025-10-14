@@ -7,20 +7,6 @@ import { Button } from "../ui/Button";
 import { Send, Image, Loader2, X, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 
-// visualViewport API 타입 확장
-declare global {
-  interface Window {
-    visualViewport?: {
-      height: number;
-      width: number;
-      offsetTop: number;
-      offsetLeft: number;
-      scale: number;
-      addEventListener: (event: string, handler: () => void) => void;
-      removeEventListener: (event: string, handler: () => void) => void;
-    };
-  }
-}
 
 interface MessageInputProps {
   chatId: string;
@@ -54,67 +40,10 @@ export function MessageInput({
     }, 300);
   }, []);
 
-  // visualViewport API를 사용한 키보드 고정 및 레이아웃 보정
+  // 모바일 키보드 이벤트 처리 - 자연스러운 키보드 유지
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea || !window.visualViewport) return;
-
-    let isKeyboardOpen = false;
-    let initialViewportHeight = window.visualViewport.height;
-
-    const handleViewportChange = () => {
-      const currentHeight = window.visualViewport.height;
-      const heightDifference = initialViewportHeight - currentHeight;
-      
-      // 키보드가 열렸는지 판단 (높이 차이가 150px 이상)
-      const keyboardOpened = heightDifference > 150;
-      
-      if (keyboardOpened && !isKeyboardOpen) {
-        // 키보드가 열림
-        isKeyboardOpen = true;
-        document.body.style.transform = `translateY(-${heightDifference}px)`;
-        document.body.style.transition = 'transform 0.3s ease-out';
-        
-        // 포커스 유지
-        setTimeout(() => {
-          textarea.focus();
-        }, 100);
-        
-      } else if (!keyboardOpened && isKeyboardOpen) {
-        // 키보드가 닫힘
-        isKeyboardOpen = false;
-        document.body.style.transform = 'translateY(0)';
-        
-        // 포커스 유지
-        setTimeout(() => {
-          textarea.focus();
-        }, 100);
-      }
-    };
-
-    const handleFocus = () => {
-      if (textarea) {
-        textarea.focus();
-      }
-    };
-
-    // visualViewport 이벤트 리스너 등록
-    window.visualViewport.addEventListener('resize', handleViewportChange);
-    window.visualViewport.addEventListener('scroll', handleViewportChange);
-    
-    textarea.addEventListener('focus', handleFocus);
-
-    return () => {
-      // 정리
-      document.body.style.transform = '';
-      document.body.style.transition = '';
-      
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewportChange);
-        window.visualViewport.removeEventListener('scroll', handleViewportChange);
-      }
-      textarea.removeEventListener('focus', handleFocus);
-    };
+    // 메시지 전송 후에만 포커스 유지 (자연스러운 방식)
+    // blur 이벤트는 제거하여 깜빡임 방지
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,26 +105,22 @@ export function MessageInput({
         textareaRef.current.style.height = "auto";
       }
 
-      // 비동기 처리 완료 후 콜백 호출 (DOM 조작 없음)
+      // 새로고침 없이 메시지 목록만 업데이트
       onMessageSent?.();
 
-      // 입력창 초기화 후 포커스 복원 (DOM 리마운트 없음)
-      setMessage("");
-      setSelectedFiles([]);
-      
-      // 포커스 복원 (visualViewport 보정과 함께)
-      requestAnimationFrame(() => {
+      // 메시지 전송 후 자연스럽게 포커스 유지
+      setTimeout(() => {
         textareaRef.current?.focus();
-      });
+      }, 100);
     } catch (error) {
       console.error("메시지 전송 실패:", error);
       toast.error("메시지 전송 중 오류가 발생했습니다.");
     } finally {
       setIsSending(false);
-      // 전송 완료 후 포커스 복원 (visualViewport 보정과 함께)
-      requestAnimationFrame(() => {
+      // 전송 완료 후 자연스럽게 포커스 유지
+      setTimeout(() => {
         textareaRef.current?.focus();
-      });
+      }, 150);
     }
   };
 
