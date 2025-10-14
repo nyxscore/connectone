@@ -218,7 +218,6 @@ export function MessageInput({
           variant="outline"
           size="sm"
           onClick={openFileDialog}
-          disabled={isSending || isUploading}
           className={`flex-shrink-0 h-10 w-10 p-0 flex items-center justify-center ${onPlusClick ? "hidden md:flex" : ""}`}
         >
           <Image className="w-5 h-5" />
@@ -232,8 +231,7 @@ export function MessageInput({
             onChange={handleTextareaChange}
             onKeyPress={handleKeyPress}
             placeholder="메시지를 입력하세요..."
-            disabled={isSending || isUploading}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             rows={1}
             style={{ minHeight: "40px", maxHeight: "120px" }}
           />
