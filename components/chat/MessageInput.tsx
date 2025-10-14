@@ -7,7 +7,6 @@ import { Button } from "../ui/Button";
 import { Send, Image, Loader2, X, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 
-
 interface MessageInputProps {
   chatId: string;
   senderUid: string;
@@ -27,8 +26,8 @@ export function MessageInput({
 }: MessageInputProps) {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isSending, setIsSending] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const isSendingRef = useRef(false); // state 대신 ref 사용 - 리렌더링 방지
+  const isUploadingRef = useRef(false); // state 대신 ref 사용 - 리렌더링 방지
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,10 +54,10 @@ export function MessageInput({
     };
 
     // textarea에서 포커스가 벗어나려고 할 때 막음
-    textarea.addEventListener('blur', preventBlur);
+    textarea.addEventListener("blur", preventBlur);
 
     return () => {
-      textarea.removeEventListener('blur', preventBlur);
+      textarea.removeEventListener("blur", preventBlur);
     };
   }, []);
 
@@ -66,27 +65,27 @@ export function MessageInput({
     e.preventDefault();
 
     if (!message.trim() && selectedFiles.length === 0) return;
-    if (isSending) return;
+    if (isSendingRef.current) return;
 
-    setIsSending(true);
+    isSendingRef.current = true;
 
     try {
       let imageUrls: string[] = [];
 
       // 이미지 업로드
       if (selectedFiles.length > 0) {
-        setIsUploading(true);
+        isUploadingRef.current = true;
         const uploadResult = await uploadImages(selectedFiles);
 
         if (uploadResult.success && uploadResult.urls) {
           imageUrls = uploadResult.urls;
         } else {
           toast.error("이미지 업로드에 실패했습니다.");
-          setIsSending(false);
-          setIsUploading(false);
+          isSendingRef.current = false;
+          isUploadingRef.current = false;
           return;
         }
-        setIsUploading(false);
+        isUploadingRef.current = false;
       }
 
       // 메시지 전송
@@ -109,7 +108,7 @@ export function MessageInput({
 
       if (!result.success) {
         toast.error(result.error || "메시지 전송에 실패했습니다.");
-        setIsSending(false);
+        isSendingRef.current = false;
         return;
       }
 
@@ -124,7 +123,7 @@ export function MessageInput({
       // 입력창 초기화 (DOM 리마운트 없이)
       setMessage("");
       setSelectedFiles([]);
-      
+
       // 새로고침 없이 메시지 목록만 업데이트
       onMessageSent?.();
 
@@ -136,11 +135,9 @@ export function MessageInput({
       console.error("메시지 전송 실패:", error);
       toast.error("메시지 전송 중 오류가 발생했습니다.");
     } finally {
-      setIsSending(false);
+      isSendingRef.current = false;
       // 전송 완료 후 키보드 절대 내려가지 않도록 포커스 유지
-      requestAnimationFrame(() => {
-        textareaRef.current?.focus();
-      });
+      textareaRef.current?.focus();
     }
   };
 
@@ -242,22 +239,13 @@ export function MessageInput({
           />
         </div>
 
-        {/* 전송 버튼 */}
+        {/* 전송 버튼 - disabled 제거로 리렌더링 방지 */}
         <Button
           type="submit"
           size="sm"
-          disabled={
-            (!message.trim() && selectedFiles.length === 0) ||
-            isSending ||
-            isUploading
-          }
           className="flex-shrink-0 h-10 w-10 p-0 flex items-center justify-center"
         >
-          {isSending || isUploading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Send className="w-5 h-5" />
-          )}
+          <Send className="w-5 h-5" />
         </Button>
       </form>
 
@@ -271,15 +259,6 @@ export function MessageInput({
         className="hidden"
       />
 
-      {/* 업로드 상태 표시 */}
-      {isUploading && (
-        <div className="mt-2 text-center">
-          <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>이미지 업로드 중...</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
