@@ -152,6 +152,7 @@ export function EnhancedChatModal({
   const [showShippingAddressModal, setShowShippingAddressModal] =
     useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [isShippingInfoExpanded, setIsShippingInfoExpanded] = useState(false);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [showTradeStatusDropdown, setShowTradeStatusDropdown] = useState(false);
   const [showStepDropdown, setShowStepDropdown] = useState(false);
@@ -475,6 +476,38 @@ export function EnhancedChatModal({
     } catch (error) {
       console.error("배송지 전달 실패:", error);
       toast.error("배송지 전달에 실패했습니다.");
+    }
+  };
+
+  // 이미지 업로드 처리 함수
+  const handleImageUpload = async (files: FileList) => {
+    if (!chatData?.chatId || !user?.uid) return;
+
+    try {
+      // FileList를 File 배열로 변환
+      const fileArray = Array.from(files);
+      
+      // 이미지 업로드
+      const { uploadImages } = await import("../../lib/api/storage");
+      const uploadResult = await uploadImages(fileArray);
+
+      if (uploadResult.success && uploadResult.urls) {
+        // 각 이미지를 메시지로 전송
+        for (const imageUrl of uploadResult.urls) {
+          await sendMessage({
+            chatId: chatData.chatId,
+            senderUid: user.uid,
+            content: "",
+            imageUrl: imageUrl,
+          });
+        }
+        toast.success("이미지가 전송되었습니다.");
+      } else {
+        toast.error("이미지 업로드에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("이미지 업로드 실패:", error);
+      toast.error("이미지 업로드 중 오류가 발생했습니다.");
     }
   };
 
@@ -2956,7 +2989,19 @@ export function EnhancedChatModal({
                       {/* 앨범 (공통) */}
                       <motion.button
                         onClick={() => {
-                          toast.success("앨범 열기");
+                          // 파일 입력 요소 생성
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/*';
+                          input.multiple = true;
+                          input.onchange = (e) => {
+                            const files = (e.target as HTMLInputElement).files;
+                            if (files && files.length > 0) {
+                              // 이미지 파일들을 MessageInput으로 전달
+                              handleImageUpload(files);
+                            }
+                          };
+                          input.click();
                           setShowBottomSheet(false);
                         }}
                         className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
@@ -2972,7 +3017,19 @@ export function EnhancedChatModal({
                       {/* 카메라 (공통) */}
                       <motion.button
                         onClick={() => {
-                          toast.success("카메라 열기");
+                          // 카메라 입력 요소 생성
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/*';
+                          input.capture = 'camera';
+                          input.onchange = (e) => {
+                            const files = (e.target as HTMLInputElement).files;
+                            if (files && files.length > 0) {
+                              // 이미지 파일들을 MessageInput으로 전달
+                              handleImageUpload(files);
+                            }
+                          };
+                          input.click();
                           setShowBottomSheet(false);
                         }}
                         className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
@@ -3004,7 +3061,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <PlayCircle className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">거래진행</span>
+                                <span className="text-xs font-medium">
+                                  거래진행
+                                </span>
                               </motion.button>
 
                               {/* 거래 취소하기 */}
@@ -3020,7 +3079,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <XCircle className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">거래취소</span>
+                                <span className="text-xs font-medium">
+                                  거래취소
+                                </span>
                               </motion.button>
                             </>
                           )}
@@ -3043,7 +3104,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <Truck className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">운송장등록</span>
+                                <span className="text-xs font-medium">
+                                  운송장등록
+                                </span>
                               </motion.button>
 
                               {/* 거래 취소하기 */}
@@ -3059,7 +3122,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <XCircle className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">거래취소</span>
+                                <span className="text-xs font-medium">
+                                  거래취소
+                                </span>
                               </motion.button>
                             </>
                           )}
@@ -3069,8 +3134,13 @@ export function EnhancedChatModal({
                             <>
                               <motion.button
                                 onClick={() => {
-                                  setCourier(chatData.item.shippingInfo?.courier || "");
-                                  setTrackingNumber(chatData.item.shippingInfo?.trackingNumber || "");
+                                  setCourier(
+                                    chatData.item.shippingInfo?.courier || ""
+                                  );
+                                  setTrackingNumber(
+                                    chatData.item.shippingInfo
+                                      ?.trackingNumber || ""
+                                  );
                                   setShowShippingEditModal(true);
                                   setShowBottomSheet(false);
                                 }}
@@ -3081,7 +3151,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <Edit className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">송장수정</span>
+                                <span className="text-xs font-medium">
+                                  송장수정
+                                </span>
                               </motion.button>
                             </>
                           )}
@@ -3102,7 +3174,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <Star className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">후기작성</span>
+                                <span className="text-xs font-medium">
+                                  후기작성
+                                </span>
                               </motion.button>
                             </>
                           )}
@@ -3128,7 +3202,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <MapPin className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">배송지입력</span>
+                                <span className="text-xs font-medium">
+                                  배송지입력
+                                </span>
                               </motion.button>
 
                               {/* 거래 취소하기 */}
@@ -3144,7 +3220,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <XCircle className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">거래취소</span>
+                                <span className="text-xs font-medium">
+                                  거래취소
+                                </span>
                               </motion.button>
                             </>
                           )}
@@ -3165,7 +3243,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <MapPin className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">배송지입력</span>
+                                <span className="text-xs font-medium">
+                                  배송지입력
+                                </span>
                               </motion.button>
 
                               {/* 거래 취소하기 */}
@@ -3181,7 +3261,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <XCircle className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">거래취소</span>
+                                <span className="text-xs font-medium">
+                                  거래취소
+                                </span>
                               </motion.button>
                             </>
                           )}
@@ -3201,7 +3283,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <CheckCircle className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">배송확인</span>
+                                <span className="text-xs font-medium">
+                                  배송확인
+                                </span>
                               </motion.button>
                             </>
                           )}
@@ -3222,7 +3306,9 @@ export function EnhancedChatModal({
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <RotateCcw className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">반품</span>
+                                <span className="text-xs font-medium">
+                                  반품
+                                </span>
                               </motion.button>
                             </>
                           )}
@@ -3489,63 +3575,78 @@ export function EnhancedChatModal({
 
                           return (
                             <div
-                              className={`${bgColor} border rounded-lg p-4 mb-4`}
+                              className={`${bgColor} border rounded-lg mb-4`}
                             >
-                              <h4
-                                className={`text-sm font-medium ${textColor} mb-2`}
+                              {/* 접기/펼치기 헤더 */}
+                              <button
+                                onClick={() => setIsShippingInfoExpanded(!isShippingInfoExpanded)}
+                                className={`w-full p-4 text-left flex items-center justify-between hover:bg-opacity-80 transition-colors`}
                               >
-                                {title}
-                              </h4>
-                              <div className="space-y-2">
-                                {addressInfo["수령인"] && (
-                                  <div className="flex justify-between items-center">
-                                    <span className={`text-sm ${labelColor}`}>
-                                      받는 사람:
-                                    </span>
-                                    <span
-                                      className={`text-sm font-medium ${valueColor}`}
-                                    >
-                                      {addressInfo["수령인"]}
-                                    </span>
-                                  </div>
+                                <h4
+                                  className={`text-sm font-medium ${textColor}`}
+                                >
+                                  {title}
+                                </h4>
+                                {isShippingInfoExpanded ? (
+                                  <ChevronDown className={`w-4 h-4 ${textColor}`} />
+                                ) : (
+                                  <ChevronRight className={`w-4 h-4 ${textColor}`} />
                                 )}
-                                {addressInfo["연락처"] && (
-                                  <div className="flex justify-between items-center">
-                                    <span className={`text-sm ${labelColor}`}>
-                                      연락처:
-                                    </span>
-                                    <span
-                                      className={`text-sm font-medium ${valueColor}`}
-                                    >
-                                      {addressInfo["연락처"]}
-                                    </span>
-                                  </div>
-                                )}
-                                {addressInfo["주소"] && (
-                                  <div className="space-y-1">
-                                    <span className={`text-sm ${labelColor}`}>
-                                      배송 주소:
-                                    </span>
-                                    <p
-                                      className={`text-sm font-medium ${valueColor}`}
-                                    >
-                                      {addressInfo["주소"]}
-                                    </p>
-                                  </div>
-                                )}
-                                {addressInfo["배송 메모"] && (
-                                  <div className="space-y-1">
-                                    <span className={`text-sm ${labelColor}`}>
-                                      배송 메모:
-                                    </span>
-                                    <p
-                                      className={`text-sm font-medium ${valueColor}`}
-                                    >
-                                      {addressInfo["배송 메모"]}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
+                              </button>
+                              
+                              {/* 펼쳐진 내용 */}
+                              {isShippingInfoExpanded && (
+                                <div className="px-4 pb-4 space-y-2">
+                                  {addressInfo["수령인"] && (
+                                    <div className="flex justify-between items-center">
+                                      <span className={`text-sm ${labelColor}`}>
+                                        받는 사람:
+                                      </span>
+                                      <span
+                                        className={`text-sm font-medium ${valueColor}`}
+                                      >
+                                        {addressInfo["수령인"]}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {addressInfo["연락처"] && (
+                                    <div className="flex justify-between items-center">
+                                      <span className={`text-sm ${labelColor}`}>
+                                        연락처:
+                                      </span>
+                                      <span
+                                        className={`text-sm font-medium ${valueColor}`}
+                                      >
+                                        {addressInfo["연락처"]}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {addressInfo["주소"] && (
+                                    <div className="space-y-1">
+                                      <span className={`text-sm ${labelColor}`}>
+                                        배송 주소:
+                                      </span>
+                                      <p
+                                        className={`text-sm font-medium ${valueColor}`}
+                                      >
+                                        {addressInfo["주소"]}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {addressInfo["배송 메모"] && (
+                                    <div className="space-y-1">
+                                      <span className={`text-sm ${labelColor}`}>
+                                        배송 메모:
+                                      </span>
+                                      <p
+                                        className={`text-sm font-medium ${valueColor}`}
+                                      >
+                                        {addressInfo["배송 메모"]}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           );
                         }
