@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -9,6 +9,7 @@ import { PriceRangeSlider } from "../ui/PriceRangeSlider";
 import { ItemListFilters } from "../../lib/api/products";
 import { INSTRUMENT_CATEGORIES, REGIONS } from "../../data/constants/index";
 import { Search, Filter, SortAsc, SortDesc, X } from "lucide-react";
+import categoriesData from "../../data/categories.json";
 
 interface ItemFiltersProps {
   filters: ItemListFilters;
@@ -43,9 +44,11 @@ export function ItemFilters({
     });
   };
 
-  const hasActiveFilters = Object.values(filters).some(
-    value => value !== undefined && value !== ""
-  );
+  const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+    // status는 제외 (항상 있을 수 있는 기본 필터)
+    if (key === "status") return false;
+    return value !== undefined && value !== "";
+  });
 
   return (
     <Card className="p-4 sm:p-6 mb-6 sm:mb-8">
@@ -136,23 +139,30 @@ export function ItemFilters({
           </div>
         )}
 
-        {/* 카테고리 필터 - 심플한 버튼 형태 */}
+        {/* 카테고리 필터 - 계층적 구조 */}
         <div className="pt-4 border-t">
           <span className="text-sm font-medium text-gray-700 mb-3 block">
             카테고리
           </span>
-          <div className="flex flex-wrap gap-2">
-            {/* 전체 버튼 */}
+
+          {/* 1단계: 메인 카테고리 */}
+          <div className="flex flex-wrap gap-2 mb-3">
             <Button
               variant={!filters.category ? "primary" : "outline"}
               size="sm"
-              onClick={() => handleFilterChange("category", undefined)}
+              onClick={() => {
+                onFiltersChange({
+                  ...filters,
+                  category: undefined,
+                  subcategory: undefined,
+                  detailCategory: undefined,
+                });
+              }}
               className="text-xs sm:text-sm"
             >
               전체
             </Button>
 
-            {/* 카테고리 버튼들 */}
             {INSTRUMENT_CATEGORIES.map(category => (
               <Button
                 key={category.key}
@@ -160,13 +170,152 @@ export function ItemFilters({
                   filters.category === category.key ? "primary" : "outline"
                 }
                 size="sm"
-                onClick={() => handleFilterChange("category", category.key)}
+                onClick={() => {
+                  onFiltersChange({
+                    ...filters,
+                    category: category.key,
+                    subcategory: undefined,
+                    detailCategory: undefined,
+                  });
+                }}
                 className="text-xs sm:text-sm"
               >
                 {category.label}
               </Button>
             ))}
           </div>
+
+          {/* 2단계: 서브카테고리 (예: 피아노, 기타, 색소폰 등) */}
+          {filters.category &&
+            (() => {
+              const categoryData = categoriesData.categories.find(
+                cat =>
+                  cat.name ===
+                  INSTRUMENT_CATEGORIES.find(ic => ic.key === filters.category)
+                    ?.label
+              );
+
+              if (!categoryData) return null;
+
+              // items 배열에서 중간 카테고리 추출
+              const subcategories = categoryData.items.map(item =>
+                typeof item === "string" ? item : item.name
+              );
+
+              return (
+                <div className="mb-3">
+                  <span className="text-sm font-medium text-gray-700 mb-3 block">
+                    세부 카테고리
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={!filters.subcategory ? "primary" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        onFiltersChange({
+                          ...filters,
+                          subcategory: undefined,
+                          detailCategory: undefined,
+                        });
+                      }}
+                      className="text-xs"
+                    >
+                      전체
+                    </Button>
+                    {subcategories.map(subcat => (
+                      <Button
+                        key={subcat}
+                        variant={
+                          filters.subcategory === subcat ? "primary" : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          onFiltersChange({
+                            ...filters,
+                            subcategory: subcat,
+                            detailCategory: undefined,
+                          });
+                        }}
+                        className="text-xs"
+                      >
+                        {subcat}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* 3단계: 상세 카테고리 (예: 그랜드 피아노, 디지털 피아노 등) */}
+          {filters.category &&
+            filters.subcategory &&
+            (() => {
+              const categoryData = categoriesData.categories.find(
+                cat =>
+                  cat.name ===
+                  INSTRUMENT_CATEGORIES.find(ic => ic.key === filters.category)
+                    ?.label
+              );
+
+              if (!categoryData) return null;
+
+              // 선택된 서브카테고리의 상세 카테고리 찾기
+              const subcategoryData = categoryData.items.find(
+                item =>
+                  typeof item !== "string" && item.name === filters.subcategory
+              );
+
+              if (
+                !subcategoryData ||
+                typeof subcategoryData === "string" ||
+                !subcategoryData.subcategories
+              ) {
+                return null;
+              }
+
+              return (
+                <div className="mb-3">
+                  <span className="text-sm font-medium text-gray-700 mb-3 block">
+                    상세 종류
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={!filters.detailCategory ? "primary" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        onFiltersChange({
+                          ...filters,
+                          detailCategory: undefined,
+                        });
+                      }}
+                      className="text-xs"
+                    >
+                      전체
+                    </Button>
+                    {subcategoryData.subcategories.map(detail => (
+                      <Button
+                        key={detail}
+                        variant={
+                          filters.detailCategory === detail
+                            ? "primary"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          onFiltersChange({
+                            ...filters,
+                            detailCategory: detail,
+                          });
+                        }}
+                        className="text-xs"
+                      >
+                        {detail}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
         </div>
 
         {/* 거래 상태 필터 - 항상 보이는 버튼 형태 */}

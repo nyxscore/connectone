@@ -259,9 +259,7 @@ function MyItemsPageContent() {
                 variant="outline"
                 className="text-xs sm:text-sm"
               >
-                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">프로필로 돌아가기</span>
-                <span className="sm:hidden">뒤로</span>
+                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
               <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
                 <h1 className="text-lg sm:text-2xl font-bold text-gray-900">

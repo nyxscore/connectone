@@ -362,6 +362,8 @@ export async function updateItemStatus(
 export interface ItemListFilters {
   keyword?: string;
   category?: string;
+  subcategory?: string; // 중간 카테고리 (예: 피아노, 기타)
+  detailCategory?: string; // 세부 카테고리 (예: 디지털 피아노, 통기타)
   region?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -407,7 +409,10 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
           statusFilter = ["reserved", "escrow_completed"]; // 거래중인 상품만 (안전결제 완료 포함)
           break;
         case "sold":
-          statusFilter = ["sold"]; // 판매완료된 상품만
+          statusFilter = ["sold"]; // 거래완료된 상품만
+          break;
+        case "all":
+          statusFilter = ["active", "reserved", "escrow_completed", "sold"]; // 전체
           break;
         default:
           statusFilter = ["active", "reserved", "escrow_completed", "sold"]; // 전체
@@ -474,6 +479,13 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     console.log("쿼리 결과 개수:", querySnapshot.size);
     querySnapshot.forEach(doc => {
       const itemData = { id: doc.id, ...doc.data() } as Item;
+      console.log(
+        "상품 데이터:",
+        doc.id,
+        itemData.title,
+        itemData.status,
+        itemData.category
+      );
       items.push(itemData);
     });
 
@@ -486,22 +498,84 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       items = items.filter(item => item.price <= filters.maxPrice!);
     }
 
-    // 카테고리 필터링 (클라이언트 사이드 - 서브카테고리 지원)
+    // 카테고리 필터링 (클라이언트 사이드 - 계층적 카테고리 지원)
     if (filters.category) {
-      console.log("클라이언트 사이드 카테고리 필터링:", filters.category);
+      console.log("=== 카테고리 필터링 시작 ===");
+      console.log("필터 조건:", {
+        category: filters.category,
+        subcategory: filters.subcategory,
+        detailCategory: filters.detailCategory,
+      });
+
+      // 필터링 전 샘플 카테고리 확인
+      console.log(
+        "샘플 카테고리 데이터:",
+        items.slice(0, 5).map(item => ({
+          id: item.id,
+          title: item.title,
+          category: item.category,
+        }))
+      );
+
+      // 전체 카테고리 목록 확인
+      const allCategories = [...new Set(items.map(item => item.category))];
+      console.log("데이터베이스의 모든 카테고리:", allCategories);
+
       items = items.filter(item => {
-        // 정확히 일치하거나 해당 카테고리로 시작하는 경우
+        if (!item.category) {
+          console.log(`❌ ${item.title}: 카테고리 없음`);
+          return false;
+        }
+
+        // 메인 카테고리 매칭 - 여러 패턴 시도
         const categoryMatch =
           item.category === filters.category ||
           item.category?.startsWith(filters.category + "기 >") ||
-          item.category?.startsWith(filters.category + " >");
+          item.category?.startsWith(filters.category + " >") ||
+          item.category?.includes(filters.category);
 
-        console.log(
-          `상품 ${item.id}: category="${item.category}", filter="${filters.category}", match=${categoryMatch}`
-        );
-        return categoryMatch;
+        if (!categoryMatch) {
+          console.log(
+            `❌ ${item.title}: 메인 카테고리 불일치 (${item.category} / ${filters.category})`
+          );
+          return false;
+        }
+
+        // 서브카테고리가 지정된 경우 (예: "피아노")
+        if (filters.subcategory) {
+          const subcategoryMatch = item.category?.includes(filters.subcategory);
+          if (!subcategoryMatch) {
+            console.log(
+              `❌ ${item.title}: 서브카테고리 불일치 (${item.category} / ${filters.subcategory})`
+            );
+            return false;
+          }
+
+          // 상세 카테고리가 지정된 경우 (예: "디지털 피아노")
+          if (filters.detailCategory) {
+            const detailMatch = item.category?.includes(filters.detailCategory);
+            if (!detailMatch) {
+              console.log(
+                `❌ ${item.title}: 상세 카테고리 불일치 (${item.category} / ${filters.detailCategory})`
+              );
+              return false;
+            }
+            console.log(`✅ ${item.title}: 모든 조건 일치 (${item.category})`);
+            return true;
+          }
+
+          console.log(
+            `✅ ${item.title}: 서브카테고리까지 일치 (${item.category})`
+          );
+          return true;
+        }
+
+        console.log(`✅ ${item.title}: 메인 카테고리 일치 (${item.category})`);
+        return true;
       });
+
       console.log("카테고리 필터링 후 상품 개수:", items.length);
+      console.log("=== 카테고리 필터링 끝 ===");
     }
 
     // 키워드 필터링
@@ -519,6 +593,8 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
 
     // 거래중인 상품 필터링 (구매자와 판매자에게만 보이도록)
     if (options.currentUserId) {
+      console.log("사용자 ID로 필터링:", options.currentUserId);
+      const beforeFilterCount = items.length;
       items = items.filter(item => {
         // 거래중인 상품인지 확인 (reserved, paid_hold, shipping, escrow_completed 상태)
         const isTradingItem =
@@ -533,12 +609,20 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
           const isBuyer =
             item.buyerUid === options.currentUserId ||
             item.buyerId === options.currentUserId;
+
+          console.log(
+            `거래중 상품 ${item.title}: seller=${isSeller}, buyer=${isBuyer}, show=${isSeller || isBuyer}`
+          );
           return isSeller || isBuyer;
         }
 
         // 거래중이 아닌 상품은 모든 사용자에게 보임
+        console.log(`일반 상품 ${item.title}: 보임`);
         return true;
       });
+      console.log(
+        `사용자 필터링 후: ${beforeFilterCount} -> ${items.length}개`
+      );
     }
 
     // 정렬 (클라이언트 사이드)
@@ -754,11 +838,11 @@ export async function applyForItem(
 
     const item = itemResult.item;
 
-    // 이미 거래중이거나 판매완료된 상품인지 확인
+    // 이미 거래중이거나 거래완료된 상품인지 확인
     if (item.status !== "active") {
       return {
         success: false,
-        error: "이미 거래중이거나 판매완료된 상품입니다.",
+        error: "이미 거래중이거나 거래완료된 상품입니다.",
       };
     }
 

@@ -15,10 +15,11 @@ import {
   getChatMessages,
   subscribeToMessages,
   deleteChat,
+  sendMessage,
   Chat,
   Message,
 } from "../../lib/chat/api";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDb as getDb } from "../../lib/api/firebase-ultra-safe";
 import {
   ArrowLeft,
@@ -31,7 +32,9 @@ import {
   AlertCircle,
   MessageCircle,
   Trash2,
+  Edit,
 } from "lucide-react";
+import ShippingAddressSelectionModal from "./ShippingAddressSelectionModal";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import toast from "react-hot-toast";
@@ -74,6 +77,10 @@ export function ChatModal({
   const [showOtherProfileModal, setShowOtherProfileModal] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [showPriceEdit, setShowPriceEdit] = useState(false);
+  const [newPrice, setNewPrice] = useState<string>("");
+  const [showShippingAddressModal, setShowShippingAddressModal] =
+    useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -145,6 +152,7 @@ export function ChatModal({
                   photoURL: undefined,
                 };
           console.log("최종 사용자 데이터:", userData);
+          console.log("otherUser 원본 데이터:", otherUser);
 
           const itemData =
             itemResult?.success && itemResult.item
@@ -162,7 +170,7 @@ export function ChatModal({
             otherUser: {
               uid: otherUid,
               nickname: userData.nickname,
-              profileImage: userData.photoURL,
+              profileImage: userData.profileImage || userData.photoURL,
             },
             item: {
               id: itemData.id,
@@ -295,6 +303,66 @@ export function ChatModal({
     });
   };
 
+  const shouldShowTime = (message: Message, prevMessage: Message | null) => {
+    if (!prevMessage) return true;
+
+    const currentTime = message.createdAt?.toDate
+      ? message.createdAt.toDate()
+      : new Date(message.createdAt);
+    const prevTime = prevMessage.createdAt?.toDate
+      ? prevMessage.createdAt.toDate()
+      : new Date(prevMessage.createdAt);
+
+    // 분이 다르면 시간 표시
+    return (
+      currentTime.getMinutes() !== prevTime.getMinutes() ||
+      currentTime.getHours() !== prevTime.getHours()
+    );
+  };
+
+  const shouldShowProfile = (
+    message: Message,
+    prevMessage: Message | null,
+    isOwn: boolean
+  ) => {
+    if (isOwn) return false; // 내 메시지에는 프로필 표시 안함
+    if (!prevMessage) return true; // 첫 번째 메시지는 프로필 표시
+
+    const currentTime = message.createdAt?.toDate
+      ? message.createdAt.toDate()
+      : new Date(message.createdAt);
+    const prevTime = prevMessage.createdAt?.toDate
+      ? prevMessage.createdAt.toDate()
+      : new Date(prevMessage.createdAt);
+
+    // 5분 이상 차이나거나 다른 사람의 메시지면 프로필 표시
+    const timeDiff = Math.abs(currentTime.getTime() - prevTime.getTime());
+    const isDifferentSender = message.senderUid !== prevMessage.senderUid;
+
+    return timeDiff > 5 * 60 * 1000 || isDifferentSender;
+  };
+
+  // 배송지 전달 함수
+  const handleSendShippingAddress = async (address: any) => {
+    if (!chatData?.chatId || !user) return;
+
+    try {
+      // 배송지 정보를 깔끔하게 정렬하여 전송
+      const addressMessage = `배송지 정보가 전달되었습니다.\n\n📦 수령인: ${address.recipientName}\n\n📞 연락처: ${address.phoneNumber}\n\n📍 주소: ${address.address}${address.deliveryMemo ? `\n\n📝 배송 메모: ${address.deliveryMemo}` : ""}`;
+
+      await sendMessage({
+        chatId: chatData.chatId,
+        senderUid: user.uid,
+        content: addressMessage,
+      });
+
+      toast.success("배송지 정보가 판매자에게 전달되었습니다.");
+    } catch (error) {
+      console.error("배송지 전달 실패:", error);
+      toast.error("배송지 전달에 실패했습니다.");
+    }
+  };
+
   const isSameDate = (date1: any, date2: any) => {
     if (!date1 || !date2) return false;
     const d1 = date1.toDate ? date1.toDate() : new Date(date1);
@@ -329,6 +397,56 @@ export function ChatModal({
     } catch (error) {
       console.error("채팅방 삭제 실패:", error);
       toast.error("채팅방 삭제에 실패했습니다.");
+    }
+  };
+
+  const handlePriceUpdate = async () => {
+    if (!user || !chatData?.item.id || !newPrice) return;
+
+    const priceValue = parseInt(newPrice.replace(/[^0-9]/g, ""), 10);
+    if (isNaN(priceValue) || priceValue <= 0) {
+      toast.error("올바른 가격을 입력해주세요.");
+      return;
+    }
+
+    try {
+      const db = await getDb();
+      const oldPrice = chatData.item.price;
+
+      // 상품 가격 업데이트
+      const itemRef = doc(db, "items", chatData.item.id);
+      await updateDoc(itemRef, {
+        price: priceValue,
+        updatedAt: serverTimestamp(),
+      });
+
+      // 시스템 메시지로 가격 변경 알림 전송
+      const priceChangeMessage = `💰 가격이 ${formatPrice(oldPrice)}에서 ${formatPrice(priceValue)}으로 수정되었습니다.`;
+
+      await sendMessage({
+        chatId: chatData.chatId,
+        senderUid: "system",
+        content: priceChangeMessage,
+      });
+
+      // 로컬 상태 업데이트
+      setChatData({
+        ...chatData,
+        item: {
+          ...chatData.item,
+          price: priceValue,
+        },
+      });
+
+      toast.success("가격이 수정되었습니다.");
+      setShowPriceEdit(false);
+      setNewPrice("");
+
+      // 메시지 새로고침
+      loadMessages(chatData.chatId);
+    } catch (error) {
+      console.error("가격 수정 실패:", error);
+      toast.error("가격 수정에 실패했습니다.");
     }
   };
 
@@ -372,12 +490,15 @@ export function ChatModal({
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            {/* 상대방 프로필 버튼 - 더 눈에 띄게 */}
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => setShowOtherProfileModal(true)}
+              className="bg-white border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400"
             >
-              <User className="w-4 h-4" />
+              <User className="w-4 h-4 mr-1" />
+              <span className="text-xs font-medium">프로필</span>
             </Button>
             <Button
               variant="ghost"
@@ -408,9 +529,60 @@ export function ChatModal({
                 <h3 className="font-semibold text-gray-900">
                   {chatData.item.title}
                 </h3>
-                <p className="text-lg font-bold text-blue-600">
-                  {formatPrice(chatData.item.price)}
-                </p>
+                {showPriceEdit ? (
+                  <div className="flex items-center space-x-2 mt-1">
+                    <input
+                      type="text"
+                      value={newPrice}
+                      onChange={e => {
+                        const value = e.target.value.replace(/[^0-9]/g, "");
+                        setNewPrice(
+                          value ? parseInt(value, 10).toLocaleString() : ""
+                        );
+                      }}
+                      placeholder="새 가격"
+                      className="px-2 py-1 border rounded text-sm w-32"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handlePriceUpdate}
+                      className="bg-blue-600 text-white text-xs px-2 py-1"
+                    >
+                      확인
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setShowPriceEdit(false);
+                        setNewPrice("");
+                      }}
+                      className="text-xs px-2 py-1"
+                    >
+                      취소
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <p className="text-lg font-bold text-blue-600">
+                      {formatPrice(chatData.item.price)}
+                    </p>
+                    {/* 판매자만 가격 수정 버튼 표시 */}
+                    {user && sellerUid === user.uid && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setShowPriceEdit(true);
+                          setNewPrice(chatData.item.price.toLocaleString());
+                        }}
+                        className="text-xs text-gray-600 hover:text-blue-600 p-1"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -449,12 +621,35 @@ export function ChatModal({
               {console.log("메시지 렌더링:", messages.length, "개", messages)}
               {messages.map((message, index) => {
                 const isOwn = message.senderUid === user?.uid;
+                const isSystem = message.senderUid === "system";
 
                 // 이전 메시지와 날짜가 다른지 확인
                 const prevMessage = index > 0 ? messages[index - 1] : null;
                 const showDateSeparator =
                   !prevMessage ||
                   !isSameDate(message.createdAt, prevMessage.createdAt);
+
+                // 시간 표시 여부 확인 (분단위가 달라질 때만)
+                const showTime = shouldShowTime(message, prevMessage);
+                // 프로필 표시 여부 확인 (카카오톡 스타일)
+                const showProfile = shouldShowProfile(
+                  message,
+                  prevMessage,
+                  isOwn
+                );
+
+                // 디버깅 로그
+                console.log("메시지 프로필 디버깅:", {
+                  messageId: message.id,
+                  isOwn,
+                  showProfile,
+                  hasProfileImage: !!chatData?.otherUser.profileImage,
+                  profileImageUrl: chatData?.otherUser.profileImage,
+                  otherUser: chatData?.otherUser,
+                });
+
+                // 임시: 프로필 이미지가 없어도 강제로 표시 (디버깅용)
+                const forceShowProfile = !isOwn; // 상대방 메시지면 무조건 프로필 표시
 
                 return (
                   <div key={message.id}>
@@ -467,46 +662,118 @@ export function ChatModal({
                       </div>
                     )}
 
-                    {/* 메시지 */}
-                    <div
-                      className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-1`}
-                    >
-                      <div className="flex flex-col max-w-xs lg:max-w-md">
-                        <div
-                          className={`px-4 py-2 rounded-lg ${
-                            isOwn
-                              ? "bg-blue-500 text-white"
-                              : "bg-gray-200 text-gray-900"
-                          }`}
-                        >
-                          {message.imageUrl && (
-                            <img
-                              src={message.imageUrl}
-                              alt="메시지 이미지"
-                              className="w-full h-48 object-cover rounded mb-2"
-                            />
-                          )}
-                          <p className="text-sm">{message.content}</p>
-                        </div>
-
-                        {/* 시간 - 메시지 버블 밖에 표시 */}
-                        <div
-                          className={`flex items-center mt-1 ${
-                            isOwn ? "justify-end" : "justify-start"
-                          }`}
-                        >
-                          <span className="text-xs text-gray-500">
-                            {formatTimeOnly(message.createdAt)}
-                          </span>
+                    {/* 시스템 메시지 */}
+                    {isSystem ? (
+                      <div className="flex items-center justify-center my-3">
+                        <div className="bg-amber-50 text-amber-800 text-sm px-4 py-2 rounded-lg border border-amber-200 max-w-md text-center">
+                          {message.content}
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* 일반 메시지 */
+                      <div
+                        className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-1`}
+                      >
+                        <div
+                          className={`flex items-end ${isOwn ? "flex-row-reverse" : ""} ${
+                            showProfile
+                              ? "space-x-2"
+                              : isOwn
+                                ? "space-x-reverse space-x-2"
+                                : "space-x-2"
+                          }`}
+                        >
+                          {/* 상대방 프로필 사진 (카카오톡 스타일) - 임시로 강제 표시 */}
+                          {forceShowProfile && (
+                            <div className="flex-shrink-0 w-10 h-10">
+                              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-2 border-red-500">
+                                {chatData?.otherUser.profileImage ? (
+                                  <img
+                                    src={chatData.otherUser.profileImage}
+                                    alt={chatData.otherUser.nickname}
+                                    className="w-full h-full object-cover"
+                                    onError={e => {
+                                      console.log(
+                                        "프로필 이미지 로드 실패:",
+                                        chatData.otherUser.profileImage
+                                      );
+                                      e.currentTarget.style.display = "none";
+                                    }}
+                                    onLoad={() => {
+                                      console.log(
+                                        "프로필 이미지 로드 성공:",
+                                        chatData.otherUser.profileImage
+                                      );
+                                    }}
+                                  />
+                                ) : (
+                                  <User className="w-5 h-5 text-gray-400" />
+                                )}
+                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                  {showProfile ? "S" : "H"}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex flex-col max-w-xs lg:max-w-md">
+                            <div
+                              className={`px-4 py-2 rounded-lg ${
+                                isOwn
+                                  ? "bg-blue-500 text-white"
+                                  : "bg-gray-200 text-gray-900"
+                              }`}
+                            >
+                              {message.imageUrl && (
+                                <img
+                                  src={message.imageUrl}
+                                  alt="메시지 이미지"
+                                  className="w-full h-48 object-cover rounded mb-2"
+                                />
+                              )}
+                              <p className="text-sm">{message.content}</p>
+                            </div>
+
+                            {/* 시간 - 분단위가 달라질 때만 표시 */}
+                            {showTime && (
+                              <div
+                                className={`flex items-center mt-1 ${
+                                  isOwn ? "justify-end" : "justify-start"
+                                }`}
+                              >
+                                <span className="text-xs text-gray-500">
+                                  {formatTimeOnly(message.createdAt)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
           )}
         </div>
+
+        {/* 배송지 입력 버튼 - 구매자만 표시 */}
+        {user && chatData?.chatId && user.uid !== sellerUid && (
+          <div className="px-4 py-2 bg-blue-50 border-b">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // 배송지 입력 모달 열기
+                setShowShippingAddressModal(true);
+              }}
+              className="w-full bg-white border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400"
+            >
+              <MapPin className="w-4 h-4 mr-2" />
+              <span className="text-sm font-medium">배송지 정보 입력</span>
+            </Button>
+          </div>
+        )}
 
         {/* 메시지 입력 */}
         <div className="p-4 border-t">
@@ -517,8 +784,7 @@ export function ChatModal({
             sellerUid={sellerUid || "unknown"}
             onMessageSent={() => {
               console.log("메시지 전송 완료 - 새로고침 시작");
-              toast.success("메시지가 전송되었습니다!");
-              // 메시지 목록 새로고침
+              // 토스트 메시지 제거하고 조용히 새로고침
               if (chatData?.chatId) {
                 console.log("메시지 새로고침 호출:", chatData.chatId);
                 loadMessages(chatData.chatId);
@@ -536,6 +802,20 @@ export function ChatModal({
           isOpen={showOtherProfileModal}
           onClose={() => setShowOtherProfileModal(false)}
           otherUser={chatData.otherUser}
+        />
+      )}
+
+      {/* 배송지 선택 모달 */}
+      {user && showShippingAddressModal && (
+        <ShippingAddressSelectionModal
+          isOpen={showShippingAddressModal}
+          onClose={() => setShowShippingAddressModal(false)}
+          userId={user.uid}
+          onAddressSelect={address => {
+            // 배송지 선택 시 판매자에게 전달하는 로직
+            handleSendShippingAddress(address);
+            setShowShippingAddressModal(false);
+          }}
         />
       )}
     </div>

@@ -16,7 +16,6 @@ function GoogleCallbackContent() {
         const result = await handleRedirectResult();
 
         if (result) {
-          toast.success("구글 로그인이 완료되었습니다!");
           router.push("/");
         } else {
           toast.error("구글 로그인에 실패했습니다.");

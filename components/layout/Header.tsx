@@ -8,13 +8,38 @@ import {
   getTotalUnreadMessageCount,
   subscribeToUnreadCount,
 } from "../../lib/chat/api";
-import { MessageCircle, Menu, X } from "lucide-react";
+import {
+  getUserNotifications,
+  markNotificationAsRead,
+  deleteNotification,
+  deleteAllNotifications,
+  subscribeToNotifications,
+  subscribeToUnreadNotificationCount,
+} from "../../lib/api/notifications";
+import { Notification } from "../../data/types";
+import {
+  MessageCircle,
+  Menu,
+  X,
+  Bell,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+} from "lucide-react";
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 
 export function Header() {
   const { user, loading, logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // 알림 관련 상태
+  const [isMobileNotificationOpen, setIsMobileNotificationOpen] =
+    useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
 
   // 읽지 않은 메시지 개수 로드
   useEffect(() => {
@@ -53,6 +78,109 @@ export function Header() {
     };
   }, [user?.uid]);
 
+  // 알림 데이터 로드 및 실시간 구독
+  useEffect(() => {
+    if (!user?.uid) {
+      setNotifications([]);
+      setUnreadNotificationCount(0);
+      return;
+    }
+
+    // 초기 알림 로드
+    const loadNotifications = async () => {
+      setIsLoadingNotifications(true);
+      try {
+        const result = await getUserNotifications(user.uid, 20);
+        if (result.success && result.notifications) {
+          setNotifications(result.notifications);
+        }
+      } catch (error) {
+        console.error("알림 로드 실패:", error);
+      } finally {
+        setIsLoadingNotifications(false);
+      }
+    };
+
+    loadNotifications();
+
+    // 실시간 알림 구독
+    const unsubscribeNotifications = subscribeToNotifications(
+      user.uid,
+      newNotifications => {
+        setNotifications(newNotifications);
+      },
+      error => {
+        console.error("알림 구독 오류:", error);
+      }
+    );
+
+    // 실시간 읽지 않은 알림 개수 구독
+    const unsubscribeUnreadCount = subscribeToUnreadNotificationCount(
+      user.uid,
+      count => {
+        setUnreadNotificationCount(count);
+      },
+      error => {
+        console.error("읽지 않은 알림 개수 구독 오류:", error);
+      }
+    );
+
+    return () => {
+      unsubscribeNotifications();
+      unsubscribeUnreadCount();
+    };
+  }, [user?.uid]);
+
+  // 알림 관련 핸들러 함수들
+  const handleDeleteNotification = async (id: string) => {
+    if (!user?.uid) return;
+
+    try {
+      const result = await deleteNotification(id, user.uid);
+      if (result.success) {
+        toast.success("알림이 삭제되었습니다.");
+      } else {
+        toast.error(result.error || "알림 삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("알림 삭제 오류:", error);
+      toast.error("알림 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteAllNotifications = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const result = await deleteAllNotifications(user.uid);
+      if (!result.success) {
+        toast.error(result.error || "알림 삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("알림 삭제 오류:", error);
+      toast.error("알림 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!user?.uid) return;
+
+    // 읽지 않은 알림이면 읽음 처리
+    if (!notification.isRead) {
+      try {
+        await markNotificationAsRead(notification.id, user.uid);
+      } catch (error) {
+        console.error("알림 읽음 처리 오류:", error);
+      }
+    }
+
+    // 링크가 있으면 해당 페이지로 이동
+    if (notification.link) {
+      window.location.href = notification.link;
+      setIsMobileMenuOpen(false);
+    }
+  };
+
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,44 +188,40 @@ export function Header() {
           {/* 로고 */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center -space-x-2">
-              <img
-                src="/logo1.png"
-                alt="ConnecTone Logo 1"
-                className="h-7 w-auto object-contain sm:h-9"
-              />
-              <img
-                src="/logo2.png"
-                alt="ConnecTone Logo 2"
-                className="h-6 w-auto object-contain sm:h-8"
-              />
+              <img src="/logo1.png" alt="ConnecTone" className="h-10 w-auto" />
+              <img src="/logo2.png" alt="ConnecTone" className="h-10 w-auto" />
             </Link>
           </div>
 
           {/* 데스크톱 네비게이션 */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex items-center space-x-8">
             <Link
               href="/list"
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium"
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+              onClick={() => {
+                // 필터 초기화를 위한 새로고침 강제
+                window.location.href = "/list";
+              }}
             >
               상품 목록
             </Link>
             <Link
               href={user ? "/product/new" : "/auth/login?next=/product/new"}
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium"
+              className="text-gray-700 hover:text-blue-600 transition-colors"
             >
               상품 등록
             </Link>
             <Link
               href={user ? "/chat" : "/auth/login?next=/chat"}
-              className="relative text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium"
+              className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors"
             >
-              <div className="flex items-center space-x-1">
-                <MessageCircle className="w-4 h-4" />
-                <span>채팅</span>
-                {user && unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 rounded-full h-2 w-2 shadow-lg animate-pulse"></span>
-                )}
-              </div>
+              <MessageCircle className="w-4 h-4" />
+              <span>채팅</span>
+              {user && unreadCount > 0 && (
+                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </Link>
           </nav>
 
@@ -107,17 +231,7 @@ export function Header() {
           </div>
 
           {/* 모바일 메뉴 버튼 */}
-          <div className="md:hidden flex items-center space-x-2">
-            {/* 모바일 채팅 알림 */}
-            {user && unreadCount > 0 && (
-              <Link href="/chat" className="relative p-2">
-                <MessageCircle className="w-6 h-6 text-gray-700" />
-                <span className="absolute -top-0.5 -right-0.5 bg-red-500 rounded-full h-2.5 w-2.5 flex items-center justify-center text-xs text-white font-bold">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              </Link>
-            )}
-
+          <div className="md:hidden relative">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100"
@@ -128,10 +242,15 @@ export function Header() {
                 <Menu className="w-6 h-6" />
               )}
             </button>
+
+            {/* 통합 알림 배지 */}
+            {(unreadCount > 0 || unreadNotificationCount > 0) && (
+              <span className="absolute top-0 right-0 bg-red-500 rounded-full h-2 w-2"></span>
+            )}
           </div>
         </div>
 
-        {/* 모바일 메뉴 - 프로필 우선 배치 */}
+        {/* 모바일 메뉴 */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 bg-white">
             {/* 사용자 프로필 섹션 - 맨 위로 이동 */}
@@ -166,7 +285,7 @@ export function Header() {
                       </div>
                     </div>
                   </Link>
-                  
+
                   {/* 로그아웃 버튼 */}
                   <button
                     onClick={async () => {
@@ -193,6 +312,124 @@ export function Header() {
                   </Link>
                 </div>
               )}
+
+              {/* 알림 메뉴 - 사용자 프로필 바로 아래 */}
+              {user && (
+                <div className="px-4 py-2">
+                  <button
+                    onClick={() =>
+                      setIsMobileNotificationOpen(!isMobileNotificationOpen)
+                    }
+                    className="flex items-center justify-between w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Bell className="w-4 h-4" />
+                      <span>알림</span>
+                      {unreadNotificationCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                          {unreadNotificationCount > 9
+                            ? "9+"
+                            : unreadNotificationCount}
+                        </span>
+                      )}
+                    </div>
+                    {isMobileNotificationOpen ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </button>
+
+                  {/* 알림 목록 */}
+                  {isMobileNotificationOpen && (
+                    <div className="px-2 pb-2 max-h-64 overflow-y-auto mt-2">
+                      {isLoadingNotifications ? (
+                        <div className="px-3 py-4 text-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                          <p className="text-xs text-gray-500">
+                            알림을 불러오는 중...
+                          </p>
+                        </div>
+                      ) : notifications.length > 0 ? (
+                        <>
+                          <div className="flex justify-end px-2 py-1">
+                            <button
+                              onClick={handleDeleteAllNotifications}
+                              className="text-xs text-red-600 hover:text-red-700"
+                            >
+                              모두 삭제
+                            </button>
+                          </div>
+                          {notifications.map(notification => (
+                            <div
+                              key={notification.id}
+                              className={`flex items-start justify-between px-3 py-2 rounded-lg group cursor-pointer transition-colors ${
+                                notification.isRead
+                                  ? "hover:bg-gray-50"
+                                  : "bg-blue-50 hover:bg-blue-100"
+                              }`}
+                              onClick={() =>
+                                handleNotificationClick(notification)
+                              }
+                            >
+                              <div className="flex-1 pr-2">
+                                <p
+                                  className={`text-xs ${
+                                    notification.isRead
+                                      ? "text-gray-600"
+                                      : "text-blue-900 font-medium"
+                                  }`}
+                                >
+                                  {notification.message}
+                                </p>
+                                <div className="flex items-center justify-between mt-1">
+                                  <p className="text-xs text-gray-400">
+                                    {notification.createdAt &&
+                                      new Date(
+                                        notification.createdAt.seconds * 1000
+                                      ).toLocaleString("ko-KR", {
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                  </p>
+                                  {/* 모바일용 작은 X 버튼 */}
+                                  <button
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      handleDeleteNotification(notification.id);
+                                    }}
+                                    className="md:hidden text-gray-400 hover:text-red-600 transition-colors"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                              {/* 데스크톱용 삭제 버튼 */}
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleDeleteNotification(notification.id);
+                                }}
+                                className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                              >
+                                <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-600" />
+                              </button>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="px-3 py-4 text-center">
+                          <p className="text-xs text-gray-500">
+                            알림이 없습니다
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* 메뉴 항목들 */}
@@ -200,7 +437,11 @@ export function Header() {
               <Link
                 href="/list"
                 className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  // 필터 초기화를 위한 새로고침 강제
+                  window.location.href = "/list";
+                }}
               >
                 상품 목록
               </Link>
@@ -217,7 +458,10 @@ export function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <div className="flex items-center justify-between">
-                  <span>채팅</span>
+                  <div className="flex items-center space-x-2">
+                    <MessageCircle className="w-4 h-4" />
+                    <span>채팅</span>
+                  </div>
                   {user && unreadCount > 0 && (
                     <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                       {unreadCount > 9 ? "9+" : unreadCount}

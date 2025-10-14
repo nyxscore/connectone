@@ -45,7 +45,11 @@ export async function setUserOnlineStatus(
   isOnline: boolean
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const db = await getDb();
+    const db = getDb();
+    if (!db) {
+      console.error("❌ Firebase DB가 초기화되지 않음");
+      return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+    }
     console.log(
       `🟢 온라인 상태 설정: ${userId} -> ${isOnline ? "온라인" : "오프라인"}`
     );
@@ -134,7 +138,11 @@ export async function getOrCreateChat(
   tradeType?: string
 ): Promise<{ success: boolean; chatId?: string; error?: string }> {
   try {
-    const db = await getDb();
+    const db = getDb();
+    if (!db) {
+      console.error("❌ Firebase DB가 초기화되지 않음");
+      return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+    }
 
     // 자기 자신과의 채팅 방지 (단, 시스템 메시지만 있는 경우는 허용)
     if (buyerUid === sellerUid) {
@@ -240,7 +248,11 @@ export async function getUserChats(
   error?: string;
 }> {
   try {
-    const db = await getDb();
+    const db = getDb();
+    if (!db) {
+      console.error("❌ Firebase DB가 초기화되지 않음");
+      return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+    }
     console.log("getUserChats 호출됨, userId:", userId);
     const chatsRef = collection(db, "chats");
 
@@ -353,7 +365,11 @@ export async function sendMessage(
   data: SendMessageData
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const db = await getDb();
+    const db = getDb();
+    if (!db) {
+      console.error("❌ Firebase DB가 초기화되지 않음");
+      return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+    }
 
     // 시스템 메시지인 경우 senderUid 검증 생략
     if (data.senderUid !== "system" && !data.senderUid) {
@@ -537,7 +553,11 @@ export async function getChatMessages(
   lastDoc?: any;
   error?: string;
 }> {
-  const db = await getDb();
+  const db = getDb();
+  if (!db) {
+    console.error("❌ Firebase DB가 초기화되지 않음");
+    return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+  }
   try {
     const messagesRef = collection(db, "messages");
     let q = query(
@@ -636,7 +656,11 @@ export async function markMessageAsRead(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const db = await getDb();
+    const db = getDb();
+    if (!db) {
+      console.error("❌ Firebase DB가 초기화되지 않음");
+      return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+    }
     const messageRef = doc(db, "messages", messageId);
     const messageSnap = await getDoc(messageRef);
 
@@ -650,6 +674,27 @@ export async function markMessageAsRead(
       await updateDoc(messageRef, {
         readBy: [...messageData.readBy, userId],
       });
+
+      // 채팅 문서의 안읽은 메시지 개수도 업데이트
+      if (messageData.chatId) {
+        const chatRef = doc(db, "chats", messageData.chatId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (chatSnap.exists()) {
+          const chatData = chatSnap.data();
+          const isBuyer = chatData.buyerUid === userId;
+
+          // 현재 사용자의 안읽은 메시지 개수를 0으로 설정
+          const updateData = isBuyer
+            ? { buyerUnreadCount: 0 }
+            : { sellerUnreadCount: 0 };
+
+          await updateDoc(chatRef, updateData);
+          console.log(
+            `채팅 ${messageData.chatId}의 안읽은 메시지 개수 업데이트 완료`
+          );
+        }
+      }
     }
 
     return { success: true };
@@ -669,7 +714,11 @@ export async function getUnreadMessageCount(
   userId: string
 ): Promise<number> {
   try {
-    const db = await getDb();
+    const db = getDb();
+    if (!db) {
+      console.error("❌ Firebase DB가 초기화되지 않음");
+      return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+    }
     const messagesRef = collection(db, "messages");
     const q = query(messagesRef, where("chatId", "==", chatId));
 
@@ -694,12 +743,83 @@ export async function getUnreadMessageCount(
   }
 }
 
+// 차단 시 채팅 삭제 (권한 체크 우회)
+async function deleteChatForBlock(
+  chatId: string,
+  blockerUid: string
+): Promise<{ success: boolean; error?: string }> {
+  const db = getDb();
+  if (!db) {
+    console.error("❌ Firebase DB가 초기화되지 않음");
+    return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+  }
+
+  try {
+    console.log("🔍 deleteChatForBlock 호출됨:", { chatId, blockerUid });
+
+    if (!chatId || !blockerUid) {
+      console.error("❌ 필수 파라미터 누락:", { chatId, blockerUid });
+      return { success: false, error: "필수 파라미터가 누락되었습니다." };
+    }
+
+    const chatRef = doc(db, "chats", chatId);
+    const chatSnap = await getDoc(chatRef);
+
+    if (!chatSnap.exists()) {
+      console.log("❌ 채팅을 찾을 수 없음:", chatId);
+      return { success: false, error: "채팅을 찾을 수 없습니다." };
+    }
+
+    const chatData = chatSnap.data() as Chat;
+
+    // 차단자와 관련된 채팅인지 확인
+    const isRelated =
+      chatData.buyerUid === blockerUid || chatData.sellerUid === blockerUid;
+
+    if (!isRelated) {
+      console.error("❌ 차단자와 관련 없는 채팅:", { chatId, blockerUid });
+      return { success: false, error: "관련 없는 채팅입니다." };
+    }
+
+    // 채팅을 완전히 삭제하지 않고, 사용자별로 삭제 상태만 표시
+    const deletedByField =
+      chatData.buyerUid === blockerUid ? "deletedByBuyer" : "deletedBySeller";
+
+    await updateDoc(chatRef, {
+      [deletedByField]: true,
+      deletedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(
+      "✅ 차단으로 인한 채팅 삭제 상태 업데이트 완료:",
+      `${deletedByField} = true`
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error("❌ 차단으로 인한 채팅 삭제 실패:", {
+      chatId,
+      blockerUid,
+      error,
+    });
+    return {
+      success: false,
+      error: "채팅 삭제 중 오류가 발생했습니다.",
+    };
+  }
+}
+
 // 채팅 삭제
 export async function deleteChat(
   chatId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const db = await getDb();
+  const db = getDb();
+  if (!db) {
+    console.error("❌ Firebase DB가 초기화되지 않음");
+    return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+  }
   try {
     console.log("🔍 deleteChat 호출됨:", { chatId, userId });
 
@@ -803,7 +923,11 @@ export async function getTotalUnreadMessageCount(
   userId: string
 ): Promise<{ success: boolean; count?: number; error?: string }> {
   try {
-    const db = await getDb();
+    const db = getDb();
+    if (!db) {
+      console.error("❌ Firebase DB가 초기화되지 않음");
+      return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+    }
     console.log("읽지 않은 메시지 개수 조회:", userId);
 
     // 사용자가 참여한 모든 채팅 조회
@@ -936,7 +1060,11 @@ export async function markChatAsRead(
   chatId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const db = await getDb();
+  const db = getDb();
+  if (!db) {
+    console.error("❌ Firebase DB가 초기화되지 않음");
+    return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+  }
   try {
     const chatRef = doc(db, "chats", chatId);
     const chatDoc = await getDoc(chatRef);
@@ -978,7 +1106,12 @@ export async function reportUser(
   reason: string,
   description?: string
 ): Promise<{ success: boolean; error?: string }> {
-  const db = await getDb();
+  const db = getDb();
+  if (!db) {
+    console.error("❌ Firebase DB가 초기화되지 않음");
+    return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+  }
+
   try {
     console.log("사용자 신고 시작:", { reporterUid, reportedUid, reason });
 
@@ -1008,7 +1141,12 @@ export async function blockUser(
   blockerUid: string,
   blockedUid: string
 ): Promise<{ success: boolean; error?: string }> {
-  const db = await getDb();
+  const db = getDb();
+  if (!db) {
+    console.error("❌ Firebase DB가 초기화되지 않음");
+    return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+  }
+
   try {
     console.log("사용자 차단 시작:", { blockerUid, blockedUid });
 
@@ -1083,9 +1221,9 @@ export async function blockUser(
       )
       .map(chat => chat.id);
 
-    // 모든 관련 채팅 삭제
+    // 모든 관련 채팅 삭제 (차단 시에는 권한 체크 우회)
     const deletePromises = chatsToDelete.map(chatId =>
-      deleteChat(chatId, blockerUid)
+      deleteChatForBlock(chatId, blockerUid)
     );
     await Promise.all(deletePromises);
 
@@ -1109,7 +1247,11 @@ export async function isUserBlocked(
   blockerUid: string,
   blockedUid: string
 ): Promise<{ success: boolean; isBlocked?: boolean; error?: string }> {
-  const db = await getDb();
+  const db = getDb();
+  if (!db) {
+    console.error("❌ Firebase DB가 초기화되지 않음");
+    return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+  }
   try {
     const blocksRef = collection(db, "blocks");
     const blockQuery = query(blocksRef, where("blockerUid", "==", blockerUid));
@@ -1135,7 +1277,11 @@ export async function isUserBlocked(
 export async function getBlockedUsers(
   blockerUid: string
 ): Promise<{ success: boolean; blockedUsers?: any[]; error?: string }> {
-  const db = await getDb();
+  const db = getDb();
+  if (!db) {
+    console.error("❌ Firebase DB가 초기화되지 않음");
+    return { success: false, error: "데이터베이스 연결에 실패했습니다." };
+  }
   try {
     console.log("차단된 사용자 목록 조회 시작:", blockerUid);
 

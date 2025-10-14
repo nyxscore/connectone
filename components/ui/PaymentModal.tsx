@@ -285,7 +285,7 @@ export function PaymentModal({
               결제 완료!
             </h2>
             <p className="text-gray-600 mb-6">
-              안전결제가 완료되었습니다. 에스크로로 보관됩니다.
+              구매자가 안전결제를 완료했습니다!\n거래를 진행해주세요.
             </p>
             <Button onClick={handleClose} className="w-full">
               확인

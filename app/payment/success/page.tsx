@@ -49,10 +49,20 @@ function PaymentSuccessContent() {
         itemId,
         sellerUid,
       });
-      toast.success("결제가 완료되었습니다!");
+      // 테스트 결제인 경우 조용히 처리
+      if (orderId.startsWith("MOCK_ORDER_")) {
+        console.log("테스트 결제 완료:", orderId);
+      } else {
+        toast.success("결제가 완료되었습니다!");
+      }
     } else {
       console.error("결제 정보 없음 - 홈으로 리다이렉트");
-      toast.error("결제 정보를 찾을 수 없습니다.");
+      // 테스트 환경에서는 조용히 처리
+      if (process.env.NODE_ENV === "development") {
+        console.log("개발 환경: 결제 정보 없음");
+      } else {
+        toast.error("결제 정보를 찾을 수 없습니다.");
+      }
       router.push("/");
     }
   }, [searchParams, router]);
@@ -107,7 +117,7 @@ function PaymentSuccessContent() {
                 orderInfo.itemId,
                 user.uid,
                 orderInfo.sellerUid,
-                "🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다."
+                "🎉 구매자가 안전결제를 완료했습니다!\n거래를 진행해주세요."
               );
 
               if (chatResult.success) {
@@ -150,6 +160,13 @@ function PaymentSuccessContent() {
         }
       } catch (error) {
         console.error("거래 내역 저장 실패:", error);
+        // 테스트 결제인 경우 조용히 처리
+        if (orderInfo.orderId.startsWith("MOCK_ORDER_")) {
+          console.log("테스트 결제: 거래 내역 저장 실패 (무시됨)", error);
+        } else {
+          // 실제 결제에서는 오류 알림을 보여줄 수도 있지만, 현재는 조용히 처리
+          console.log("실제 결제: 거래 내역 저장 실패", error);
+        }
       }
     };
 
@@ -214,9 +231,17 @@ function PaymentSuccessContent() {
                 if (orderInfo.sellerUid && orderInfo.itemId) {
                   setShowChatModal(true);
                 } else {
-                  toast.error(
-                    `채팅 정보가 부족합니다. sellerUid: ${orderInfo.sellerUid}, itemId: ${orderInfo.itemId}`
-                  );
+                  // 테스트 결제인 경우 조용히 처리
+                  if (orderInfo.orderId.startsWith("MOCK_ORDER_")) {
+                    console.log("테스트 결제: 채팅 정보 부족", {
+                      sellerUid: orderInfo.sellerUid,
+                      itemId: orderInfo.itemId,
+                    });
+                  } else {
+                    toast.error(
+                      `채팅 정보가 부족합니다. sellerUid: ${orderInfo.sellerUid}, itemId: ${orderInfo.itemId}`
+                    );
+                  }
                 }
               }}
               className="w-full bg-blue-600 hover:bg-blue-700"

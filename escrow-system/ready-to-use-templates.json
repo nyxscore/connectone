@@ -1,0 +1,97 @@
+[
+  {
+    "state": "INITIATED",
+    "message": "🚀 안전거래가 시작되었습니다! 아래 '안전결제 진행' 버튼을 눌러 결제해주세요.",
+    "actions": [
+      {
+        "label": "안전결제 진행",
+        "api": "/payment/initiate",
+        "method": "POST"
+      }
+    ]
+  },
+  {
+    "state": "PAID",
+    "message": "🔒 결제가 완료되어 금액은 에스크로에 보관되었습니다. 판매자에게 배송지 정보를 입력해달라고 요청하세요.",
+    "actions": [
+      {
+        "label": "배송지 등록 요청",
+        "api": "/shipment/request",
+        "method": "POST"
+      }
+    ]
+  },
+  {
+    "state": "AWAITING_SHIPMENT",
+    "message": "📦 판매자에게 배송지 입력을 요청했습니다. 판매자가 송장 등록하면 알림이 갑니다.",
+    "actions": [
+      {
+        "label": "거래 취소 요청",
+        "api": "/payment/cancel-request",
+        "method": "POST"
+      }
+    ]
+  },
+  {
+    "state": "SHIPPED",
+    "message": "🚚 판매자가 상품을 발송했습니다. 송장번호: {tracking}. 배송 상태를 추적해주세요.",
+    "actions": [
+      {
+        "label": "배송 추적 보기",
+        "api": "/shipment/track",
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "state": "DELIVERED",
+    "message": "📬 상품이 배송 완료되었습니다. 상품을 확인하셨다면 '구매확정' 버튼을 눌러주세요. (자동확정까지 {hours}시간 남음)",
+    "actions": [
+      {
+        "label": "구매확정",
+        "api": "/payment/confirm",
+        "method": "POST"
+      },
+      {
+        "label": "반품 요청",
+        "api": "/payment/cancel-request",
+        "method": "POST"
+      }
+    ]
+  },
+  {
+    "state": "CANCEL_REQUESTED",
+    "message": "⚠️ 구매자가 거래 취소를 요청했습니다. 판매자가 수락하면 환불이 진행됩니다. 판매자가 응답하지 않을 경우 고객센터 개입이 가능합니다.",
+    "actions": [
+      {
+        "label": "판매자 승인하기",
+        "api": "/payment/cancel-approve",
+        "method": "POST"
+      },
+      {
+        "label": "고객센터 요청",
+        "api": "/dispute/open",
+        "method": "POST"
+      }
+    ]
+  },
+  {
+    "state": "REFUNDED",
+    "message": "✅ 환불이 처리되었습니다. 환불 완료일: {refundedAt}. 결제수단에 따라 영업일 기준 반영 시간이 다를 수 있습니다.",
+    "actions": []
+  },
+  {
+    "state": "DISPUTE",
+    "message": "🛡️ 분쟁 상태입니다. 관리자 개입을 요청했습니다. 증빙(사진/채팅/송장)을 업로드 해주세요.",
+    "actions": [
+      {
+        "label": "증빙 업로드",
+        "api": "/dispute/upload-evidence",
+        "method": "POST"
+      }
+    ]
+  }
+]
+
+
+

@@ -534,14 +534,15 @@ export default function ShippingAddressModal({
                       휴대폰 번호 <span className="text-red-500">*</span>
                     </label>
                     <Input
-                      value={formData.phoneNumber || ""}
-                      onChange={e =>
+                      value={formatPhoneNumber(formData.phoneNumber || "")}
+                      onChange={e => {
+                        const value = e.target.value.replace(/\D/g, ""); // 숫자만 추출
                         setFormData({
                           ...formData,
-                          phoneNumber: e.target.value,
-                        })
-                      }
-                      placeholder="-없이 휴대폰 번호를 입력해주세요."
+                          phoneNumber: value,
+                        });
+                      }}
+                      placeholder="휴대폰 번호를 입력해주세요 (예: 010-1234-5678)"
                       className="h-12 text-sm rounded-lg"
                       required
                     />

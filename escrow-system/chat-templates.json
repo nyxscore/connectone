@@ -1,0 +1,290 @@
+[
+  {
+    "state": "INITIATED",
+    "message": "🚀 안전거래가 시작되었습니다! 아래 '안전결제 진행' 버튼을 눌러 결제해주세요.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "안전결제 진행",
+        "api": "/payment/initiate",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}",
+          "amount": "{amount}",
+          "method": "card"
+        },
+        "confirmMessage": "안전결제를 진행하시겠습니까? 결제 후 에스크로에 보관됩니다."
+      }
+    ],
+    "recipient": "buyer"
+  },
+  {
+    "state": "PAID",
+    "message": "🔒 결제가 완료되어 금액은 에스크로에 보관되었습니다. 판매자에게 배송지 정보를 입력해달라고 요청하세요.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "배송지 등록 요청",
+        "api": "/shipment/request",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}"
+        }
+      }
+    ],
+    "recipient": "buyer"
+  },
+  {
+    "state": "IN_ESCROW",
+    "message": "💰 결제 금액이 안전하게 에스크로에 보관되었습니다. 거래가 진행되는 동안 안전합니다.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "배송지 등록 요청",
+        "api": "/shipment/request",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}"
+        }
+      },
+      {
+        "label": "거래 취소 요청",
+        "api": "/payment/cancel-request",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}",
+          "reason": "구매자 변심"
+        },
+        "confirmMessage": "정말로 거래를 취소하시겠습니까?"
+      }
+    ],
+    "recipient": "buyer"
+  },
+  {
+    "state": "AWAITING_SHIPMENT",
+    "message": "📦 구매자가 배송지 입력을 요청했습니다. 아래 버튼을 눌러 송장을 등록해주세요.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "송장 등록하기",
+        "api": "/shipment/register",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}"
+        }
+      }
+    ],
+    "recipient": "seller"
+  },
+  {
+    "state": "SHIPPED",
+    "message": "🚚 판매자가 상품을 발송했습니다.\n택배사: {courier}\n송장번호: {trackingNumber}\n배송 상태를 추적해주세요.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "배송 추적 보기",
+        "api": "/shipment/track",
+        "method": "GET",
+        "payload": {
+          "trackingNumber": "{trackingNumber}",
+          "courier": "{courier}"
+        }
+      },
+      {
+        "label": "거래 취소 요청",
+        "api": "/payment/cancel-request",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}",
+          "reason": "배송 전 취소"
+        },
+        "confirmMessage": "배송이 시작된 후 취소 시 반품비가 발생할 수 있습니다. 계속하시겠습니까?"
+      }
+    ],
+    "recipient": "buyer"
+  },
+  {
+    "state": "IN_TRANSIT",
+    "message": "🚛 상품이 배송 중입니다. 택배사에서 픽업되어 목적지로 이동하고 있습니다.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "배송 추적 보기",
+        "api": "/shipment/track",
+        "method": "GET",
+        "payload": {
+          "trackingNumber": "{trackingNumber}",
+          "courier": "{courier}"
+        }
+      }
+    ],
+    "recipient": "buyer"
+  },
+  {
+    "state": "DELIVERED",
+    "message": "📬 상품이 배송 완료되었습니다!\n수령인: {recipientName}\n배송 완료 시간: {deliveredAt}\n\n상품을 확인하셨다면 '구매확정' 버튼을 눌러주세요.\n(자동확정까지 {autoConfirmHours}시간 남음)",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "구매확정",
+        "api": "/payment/confirm",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}"
+        },
+        "confirmMessage": "상품을 정상적으로 수령하셨나요? 구매확정 후 환불이 불가능합니다."
+      },
+      {
+        "label": "반품 요청",
+        "api": "/payment/cancel-request",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}",
+          "reason": "상품 불량 또는 기타 사유"
+        },
+        "confirmMessage": "반품 사유를 선택해주세요."
+      }
+    ],
+    "recipient": "buyer"
+  },
+  {
+    "state": "DELIVERY_CONFIRMED",
+    "message": "📦 배송이 확인되었습니다. 최종 구매확정을 진행해주세요.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "구매확정",
+        "api": "/payment/final-confirm",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}"
+        },
+        "confirmMessage": "거래를 최종 확정하시겠습니까? 확정 후 판매자에게 대금이 지급됩니다."
+      }
+    ],
+    "recipient": "buyer"
+  },
+  {
+    "state": "BUYER_CONFIRMED",
+    "message": "🎉 거래가 성공적으로 완료되었습니다!\n판매자에게 대금이 지급되었습니다.\n거래 완료 시간: {confirmedAt}",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "거래 내역 보기",
+        "api": "/transaction/{transactionId}",
+        "method": "GET"
+      },
+      {
+        "label": "리뷰 작성하기",
+        "api": "/review/create",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}"
+        }
+      }
+    ],
+    "recipient": "both"
+  },
+  {
+    "state": "CANCEL_REQUESTED",
+    "message": "⚠️ 구매자가 거래 취소를 요청했습니다.\n취소 사유: {cancelReason}\n\n아래 버튼을 눌러 승인하거나 거부해주세요.\n(24시간 내 미응답 시 자동 취소됩니다)",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "취소 승인하기",
+        "api": "/payment/cancel-approve",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}"
+        },
+        "confirmMessage": "거래 취소를 승인하시겠습니까? 승인 후 환불이 진행됩니다."
+      },
+      {
+        "label": "고객센터 요청",
+        "api": "/dispute/open",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}",
+          "type": "seller_non_response"
+        }
+      }
+    ],
+    "recipient": "seller"
+  },
+  {
+    "state": "CANCELLED",
+    "message": "❌ 거래가 취소되었습니다.\n취소 사유: {cancelReason}\n취소 시간: {cancelledAt}",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "거래 내역 보기",
+        "api": "/transaction/{transactionId}",
+        "method": "GET"
+      }
+    ],
+    "recipient": "both"
+  },
+  {
+    "state": "REFUND_PENDING",
+    "message": "💳 환불이 처리 중입니다.\n환불 금액: {refundAmount}원\n처리 상태: 진행 중\n\n영업일 기준 1-3일 내 계좌로 입금됩니다.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "환불 내역 보기",
+        "api": "/refund/{transactionId}",
+        "method": "GET"
+      }
+    ],
+    "recipient": "buyer"
+  },
+  {
+    "state": "REFUNDED",
+    "message": "✅ 환불이 완료되었습니다!\n환불 금액: {refundAmount}원\n환불 완료일: {refundedAt}\n입금 계좌: {bankName} {accountNumber}\n\n결제수단에 따라 영업일 기준 반영 시간이 다를 수 있습니다.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "거래 내역 보기",
+        "api": "/transaction/{transactionId}",
+        "method": "GET"
+      }
+    ],
+    "recipient": "buyer"
+  },
+  {
+    "state": "DISPUTE",
+    "message": "🛡️ 분쟁 상태입니다.\n분쟁 유형: {disputeType}\n분쟁 사유: {disputeReason}\n\n관리자 개입을 요청했습니다.\n증빙 자료를 업로드해주세요.",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "증빙 업로드",
+        "api": "/dispute/upload-evidence",
+        "method": "POST",
+        "payload": {
+          "transactionId": "{transactionId}"
+        }
+      },
+      {
+        "label": "고객센터 문의",
+        "api": "/support/contact",
+        "method": "GET"
+      }
+    ],
+    "recipient": "both"
+  },
+  {
+    "state": "AUTO_CONFIRMED",
+    "message": "⏰ 자동 구매확정되었습니다.\n구매자가 {autoConfirmHours}시간 내에 확정하지 않아 자동으로 거래가 완료되었습니다.\n거래 완료 시간: {confirmedAt}",
+    "messageType": "system",
+    "actions": [
+      {
+        "label": "거래 내역 보기",
+        "api": "/transaction/{transactionId}",
+        "method": "GET"
+      }
+    ],
+    "recipient": "both"
+  }
+]
+
+
+

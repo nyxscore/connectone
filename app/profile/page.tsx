@@ -146,8 +146,6 @@ export default function MyProfilePage() {
 
           // 헤더의 사용자 정보 새로고침 (최신 데이터 가져오기)
           await refreshUser();
-
-          toast.success("아바타가 업데이트되었습니다.");
         } else {
           toast.error(updateResult.error || "아바타 업데이트에 실패했습니다.");
         }

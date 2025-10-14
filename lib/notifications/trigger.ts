@@ -203,6 +203,31 @@ export class NotificationTriggerService {
     });
   }
 
+  // 구매확인 완료 알림 (판매자에게)
+  async triggerPurchaseConfirmation(data: {
+    userId: string;
+    productTitle: string;
+    buyerNickname: string;
+  }): Promise<void> {
+    // Firestore에 알림 생성
+    try {
+      const { createNotification } = await import("../api/notifications");
+
+      await createNotification({
+        userId: data.userId,
+        type: "transaction_update",
+        title: "구매확인 완료",
+        message: `${data.buyerNickname}님이 "${data.productTitle}" 상품의 구매를 확인했습니다. 거래가 완료되었습니다! 🎉`,
+        link: "/profile/transactions",
+        isRead: false,
+      });
+
+      console.log("✅ Firestore 구매확인 알림 생성 완료:", data.userId);
+    } catch (error) {
+      console.error("❌ Firestore 구매확인 알림 생성 실패:", error);
+    }
+  }
+
   // 공통 알림 트리거
   private async triggerNotification(data: {
     type: NotificationType;

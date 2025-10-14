@@ -1,0 +1,476 @@
+"use client";
+
+import { Button } from "../ui/Button";
+import {
+  MessageCircle,
+  Shield,
+  ShoppingCart,
+  Clock,
+  CheckCircle,
+  Search,
+  Truck,
+  Edit,
+  Trash2,
+  ArrowUp,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { StartChatButton } from "../chat/StartChatButton";
+import { deleteItem, updateItem } from "../../lib/api/products";
+import { EditItemModal } from "./EditItemModal";
+import { getOrCreateChat } from "../../lib/chat/api";
+import toast from "react-hot-toast";
+import { useState, useEffect } from "react";
+
+interface PurchaseCTAProps {
+  status:
+    | "active"
+    | "reserved"
+    | "paid_hold"
+    | "shipped"
+    | "sold"
+    | "escrow_completed";
+  escrowEnabled: boolean;
+  isLoggedIn: boolean;
+  itemId?: string;
+  sellerUid?: string;
+  buyerUid?: string;
+  currentUserId?: string; // 현재 로그인한 사용자 ID
+  onPurchase?: () => void;
+  onChat?: () => void;
+  onSimilarItems?: () => void;
+  onLogisticsQuote?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onBump?: () => void;
+  onStartTransaction?: () => void; // 거래 진행하기
+}
+
+export function PurchaseCTA({
+  status,
+  escrowEnabled,
+  isLoggedIn,
+  itemId,
+  sellerUid,
+  buyerUid,
+  currentUserId,
+  onPurchase,
+  onChat,
+  onSimilarItems,
+  onLogisticsQuote,
+  onEdit,
+  onDelete,
+  onBump,
+  onStartTransaction,
+}: PurchaseCTAProps) {
+  const router = useRouter();
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const handlePurchase = async () => {
+    if (escrowEnabled && itemId) {
+      // 안전결제인 경우 결제 페이지로 이동
+      router.push(`/payment?itemId=${itemId}&escrow=true`);
+    } else if (onPurchase) {
+      onPurchase();
+    } else {
+      // 기본 핸들러 - 일반 구매 시 시스템 메시지 전송
+      if (itemId && currentUserId && sellerUid) {
+        try {
+          const { getOrCreateChat } = await import("../../lib/chat/api");
+          const chatResult = await getOrCreateChat(
+            itemId,
+            currentUserId,
+            sellerUid,
+            "🛒 구매자가 구매를 진행했습니다. 거래를 시작해주세요."
+          );
+
+          if (chatResult.success) {
+            console.log(
+              "구매 진행 시스템 메시지 전송 완료:",
+              chatResult.chatId
+            );
+          }
+        } catch (error) {
+          console.error("구매 진행 시스템 메시지 전송 실패:", error);
+        }
+      }
+      console.log("구매하기 클릭");
+    }
+  };
+
+  const handleChat = () => {
+    if (onChat) {
+      onChat();
+    }
+  };
+
+  const handleSimilarItems = () => {
+    if (onSimilarItems) {
+      onSimilarItems();
+    } else {
+      // 기본 핸들러 - 비슷한 상품 목록으로 이동
+      router.push("/list");
+    }
+  };
+
+  const handleLogisticsQuote = () => {
+    if (onLogisticsQuote) {
+      onLogisticsQuote();
+    } else {
+      // 기본 핸들러 - 실제 구현에서는 운송 견적 모달로 연결
+      console.log("운송 견적 받기 클릭");
+    }
+  };
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit();
+    } else {
+      // 기본 핸들러 - 상품 수정 모달 열기
+      setShowEditModal(true);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (onDelete) {
+      onDelete();
+    } else {
+      // 기본 핸들러 - 삭제 확인 후 삭제
+      if (
+        confirm(
+          "정말로 이 상품을 삭제하시겠습니까?\n삭제된 상품은 복구할 수 없습니다."
+        )
+      ) {
+        if (!itemId || !currentUserId) {
+          toast.error("삭제할 수 없습니다.");
+          return;
+        }
+
+        try {
+          const result = await deleteItem(itemId, currentUserId);
+
+          if (result.success) {
+            toast.success("상품이 삭제되었습니다.");
+            // 페이지 새로고침
+            window.location.reload();
+          } else {
+            toast.error(result.error || "상품 삭제에 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("상품 삭제 실패:", error);
+          toast.error("상품 삭제 중 오류가 발생했습니다.");
+        }
+      }
+    }
+  };
+
+  const handleBump = async () => {
+    if (onBump) {
+      onBump();
+    } else {
+      // 기본 핸들러 - 끌어올리기 (updatedAt을 현재 시간으로 업데이트)
+      if (!itemId || !currentUserId) {
+        toast.error("끌어올릴 수 없습니다.");
+        return;
+      }
+
+      try {
+        // updatedAt만 업데이트하여 끌어올리기 효과
+        const result = await updateItem(itemId, currentUserId, {
+          updatedAt: new Date(),
+        });
+
+        if (result.success) {
+          toast.success("상품이 끌어올려졌습니다!");
+        } else {
+          toast.error(result.error || "끌어올리기에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("끌어올리기 실패:", error);
+        toast.error("끌어올리기 중 오류가 발생했습니다.");
+      }
+    }
+  };
+
+
+  const getStatusConfig = () => {
+
+    switch (status) {
+      case "active":
+        return {
+          primaryButton: {
+            text: escrowEnabled ? "안전구매하기" : "구매하기",
+            icon: escrowEnabled ? Shield : ShoppingCart,
+            variant: "primary" as const,
+            disabled: false,
+            onClick: handlePurchase,
+          },
+          secondaryButton: {
+            text: "운송 견적 받기",
+            icon: Truck,
+            variant: "outline" as const,
+            disabled: false,
+            onClick: handleLogisticsQuote,
+          },
+        };
+      case "reserved":
+        return {
+          secondaryButton: {
+            text: "거래중 · 예약중",
+            icon: Clock,
+            variant: "outline" as const,
+            disabled: true,
+            onClick: () => {},
+          },
+        };
+      case "paid_hold":
+        return {
+          secondaryButton: {
+            text: "결제완료 · 대기",
+            icon: CheckCircle,
+            variant: "outline" as const,
+            disabled: true,
+            onClick: () => {},
+          },
+        };
+      case "shipped":
+        return {
+          secondaryButton: {
+            text: "운송 진행중",
+            icon: Clock,
+            variant: "outline" as const,
+            disabled: true,
+            onClick: () => {},
+          },
+        };
+      case "sold":
+        return {
+          primaryButton: {
+            text: "거래완료",
+            icon: CheckCircle,
+            variant: "outline" as const,
+            disabled: true,
+            onClick: () => {},
+          },
+          secondaryButton: {
+            text: "비슷한 매물 보기",
+            icon: Search,
+            variant: "primary" as const,
+            disabled: false,
+            onClick: handleSimilarItems,
+          },
+        };
+      case "escrow_completed":
+        // 판매자에게만 거래 진행하기 버튼 표시
+        if (sellerUid === currentUserId) {
+          return {
+            primaryButton: {
+              text: "거래 진행하기",
+              icon: CheckCircle,
+              variant: "primary" as const,
+              disabled: false,
+              onClick: onStartTransaction || (() => {}),
+            },
+            secondaryButton: {
+              text: "거래 상대방과 채팅",
+              icon: MessageCircle,
+              variant: "outline" as const,
+              disabled: false,
+              onClick: handleChat,
+            },
+          };
+        } else {
+          // 구매자에게는 상태만 표시
+          return {
+            secondaryButton: {
+              text: "안전결제 완료",
+              icon: Shield,
+              variant: "outline" as const,
+              disabled: true,
+              onClick: () => {},
+            },
+          };
+        }
+      default:
+        return {
+          primaryButton: {
+            text: "상태 불명",
+            icon: Clock,
+            variant: "outline" as const,
+            disabled: true,
+            onClick: () => {},
+          },
+          secondaryButton: null,
+        };
+    }
+  };
+
+  const config = getStatusConfig();
+  const PrimaryIcon = config.primaryButton?.icon;
+  const SecondaryIcon = config.secondaryButton?.icon;
+  const TertiaryIcon = (config as any).tertiaryButton?.icon;
+
+  // 자신이 작성한 글인지 확인
+  const isOwnItem = currentUserId && sellerUid && currentUserId === sellerUid;
+
+  // 구매자인지 확인 (거래중인 상품의 구매자)
+  const isBuyer = currentUserId && buyerUid && currentUserId === buyerUid;
+
+  // 거래중인 상품인지 확인 (reserved, paid_hold, shipped 상태)
+  const isTradingItem =
+    status === "reserved" || status === "paid_hold" || status === "shipped";
+
+  // 디버깅 로그
+  console.log("PurchaseCTA 디버깅:", {
+    currentUserId,
+    sellerUid,
+    buyerUid,
+    isOwnItem,
+    isBuyer,
+    status,
+    itemId,
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* 구매자/다른 사람의 글인 경우만 표시 */}
+      {!isOwnItem && (
+        <>
+          {/* 메인 버튼들 */}
+          <div className="flex space-x-4">
+            {config.primaryButton && (
+              <Button
+                className={`flex-1 ${
+                  escrowEnabled && status === "active"
+                    ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                    : ""
+                }`}
+                size="lg"
+                variant={config.primaryButton.variant}
+                disabled={config.primaryButton.disabled}
+                onClick={config.primaryButton.onClick}
+              >
+                {PrimaryIcon && <PrimaryIcon className="w-5 h-5 mr-2" />}
+                {config.primaryButton.text}
+                {escrowEnabled && status === "active" && (
+                  <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
+                    보장
+                  </span>
+                )}
+              </Button>
+            )}
+
+            {config.secondaryButton && (
+              <div className="flex-1">
+                {itemId && sellerUid ? (
+                  <StartChatButton
+                    itemId={itemId}
+                    sellerUid={sellerUid}
+                    className="w-full h-12"
+                  />
+                ) : (
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    variant={config.secondaryButton.variant}
+                    disabled={config.secondaryButton.disabled}
+                    onClick={config.secondaryButton.onClick}
+                  >
+                    {SecondaryIcon && (
+                      <SecondaryIcon className="w-5 h-5 mr-2" />
+                    )}
+                    {config.secondaryButton.text}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 거래 상대방 정보 (거래 상태일 때만) - 하단에서 상단으로 이동 */}
+          {(status === "reserved" ||
+            status === "paid_hold" ||
+            status === "shipped" ||
+            status === "escrow_completed") &&
+            buyerUid &&
+            sellerUid &&
+            currentUserId && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-900">
+                      거래 상대방
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      {currentUserId === sellerUid ? "구매자" : "판매자"}와 거래
+                      중
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-blue-600">
+                      {status === "reserved" && "거래 대기 중"}
+                      {status === "paid_hold" && "결제 완료"}
+                      {status === "shipped" && "배송 중"}
+                      {status === "escrow_completed" && "안전결제 완료"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+        </>
+      )}
+
+      {/* 운송 견적 버튼 - 다른 사람의 글일 때만 표시 */}
+      {(config as any).tertiaryButton && !isOwnItem && (
+        <div className="flex justify-center">
+          <Button
+            size="lg"
+            variant={(config as any).tertiaryButton.variant}
+            disabled={(config as any).tertiaryButton.disabled}
+            onClick={(config as any).tertiaryButton.onClick}
+            className="w-full max-w-md"
+          >
+            <TertiaryIcon className="w-5 h-5 mr-2" />
+            {(config as any).tertiaryButton.text}
+          </Button>
+        </div>
+      )}
+
+      {/* 로그인 안내 */}
+      {!isLoggedIn && status === "active" && (
+        <p className="text-sm text-gray-500 text-center">
+          구매나 채팅을 하려면{" "}
+          <button
+            className="text-blue-600 hover:underline"
+            onClick={() => router.push("/auth/login")}
+          >
+            로그인
+          </button>
+          이 필요합니다
+        </p>
+      )}
+
+      {/* 상태별 안내 메시지 */}
+      {status !== "active" && status !== "reserved" && (
+        <div className="text-center">
+          <p className="text-sm text-gray-500">
+            {status === "paid_hold" && "결제가 완료되어 배송 준비 중입니다."}
+            {status === "shipped" && "상품이 배송 중입니다."}
+            {status === "sold" && "이 상품은 이미 판매되었습니다."}
+          </p>
+        </>
+      )}
+
+      {/* 상품 수정 모달 */}
+      {itemId && (
+        <EditItemModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          itemId={itemId}
+          onItemUpdated={() => {
+            // 상품이 수정되면 페이지 새로고침 또는 상태 업데이트
+            window.location.reload();
+          }}
+        />
+      )}
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../../components/ui/Button";
 import { ItemCard } from "../../components/items/ItemCard";
 import { ItemFilters } from "../../components/items/ItemFilters";
@@ -34,6 +34,12 @@ export default function ListPage() {
   } = useItemsQuery({
     limit: 20,
   });
+
+  // 페이지 마운트 시 필터 초기화
+  useEffect(() => {
+    console.log("ListPage 마운트됨 - 필터 초기화");
+    setFilters({});
+  }, []);
 
   const handleClearFilters = () => {
     setFilters({});

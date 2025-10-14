@@ -40,6 +40,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [usernameError, setUsernameError] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [signUpError, setSignUpError] = useState("");
   // SNS 로그인은 심사 후 사용
   const [snsLoading, setSnsLoading] = useState<
     "google" | "kakao" | "naver" | null
@@ -84,12 +86,12 @@ export default function LoginPage() {
 
   const onLoginSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
+    setLoginError(""); // 오류 메시지 초기화
     try {
       await signIn(data);
-      toast.success("로그인되었습니다!");
       router.push("/");
     } catch (error) {
-      toast.error(
+      setLoginError(
         error instanceof Error
           ? error.message
           : "로그인 중 오류가 발생했습니다."
@@ -106,6 +108,7 @@ export default function LoginPage() {
       return;
     }
     setIsLoading(true);
+    setSignUpError(""); // 오류 메시지 초기화
     try {
       await signUp({
         username: data.username,
@@ -122,7 +125,7 @@ export default function LoginPage() {
       setUsernameChecked(false);
       setUsernameAvailable(null);
     } catch (error) {
-      toast.error(
+      setSignUpError(
         error instanceof Error
           ? error.message
           : "회원가입 중 오류가 발생했습니다."
@@ -149,9 +152,6 @@ export default function LoginPage() {
           break;
       }
 
-      toast.success(
-        `${provider === "google" ? "구글" : provider === "kakao" ? "카카오" : "네이버"}로 로그인되었습니다!`
-      );
       router.push("/");
     } catch (error) {
       console.error(`${provider} 로그인 오류:`, error);
@@ -253,6 +253,13 @@ export default function LoginPage() {
                   자동 로그인
                 </label>
               </div>
+
+              {/* 로그인 오류 메시지 */}
+              {loginError && (
+                <div className="text-red-600 text-sm text-center py-2">
+                  {loginError}
+                </div>
+              )}
 
               {/* 로그인 버튼 */}
               <Button
@@ -547,6 +554,13 @@ export default function LoginPage() {
                 error={signUpForm.formState.errors.agreeTerms?.message}
                 {...signUpForm.register("agreeTerms")}
               />
+
+              {/* 회원가입 오류 메시지 */}
+              {signUpError && (
+                <div className="text-red-600 text-sm text-center py-2">
+                  {signUpError}
+                </div>
+              )}
 
               {/* 회원가입 버튼 */}
               <Button

@@ -204,24 +204,23 @@ export function SellerProfileModal({
 
               {/* 지역과 날짜 정보 제거 */}
 
-              {/* 평점 및 거래 통계 */}
-              <div className="flex items-center space-x-6">
+              {/* 평점 및 거래 통계 - 한 줄로 표시 */}
+              <div className="flex items-center space-x-4 text-sm whitespace-nowrap">
                 <div className="flex items-center space-x-1">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  <span className="text-lg font-semibold text-gray-900">
-                    {sellerProfile.averageRating?.toFixed(1) || "0.0"}
+                  <Star className="w-4 h-4 text-yellow-500" />
+                  <span className="font-semibold text-gray-900">
+                    {sellerProfile.averageRating?.toFixed(1) || "0.0"}/5.0
                   </span>
-                  <span className="text-sm text-gray-500">/ 5.0</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-lg font-semibold text-gray-900">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="font-semibold text-gray-900">
                     거래 {sellerProfile.tradesCount || 0}회
                   </span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
-                  <span className="text-lg font-semibold text-gray-900">
+                  <TrendingUp className="w-4 h-4 text-blue-500" />
+                  <span className="font-semibold text-gray-900">
                     응답률 {sellerProfile.responseRate || 0}%
                   </span>
                 </div>
@@ -270,48 +269,17 @@ export function SellerProfileModal({
             </div>
           </div>
 
-          {/* 거래 통계 상세 */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* 자기소개 카드만 표시 */}
+          {sellerProfile.introLong && (
             <Card className="p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <Award className="w-5 h-5 text-blue-500" />
-                <h4 className="font-semibold text-gray-900">거래 내역</h4>
+              <div className="mb-2">
+                <h4 className="font-semibold text-gray-900">자기소개</h4>
               </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">총 거래 횟수</span>
-                  <span className="font-medium">
-                    {sellerProfile.tradesCount || 0}회
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">평균 평점</span>
-                  <span className="font-medium">
-                    {sellerProfile.averageRating?.toFixed(1) || "0.0"}점
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">응답률</span>
-                  <span className="font-medium">
-                    {sellerProfile.responseRate || 0}%
-                  </span>
-                </div>
+              <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {sellerProfile.introLong}
               </div>
             </Card>
-
-            {/* 자기소개 */}
-            {sellerProfile.introLong && (
-              <Card className="p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Clock className="w-5 h-5 text-green-500" />
-                  <h4 className="font-semibold text-gray-900">자기소개</h4>
-                </div>
-                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {sellerProfile.introLong}
-                </div>
-              </Card>
-            )}
-          </div>
+          )}
 
           {/* 액션 버튼들 */}
           <div className="space-y-3 pt-4 border-t border-gray-200">

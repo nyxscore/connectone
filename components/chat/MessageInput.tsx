@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { sendMessage } from "../../lib/chat/api";
 import { uploadImages } from "../../lib/api/storage";
 import { Button } from "../ui/Button";
-import { Send, Image, Loader2, X } from "lucide-react";
+import { Send, Image, Loader2, X, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface MessageInputProps {
@@ -13,6 +13,7 @@ interface MessageInputProps {
   itemId: string;
   sellerUid: string;
   onMessageSent?: () => void;
+  onPlusClick?: () => void; // + 버튼 클릭 핸들러
 }
 
 export function MessageInput({
@@ -21,6 +22,7 @@ export function MessageInput({
   itemId,
   sellerUid,
   onMessageSent,
+  onPlusClick,
 }: MessageInputProps) {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -32,6 +34,33 @@ export function MessageInput({
   // 컴포넌트 마운트 시 자동 포커스
   useEffect(() => {
     textareaRef.current?.focus();
+  }, []);
+
+  // 키보드 이벤트 처리 - 키보드가 사라지지 않도록 유지
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && textareaRef.current) {
+        // 페이지가 다시 활성화되면 포커스 유지
+        setTimeout(() => {
+          textareaRef.current?.focus();
+        }, 100);
+      }
+    };
+
+    const handleFocus = () => {
+      // 입력창에 포커스가 있을 때 키보드 유지
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,12 +122,13 @@ export function MessageInput({
         textareaRef.current.style.height = "auto";
       }
 
+      // 새로고침 없이 메시지 목록만 업데이트
       onMessageSent?.();
 
       // 포커스는 약간의 딜레이 후에 확실하게
       setTimeout(() => {
         textareaRef.current?.focus();
-      }, 50);
+      }, 100);
     } catch (error) {
       console.error("메시지 전송 실패:", error);
       toast.error("메시지 전송 중 오류가 발생했습니다.");
@@ -107,7 +137,7 @@ export function MessageInput({
       // 전송 완료 후에도 포커스 유지
       setTimeout(() => {
         textareaRef.current?.focus();
-      }, 100);
+      }, 150);
     }
   };
 
@@ -147,7 +177,7 @@ export function MessageInput({
   };
 
   return (
-    <div className="border-t bg-white p-4">
+    <div className="border-t bg-white p-4 pb-safe">
       {/* 선택된 파일 미리보기 */}
       {selectedFiles.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-2">
@@ -171,14 +201,25 @@ export function MessageInput({
       )}
 
       <form onSubmit={handleSubmit} className="flex items-center space-x-3">
-        {/* 파일 선택 버튼 */}
+        {/* + 버튼 (모바일) 또는 이미지 버튼 (데스크톱) */}
+        {onPlusClick ? (
+          <button
+            type="button"
+            onClick={onPlusClick}
+            className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center md:hidden"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+        ) : null}
+
+        {/* 이미지 버튼 (데스크톱에서만 또는 onPlusClick이 없을 때) */}
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={openFileDialog}
           disabled={isSending || isUploading}
-          className="flex-shrink-0 h-10 w-10 p-0 flex items-center justify-center"
+          className={`flex-shrink-0 h-10 w-10 p-0 flex items-center justify-center ${onPlusClick ? "hidden md:flex" : ""}`}
         >
           <Image className="w-5 h-5" />
         </Button>

@@ -114,7 +114,6 @@ export function ProfileDropdown() {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success("로그아웃되었습니다.");
       router.push("/");
       setIsOpen(false);
     } catch (error) {
@@ -145,9 +144,7 @@ export function ProfileDropdown() {
 
     try {
       const result = await deleteAllNotifications(user.uid);
-      if (result.success) {
-        toast.success("모든 알림이 삭제되었습니다.");
-      } else {
+      if (!result.success) {
         toast.error(result.error || "알림 삭제에 실패했습니다.");
       }
     } catch (error) {
@@ -243,7 +240,7 @@ export function ProfileDropdown() {
                 <div className="text-sm font-medium text-gray-900">
                   {user.nickname}
                 </div>
-                <div className="text-xs text-gray-500">{user.email}</div>
+                {/* 이메일 제거됨 */}
               </div>
             </div>
           </div>
@@ -345,7 +342,7 @@ export function ProfileDropdown() {
           </div>
 
           {/* 프로필 보기 */}
-          <div className="py-1">
+          <div className="py-1 border-b border-gray-100">
             <Link
               href="/profile"
               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -355,9 +352,6 @@ export function ProfileDropdown() {
               프로필 보기
             </Link>
           </div>
-
-          {/* 구분선 */}
-          <div className="border-t border-gray-100 my-1"></div>
 
           {/* 내 상품 섹션 */}
           <div className="py-1">

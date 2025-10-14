@@ -501,7 +501,7 @@ export default function ProductDetailModal({
     }
 
     if (product?.status === "sold") {
-      toast.error("이미 판매완료된 상품입니다.");
+      toast.error("이미 거래완료된 상품입니다.");
       return;
     }
 
@@ -1200,15 +1200,28 @@ export default function ProductDetailModal({
 
                                 // 채팅 기능 - 채팅 모달 열기
                                 console.log("🔵 채팅하기 버튼 클릭됨!");
-                                console.log("🔵 actualProductId:", actualProductId);
-                                console.log("🔵 item?.sellerUid:", item?.sellerUid);
-                                console.log("🔵 product?.sellerId:", product?.sellerId);
-                                
+                                console.log(
+                                  "🔵 actualProductId:",
+                                  actualProductId
+                                );
+                                console.log(
+                                  "🔵 item?.sellerUid:",
+                                  item?.sellerUid
+                                );
+                                console.log(
+                                  "🔵 product?.sellerId:",
+                                  product?.sellerId
+                                );
+
                                 const itemId = actualProductId || product?.id;
-                                const sellerId = item?.sellerUid || product?.sellerId;
-                                
+                                const sellerId =
+                                  item?.sellerUid || product?.sellerId;
+
                                 if (onOpenChat && itemId && sellerId) {
-                                  console.log("🔵 onOpenChat 호출:", { itemId, sellerId });
+                                  console.log("🔵 onOpenChat 호출:", {
+                                    itemId,
+                                    sellerId,
+                                  });
                                   onOpenChat(itemId, sellerId);
                                 } else {
                                   console.error("🔵 채팅 열기 실패:", {

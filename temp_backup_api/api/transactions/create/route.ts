@@ -199,7 +199,8 @@ export async function POST(request: NextRequest) {
             itemId: productId,
             buyerUid: buyerId,
             sellerUid: product.sellerUid,
-            firstMessage: "안전결제가 완료되었습니다.",
+            firstMessage:
+              "구매자가 안전거래를 완료했습니다!\n거래를 진행하세요",
           });
 
           console.log("🔔 채팅방 생성/찾기 결과:", chatResult);
@@ -210,7 +211,7 @@ export async function POST(request: NextRequest) {
               chatId: chatResult.chatId,
               senderUid: "system",
               content:
-                "🎉 안전결제가 완료되었습니다! 구매자가 안전결제를 완료했습니다.",
+                "🎉 구매자가 안전결제를 완료했습니다!\n거래를 진행해주세요.",
             });
 
             console.log("🔔 시스템 메시지 추가 결과:", systemMessageResult);

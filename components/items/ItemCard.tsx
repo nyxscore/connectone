@@ -72,7 +72,7 @@ export function ItemCard({
     });
 
     if (item.status === "sold") {
-      alert("판매완료된 상품입니다.");
+      alert("거래완료된 상품입니다.");
       return;
     }
 
@@ -294,13 +294,6 @@ export function ItemCard({
           <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold flex items-center space-x-0.5 sm:space-x-1 shadow-lg">
             <Brain className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             <span className="text-xs">AI</span>
-          </div>
-        )}
-
-        {/* 거래중 상태 표시 */}
-        {item.status === "reserved" && (
-          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-orange-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-bold shadow-lg">
-            거래중
           </div>
         )}
 

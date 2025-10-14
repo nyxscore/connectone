@@ -1,0 +1,253 @@
+// Prisma Schema for Escrow System
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  nickname      String
+  profileImage  String?
+  phoneNumber   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  listings      Listing[]
+  transactions  Transaction[] @relation("BuyerTransactions")
+  sellerTransactions Transaction[] @relation("SellerTransactions")
+  payments      Payment[]
+  shipments     Shipment[]
+  refunds       Refund[]
+  disputes      Dispute[]
+  eventLogs     EventLog[]
+
+  @@map("users")
+}
+
+model Listing {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Int      // 원 단위
+  category    String
+  images      String[] // 이미지 URL 배열
+  status      String   @default("active") // active, sold, cancelled
+  sellerId    String
+  seller      User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  transactions Transaction[]
+
+  @@map("listings")
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  listingId       String
+  listing         Listing           @relation(fields: [listingId], references: [id])
+  buyerId         String
+  buyer           User              @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  sellerId        String
+  seller          User              @relation("SellerTransactions", fields: [sellerId], references: [id])
+  
+  // Transaction state
+  status          TransactionStatus @default(INITIATED)
+  
+  // Amounts
+  amount          Int               // 원 단위
+  escrowAmount    Int               // 에스크로 보관 금액
+  platformFee     Int               // 플랫폼 수수료
+  
+  // Timestamps
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  paidAt          DateTime?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  refundedAt      DateTime?
+  
+  // Metadata
+  cancelReason    String?
+  disputeReason   String?
+  metadata        Json?             // 추가 메타데이터
+  
+  // Relations
+  payments        Payment[]
+  shipments       Shipment[]
+  refunds         Refund[]
+  disputes        Dispute[]
+  eventLogs       EventLog[]
+  
+  // Idempotency
+  idempotencyKey  String?           @unique
+  
+  @@map("transactions")
+}
+
+model Payment {
+  id              String    @id @default(cuid())
+  transactionId   String
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  
+  // Payment details
+  amount          Int       // 원 단위
+  currency        String    @default("KRW")
+  method          String    // card, bank_transfer, etc.
+  
+  // PG Integration
+  pgProvider      String    // toss, kakaopay, etc.
+  pgTransactionId String?   @unique
+  pgOrderId       String?   @unique
+  pgStatus        String?   // pending, completed, failed, cancelled
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  completedAt     DateTime?
+  failedAt        DateTime?
+  
+  // Metadata
+  failureReason   String?
+  metadata        Json?
+  
+  @@map("payments")
+}
+
+model Shipment {
+  id              String    @id @default(cuid())
+  transactionId   String
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
+  // Shipping info
+  courier         String    // cj, lotte, hanjin, etc.
+  trackingNumber  String
+  status          String    // picked_up, in_transit, delivered, failed
+  
+  // Address info
+  recipientName   String
+  recipientPhone  String
+  address         String
+  addressDetail   String?
+  postalCode      String
+  memo            String?
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  pickedUpAt      DateTime?
+  deliveredAt     DateTime?
+  
+  // Webhook data
+  webhookData     Json?
+  
+  @@map("shipments")
+}
+
+model Refund {
+  id              String    @id @default(cuid())
+  transactionId   String
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
+  // Refund details
+  amount          Int       // 원 단위
+  reason          String
+  status          String    // pending, processing, completed, failed
+  
+  // Bank account for refund
+  bankCode        String?
+  accountNumber   String?
+  accountHolder   String?
+  
+  // PG Integration
+  pgRefundId      String?
+  pgStatus        String?
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  processedAt     DateTime?
+  completedAt     DateTime?
+  
+  // Metadata
+  failureReason   String?
+  metadata        Json?
+  
+  @@map("refunds")
+}
+
+model Dispute {
+  id              String    @id @default(cuid())
+  transactionId   String
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
+  // Dispute details
+  type            String    // quality_issue, non_delivery, wrong_item, etc.
+  reason          String
+  status          String    // open, investigating, resolved, closed
+  
+  // Evidence
+  evidenceUrls    String[]  // 증빙 자료 URL 배열
+  
+  // Resolution
+  resolution      String?
+  resolvedBy      String?   // admin user ID
+  resolvedAt      DateTime?
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@map("disputes")
+}
+
+model EventLog {
+  id              String    @id @default(cuid())
+  transactionId   String
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  
+  // Event details
+  eventType       String    // status_change, payment_created, shipment_updated, etc.
+  fromStatus      String?
+  toStatus        String?
+  description     String
+  metadata        Json?
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  
+  @@map("event_logs")
+}
+
+enum TransactionStatus {
+  INITIATED           // 거래 시작
+  PAID               // 결제 완료
+  IN_ESCROW          // 에스크로 보관
+  AWAITING_SHIPMENT  // 배송 대기
+  SHIPPED            // 배송 시작
+  IN_TRANSIT         // 배송 중
+  DELIVERED          // 배송 완료
+  DELIVERY_CONFIRMED // 배송 확인
+  BUYER_CONFIRMED    // 구매 확정
+  CANCEL_REQUESTED   // 취소 요청
+  CANCELLED          // 취소됨
+  REFUND_PENDING     // 환불 대기
+  REFUNDED           // 환불 완료
+  DISPUTE            // 분쟁
+}
+
+
+

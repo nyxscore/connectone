@@ -303,6 +303,76 @@ export const signInWithNaver = async () => {
   }
 };
 
+// Redirect 방식 로그인 함수들
+export const signInWithGoogleRedirect = async () => {
+  if (typeof window === "undefined") {
+    throw new Error("서버 사이드에서 실행할 수 없습니다.");
+  }
+
+  const auth = getFirebaseAuth();
+  const provider = getGoogleProvider();
+
+  if (!auth || !provider) {
+    throw new Error(
+      "Firebase Auth 또는 Google Provider가 초기화되지 않았습니다."
+    );
+  }
+
+  try {
+    console.log("🔄 Google 리다이렉트 로그인 시작...");
+    await signInWithRedirect(auth, provider);
+  } catch (error) {
+    console.error("❌ Google 리다이렉트 로그인 실패:", error);
+    throw error;
+  }
+};
+
+export const signInWithKakaoRedirect = async () => {
+  if (typeof window === "undefined") {
+    throw new Error("서버 사이드에서 실행할 수 없습니다.");
+  }
+
+  const auth = getFirebaseAuth();
+  const provider = getKakaoProvider();
+
+  if (!auth || !provider) {
+    throw new Error(
+      "Firebase Auth 또는 Kakao Provider가 초기화되지 않았습니다."
+    );
+  }
+
+  try {
+    console.log("🔄 Kakao 리다이렉트 로그인 시작...");
+    await signInWithRedirect(auth, provider);
+  } catch (error) {
+    console.error("❌ Kakao 리다이렉트 로그인 실패:", error);
+    throw error;
+  }
+};
+
+export const signInWithNaverRedirect = async () => {
+  if (typeof window === "undefined") {
+    throw new Error("서버 사이드에서 실행할 수 없습니다.");
+  }
+
+  const auth = getFirebaseAuth();
+  const provider = getNaverProvider();
+
+  if (!auth || !provider) {
+    throw new Error(
+      "Firebase Auth 또는 Naver Provider가 초기화되지 않았습니다."
+    );
+  }
+
+  try {
+    console.log("🔄 Naver 리다이렉트 로그인 시작...");
+    await signInWithRedirect(auth, provider);
+  } catch (error) {
+    console.error("❌ Naver 리다이렉트 로그인 실패:", error);
+    throw error;
+  }
+};
+
 export const handleRedirectResult = async () => {
   if (typeof window === "undefined") {
     return null;
@@ -327,3 +397,6 @@ export const handleRedirectResult = async () => {
     throw error;
   }
 };
+
+// getRedirectResult를 firebaseGetRedirectResult로 export
+export { firebaseGetRedirectResult };

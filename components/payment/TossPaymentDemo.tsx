@@ -52,6 +52,7 @@ export function TossPaymentDemo({
   useEffect(() => {
     const initializeTossPayments = async () => {
       try {
+        console.log("토스페이먼츠 SDK 초기화 시작...");
         const tossPayments = await loadTossPayments(
           "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq" // 테스트 클라이언트 키
         );
@@ -59,9 +60,29 @@ export function TossPaymentDemo({
         console.log("토스페이먼츠 SDK 초기화 완료");
       } catch (error) {
         console.error("토스페이먼츠 SDK 초기화 실패:", error);
-        toast.error("결제 시스템을 불러오는데 실패했습니다.");
+
+        // 더 구체적인 에러 메시지 제공
+        let errorMessage = "결제 시스템을 불러오는데 실패했습니다.";
+        if (error instanceof Error) {
+          if (
+            error.message.includes("network") ||
+            error.message.includes("fetch")
+          ) {
+            errorMessage = "네트워크 연결을 확인해주세요.";
+          } else if (error.message.includes("script")) {
+            errorMessage = "결제 스크립트 로딩에 실패했습니다.";
+          }
+        }
+
+        toast.error(errorMessage);
       }
     };
+
+    // 네트워크 상태 확인
+    if (!navigator.onLine) {
+      toast.error("인터넷 연결을 확인해주세요.");
+      return;
+    }
 
     initializeTossPayments();
   }, []);
@@ -69,7 +90,9 @@ export function TossPaymentDemo({
   // 결제 요청 핸들러
   const handlePayment = async () => {
     if (!tossPaymentsRef.current) {
-      toast.error("결제 시스템이 준비되지 않았습니다.");
+      toast.error(
+        "결제 시스템이 준비되지 않았습니다. 페이지를 새로고침해주세요."
+      );
       return;
     }
 
@@ -106,8 +129,45 @@ export function TossPaymentDemo({
       if (error.code === "USER_CANCEL") {
         toast("결제가 취소되었습니다.");
       } else {
-        toast.error(error.message || "결제 요청에 실패했습니다.");
-        onFail?.(error.message || "결제 실패");
+        // 더 구체적인 에러 메시지 제공
+        let errorMessage = "결제 요청에 실패했습니다.";
+
+        if (error.code) {
+          switch (error.code) {
+            case "INVALID_CARD_COMPANY":
+              errorMessage = "지원하지 않는 카드입니다.";
+              break;
+            case "INVALID_CARD_NUMBER":
+              errorMessage = "카드 번호를 확인해주세요.";
+              break;
+            case "INVALID_CARD_EXPIRY":
+              errorMessage = "카드 유효기간을 확인해주세요.";
+              break;
+            case "INVALID_CARD_PASSWORD":
+              errorMessage = "카드 비밀번호를 확인해주세요.";
+              break;
+            case "PAY_PROCESS_CANCELED":
+              errorMessage = "결제가 취소되었습니다.";
+              break;
+            case "PAY_PROCESS_ABORTED":
+              errorMessage = "결제가 중단되었습니다.";
+              break;
+            case "REJECT_CARD_COMPANY":
+              errorMessage = "해당 카드사에서는 결제를 거부했습니다.";
+              break;
+            case "INSUFFICIENT_BALANCE":
+              errorMessage = "잔액이 부족합니다.";
+              break;
+            default:
+              errorMessage =
+                error.message || "결제 처리 중 오류가 발생했습니다.";
+          }
+        } else {
+          errorMessage = error.message || "결제 처리 중 오류가 발생했습니다.";
+        }
+
+        toast.error(errorMessage);
+        onFail?.(errorMessage);
       }
     }
   };
