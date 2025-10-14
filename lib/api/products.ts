@@ -44,6 +44,14 @@ export interface Item extends SellItemInput {
   };
   transactionCancelledAt?: any;
   buyerUid?: string;
+  cancelRequest?: {
+    requestedBy: string; // 요청한 사용자 UID
+    requestedAt: any; // 요청 시간
+    reason?: string; // 취소 사유
+    status: "pending" | "approved" | "rejected"; // 요청 상태
+    processedBy?: string; // 처리한 사용자 UID
+    processedAt?: any; // 처리 시간
+  };
   createdAt: any;
   updatedAt: any;
 }

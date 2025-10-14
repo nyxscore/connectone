@@ -1558,28 +1558,26 @@ export function EnhancedChatModal({
       }
 
       const itemRef = doc(db, "items", chatData.item.id);
-      const { deleteField } = await import("firebase/firestore");
 
+      // 취소 요청 상태로 업데이트 (즉시 취소하지 않음)
       await updateDoc(itemRef, {
-        status: "active", // 취소 시 다시 판매중으로
-        buyerUid: deleteField(), // 구매자 정보 제거
-        buyerId: deleteField(),
-        cancelReason: cancelReason || "구매자 요청",
-        cancelledBy: user.uid,
-        cancelledAt: serverTimestamp(),
+        cancelRequest: {
+          requestedBy: user.uid,
+          requestedAt: serverTimestamp(),
+          reason: cancelReason || "구매자 요청",
+          status: "pending",
+        },
         updatedAt: serverTimestamp(),
       });
-      toast.success(
-        "거래가 취소되었습니다. 상품이 다시 판매중으로 변경되었습니다!"
-      );
+
+      toast.success("취소 요청이 판매자에게 전달되었습니다.");
       setShowCancelModal(false);
       setCancelReason("");
 
       // 취소 요청 시스템 메시지 전송
       try {
         const { sendMessage } = await import("../../lib/chat/api");
-        const cancelMessage =
-          "구매자가 거래 취소를 요청했습니다. 거래가 취소되었습니다.";
+        const cancelMessage = `🔄 구매자가 거래 취소를 요청했습니다.\n사유: ${cancelReason || "구매자 요청"}\n\n판매자의 승인을 기다리고 있습니다.`;
 
         const result = await sendMessage({
           chatId: chatData.chatId,
@@ -1593,15 +1591,8 @@ export function EnhancedChatModal({
           console.error("취소 요청 시스템 메시지 전송 실패:", result.error);
         }
       } catch (error) {
-        console.error("취소 요청 시스템 메시지 전송 실패:", error);
+        console.error("취소 요청 시스템 메시지 전송 중 오류:", error);
       }
-
-      // 전역 이벤트 발생으로 상품 목록 업데이트 (취소 요청 시에도 active로 변경)
-      window.dispatchEvent(
-        new CustomEvent("itemStatusChanged", {
-          detail: { itemId: chatData.item.id, status: "active" },
-        })
-      );
     } catch (error) {
       console.error("취소 요청 실패:", error);
       toast.error("취소 요청 중 오류가 발생했습니다.");
@@ -1624,55 +1615,142 @@ export function EnhancedChatModal({
       setIsApprovingCancel(true);
 
       try {
-        const response = await fetch("/api/products/approve-cancel", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        // 클라이언트 사이드에서 직접 Firestore 업데이트
+        const { doc, updateDoc, serverTimestamp, deleteField } = await import(
+          "firebase/firestore"
+        );
+        const { getFirebaseDb } = await import(
+          "../../lib/api/firebase-ultra-safe"
+        );
+
+        const db = getFirebaseDb();
+        if (!db) {
+          toast.error("데이터베이스 연결에 실패했습니다.");
+          return;
+        }
+
+        const itemRef = doc(db, "items", chatData.item.id);
+
+        await updateDoc(itemRef, {
+          status: "active", // 취소 시 다시 판매중으로
+          buyerUid: deleteField(), // 구매자 정보 제거
+          buyerId: deleteField(),
+          cancelRequest: {
+            ...chatData.item.cancelRequest,
+            status: "approved",
+            processedBy: user.uid,
+            processedAt: serverTimestamp(),
           },
-          body: JSON.stringify({
-            itemId: chatData.item.id,
-            sellerUid: user.uid,
-          }),
+          updatedAt: serverTimestamp(),
         });
 
-        const result = await response.json();
+        toast.success("취소 요청이 승인되었습니다!");
 
-        if (result.success) {
-          toast.success("취소 요청이 승인되었습니다!");
+        // 취소 승인 시스템 메시지 전송
+        try {
+          const { sendMessage } = await import("../../lib/chat/api");
+          const cancelMessage =
+            "✅ 판매자가 취소 요청을 승인했습니다. 상품이 다시 판매중으로 변경되었습니다.";
 
-          // 취소 승인 시스템 메시지 전송
-          try {
-            const { sendMessage } = await import("../../lib/chat/api");
-            const cancelMessage =
-              "✅ 판매자가 취소 요청을 승인했습니다. 상품이 다시 판매중으로 변경되었습니다.";
+          const result = await sendMessage({
+            chatId: chatData.chatId,
+            senderUid: "system",
+            content: cancelMessage,
+          });
 
-            const result = await sendMessage({
-              chatId: chatData.chatId,
-              senderUid: "system",
-              content: cancelMessage,
-            });
-
-            if (result.success) {
-              console.log("취소 승인 시스템 메시지 전송 완료");
-            } else {
-              console.error("취소 승인 시스템 메시지 전송 실패:", result.error);
-            }
-          } catch (error) {
-            console.error("취소 승인 시스템 메시지 전송 실패:", error);
+          if (result.success) {
+            console.log("취소 승인 시스템 메시지 전송 완료");
+          } else {
+            console.error("취소 승인 시스템 메시지 전송 실패:", result.error);
+          }
+        } catch (error) {
+          console.error("취소 승인 시스템 메시지 전송 실패:", error);
           }
 
-          // 전역 이벤트 발생으로 상품 목록 업데이트
-          window.dispatchEvent(
-            new CustomEvent("itemStatusChanged", {
-              detail: { itemId: chatData.item.id, status: "active" },
-            })
-          );
-        } else {
-          toast.error(result.error || "취소 승인에 실패했습니다.");
-        }
+        // 전역 이벤트 발생으로 상품 목록 업데이트
+        window.dispatchEvent(
+          new CustomEvent("itemStatusChanged", {
+            detail: { itemId: chatData.item.id, status: "active" },
+          })
+        );
+
+        // 채팅 모달 닫기
+        onClose();
       } catch (error) {
         console.error("취소 승인 실패:", error);
         toast.error("취소 승인 중 오류가 발생했습니다.");
+      } finally {
+        setIsApprovingCancel(false);
+      }
+    }
+  };
+
+  // 취소 요청 거절 함수
+  const handleRejectCancel = async () => {
+    if (!chatData?.item?.id || !user?.uid) {
+      toast.error("거래 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    if (
+      confirm(
+        "정말로 취소 요청을 거절하시겠습니까?\n거래가 계속 진행됩니다."
+      )
+    ) {
+      setIsApprovingCancel(true);
+
+      try {
+        // 클라이언트 사이드에서 직접 Firestore 업데이트
+        const { doc, updateDoc, serverTimestamp } = await import(
+          "firebase/firestore"
+        );
+        const { getFirebaseDb } = await import(
+          "../../lib/api/firebase-ultra-safe"
+        );
+
+        const db = getFirebaseDb();
+        if (!db) {
+          toast.error("데이터베이스 연결에 실패했습니다.");
+          return;
+        }
+
+        const itemRef = doc(db, "items", chatData.item.id);
+
+        await updateDoc(itemRef, {
+          cancelRequest: {
+            ...chatData.item.cancelRequest,
+            status: "rejected",
+            processedBy: user.uid,
+            processedAt: serverTimestamp(),
+          },
+          updatedAt: serverTimestamp(),
+        });
+
+        toast.success("취소 요청이 거절되었습니다.");
+
+        // 취소 거절 시스템 메시지 전송
+        try {
+          const { sendMessage } = await import("../../lib/chat/api");
+          const cancelMessage =
+            "❌ 판매자가 취소 요청을 거절했습니다. 거래가 계속 진행됩니다.";
+
+          const result = await sendMessage({
+            chatId: chatData.chatId,
+            senderUid: "system",
+            content: cancelMessage,
+          });
+
+          if (result.success) {
+            console.log("취소 거절 시스템 메시지 전송 완료");
+          } else {
+            console.error("취소 거절 시스템 메시지 전송 실패:", result.error);
+          }
+        } catch (error) {
+          console.error("취소 거절 시스템 메시지 전송 실패:", error);
+        }
+      } catch (error) {
+        console.error("취소 거절 실패:", error);
+        toast.error("취소 거절 중 오류가 발생했습니다.");
       } finally {
         setIsApprovingCancel(false);
       }
@@ -2314,50 +2392,78 @@ export function EnhancedChatModal({
                                                 ) {
                                                   return (
                                                     <>
-                                                      {/* 배송지 정보 보기 (구매자가 입력한 경우) */}
-                                                      {chatData.item
-                                                        .buyerShippingInfo && (
-                                                        <button
-                                                          onClick={() => {
-                                                            const shippingInfo =
-                                                              chatData.item
-                                                                .buyerShippingInfo;
-                                                            toast.success(
-                                                              `받는분: ${shippingInfo.recipientName}\n주소: ${shippingInfo.address}\n연락처: ${shippingInfo.phoneNumber}${shippingInfo.deliveryMemo ? `\n배송메모: ${shippingInfo.deliveryMemo}` : ""}`,
-                                                              { duration: 5000 }
-                                                            );
-                                                            setShowStepDropdown(
-                                                              false
-                                                            );
-                                                            setCurrentStepDropdown(
-                                                              null
-                                                            );
-                                                          }}
-                                                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
-                                                        >
-                                                          배송지 정보 보기
-                                                        </button>
-                                                      )}
+                                                      {/* 취소 요청이 있을 때만 승인/거절 버튼 표시 */}
+                                                      {chatData.item.cancelRequest?.status === "pending" ? (
+                                                        <>
+                                                          <button
+                                                            onClick={() => {
+                                                              handleApproveCancel();
+                                                              setShowStepDropdown(false);
+                                                              setCurrentStepDropdown(null);
+                                                            }}
+                                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors text-green-600"
+                                                          >
+                                                            취소 요청 승인
+                                                          </button>
+                                                          <button
+                                                            onClick={() => {
+                                                              handleRejectCancel();
+                                                              setShowStepDropdown(false);
+                                                              setCurrentStepDropdown(null);
+                                                            }}
+                                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors text-red-600"
+                                                          >
+                                                            취소 요청 거절
+                                                          </button>
+                                                        </>
+                                                      ) : (
+                                                        <>
+                                                          {/* 배송지 정보 보기 (구매자가 입력한 경우) */}
+                                                          {chatData.item
+                                                            .buyerShippingInfo && (
+                                                            <button
+                                                              onClick={() => {
+                                                                const shippingInfo =
+                                                                  chatData.item
+                                                                    .buyerShippingInfo;
+                                                                toast.success(
+                                                                  `받는분: ${shippingInfo.recipientName}\n주소: ${shippingInfo.address}\n연락처: ${shippingInfo.phoneNumber}${shippingInfo.deliveryMemo ? `\n배송메모: ${shippingInfo.deliveryMemo}` : ""}`,
+                                                                  { duration: 5000 }
+                                                                );
+                                                                setShowStepDropdown(
+                                                                  false
+                                                                );
+                                                                setCurrentStepDropdown(
+                                                                  null
+                                                                );
+                                                              }}
+                                                              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                                                            >
+                                                              배송지 정보 보기
+                                                            </button>
+                                                          )}
 
-                                                      {/* 운송장 등록 */}
-                                                      <button
-                                                        onClick={() => {
-                                                          setCourier("");
-                                                          setTrackingNumber("");
-                                                          setShowShippingEditModal(
-                                                            true
-                                                          );
-                                                          setShowStepDropdown(
-                                                            false
-                                                          );
-                                                          setCurrentStepDropdown(
-                                                            null
-                                                          );
-                                                        }}
-                                                        className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
-                                                      >
-                                                        운송장 등록
-                                                      </button>
+                                                          {/* 운송장 등록 */}
+                                                          <button
+                                                            onClick={() => {
+                                                              setCourier("");
+                                                              setTrackingNumber("");
+                                                              setShowShippingEditModal(
+                                                                true
+                                                              );
+                                                              setShowStepDropdown(
+                                                                false
+                                                              );
+                                                              setCurrentStepDropdown(
+                                                                null
+                                                              );
+                                                            }}
+                                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                                                          >
+                                                            운송장 등록
+                                                          </button>
+                                                        </>
+                                                      )}
                                                     </>
                                                   );
                                                 } else if (
@@ -3089,43 +3195,82 @@ export function EnhancedChatModal({
                           {/* 거래중 단계 */}
                           {chatData.item.status === "reserved" && (
                             <>
-                              {/* 운송장 등록 */}
-                              <motion.button
-                                onClick={() => {
-                                  setCourier("");
-                                  setTrackingNumber("");
-                                  setShowShippingEditModal(true);
-                                  setShowBottomSheet(false);
-                                }}
-                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1 }}
-                                whileTap={{ scale: 0.95 }}
-                              >
-                                <Truck className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">
-                                  운송장등록
-                                </span>
-                              </motion.button>
+                              {/* 취소 요청이 있을 때만 승인/거절 버튼 표시 */}
+                              {chatData.item.cancelRequest?.status === "pending" ? (
+                                <>
+                                  {/* 취소 요청 승인 */}
+                                  <motion.button
+                                    onClick={() => {
+                                      handleApproveCancel();
+                                      setShowBottomSheet(false);
+                                    }}
+                                    className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg hover:shadow-xl transition-all"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <CheckCircle className="w-5 h-5 mb-2" />
+                                    <span className="text-xs font-medium">취소승인</span>
+                                  </motion.button>
 
-                              {/* 거래 취소하기 */}
-                              <motion.button
-                                onClick={() => {
-                                  handleCancelTrade();
-                                  setShowBottomSheet(false);
-                                }}
-                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.15 }}
-                                whileTap={{ scale: 0.95 }}
-                              >
-                                <XCircle className="w-5 h-5 mb-2" />
-                                <span className="text-xs font-medium">
-                                  거래취소
-                                </span>
-                              </motion.button>
+                                  {/* 취소 요청 거절 */}
+                                  <motion.button
+                                    onClick={() => {
+                                      handleRejectCancel();
+                                      setShowBottomSheet(false);
+                                    }}
+                                    className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.15 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <XCircle className="w-5 h-5 mb-2" />
+                                    <span className="text-xs font-medium">취소거절</span>
+                                  </motion.button>
+                                </>
+                              ) : (
+                                <>
+                                  {/* 운송장 등록 */}
+                                  <motion.button
+                                    onClick={() => {
+                                      setCourier("");
+                                      setTrackingNumber("");
+                                      setShowShippingEditModal(true);
+                                      setShowBottomSheet(false);
+                                    }}
+                                    className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <Truck className="w-5 h-5 mb-2" />
+                                    <span className="text-xs font-medium">
+                                      운송장등록
+                                    </span>
+                                  </motion.button>
+
+                                  {/* 거래 취소하기 */}
+                                  <motion.button
+                                    onClick={() => {
+                                      handleCancelTrade();
+                                      setShowBottomSheet(false);
+                                    }}
+                                    className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.15 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <XCircle className="w-5 h-5 mb-2" />
+                                    <span className="text-xs font-medium">
+                                      거래취소
+                                    </span>
+                                  </motion.button>
+                                </>
+                              )}
                             </>
                           )}
 
