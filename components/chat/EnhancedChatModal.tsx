@@ -119,6 +119,7 @@ export function EnhancedChatModal({
   const [showOtherProfileModal, setShowOtherProfileModal] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messagesLoaded, setMessagesLoaded] = useState(false);
   // 모바일에서는 사이드바 기본 숨김, 데스크톱에서는 표시
   const [showSidebar, setShowSidebar] = useState(
     typeof window !== "undefined" ? window.innerWidth >= 768 : false
@@ -809,6 +810,10 @@ export function EnhancedChatModal({
   useEffect(() => {
     if (isOpen && user) {
       loadChatData();
+    } else if (!isOpen) {
+      // 채팅이 닫힐 때 상태 초기화
+      setMessagesLoaded(false);
+      setMessages([]);
     }
   }, [isOpen, user, itemId, sellerUid, chatId]);
 
@@ -991,17 +996,12 @@ export function EnhancedChatModal({
   }, [chatData?.item?.id]);
 
   useEffect(() => {
-    if (chatData?.chatId) {
-      console.log("chatData 변경됨 - 메시지 로드:", chatData.chatId);
-      console.log("=== chatData 상태 변경 감지 ===");
-      console.log("chatData.item:", chatData.item);
-      console.log("chatData.item.shippingInfo:", chatData.item?.shippingInfo);
-      console.log(
-        "chatData.item.buyerShippingInfo:",
-        chatData.item?.buyerShippingInfo
-      );
-      console.log("chatData.item.status:", chatData.item?.status);
+    if (chatData?.chatId && !messagesLoaded) {
+      console.log("메시지 로드 및 구독 시작:", chatData.chatId);
+      
+      // 초기 메시지 로드
       loadMessages(chatData.chatId);
+      setMessagesLoaded(true);
 
       // 실시간 메시지 구독
       const unsubscribe = subscribeToMessages(
@@ -1089,7 +1089,7 @@ export function EnhancedChatModal({
         }
       };
     }
-  }, [chatData?.chatId, user]);
+  }, [chatData?.chatId, user, messagesLoaded]);
 
   const loadMessages = async (chatId: string) => {
     try {
