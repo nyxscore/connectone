@@ -2042,9 +2042,9 @@ export function EnhancedChatModal({
             </div>
           </div>
 
-          {/* 진행 상태 바 (모바일 전용, 안전결제만) - 완전 고정 */}
+          {/* 진행 상태 바 (모바일 전용, 안전결제만) - 헤더 아래 고정 */}
           {chatData?.tradeType === "안전결제" && (
-            <div className="bg-white px-4 py-4 border-b md:hidden fixed top-0 left-0 right-0 z-50 shadow-lg">
+            <div className="bg-white px-4 py-4 border-b md:hidden sticky top-16 z-40 shadow-lg">
               <div className="flex items-center justify-between relative">
                 {(() => {
                   const status = chatData?.item?.status;
@@ -2549,7 +2549,7 @@ export function EnhancedChatModal({
 
           {/* 메시지 영역 */}
           <div
-            className={`flex-1 overflow-y-auto p-4 space-y-4 pb-safe ${chatData?.tradeType === "안전결제" ? "pt-24 md:pt-4" : ""}`}
+            className={`flex-1 overflow-y-auto p-4 space-y-4 pb-safe ${chatData?.tradeType === "안전결제" ? "pt-4" : ""}`}
           >
             {/* 사기 경고 메시지 */}
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
