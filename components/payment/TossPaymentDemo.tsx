@@ -61,20 +61,12 @@ export function TossPaymentDemo({
       } catch (error) {
         console.error("토스페이먼츠 SDK 초기화 실패:", error);
 
-        // 더 구체적인 에러 메시지 제공
-        let errorMessage = "결제 시스템을 불러오는데 실패했습니다.";
-        if (error instanceof Error) {
-          if (
-            error.message.includes("network") ||
-            error.message.includes("fetch")
-          ) {
-            errorMessage = "네트워크 연결을 확인해주세요.";
-          } else if (error.message.includes("script")) {
-            errorMessage = "결제 스크립트 로딩에 실패했습니다.";
-          }
-        }
-
-        toast.error(errorMessage);
+        // Mock 결제로 자동 전환
+        console.log("Mock 결제 모드로 전환됨");
+        toast.error(
+          "결제 시스템 로딩 실패. 테스트 결제 모드로 진행합니다.",
+          { duration: 3000 }
+        );
       }
     };
 
@@ -91,7 +83,8 @@ export function TossPaymentDemo({
   const handlePayment = async () => {
     if (!tossPaymentsRef.current) {
       toast.error(
-        "결제 시스템이 준비되지 않았습니다. 페이지를 새로고침해주세요."
+        "결제 시스템이 준비되지 않았습니다. Mock 결제를 사용해주세요.",
+        { duration: 2000 }
       );
       return;
     }

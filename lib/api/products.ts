@@ -398,7 +398,13 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     const db = getDb();
 
     // 상태 필터 처리
-    let statusFilter = ["active", "reserved", "escrow_completed", "sold", "cancelled"]; // 기본값: 모든 상태 (취소된 것도 포함)
+    let statusFilter = [
+      "active",
+      "reserved",
+      "escrow_completed",
+      "sold",
+      "cancelled",
+    ]; // 기본값: 모든 상태 (취소된 것도 포함)
 
     if (filters.status) {
       switch (filters.status) {
@@ -412,10 +418,22 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
           statusFilter = ["sold"]; // 거래완료된 상품만
           break;
         case "all":
-          statusFilter = ["active", "reserved", "escrow_completed", "sold", "cancelled"]; // 전체
+          statusFilter = [
+            "active",
+            "reserved",
+            "escrow_completed",
+            "sold",
+            "cancelled",
+          ]; // 전체
           break;
         default:
-          statusFilter = ["active", "reserved", "escrow_completed", "sold", "cancelled"]; // 전체
+          statusFilter = [
+            "active",
+            "reserved",
+            "escrow_completed",
+            "sold",
+            "cancelled",
+          ]; // 전체
       }
     }
 
