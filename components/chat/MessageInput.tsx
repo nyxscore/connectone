@@ -39,10 +39,55 @@ export function MessageInput({
     }, 300);
   }, []);
 
-  // 모바일 키보드 이벤트 처리 - 자연스러운 키보드 유지
+  // 모바일 키보드 완전 고정
   useEffect(() => {
-    // 메시지 전송 후에만 포커스 유지 (자연스러운 방식)
-    // blur 이벤트는 제거하여 깜빡임 방지
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // 키보드가 올라올 때 강제 포커스
+    const handleFocus = () => {
+      if (textarea) {
+        textarea.focus();
+      }
+    };
+
+    // 키보드가 내려갈 때 방지
+    const handleBlur = (e: FocusEvent) => {
+      e.preventDefault();
+      setTimeout(() => {
+        if (textarea && document.activeElement !== textarea) {
+          textarea.focus();
+        }
+      }, 10);
+    };
+
+    // 터치 시 포커스 유지
+    const handleTouchStart = () => {
+      if (textarea) {
+        textarea.focus();
+      }
+    };
+
+    // 키보드 표시/숨김 감지
+    const handleResize = () => {
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+        }
+      }, 100);
+    };
+
+    textarea.addEventListener('focus', handleFocus);
+    textarea.addEventListener('blur', handleBlur);
+    textarea.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      textarea.removeEventListener('focus', handleFocus);
+      textarea.removeEventListener('blur', handleBlur);
+      textarea.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,19 +152,27 @@ export function MessageInput({
       // 새로고침 없이 메시지 목록만 업데이트
       onMessageSent?.();
 
-      // 메시지 전송 후 자연스럽게 포커스 유지 (더 빠르게)
+      // 메시지 전송 후 즉시 포커스 유지
       setTimeout(() => {
         textareaRef.current?.focus();
-      }, 50);
+        // 추가로 강제 포커스
+        setTimeout(() => {
+          textareaRef.current?.focus();
+        }, 10);
+      }, 10);
     } catch (error) {
       console.error("메시지 전송 실패:", error);
       toast.error("메시지 전송 중 오류가 발생했습니다.");
     } finally {
       setIsSending(false);
-      // 전송 완료 후 자연스럽게 포커스 유지 (더 빠르게)
+      // 전송 완료 후 즉시 포커스 유지
       setTimeout(() => {
         textareaRef.current?.focus();
-      }, 100);
+        // 추가로 강제 포커스
+        setTimeout(() => {
+          textareaRef.current?.focus();
+        }, 10);
+      }, 10);
     }
   };
 
