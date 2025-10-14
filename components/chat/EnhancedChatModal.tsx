@@ -1857,8 +1857,8 @@ export function EnhancedChatModal({
         <div
           className={`flex-1 flex flex-col ${showSidebar ? "mr-4" : "mr-0"} relative`}
         >
-          {/* 헤더 */}
-          <div className="flex items-center justify-between p-2 border-b bg-gray-50">
+          {/* 헤더 - 모바일에서 고정 */}
+          <div className="flex items-center justify-between p-2 border-b bg-gray-50 md:relative sticky top-0 z-50">
             <div className="flex items-center space-x-1 flex-1 min-w-0">
               <Button
                 variant="ghost"
@@ -2042,9 +2042,9 @@ export function EnhancedChatModal({
             </div>
           </div>
 
-          {/* 진행 상태 바 (모바일 전용, 안전결제만) - 헤더 아래 고정 */}
+          {/* 진행 상태 바 (모바일 전용, 안전결제만) - 헤더 바로 아래 고정 */}
           {chatData?.tradeType === "안전결제" && (
-            <div className="bg-white px-4 py-4 border-b md:hidden sticky top-16 z-40 shadow-lg">
+            <div className="bg-white px-4 py-4 border-b md:hidden sticky top-[64px] z-40 shadow-lg">
               <div className="flex items-center justify-between relative">
                 {(() => {
                   const status = chatData?.item?.status;

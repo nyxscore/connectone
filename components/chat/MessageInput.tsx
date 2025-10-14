@@ -40,10 +40,26 @@ export function MessageInput({
     }, 300);
   }, []);
 
-  // 모바일 키보드 이벤트 처리 - 자연스러운 키보드 유지
+  // 모바일 키보드 완전 고정 - 절대 내려가지 않음
   useEffect(() => {
-    // 메시지 전송 후에만 포커스 유지 (자연스러운 방식)
-    // blur 이벤트는 제거하여 깜빡임 방지
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // blur 방지 - 키보드가 내려가는 것을 막음
+    const preventBlur = (e: FocusEvent) => {
+      e.preventDefault();
+      // 즉시 다시 포커스
+      requestAnimationFrame(() => {
+        textarea.focus();
+      });
+    };
+
+    // textarea에서 포커스가 벗어나려고 할 때 막음
+    textarea.addEventListener('blur', preventBlur);
+
+    return () => {
+      textarea.removeEventListener('blur', preventBlur);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,22 +121,26 @@ export function MessageInput({
         textareaRef.current.style.height = "auto";
       }
 
+      // 입력창 초기화 (DOM 리마운트 없이)
+      setMessage("");
+      setSelectedFiles([]);
+      
       // 새로고침 없이 메시지 목록만 업데이트
       onMessageSent?.();
 
-      // 메시지 전송 후 자연스럽게 포커스 유지
-      setTimeout(() => {
+      // 키보드 절대 내려가지 않도록 즉시 포커스 복원
+      requestAnimationFrame(() => {
         textareaRef.current?.focus();
-      }, 100);
+      });
     } catch (error) {
       console.error("메시지 전송 실패:", error);
       toast.error("메시지 전송 중 오류가 발생했습니다.");
     } finally {
       setIsSending(false);
-      // 전송 완료 후 자연스럽게 포커스 유지
-      setTimeout(() => {
+      // 전송 완료 후 키보드 절대 내려가지 않도록 포커스 유지
+      requestAnimationFrame(() => {
         textareaRef.current?.focus();
-      }, 150);
+      });
     }
   };
 
