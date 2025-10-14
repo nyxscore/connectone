@@ -2903,9 +2903,7 @@ export function EnhancedChatModal({
                 senderUid={user.uid}
                 itemId={chatData.item.id}
                 sellerUid={chatData.otherUser.uid}
-                onMessageSent={() => {
-                  console.log("메시지 전송 완료");
-                }}
+                onMessageSent={undefined}
                 onPlusClick={() => setShowBottomSheet(true)}
               />
             </div>

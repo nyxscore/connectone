@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, memo } from "react";
 import { sendMessage } from "../../lib/chat/api";
 import { uploadImages } from "../../lib/api/storage";
 import { Button } from "../ui/Button";
@@ -16,7 +16,7 @@ interface MessageInputProps {
   onPlusClick?: () => void; // + 버튼 클릭 핸들러
 }
 
-export function MessageInput({
+export const MessageInput = memo(function MessageInput({
   chatId,
   senderUid,
   itemId,
@@ -259,4 +259,4 @@ export function MessageInput({
 
     </div>
   );
-}
+});
