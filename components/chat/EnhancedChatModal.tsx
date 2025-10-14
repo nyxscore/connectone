@@ -1521,14 +1521,18 @@ export function EnhancedChatModal({
       }
 
       const itemRef = doc(db, "items", chatData.item.id);
+      const { deleteField } = await import("firebase/firestore");
+      
       await updateDoc(itemRef, {
-        status: "cancelled",
+        status: "active", // 취소 시 다시 판매중으로
+        buyerUid: deleteField(), // 구매자 정보 제거
+        buyerId: deleteField(),
         cancelReason: cancelReason || "구매자 요청",
         cancelledBy: user.uid,
         cancelledAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      toast.success("취소 요청이 전송되었습니다!");
+      toast.success("거래가 취소되었습니다. 상품이 다시 판매중으로 변경되었습니다!");
       setShowCancelModal(false);
       setCancelReason("");
 
@@ -1553,10 +1557,10 @@ export function EnhancedChatModal({
         console.error("취소 요청 시스템 메시지 전송 실패:", error);
       }
 
-      // 전역 이벤트 발생으로 상품 목록 업데이트
+      // 전역 이벤트 발생으로 상품 목록 업데이트 (취소 요청 시에도 active로 변경)
       window.dispatchEvent(
         new CustomEvent("itemStatusChanged", {
-          detail: { itemId: chatData.item.id, status: "cancelled" },
+          detail: { itemId: chatData.item.id, status: "active" },
         })
       );
     } catch (error) {
