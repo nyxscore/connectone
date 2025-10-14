@@ -49,6 +49,14 @@ function PaymentSuccessContent() {
         itemId,
         sellerUid,
       });
+      
+      // 안전결제인 경우 즉시 채팅창 열기
+      if (escrow && itemId && sellerUid) {
+        console.log("안전결제 완료 - 즉시 채팅창 열기");
+        setShowChatModal(true);
+        setAutoChatOpened(true);
+      }
+      
       // 테스트 결제인 경우 조용히 처리
       if (orderId.startsWith("MOCK_ORDER_")) {
         console.log("테스트 결제 완료:", orderId);
@@ -146,18 +154,6 @@ function PaymentSuccessContent() {
 
         console.log("거래 내역 저장 완료");
         setTransactionSaved(true);
-
-        // 안전결제인 경우 자동으로 채팅창 열기
-        if (
-          orderInfo.escrow &&
-          orderInfo.sellerUid &&
-          orderInfo.itemId &&
-          !autoChatOpened
-        ) {
-          console.log("안전결제 완료 - 자동 채팅창 열기");
-          setShowChatModal(true);
-          setAutoChatOpened(true);
-        }
       } catch (error) {
         console.error("거래 내역 저장 실패:", error);
         // 테스트 결제인 경우 조용히 처리
