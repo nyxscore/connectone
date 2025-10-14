@@ -36,14 +36,14 @@ export function MessageInput({
     textareaRef.current?.focus();
   }, []);
 
-  // 키보드 이벤트 처리 - 키보드가 사라지지 않도록 유지
+  // 모바일 키보드 이벤트 처리 - 키보드가 사라지지 않도록 유지
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && textareaRef.current) {
         // 페이지가 다시 활성화되면 포커스 유지
         setTimeout(() => {
           textareaRef.current?.focus();
-        }, 100);
+        }, 200);
       }
     };
 
@@ -54,12 +54,38 @@ export function MessageInput({
       }
     };
 
+    const handleBlur = () => {
+      // 포커스가 사라져도 다시 포커스 유지 (모바일에서 키보드 유지)
+      setTimeout(() => {
+        if (textareaRef.current && document.activeElement !== textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 50);
+    };
+
+    // 모바일에서 키보드 유지를 위한 추가 이벤트
+    const handleTouchStart = () => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    };
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("focus", handleFocus);
+    document.addEventListener("touchstart", handleTouchStart);
+    
+    if (textareaRef.current) {
+      textareaRef.current.addEventListener("blur", handleBlur);
+    }
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("touchstart", handleTouchStart);
+      
+      if (textareaRef.current) {
+        textareaRef.current.removeEventListener("blur", handleBlur);
+      }
     };
   }, []);
 
@@ -125,19 +151,19 @@ export function MessageInput({
       // 새로고침 없이 메시지 목록만 업데이트
       onMessageSent?.();
 
-      // 포커스는 약간의 딜레이 후에 확실하게
+      // 포커스는 약간의 딜레이 후에 확실하게 (모바일 키보드 유지)
       setTimeout(() => {
         textareaRef.current?.focus();
-      }, 100);
+      }, 200);
     } catch (error) {
       console.error("메시지 전송 실패:", error);
       toast.error("메시지 전송 중 오류가 발생했습니다.");
     } finally {
       setIsSending(false);
-      // 전송 완료 후에도 포커스 유지
+      // 전송 완료 후에도 포커스 유지 (모바일 키보드 유지)
       setTimeout(() => {
         textareaRef.current?.focus();
-      }, 150);
+      }, 250);
     }
   };
 

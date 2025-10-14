@@ -31,7 +31,11 @@ const nextConfig = {
   // 동적 import 최적화
   experimental: {
     esmExternals: false,
-    serverComponentsExternalPackages: ['firebase', '@firebase/auth', '@firebase/firestore'],
+    serverComponentsExternalPackages: [
+      "firebase",
+      "@firebase/auth",
+      "@firebase/firestore",
+    ],
   },
 
   // 소스맵 활성화 (디버깅용)
@@ -50,7 +54,6 @@ const nextConfig = {
 
     return config;
   },
-
 };
 
 module.exports = nextConfig;

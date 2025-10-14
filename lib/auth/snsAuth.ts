@@ -5,7 +5,7 @@ import {
   signInWithGoogleRedirect,
   signInWithKakaoRedirect,
   signInWithNaverRedirect,
-  getRedirectResult as firebaseGetRedirectResult,
+  firebaseGetRedirectResult,
 } from "@/lib/api/firebase-ultra-safe";
 import { User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";

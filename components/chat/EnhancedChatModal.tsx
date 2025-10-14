@@ -1877,7 +1877,7 @@ export function EnhancedChatModal({
                   className="flex items-center space-x-1 hover:opacity-80 transition-opacity cursor-pointer flex-1 min-w-0"
                   onClick={() => {
                     // 상품 상세 페이지로 이동
-                    window.location.href = `/item/${chatData.item.id}`;
+                    window.location.href = `/product/${chatData.item.id}`;
                   }}
                 >
                   {/* 상품 썸네일 - 1.5배 크기 확대 */}
