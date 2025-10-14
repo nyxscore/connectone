@@ -2549,7 +2549,7 @@ export function EnhancedChatModal({
 
           {/* 메시지 영역 */}
           <div
-            className={`flex-1 overflow-y-auto p-4 space-y-4 pb-safe ${chatData?.tradeType === "안전결제" ? "pt-24 md:pt-4" : ""}`}
+            className={`flex-1 overflow-y-auto p-4 space-y-4 pb-safe ${chatData?.tradeType === "안전결제" ? "pt-24 md:pt-4" : ""} pb-24 md:pb-safe`}
           >
             {/* 사기 경고 메시지 */}
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
@@ -2895,9 +2895,9 @@ export function EnhancedChatModal({
               </div>
             )}
 
-          {/* 메시지 입력 */}
+          {/* 메시지 입력 - 모바일에서 완전 고정 */}
           {chatData && user && (
-            <div className="p-4 border-t bg-gray-50">
+            <div className="p-4 border-t bg-gray-50 md:relative fixed bottom-0 left-0 right-0 z-50 md:z-auto">
               <MessageInput
                 chatId={chatData.chatId}
                 senderUid={user.uid}
