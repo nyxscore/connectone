@@ -1008,7 +1008,7 @@ export function EnhancedChatModal({
   useEffect(() => {
     if (chatData?.chatId) {
       console.log("실시간 메시지 구독 시작:", chatData.chatId);
-      
+
       const unsubscribe = subscribeToMessages(
         chatData.chatId,
         messages => {
