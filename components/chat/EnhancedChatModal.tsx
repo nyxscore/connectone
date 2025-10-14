@@ -52,6 +52,10 @@ import {
   UserX,
   LogOut,
   MessageSquare,
+  PlayCircle,
+  Edit,
+  Star,
+  Package,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { ShippingTrackingModal } from "../shipping/ShippingTrackingModal";
@@ -2949,7 +2953,7 @@ export function EnhancedChatModal({
                         : "판매자 메뉴"}
                     </h3>
                     <div className="grid grid-cols-3 gap-3">
-                      {/* 앨범 */}
+                      {/* 앨범 (공통) */}
                       <motion.button
                         onClick={() => {
                           toast.success("앨범 열기");
@@ -2965,7 +2969,7 @@ export function EnhancedChatModal({
                         <span className="text-xs font-medium">앨범</span>
                       </motion.button>
 
-                      {/* 카메라 */}
+                      {/* 카메라 (공통) */}
                       <motion.button
                         onClick={() => {
                           toast.success("카메라 열기");
@@ -2981,117 +2985,247 @@ export function EnhancedChatModal({
                         <span className="text-xs font-medium">카메라</span>
                       </motion.button>
 
-                      {/* 구매자 전용 메뉴 */}
-                      {user.uid === chatData.buyerUid && (
+                      {/* 판매자 메뉴 */}
+                      {user.uid === chatData.sellerUid && (
                         <>
-                          {/* 배송지 입력 */}
-                          <motion.button
-                            onClick={() => {
-                              setShowShippingAddressModal(true);
-                              setShowBottomSheet(false);
-                            }}
-                            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <MapPin className="w-5 h-5 mb-2" />
-                            <span className="text-xs font-medium">
-                              배송지입력
-                            </span>
-                          </motion.button>
+                          {/* 결제완료 단계 */}
+                          {chatData.item.status === "escrow_completed" && (
+                            <>
+                              {/* 거래 진행하기 */}
+                              <motion.button
+                                onClick={() => {
+                                  handleStartTransaction();
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg hover:shadow-xl transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <PlayCircle className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">거래진행</span>
+                              </motion.button>
 
-                          {/* 구매확인 */}
-                          {chatData.item.status === "shipping" && (
-                            <motion.button
-                              onClick={() => {
-                                handleCompletePurchase();
-                                setShowBottomSheet(false);
-                              }}
-                              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.15 }}
-                              whileTap={{ scale: 0.95 }}
-                            >
-                              <CheckCircle className="w-5 h-5 mb-2" />
-                              <span className="text-xs font-medium">
-                                구매확인
-                              </span>
-                            </motion.button>
+                              {/* 거래 취소하기 */}
+                              <motion.button
+                                onClick={() => {
+                                  handleCancelTrade();
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <XCircle className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">거래취소</span>
+                              </motion.button>
+                            </>
                           )}
 
-                          {/* 반품 */}
-                          <motion.button
-                            onClick={() => {
-                              toast.error("반품 신청");
-                              setShowBottomSheet(false);
-                            }}
-                            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <RotateCcw className="w-5 h-5 mb-2" />
-                            <span className="text-xs font-medium">반품</span>
-                          </motion.button>
+                          {/* 거래중 단계 */}
+                          {chatData.item.status === "reserved" && (
+                            <>
+                              {/* 운송장 등록 */}
+                              <motion.button
+                                onClick={() => {
+                                  setCourier("");
+                                  setTrackingNumber("");
+                                  setShowShippingEditModal(true);
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <Truck className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">운송장등록</span>
+                              </motion.button>
+
+                              {/* 거래 취소하기 */}
+                              <motion.button
+                                onClick={() => {
+                                  handleCancelTrade();
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <XCircle className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">거래취소</span>
+                              </motion.button>
+                            </>
+                          )}
+
+                          {/* 배송중 단계 - 송장수정 */}
+                          {chatData.item.status === "shipping" && (
+                            <>
+                              <motion.button
+                                onClick={() => {
+                                  setCourier(chatData.item.shippingInfo?.courier || "");
+                                  setTrackingNumber(chatData.item.shippingInfo?.trackingNumber || "");
+                                  setShowShippingEditModal(true);
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <Edit className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">송장수정</span>
+                              </motion.button>
+                            </>
+                          )}
+
+                          {/* 거래완료 단계 */}
+                          {chatData.item.status === "sold" && (
+                            <>
+                              {/* 후기 작성 */}
+                              <motion.button
+                                onClick={() => {
+                                  toast.success("후기 작성 기능 준비중");
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-lg hover:shadow-xl transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <Star className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">후기작성</span>
+                              </motion.button>
+                            </>
+                          )}
                         </>
                       )}
 
-                      {/* 판매자 전용 메뉴 */}
-                      {user.uid === chatData.sellerUid && (
+                      {/* 구매자 메뉴 */}
+                      {user.uid === chatData.buyerUid && (
                         <>
-                          {/* 운송장 등록 */}
-                          {(chatData.item.status === "reserved" ||
-                            chatData.item.status === "escrow_completed") && (
-                            <motion.button
-                              onClick={() => {
-                                // 운송장 등록 모달 열기
-                                setCourier("");
-                                setTrackingNumber("");
-                                setShowShippingEditModal(true);
-                                setShowBottomSheet(false);
-                              }}
-                              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.1 }}
-                              whileTap={{ scale: 0.95 }}
-                            >
-                              <Truck className="w-5 h-5 mb-2" />
-                              <span className="text-xs font-medium">
-                                운송장등록
-                              </span>
-                            </motion.button>
+                          {/* 결제완료 단계 */}
+                          {chatData.item.status === "escrow_completed" && (
+                            <>
+                              {/* 배송지 입력 */}
+                              <motion.button
+                                onClick={() => {
+                                  setShowShippingAddressModal(true);
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <MapPin className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">배송지입력</span>
+                              </motion.button>
+
+                              {/* 거래 취소하기 */}
+                              <motion.button
+                                onClick={() => {
+                                  setShowCancelModal(true);
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <XCircle className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">거래취소</span>
+                              </motion.button>
+                            </>
                           )}
 
-                          {/* 구매확인 요청 */}
-                          <motion.button
-                            onClick={async () => {
-                              if (chatData.chatId && user.uid) {
-                                await sendMessage({
-                                  chatId: chatData.chatId,
-                                  senderUid: user.uid,
-                                  content:
-                                    "💬 판매자가 구매확인을 요청했습니다.",
-                                });
-                                toast.success("구매확인 요청을 전송했습니다.");
-                              }
-                              setShowBottomSheet(false);
-                            }}
-                            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.15 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <MessageSquare className="w-5 h-5 mb-2" />
-                            <span className="text-xs font-medium">
-                              구매확인요청
-                            </span>
-                          </motion.button>
+                          {/* 거래중 단계 */}
+                          {chatData.item.status === "reserved" && (
+                            <>
+                              {/* 배송지 입력 */}
+                              <motion.button
+                                onClick={() => {
+                                  setShowShippingAddressModal(true);
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <MapPin className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">배송지입력</span>
+                              </motion.button>
+
+                              {/* 거래 취소하기 */}
+                              <motion.button
+                                onClick={() => {
+                                  setShowCancelModal(true);
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <XCircle className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">거래취소</span>
+                              </motion.button>
+                            </>
+                          )}
+
+                          {/* 배송중 단계 - 배송확인 (=구매확인) */}
+                          {chatData.item.status === "shipping" && (
+                            <>
+                              <motion.button
+                                onClick={() => {
+                                  handleCompletePurchase();
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg hover:shadow-xl transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <CheckCircle className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">배송확인</span>
+                              </motion.button>
+                            </>
+                          )}
+
+                          {/* 거래완료 단계 - 반품만 */}
+                          {chatData.item.status === "sold" && (
+                            <>
+                              {/* 반품 */}
+                              <motion.button
+                                onClick={() => {
+                                  toast.error("반품 신청");
+                                  setShowBottomSheet(false);
+                                }}
+                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <RotateCcw className="w-5 h-5 mb-2" />
+                                <span className="text-xs font-medium">반품</span>
+                              </motion.button>
+                            </>
+                          )}
                         </>
                       )}
                     </div>
