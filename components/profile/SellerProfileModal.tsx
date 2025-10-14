@@ -204,8 +204,8 @@ export function SellerProfileModal({
 
               {/* 지역과 날짜 정보 제거 */}
 
-              {/* 평점 및 거래 통계 - 한 줄로 표시 */}
-              <div className="flex items-center space-x-4 text-sm whitespace-nowrap">
+              {/* 평점 및 거래 통계 - 모바일에서 반응형으로 표시 */}
+              <div className="flex flex-wrap items-center gap-3 text-sm">
                 <div className="flex items-center space-x-1">
                   <Star className="w-4 h-4 text-yellow-500" />
                   <span className="font-semibold text-gray-900">
