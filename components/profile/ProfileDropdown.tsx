@@ -17,6 +17,8 @@ import {
   Bell,
   Trash2,
   ShoppingCart,
+  Coins,
+  MessageCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -211,9 +213,17 @@ export function ProfileDropdown() {
             </span>
           )}
         </div>
-        <span className="text-sm font-medium text-gray-700 hidden sm:block">
-          {user.nickname}
-        </span>
+        <div className="hidden sm:flex flex-col items-start">
+          <span className="text-sm font-medium text-gray-700">
+            {user.nickname}
+          </span>
+          <span className="text-xs text-blue-600 font-semibold flex items-center gap-1">
+            <span className="inline-flex items-center justify-center w-4 h-4 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full text-white text-xs font-bold shadow-sm">
+              P
+            </span>
+            {(user.points || 0).toLocaleString()} 포인트
+          </span>
+        </div>
         <ChevronDown className="w-4 h-4 text-gray-500" />
       </button>
 
@@ -222,7 +232,7 @@ export function ProfileDropdown() {
         <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
           {/* 사용자 정보 */}
           <div className="px-4 py-3 border-b border-gray-100">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 mb-3">
               <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                 {user.profileImage ? (
                   <img
@@ -243,6 +253,24 @@ export function ProfileDropdown() {
                 {/* 이메일 제거됨 */}
               </div>
             </div>
+            {/* 포인트 잔액 */}
+            <Link
+              href="/profile/points"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 hover:from-blue-100 hover:to-purple-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-5 h-5 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full text-white text-sm font-bold shadow-sm">
+                  P
+                </span>
+                <span className="text-sm font-medium text-gray-700">
+                  내 포인트
+                </span>
+              </div>
+              <span className="text-lg font-bold text-blue-600">
+                {(user.points || 0).toLocaleString()} 포인트
+              </span>
+            </Link>
           </div>
 
           {/* 알림 섹션 (접을 수 있음) */}
@@ -350,6 +378,16 @@ export function ProfileDropdown() {
             >
               <User className="w-4 h-4 mr-3" />
               프로필 보기
+            </Link>
+
+            {/* 채팅 */}
+            <Link
+              href="/chat"
+              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              onClick={() => setIsOpen(false)}
+            >
+              <MessageCircle className="w-4 h-4 mr-3" />
+              채팅
             </Link>
           </div>
 

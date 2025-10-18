@@ -222,21 +222,20 @@ export default function ProductWizardPage() {
       const tradeOptions =
         formData.tradeType === "buy"
           ? []
-          : data.shippingTypes
-              .map(type => {
-                switch (type) {
-                  case "direct":
-                    return "직거래";
-                  case "parcel":
-                    return "택배";
-                  case "shipping":
-                    return "화물운송";
-                  case "escrow":
-                    return "안전결제";
-                  default:
-                    return type;
-                }
-              });
+          : data.shippingTypes.map(type => {
+              switch (type) {
+                case "direct":
+                  return "직거래";
+                case "parcel":
+                  return "택배";
+                case "shipping":
+                  return "화물운송";
+                case "escrow":
+                  return "안전결제";
+                default:
+                  return type;
+              }
+            });
 
       // AI 처리된 이미지 정보 생성
       const aiProcessedImageInfo = Array.from(aiProcessedImages).map(index => ({
@@ -316,7 +315,7 @@ export default function ProductWizardPage() {
           currentStep={
             formData.tradeType && formData.category
               ? 3
-              : formData.category
+              : formData.tradeType
                 ? 2
                 : 1
           }
@@ -327,35 +326,26 @@ export default function ProductWizardPage() {
         <Card className="mt-8">
           <div className="p-6 sm:p-8">
             <form onSubmit={handleSubmit(onSubmit)}>
-              {/* 1단계 - 카테고리 선택 */}
-              {!formData.category && (
+              {/* 1단계 - 거래 유형 선택 (판매/구매) */}
+              {!formData.tradeType && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <CategorySelector
-                    onSelect={category => {
-                      console.log("상품등록페이지: 카테고리 선택됨", category);
-                      console.log(
-                        "상품등록페이지: updateFormData 호출 전 formData:",
-                        formData
-                      );
-                      updateFormData({
-                        category: category.categoryPath
-                          ? category.categoryPath.join(" > ")
-                          : category.name,
-                        categoryPath: category.categoryPath || [category.name],
-                        categoryId: category.categoryId,
-                      });
-                      console.log("상품등록페이지: updateFormData 호출 후");
+                  <StepType
+                    value={formData.tradeType as "sell" | "buy"}
+                    onChange={value => updateFormData({ tradeType: value })}
+                    onBack={() => {
+                      // 홈으로 돌아가기
+                      router.back();
                     }}
                   />
                 </motion.div>
               )}
 
-              {/* 2단계 - 거래 유형 선택 (카테고리 선택 후 나타남) */}
-              {formData.category && !formData.tradeType && (
+              {/* 2단계 - 카테고리 선택 (거래 유형 선택 후 나타남) */}
+              {formData.tradeType && !formData.category && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -363,24 +353,38 @@ export default function ProductWizardPage() {
                   className="mt-12"
                 >
                   <div className="border-t border-gray-200 pt-8">
-                    <StepType
-                      value={formData.tradeType as "sell" | "buy"}
-                      onChange={value => updateFormData({ tradeType: value })}
-                      onBack={() => {
-                        // 카테고리 선택 단계로 돌아가기
+                    <CategorySelector
+                      onSelect={category => {
+                        console.log(
+                          "상품등록페이지: 카테고리 선택됨",
+                          category
+                        );
+                        console.log(
+                          "상품등록페이지: updateFormData 호출 전 formData:",
+                          formData
+                        );
                         updateFormData({
-                          category: "",
-                          categoryPath: undefined,
-                          categoryId: undefined,
+                          category: category.categoryPath
+                            ? category.categoryPath.join(" > ")
+                            : category.name,
+                          categoryPath: category.categoryPath || [
+                            category.name,
+                          ],
+                          categoryId: category.categoryId,
                         });
+                        console.log("상품등록페이지: updateFormData 호출 후");
+                      }}
+                      onBack={() => {
+                        // 거래 유형 선택 단계로 돌아가기
+                        updateFormData({ tradeType: "" });
                       }}
                     />
                   </div>
                 </motion.div>
               )}
 
-              {/* 3단계 - 상품 등록 폼 (거래 유형 선택 후 나타남) */}
-              {formData.category && formData.tradeType && (
+              {/* 3단계 - 상품 등록 폼 (카테고리 선택 후 나타남) */}
+              {formData.tradeType && formData.category && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
