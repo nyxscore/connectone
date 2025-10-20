@@ -284,8 +284,17 @@ export function ItemCard({
             showWatermark={true}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl">
-            {getCategoryIcon(item.category)}
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+            {(item as any).tradeType === "buy" ? (
+              <div className="text-center px-4">
+                <div className="text-4xl mb-2">🔍</div>
+                <div className="text-lg font-bold text-gray-700">구매합니다</div>
+              </div>
+            ) : (
+              <div className="text-4xl">
+                {getCategoryIcon(item.category)}
+              </div>
+            )}
           </div>
         )}
 
