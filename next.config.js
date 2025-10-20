@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Firebase 호스팅용 설정
-  output: "export", // Static export 활성화
+  // Vercel 서버리스 배포용 설정
+  // output: "export", // Static export 비활성화 (dynamic routes 사용)
 
   // 이미지 최적화 설정
   images: {
