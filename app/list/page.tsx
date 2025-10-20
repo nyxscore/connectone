@@ -112,22 +112,10 @@ export default function ListPage() {
     setChatSellerUid(null);
   };
 
-  // 거래중인 상품 필터링: 본인 것이 아니면 숨김
+  // 필터링: 취소된 상품만 숨김
   const filteredItems = items.filter(item => {
-    const isInTransaction =
-      item.status === "reserved" ||
-      item.status === "escrow_completed" ||
-      item.status === "shipping" ||
-      item.status === "shipped";
-
-    // 거래중인 상품이 아니면 표시
-    if (!isInTransaction) return true;
-
-    // 거래중인 상품인 경우, 본인이 판매자이거나 구매자인 경우만 표시
-    const isOwner =
-      user?.uid && (item.sellerUid === user.uid || item.buyerUid === user.uid);
-
-    return isOwner;
+    // 취소된 상품만 숨김
+    return item.status !== "cancelled";
   });
 
   if (loading) {

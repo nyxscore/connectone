@@ -133,7 +133,7 @@ export async function createItem(
 
     console.log("✅ 아이템 생성 성공:", docRef.id);
     console.log("저장된 images 필드:", itemData.images);
-    
+
     return {
       success: true,
       itemId: docRef.id,
