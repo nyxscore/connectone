@@ -4098,7 +4098,7 @@ export function EnhancedChatModal({
                         onClick={() => setShowShippingAddressModal(true)}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
                       >
-                        📍 배송지 정보 입력하기
+                        배송지 정보 입력하기
                       </Button>
                     )}
                 </div>

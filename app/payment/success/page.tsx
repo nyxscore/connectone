@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { CheckCircle, Home, Package, MessageCircle } from "lucide-react";
+import { CheckCircle, Home, Package, MessageCircle, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { EnhancedChatModal } from "@/components/chat/EnhancedChatModal";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -246,14 +246,29 @@ function PaymentSuccessContent() {
               <MessageCircle className="w-5 h-5 mr-2" />
               판매자와 채팅하기
             </Button>
-            <Button
-              onClick={() => router.push("/profile/transactions")}
-              variant="outline"
-              className="w-full"
-            >
-              <Package className="w-5 h-5 mr-2" />
-              거래 내역 보기
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => router.push("/profile/transactions")}
+                variant="outline"
+                className="flex-1"
+              >
+                <Package className="w-5 h-5 mr-2" />
+                거래 내역 보기
+              </Button>
+              <Button
+                onClick={() => {
+                  if (confirm("정말로 거래를 취소하시겠습니까?")) {
+                    toast.success("거래 취소 요청이 전송되었습니다.");
+                    // TODO: 실제 거래 취소 API 호출
+                  }
+                }}
+                variant="outline"
+                className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
+              >
+                <XCircle className="w-5 h-5 mr-2" />
+                거래 취소
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
