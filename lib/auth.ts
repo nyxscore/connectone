@@ -36,9 +36,9 @@ const findUidByUsername = async (username: string): Promise<string | null> => {
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("username", "==", username));
     const querySnapshot = await getDocs(q);
-    
+
     console.log("📊 검색 결과 개수:", querySnapshot.size);
-    
+
     if (!querySnapshot.empty) {
       const userDoc = querySnapshot.docs[0];
       console.log("✅ username으로 uid 찾음:", userDoc.id);
@@ -124,40 +124,16 @@ export const signIn = async (data: LoginData): Promise<FirebaseUser> => {
   try {
     console.log("🔐 로그인 시도:", data.username);
     
-    // 먼저 username으로 uid 찾기
-    const uid = await findUidByUsername(data.username);
+    // 아이디를 이메일로 변환해서 로그인 (간단한 방식)
+    const email = usernameToEmail(data.username);
     
-    if (uid) {
-      console.log("✅ username으로 uid 찾음, 사용자 정보 조회 중...");
-      // username이 존재하면 해당 사용자의 이메일로 로그인
-      const db = await getDb();
-      const userDoc = await getDoc(doc(db, "users", uid));
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const email = userData.email; // 실제 이메일 사용
-        console.log("📧 사용자 이메일:", email);
-        
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          data.password
-        );
-        console.log("✅ 로그인 성공!");
-        return userCredential.user;
-      } else {
-        console.log("❌ 사용자 문서가 존재하지 않음");
-      }
-    }
-    
-    console.log("🔄 username으로 실패, 이메일로 시도...");
-    // username이 없으면 실제 이메일로 시도 (기존 사용자)
     const userCredential = await signInWithEmailAndPassword(
       auth,
-      data.username, // username이 실제 이메일일 수도 있음
+      email,
       data.password
     );
-    console.log("✅ 이메일로 로그인 성공!");
+    
+    console.log("✅ 로그인 성공!");
     return userCredential.user;
   } catch (error) {
     console.error("❌ 로그인 실패:", error);
