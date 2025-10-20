@@ -231,9 +231,7 @@ export default function HomePage() {
               </p>
 
               <p className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto px-4 leading-relaxed">
-                AI 감정 시스템과 에스크로 서비스로
-                <br className="sm:hidden" />
-                믿을 수 있는 거래를 경험하세요
+                AI 감정 시스템과 안전거래로 믿을 수 있는 거래를 경험하세요
               </p>
             </div>
 
