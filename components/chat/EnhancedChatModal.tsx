@@ -3205,14 +3205,13 @@ export function EnhancedChatModal({
             className={`flex-1 overflow-y-auto p-4 space-y-4 pb-32 md:pb-24 ${chatData?.tradeType === "안전결제" ? "pt-4" : ""}`}
           >
             {/* 플랫폼 안내 메시지 */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
               <div className="flex items-start space-x-2">
-                <AlertTriangle className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-blue-800 mb-2">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">
                     📢 플랫폼 안내
                   </p>
-                  <p className="text-xs text-blue-700">
+                  <p className="text-xs text-gray-600">
                     ConnectOne은 중개 플랫폼입니다. 거래는 사용자 간 직접
                     진행되며, 플랫폼은 거래에 대한 책임을 지지 않습니다.
                   </p>
@@ -3221,11 +3220,10 @@ export function EnhancedChatModal({
             </div>
 
             {/* 안전 거래 가이드 */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
               <div className="flex items-start space-x-2">
-                <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-red-600 mb-2">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">
                     안전 거래 가이드
                   </p>
                   <div className="space-y-1">
@@ -3247,11 +3245,8 @@ export function EnhancedChatModal({
                     <p className="text-xs text-gray-600 ml-4">
                       • 수령 확인 후 거래완료 처리하세요
                     </p>
-                    <p className="text-xs text-red-600 mt-2 font-semibold">
-                      선입금 요청은 거부하세요!
-                    </p>
-                    <p className="text-xs text-red-600 font-semibold">
-                      시세보다 지나치게 저렴한 물건을 주의하세요
+                    <p className="text-xs text-gray-600 mt-2">
+                      • 시세보다 지나치게 저렴한 물건을 주의하세요
                     </p>
                   </div>
                 </div>
