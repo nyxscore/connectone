@@ -21,25 +21,21 @@ const getFirebaseConfig = () => {
   }
 
   const config = {
-    apiKey:
-      process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-      "AIzaSyDy-EXIHVfzBhKcsNq93BfmQ2SQCWRszOs",
-    authDomain:
-      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-      "connectone-8b414.firebaseapp.com",
-    projectId:
-      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "connectone-8b414",
-    storageBucket:
-      process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-      "connectone-8b414.firebasestorage.app",
-    messagingSenderId:
-      process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "567550026947",
-    appId:
-      process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
-      "1:567550026947:web:92120b0c926db2ece06e76",
-    measurementId:
-      process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-P7KKSEF6SZ",
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
   };
+
+  // 필수 환경변수 체크
+  if (!config.apiKey || !config.projectId) {
+    console.error("❌ Firebase 환경변수가 설정되지 않았습니다!");
+    console.error("Vercel Dashboard에서 환경변수를 설정해주세요.");
+    return null;
+  }
 
   console.log("🔥 Firebase 환경변수 확인:", {
     apiKey: config.apiKey ? "✅ 설정됨" : "❌ 누락",
