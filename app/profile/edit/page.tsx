@@ -7,7 +7,7 @@ import { getUserProfile, updateUserProfile } from "../../../lib/profile/api";
 import { UserProfile } from "../../../data/profile/types";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
-import { ArrowLeft, Save, X } from "lucide-react";
+import { ArrowLeft, Save, X, Lock, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,7 @@ import {
   ProfileUpdateInput,
 } from "../../../data/profile/schemas";
 import { KOREAN_REGIONS } from "../../../lib/utils";
+import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 
 export default function ProfileEditPage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
@@ -24,6 +25,18 @@ export default function ProfileEditPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  
+  // 비밀번호 변경 관련 상태
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const {
     register,
@@ -104,6 +117,86 @@ export default function ProfileEditPage() {
 
   const handleCancel = () => {
     router.push("/profile");
+  };
+
+  // 비밀번호 변경 함수
+  const handlePasswordChange = async () => {
+    if (!currentUser) {
+      toast.error("로그인이 필요합니다.");
+      return;
+    }
+
+    // 유효성 검사
+    if (!currentPassword.trim()) {
+      toast.error("현재 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    if (!newPassword.trim()) {
+      toast.error("새 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast.error("새 비밀번호는 8자 이상이어야 합니다.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("새 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      toast.error("현재 비밀번호와 새 비밀번호가 같습니다.");
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      // 현재 사용자 재인증
+      const credential = EmailAuthProvider.credential(
+        currentUser.email || "",
+        currentPassword
+      );
+      
+      await reauthenticateWithCredential(currentUser, credential);
+      
+      // 비밀번호 업데이트
+      await updatePassword(currentUser, newPassword);
+      
+      toast.success("비밀번호가 성공적으로 변경되었습니다.");
+      
+      // 폼 초기화
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowPasswordChange(false);
+      
+    } catch (error: any) {
+      console.error("비밀번호 변경 실패:", error);
+      
+      if (error.code === "auth/wrong-password") {
+        toast.error("현재 비밀번호가 올바르지 않습니다.");
+      } else if (error.code === "auth/weak-password") {
+        toast.error("새 비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용해주세요.");
+      } else if (error.code === "auth/requires-recent-login") {
+        toast.error("보안을 위해 다시 로그인해주세요.");
+      } else {
+        toast.error("비밀번호 변경 중 오류가 발생했습니다.");
+      }
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  // 비밀번호 표시/숨김 토글
+  const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
   };
 
   if (authLoading || loading) {
@@ -238,6 +331,146 @@ export default function ProfileEditPage() {
                 <p className="text-red-500 text-sm mt-1">
                   {errors.introLong.message}
                 </p>
+              )}
+            </div>
+
+            {/* 비밀번호 변경 섹션 */}
+            <div className="pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                  <Lock className="w-5 h-5 mr-2" />
+                  비밀번호 변경
+                </h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPasswordChange(!showPasswordChange)}
+                  className="text-sm"
+                >
+                  {showPasswordChange ? "닫기" : "변경하기"}
+                </Button>
+              </div>
+
+              {showPasswordChange && (
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                  {/* 현재 비밀번호 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      현재 비밀번호
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPasswords.current ? "text" : "password"}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="현재 비밀번호를 입력하세요"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility('current')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPasswords.current ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 새 비밀번호 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      새 비밀번호
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPasswords.new ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="새 비밀번호를 입력하세요 (8자 이상)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility('new')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPasswords.new ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 새 비밀번호 확인 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      새 비밀번호 확인
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPasswords.confirm ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="새 비밀번호를 다시 입력하세요"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility('confirm')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPasswords.confirm ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 비밀번호 변경 버튼 */}
+                  <div className="flex space-x-3 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setCurrentPassword("");
+                        setNewPassword("");
+                        setConfirmPassword("");
+                        setShowPasswordChange(false);
+                      }}
+                      disabled={changingPassword}
+                      className="flex-1"
+                    >
+                      취소
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handlePasswordChange}
+                      disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+                      className="flex-1"
+                    >
+                      {changingPassword ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          변경 중...
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 mr-2" />
+                          비밀번호 변경
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
 
