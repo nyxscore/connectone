@@ -43,10 +43,16 @@ export default function BuyerShippingInfoModal({
   useEffect(() => {
     if (!window.daum) {
       const script = document.createElement("script");
-      script.src =
-        "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+      script.src = "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
       script.async = true;
-      document.body.appendChild(script);
+      script.onload = () => {
+        console.log("✅ 다음 주소 검색 API 로드 완료");
+      };
+      script.onerror = () => {
+        console.error("❌ 다음 주소 검색 API 로드 실패");
+        toast.error("주소 검색 서비스를 불러올 수 없습니다.");
+      };
+      document.head.appendChild(script);
     }
   }, []);
 
@@ -59,18 +65,58 @@ export default function BuyerShippingInfoModal({
       return;
     }
 
-    new window.daum.Postcode({
-      oncomplete: function (data: any) {
-        // 도로명 주소 또는 지번 주소 선택
-        const fullAddress = data.roadAddress || data.jibunAddress;
+    try {
+      new window.daum.Postcode({
+        oncomplete: function (data: any) {
+          // 도로명 주소 또는 지번 주소 선택
+          const fullAddress = data.roadAddress || data.jibunAddress;
 
-        setFormData(prev => ({
-          ...prev,
-          zipCode: data.zonecode,
-          address: fullAddress,
-        }));
-      },
-    }).open();
+          setFormData(prev => ({
+            ...prev,
+            zipCode: data.zonecode,
+            address: fullAddress,
+          }));
+
+          toast.success(`주소가 선택되었습니다.\n${fullAddress}`);
+        },
+        onclose: function (state: string) {
+          if (state === "FORCE_CLOSE") {
+            toast.error("주소 검색이 강제로 닫혔습니다.");
+          } else if (state === "COMPLETE_CLOSE") {
+            // 정상적으로 닫힌 경우 (주소 선택 완료)
+          } else {
+            toast.info("주소 검색이 취소되었습니다.");
+          }
+        },
+        width: "100%",
+        height: "100%",
+        maxSuggestItems: 5,
+        showMoreHints: true,
+        hideMapBtn: false,
+        hideEngBtn: true,
+        alwaysShowEngAddr: false,
+        submitMode: false,
+        useBanner: true,
+        useSuggest: true,
+        autoMapping: true,
+        autoMappingRoad: true,
+        autoMappingJibun: true,
+        theme: {
+          bgColor: "#ffffff",
+          searchBgColor: "#f8f9fa",
+          contentBgColor: "#ffffff",
+          pageBgColor: "#ffffff",
+          textColor: "#333333",
+          queryTextColor: "#222222",
+          postcodeTextColor: "#fa4256",
+          emphTextColor: "#008bd3",
+          outlineColor: "#e0e0e0",
+        },
+      }).open();
+    } catch (error) {
+      console.error("주소 검색 팝업 오류:", error);
+      toast.error("주소 검색 중 오류가 발생했습니다.");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
