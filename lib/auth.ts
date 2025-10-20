@@ -6,7 +6,7 @@ import {
   User as FirebaseUser,
   AuthError as FirebaseAuthError,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDb } from "./api/firebase-ultra-safe";
 import { User, SignUpData, LoginData, AuthError } from "./types";
 
@@ -17,6 +17,25 @@ const getDb = getFirebaseDb;
 // 아이디를 이메일로 변환하는 함수
 const usernameToEmail = (username: string): string => {
   return `${username}@connectone.local`;
+};
+
+// username으로 uid 찾기
+const findUidByUsername = async (username: string): Promise<string | null> => {
+  try {
+    const db = await getDb();
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("username", "==", username));
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      const userDoc = querySnapshot.docs[0];
+      return userDoc.id; // uid 반환
+    }
+    return null;
+  } catch (error) {
+    console.error("username으로 uid 찾기 실패:", error);
+    return null;
+  }
 };
 
 // 에러 코드를 한국어 메시지로 변환
@@ -89,24 +108,34 @@ export const signUp = async (data: SignUpData): Promise<User> => {
 // 로그인
 export const signIn = async (data: LoginData): Promise<FirebaseUser> => {
   try {
-    // 먼저 아이디로 시도 (새로운 방식)
-    try {
-      const email = usernameToEmail(data.username);
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        data.password
-      );
-      return userCredential.user;
-    } catch (firstError) {
-      // 아이디로 실패하면 실제 이메일로 시도 (기존 사용자)
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        data.username, // username이 실제 이메일일 수도 있음
-        data.password
-      );
-      return userCredential.user;
+    // 먼저 username으로 uid 찾기
+    const uid = await findUidByUsername(data.username);
+    
+    if (uid) {
+      // username이 존재하면 해당 사용자의 이메일로 로그인
+      const db = await getDb();
+      const userDoc = await getDoc(doc(db, "users", uid));
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const email = userData.email; // 실제 이메일 사용
+        
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          data.password
+        );
+        return userCredential.user;
+      }
     }
+    
+    // username이 없으면 실제 이메일로 시도 (기존 사용자)
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      data.username, // username이 실제 이메일일 수도 있음
+      data.password
+    );
+    return userCredential.user;
   } catch (error) {
     const authError = error as FirebaseAuthError;
     throw new Error(getErrorMessage(authError));
