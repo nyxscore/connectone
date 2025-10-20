@@ -13,6 +13,14 @@ export interface UserProfile {
   responseRate: number; // 응답률 (0-100%)
   introShort?: string; // 한 줄 소개
   introLong?: string; // 자기소개(상세)
+  phoneNumber?: string; // 핸드폰 번호
+  phoneVerified?: boolean; // 핸드폰 인증 여부
+  emailVerified?: boolean; // 이메일 인증 여부
+  realName?: string; // 실명 (본인인증 완료 시)
+  birthDate?: string; // 생년월일 (YYYYMMDD)
+  gender?: "male" | "female"; // 성별
+  carrier?: "SKT" | "KT" | "LGU" | "MVNO"; // 통신사
+  certifiedAt?: Timestamp; // 본인인증 완료 시각
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

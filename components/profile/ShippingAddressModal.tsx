@@ -315,14 +315,42 @@ export default function ShippingAddressModal({
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
+              {isAdding && (
+                <button
+                  onClick={handleCancelEdit}
+                  className="p-2 hover:bg-white/20 text-white rounded-lg mr-2 transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+              )}
               <div className="p-2.5 bg-white/20 rounded-xl">
                 <MapPin className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">배송지 관리</h2>
-                <p className="text-blue-100 text-sm">
-                  주소를 등록하고 관리하세요
-                </p>
+                <h2 className="text-xl font-bold text-white">
+                  {isAdding
+                    ? editingId
+                      ? "배송지 수정"
+                      : "새 배송지 추가"
+                    : "배송지 관리"}
+                </h2>
+                {!isAdding && (
+                  <p className="text-blue-100 text-sm">
+                    주소를 등록하고 관리하세요
+                  </p>
+                )}
               </div>
             </div>
             <Button
@@ -337,8 +365,8 @@ export default function ShippingAddressModal({
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-          {/* 배송지 목록 */}
-          <div className="space-y-4 mb-6">
+          {/* 배송지 목록 (isAdding이 false일 때만 표시) */}
+          <div className={`space-y-4 mb-6 ${isAdding ? "hidden" : ""}`}>
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
@@ -498,189 +526,178 @@ export default function ShippingAddressModal({
             )}
           </div>
 
-          {/* 배송지 추가/수정 폼 */}
-          {isAdding && (
-            <div className="border-t border-gray-200 pt-6">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {editingId ? "배송지 수정" : "새 배송지 추가"}
-                  </h3>
+          {/* 배송지 추가/수정 폼 (isAdding이 true일 때만 표시) */}
+          <div className={`${isAdding ? "" : "hidden"}`}>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* 받는 분 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    받는 분 <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    value={formData.recipientName || ""}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        recipientName: e.target.value,
+                      })
+                    }
+                    placeholder="받는 분을 입력해 주세요."
+                    className="h-12 text-sm rounded-lg"
+                    required
+                  />
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* 받는 분 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      받는 분 <span className="text-red-500">*</span>
-                    </label>
+                {/* 휴대폰 번호 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    휴대폰 번호 <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    value={formatPhoneNumber(formData.phoneNumber || "")}
+                    onChange={e => {
+                      const value = e.target.value.replace(/\D/g, ""); // 숫자만 추출
+                      setFormData({
+                        ...formData,
+                        phoneNumber: value,
+                      });
+                    }}
+                    placeholder="휴대폰 번호를 입력해주세요 (예: 010-1234-5678)"
+                    className="h-12 text-sm rounded-lg"
+                    required
+                  />
+                </div>
+
+                {/* 주소 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    주소 <span className="text-red-500">*</span>
+                  </label>
+
+                  {/* 우편번호 + 검색 버튼 */}
+                  <div className="flex gap-2 mb-3">
                     <Input
-                      value={formData.recipientName || ""}
+                      value={formData.zipCode || ""}
                       onChange={e =>
                         setFormData({
                           ...formData,
-                          recipientName: e.target.value,
+                          zipCode: e.target.value,
                         })
                       }
-                      placeholder="받는 분을 입력해 주세요."
-                      className="h-12 text-sm rounded-lg"
-                      required
-                    />
-                  </div>
-
-                  {/* 휴대폰 번호 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      휴대폰 번호 <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      value={formatPhoneNumber(formData.phoneNumber || "")}
-                      onChange={e => {
-                        const value = e.target.value.replace(/\D/g, ""); // 숫자만 추출
-                        setFormData({
-                          ...formData,
-                          phoneNumber: value,
-                        });
-                      }}
-                      placeholder="휴대폰 번호를 입력해주세요 (예: 010-1234-5678)"
-                      className="h-12 text-sm rounded-lg"
-                      required
-                    />
-                  </div>
-
-                  {/* 주소 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      주소 <span className="text-red-500">*</span>
-                    </label>
-
-                    {/* 우편번호 + 검색 버튼 */}
-                    <div className="flex gap-2 mb-3">
-                      <Input
-                        value={formData.zipCode || ""}
-                        onChange={e =>
-                          setFormData({
-                            ...formData,
-                            zipCode: e.target.value,
-                          })
-                        }
-                        placeholder="우편번호"
-                        className="w-32 h-10 text-sm"
-                        readOnly
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleAddressSearch}
-                        className="h-10 px-6 text-sm bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
-                      >
-                        우편번호 찾기
-                      </Button>
-                    </div>
-
-                    {/* 기본 주소 */}
-                    <Input
-                      value={formData.address || ""}
-                      onChange={e =>
-                        setFormData({ ...formData, address: e.target.value })
-                      }
-                      placeholder="기본 주소"
-                      className="h-12 text-sm bg-gray-50 border-gray-300 rounded-lg mb-3"
+                      placeholder="우편번호"
+                      className="w-32 h-10 text-sm"
                       readOnly
                     />
-
-                    {/* 상세 주소 */}
-                    <Input
-                      value={formData.detailAddress || ""}
-                      onChange={e =>
-                        setFormData({
-                          ...formData,
-                          detailAddress: e.target.value,
-                        })
-                      }
-                      placeholder="상세주소 (동/호수 등)"
-                      className="h-12 text-sm rounded-lg"
-                    />
-
-                    {/* 배송 메모 */}
-                    <div className="mt-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        배송메모
-                      </label>
-                      <Input
-                        value={formData.deliveryMemo || ""}
-                        onChange={e =>
-                          setFormData({
-                            ...formData,
-                            deliveryMemo: e.target.value,
-                          })
-                        }
-                        placeholder="예: 공동현관 비밀번호 ****"
-                        className="h-12 text-sm rounded-lg"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 기본 배송지 설정 */}
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="isDefault"
-                      checked={formData.isDefault}
-                      onChange={e =>
-                        setFormData({
-                          ...formData,
-                          isDefault: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label
-                      htmlFor="isDefault"
-                      className="text-sm text-gray-700"
-                    >
-                      기본 배송지로 설정
-                    </label>
-                  </div>
-
-                  {/* 버튼들 */}
-                  <div className="flex space-x-3 pt-4">
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium"
-                    >
-                      {isLoading
-                        ? "저장 중..."
-                        : editingId
-                          ? "수정하기"
-                          : "추가하기"}
-                    </Button>
                     <Button
                       type="button"
-                      variant="outline"
-                      onClick={handleCancelEdit}
-                      disabled={isLoading}
-                      className="flex-1 h-12 text-sm rounded-lg border-gray-300"
+                      onClick={handleAddressSearch}
+                      className="h-10 px-6 text-sm bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
                     >
-                      취소
+                      우편번호 찾기
                     </Button>
                   </div>
-                </form>
-              </div>
+
+                  {/* 기본 주소 */}
+                  <Input
+                    value={formData.address || ""}
+                    onChange={e =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
+                    placeholder="기본 주소"
+                    className="h-12 text-sm bg-gray-50 border-gray-300 rounded-lg mb-3"
+                    readOnly
+                  />
+
+                  {/* 상세 주소 */}
+                  <Input
+                    value={formData.detailAddress || ""}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        detailAddress: e.target.value,
+                      })
+                    }
+                    placeholder="상세주소 (동/호수 등)"
+                    className="h-12 text-sm rounded-lg"
+                  />
+
+                  {/* 배송 메모 */}
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      배송메모
+                    </label>
+                    <Input
+                      value={formData.deliveryMemo || ""}
+                      onChange={e =>
+                        setFormData({
+                          ...formData,
+                          deliveryMemo: e.target.value,
+                        })
+                      }
+                      placeholder="예: 공동현관 비밀번호 ****"
+                      className="h-12 text-sm rounded-lg"
+                    />
+                  </div>
+                </div>
+
+                {/* 기본 배송지 설정 */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isDefault"
+                    checked={formData.isDefault}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        isDefault: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="isDefault" className="text-sm text-gray-700">
+                    기본 배송지로 설정
+                  </label>
+                </div>
+
+                {/* 버튼들 */}
+                <div className="flex space-x-3 pt-4">
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium"
+                  >
+                    {isLoading
+                      ? "저장 중..."
+                      : editingId
+                        ? "수정하기"
+                        : "추가하기"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={isLoading}
+                    className="flex-1 h-12 text-sm rounded-lg border-gray-300"
+                  >
+                    취소
+                  </Button>
+                </div>
+              </form>
             </div>
-          )}
+          </div>
 
           {/* 배송지 추가 버튼 */}
-          {!isAdding && addresses.length > 0 && (
-            <div className="pt-6">
-              <Button
-                onClick={() => setIsAdding(true)}
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                <MapPin className="w-5 h-5 mr-2" />새 배송지 추가
-              </Button>
-            </div>
-          )}
+          <div
+            className={`pt-6 ${isAdding || addresses.length === 0 ? "hidden" : ""}`}
+          >
+            <Button
+              onClick={() => setIsAdding(true)}
+              className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <MapPin className="w-5 h-5 mr-2" />새 배송지 추가
+            </Button>
+          </div>
         </div>
       </div>
     </div>

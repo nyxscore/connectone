@@ -183,7 +183,14 @@ export async function getUserItems(
     let q = query(
       collection(db, "items"),
       where("sellerUid", "==", sellerUid),
-      where("status", "in", ["active", "cancelled"]), // 판매중 + 취소된 상품 (취소된 것도 판매중으로 표시)
+      where("status", "in", [
+        "active",
+        "reserved",
+        "escrow_completed",
+        "shipping",
+        "sold",
+        "cancelled",
+      ]), // 모든 상태 포함
       limit(limitCount)
     );
 
@@ -323,7 +330,7 @@ export async function updateItemStatus(
   status: "active" | "reserved" | "paid_hold" | "sold" | "inactive",
   buyerId?: string
 ): Promise<{ success: boolean; error?: string }> {
-  const db = getDb();
+  const db = await getDb();
   try {
     console.log("updateItemStatus 호출:", { itemId, status });
 
@@ -403,45 +410,67 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       filters = {},
     } = options;
 
-    const db = getDb();
+    const db = await getDb();
+    if (!db) {
+      console.error("❌ Firebase DB가 초기화되지 않았습니다.");
+      return {
+        success: false,
+        error: "데이터베이스 연결에 실패했습니다.",
+      };
+    }
 
     // 상태 필터 처리
     let statusFilter = [
       "active",
       "reserved",
       "escrow_completed",
+      "shipping",
+      "shipped",
       "sold",
-      "cancelled",
-    ]; // 기본값: 모든 상태 (취소된 것도 포함)
+    ]; // 기본값: 전체 상품 (취소된 것 제외)
 
     if (filters.status) {
       switch (filters.status) {
         case "available":
-          statusFilter = ["active", "cancelled"]; // 거래가능한 상품 (취소된 것도 포함)
+          statusFilter = ["active"]; // 거래가능한 상품 (active만)
           break;
         case "reserved":
-          statusFilter = ["reserved", "escrow_completed"]; // 거래중인 상품만 (안전결제 완료 포함)
+          statusFilter = [
+            "reserved",
+            "escrow_completed",
+            "shipping",
+            "shipped",
+          ]; // 거래중인 상품 (안전결제 완료 + 배송중 포함)
+          break;
+        case "shipping":
+          statusFilter = ["shipping", "shipped"]; // 배송중인 상품만
           break;
         case "sold":
           statusFilter = ["sold"]; // 거래완료된 상품만
+          break;
+        case "cancelled":
+          statusFilter = ["cancelled"]; // 취소된 상품만
           break;
         case "all":
           statusFilter = [
             "active",
             "reserved",
             "escrow_completed",
+            "shipping",
+            "shipped",
             "sold",
             "cancelled",
-          ]; // 전체
+          ]; // 전체 (취소된 것 포함)
           break;
         default:
           statusFilter = [
             "active",
             "reserved",
             "escrow_completed",
+            "shipping",
+            "shipped",
             "sold",
-            "cancelled",
-          ]; // 전체
+          ]; // 기본값: 전체 상품 (취소된 것 제외)
       }
     }
 
@@ -617,17 +646,25 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       });
     }
 
-    // 거래중인 상품 필터링 (구매자와 판매자에게만 보이도록)
-    if (options.currentUserId) {
-      console.log("사용자 ID로 필터링:", options.currentUserId);
+    // 거래중인 상품 필터링 (구매자와 판매자에게만 보이도록) - 임시 비활성화
+    if (false && options.currentUserId) {
+      console.log("🔍 사용자 ID로 필터링:", options.currentUserId);
       const beforeFilterCount = items.length;
+      console.log(`📦 필터링 전 상품 개수: ${beforeFilterCount}개`);
+
       items = items.filter(item => {
+        console.log(
+          `🔍 상품 체크: "${item.title}" (상태: ${item.status}, 판매자: ${item.sellerUid})`
+        );
+
         // 거래중인 상품인지 확인 (reserved, paid_hold, shipping, escrow_completed 상태)
+        // 단, active 상태는 모든 사용자에게 보임
         const isTradingItem =
-          item.status === "reserved" ||
-          item.status === "paid_hold" ||
-          item.status === "shipping" ||
-          item.status === "escrow_completed";
+          (item.status === "reserved" ||
+            item.status === "paid_hold" ||
+            item.status === "shipping" ||
+            item.status === "escrow_completed") &&
+          item.status !== "active"; // active 상태는 제외
 
         if (isTradingItem) {
           // 거래중인 상품은 구매자나 판매자에게만 보임
@@ -723,7 +760,7 @@ export async function deleteItem(
   itemId: string,
   sellerUid: string
 ): Promise<{ success: boolean; error?: string }> {
-  const db = getDb();
+  const db = await getDb();
   try {
     console.log("deleteItem 호출:", { itemId, sellerUid });
 
@@ -779,7 +816,7 @@ export async function submitBuyerShippingInfo(
   success: boolean;
   error?: string;
 }> {
-  const db = getDb();
+  const db = await getDb();
   try {
     const itemRef = doc(db, "items", itemId);
     await updateDoc(itemRef, {
@@ -802,7 +839,7 @@ export async function updateItem(
   sellerUid: string,
   updateData: Partial<SellItemInput>
 ): Promise<{ success: boolean; error?: string }> {
-  const db = getDb();
+  const db = await getDb();
   try {
     console.log("updateItem 호출:", { itemId, sellerUid, updateData });
 
@@ -852,7 +889,7 @@ export async function applyForItem(
   itemId: string,
   buyerUid: string
 ): Promise<{ success: boolean; error?: string }> {
-  const db = getDb();
+  const db = await getDb();
   try {
     console.log("상품 신청 시작:", { itemId, buyerUid });
 
@@ -921,7 +958,7 @@ export async function getItemApplications(itemId: string): Promise<{
   applications?: ItemApplication[];
   error?: string;
 }> {
-  const db = getDb();
+  const db = await getDb();
   try {
     console.log("구매신청자 목록 조회:", itemId);
 
@@ -959,7 +996,7 @@ export async function approveApplication(
   itemId: string,
   buyerUid: string
 ): Promise<{ success: boolean; error?: string }> {
-  const db = getDb();
+  const db = await getDb();
   try {
     console.log("구매신청 승인 시작:", { applicationId, itemId, buyerUid });
 
@@ -1014,7 +1051,7 @@ export async function getUserApplicationStatus(
   itemId: string,
   buyerUid: string
 ): Promise<{ success: boolean; status?: string; error?: string }> {
-  const db = getDb();
+  const db = await getDb();
   try {
     const applicationQuery = query(
       collection(db, "itemApplications"),

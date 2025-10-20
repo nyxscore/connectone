@@ -28,6 +28,21 @@ export default function RootLayout({
           src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
           async
         ></script>
+        <script
+          src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"
+          integrity="sha384-l+xbElFSnPZ2rOaPrU//2FF5B4LB8FiX5q4fXYTlfcG4PGpMkE1vcL7kNXI6Cci0"
+          crossOrigin="anonymous"
+          async
+        ></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && window.Kakao && !window.Kakao.isInitialized()) {
+                window.Kakao.init('${process.env.NEXT_PUBLIC_KAKAO_JS_KEY || ""}');
+              }
+            `,
+          }}
+        />
       </head>
       <body className="font-sans antialiased bg-gray-50">
         <div className="min-h-screen flex flex-col">

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Firebase 호스팅용 설정
-  output: "export", // Firebase 호스팅용 정적 내보내기
+  // Firebase 호스팅용 설정 (SSR 모드로 API 지원)
+  // output: "export", // SSR 모드에서는 비활성화
 
   // 이미지 최적화 설정
   images: {
@@ -49,10 +49,33 @@ const nextConfig = {
         fs: false,
         net: false,
         tls: false,
+        dns: false,
+        child_process: false,
+        crypto: false,
       };
     }
 
     return config;
+  },
+
+  // HTTP 헤더 설정
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value:
+              "default-src 'self'; media-src 'self' blob: data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; font-src 'self' data:; worker-src 'self' blob:;",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "microphone=(self), camera=(self)",
+          },
+        ],
+      },
+    ];
   },
 };
 

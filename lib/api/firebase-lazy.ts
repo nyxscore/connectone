@@ -1,14 +1,14 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp as firebaseGetApp } from "firebase/app";
 import {
-  getAuth,
+  getAuth as firebaseGetAuth,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult as firebaseGetRedirectResult,
   OAuthProvider,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { getFirestore as firebaseGetFirestore } from "firebase/firestore";
+import { getStorage as firebaseGetStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey:
@@ -36,7 +36,10 @@ let app: any = null;
 const getApp = () => {
   if (!app) {
     try {
-      app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+      app =
+        getApps().length === 0
+          ? initializeApp(firebaseConfig)
+          : firebaseGetApp();
       console.log("✅ Firebase 앱 초기화 성공");
     } catch (error) {
       console.error("❌ Firebase 앱 초기화 실패:", error);
@@ -54,7 +57,7 @@ let storage: any = null;
 export const getAuth = () => {
   if (!auth) {
     try {
-      auth = getAuth(getApp());
+      auth = firebaseGetAuth(getApp());
       console.log("✅ Firebase Auth 초기화 성공");
     } catch (error) {
       console.error("❌ Firebase Auth 초기화 실패:", error);
@@ -67,7 +70,7 @@ export const getAuth = () => {
 export const getDb = () => {
   if (!db) {
     try {
-      db = getFirestore(getApp());
+      db = firebaseGetFirestore(getApp());
       console.log("✅ Firebase Firestore 초기화 성공");
     } catch (error) {
       console.error("❌ Firebase Firestore 초기화 실패:", error);
@@ -80,7 +83,7 @@ export const getDb = () => {
 export const getStorage = () => {
   if (!storage) {
     try {
-      storage = getStorage(getApp());
+      storage = firebaseGetStorage(getApp());
       console.log("✅ Firebase Storage 초기화 성공");
     } catch (error) {
       console.error("❌ Firebase Storage 초기화 실패:", error);
@@ -165,11 +168,3 @@ export const signInWithNaverRedirect = () =>
 export const getRedirectResult = firebaseGetRedirectResult;
 
 export default getApp;
-
-
-
-
-
-
-
-

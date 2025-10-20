@@ -2,7 +2,7 @@ import React, { useId } from "react";
 import { cn } from "../../lib/utils";
 
 interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
+  label?: string | React.ReactNode;
   error?: string;
   helperText?: string;
 }

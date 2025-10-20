@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "../../components/ui/Button";
 import { ItemCard } from "../../components/items/ItemCard";
 import { ItemFilters } from "../../components/items/ItemFilters";
@@ -9,8 +9,10 @@ import { SellItem } from "../../data/types";
 import { ItemDetailModal } from "../../components/items/ItemDetailModal";
 import ProductDetailModal from "../../components/product/ProductDetailModal";
 import { EnhancedChatModal } from "../../components/chat/EnhancedChatModal";
+import { useAuth } from "../../lib/hooks/useAuth";
 
 export default function ListPage() {
+  const { user } = useAuth();
   const [selectedItem, setSelectedItem] = useState<SellItem | null>(null);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
@@ -18,6 +20,9 @@ export default function ListPage() {
   const [showChatModal, setShowChatModal] = useState(false);
   const [chatItemId, setChatItemId] = useState<string | null>(null);
   const [chatSellerUid, setChatSellerUid] = useState<string | null>(null);
+
+  // 무한 스크롤을 위한 ref
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   const {
     items,
@@ -40,6 +45,39 @@ export default function ListPage() {
     console.log("ListPage 마운트됨 - 필터 초기화");
     setFilters({});
   }, []);
+
+  // 무한 스크롤 설정
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        // 관찰 대상이 화면에 보이고, 더 불러올 상품이 있고, 현재 로딩 중이 아닐 때
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !loadingMore &&
+          !filtering
+        ) {
+          console.log("📜 스크롤 하단 도달 - 자동 로드");
+          loadMore();
+        }
+      },
+      {
+        threshold: 0.1, // 10%만 보여도 트리거
+        rootMargin: "100px", // 하단 100px 전에 미리 로드
+      }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loadingMore, filtering, loadMore]);
 
   const handleClearFilters = () => {
     setFilters({});
@@ -73,6 +111,24 @@ export default function ListPage() {
     setChatItemId(null);
     setChatSellerUid(null);
   };
+
+  // 거래중인 상품 필터링: 본인 것이 아니면 숨김
+  const filteredItems = items.filter(item => {
+    const isInTransaction =
+      item.status === "reserved" ||
+      item.status === "escrow_completed" ||
+      item.status === "shipping" ||
+      item.status === "shipped";
+
+    // 거래중인 상품이 아니면 표시
+    if (!isInTransaction) return true;
+
+    // 거래중인 상품인 경우, 본인이 판매자이거나 구매자인 경우만 표시
+    const isOwner =
+      user?.uid && (item.sellerUid === user.uid || item.buyerUid === user.uid);
+
+    return isOwner;
+  });
 
   if (loading) {
     return (
@@ -121,7 +177,7 @@ export default function ListPage() {
             <p className="text-red-600 mb-4">{error}</p>
             <Button onClick={refresh}>다시 시도</Button>
           </div>
-        ) : items.length === 0 && !filtering ? (
+        ) : filteredItems.length === 0 && !filtering ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎵</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -142,26 +198,29 @@ export default function ListPage() {
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
-              {items.map(item => (
+              {filteredItems.map(item => (
                 <ItemCard key={item.id} item={item} onClick={handleItemClick} />
               ))}
             </div>
           </div>
         )}
 
-        {/* 더보기 버튼 */}
-        {hasMore && !loadingMore && (
-          <div className="text-center mt-8">
-            <Button onClick={loadMore} size="lg">
-              더 많은 상품 보기
-            </Button>
+        {/* 무한 스크롤 트리거 & 로딩 인디케이터 */}
+        {hasMore && (
+          <div ref={observerTarget} className="text-center mt-8 py-4">
+            {loadingMore && (
+              <>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">상품을 불러오는 중...</p>
+              </>
+            )}
           </div>
         )}
 
-        {loadingMore && (
-          <div className="text-center mt-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">상품을 불러오는 중...</p>
+        {/* 더 이상 상품이 없을 때 */}
+        {!hasMore && filteredItems.length > 0 && (
+          <div className="text-center mt-8 py-4">
+            <p className="text-gray-500">모든 상품을 불러왔습니다 ✨</p>
           </div>
         )}
       </div>

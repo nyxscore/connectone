@@ -20,6 +20,7 @@ import {
   EyeOff,
   Tag,
   RefreshCw,
+  Coins,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -28,6 +29,96 @@ import { toast } from "react-hot-toast";
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [isUpdatingResponseRate, setIsUpdatingResponseRate] = useState(false);
+  const [showPointModal, setShowPointModal] = useState(false);
+  const [targetUserId, setTargetUserId] = useState("");
+  const [pointAmount, setPointAmount] = useState("");
+  const [pointReason, setPointReason] = useState("");
+
+  // 포인트 지급 함수
+  const handleGrantPoints = async () => {
+    if (!user) return;
+    if (!targetUserId.trim()) {
+      toast.error("사용자 UID를 입력해주세요.");
+      return;
+    }
+    if (
+      !pointAmount ||
+      isNaN(Number(pointAmount)) ||
+      Number(pointAmount) <= 0
+    ) {
+      toast.error("올바른 포인트 금액을 입력해주세요.");
+      return;
+    }
+
+    try {
+      const { db } = await import("@/lib/api/firebase-lazy");
+      const {
+        doc,
+        getDoc,
+        updateDoc,
+        increment,
+        collection,
+        addDoc,
+        serverTimestamp,
+      } = await import("firebase/firestore");
+
+      // 사용자 존재 여부 확인
+      const userDoc = await getDoc(doc(db, "users", targetUserId));
+      if (!userDoc.exists()) {
+        toast.error("해당 사용자를 찾을 수 없습니다.");
+        return;
+      }
+
+      const targetUser = userDoc.data();
+      const points = Number(pointAmount);
+
+      // 포인트 지급
+      await updateDoc(doc(db, "users", targetUserId), {
+        points: increment(points),
+      });
+
+      // 포인트 이력 기록
+      await addDoc(collection(db, "point_transactions"), {
+        userId: targetUserId,
+        amount: points,
+        type: "admin_grant",
+        description: pointReason.trim() || "관리자 지급",
+        balanceAfter: (targetUser.points || 0) + points,
+        grantedBy: user.uid,
+        grantedByNickname: user.nickname || "관리자",
+        createdAt: serverTimestamp(),
+      });
+
+      // 감사 로그 기록
+      const { logAdminAction } = await import("../../lib/admin/auditLog");
+      await logAdminAction({
+        adminUid: user.uid,
+        adminNickname: user.nickname || "관리자",
+        action: "GRANT_POINTS",
+        targetType: "user",
+        targetId: targetUserId,
+        details: {
+          amount: points,
+          reason: pointReason.trim() || "관리자 지급",
+          targetNickname: targetUser.nickname || "Unknown",
+        },
+        status: "success",
+      });
+
+      toast.success(
+        `${targetUser.nickname || targetUserId}님에게 ${points.toLocaleString()}P를 지급했습니다!`
+      );
+
+      // 입력 필드 초기화
+      setTargetUserId("");
+      setPointAmount("");
+      setPointReason("");
+      setShowPointModal(false);
+    } catch (error) {
+      console.error("포인트 지급 오류:", error);
+      toast.error("포인트 지급 중 오류가 발생했습니다.");
+    }
+  };
 
   // 응답률 업데이트 함수
   const handleUpdateResponseRates = async () => {
@@ -318,6 +409,20 @@ export default function AdminDashboard() {
               </Card>
             </Link>
 
+            {/* 포인트 지급 */}
+            <Card
+              className="hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => setShowPointModal(true)}
+            >
+              <CardContent className="p-6 text-center">
+                <Coins className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  포인트 지급
+                </h3>
+                <p className="text-sm text-gray-600">회원 포인트 관리</p>
+              </CardContent>
+            </Card>
+
             {/* 응답률 업데이트 */}
             <Card
               className="hover:shadow-lg transition-shadow cursor-pointer"
@@ -375,6 +480,79 @@ export default function AdminDashboard() {
             </Link>
           </div>
         </div>
+
+        {/* 포인트 지급 모달 */}
+        {showPointModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                포인트 지급
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    사용자 UID
+                  </label>
+                  <input
+                    type="text"
+                    value={targetUserId}
+                    onChange={e => setTargetUserId(e.target.value)}
+                    placeholder="사용자 UID를 입력하세요"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    포인트 금액
+                  </label>
+                  <input
+                    type="number"
+                    value={pointAmount}
+                    onChange={e => setPointAmount(e.target.value)}
+                    placeholder="예: 10000"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    지급 사유 (선택)
+                  </label>
+                  <input
+                    type="text"
+                    value={pointReason}
+                    onChange={e => setPointReason(e.target.value)}
+                    placeholder="예: 이벤트 참여 보상"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <Button
+                  onClick={() => {
+                    setShowPointModal(false);
+                    setTargetUserId("");
+                    setPointAmount("");
+                    setPointReason("");
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleGrantPoints}
+                  className="flex-1 bg-yellow-600 hover:bg-yellow-700"
+                >
+                  지급하기
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminRoute>
   );

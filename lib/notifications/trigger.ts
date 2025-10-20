@@ -52,6 +52,7 @@ export class NotificationTriggerService {
     productModel: string;
     amount: number;
     counterpartName: string;
+    itemId?: string; // 상품 ID 추가
   }): Promise<void> {
     // Firestore에 알림 생성
     try {
@@ -62,6 +63,7 @@ export class NotificationTriggerService {
         productTitle: data.productTitle,
         amount: data.amount,
         counterpartName: data.counterpartName,
+        itemId: data.itemId, // 상품 ID 전달
       });
       console.log("✅ Firestore 거래 상태 알림 생성 완료:", data.userId);
     } catch (error) {

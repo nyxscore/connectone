@@ -2,7 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // ==================== 헬퍼 함수 ====================
+    // ==================== MVP 임시 Rules ====================
+    // TODO: 베타 테스트 후 강화 필요
     
     function isAuthenticated() {
       return request.auth != null;
@@ -12,10 +13,18 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == uid;
     }
     
+    // ==================== 전체 임시 허용 (MVP 긴급) ====================
+    match /{document=**} {
+      // 읽기는 모두 허용 (비회원 포함), 쓰기는 인증된 사용자만
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
     // ==================== USERS ====================
     
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      // 사용자 프로필은 비회원도 조회 가능 (판매자 정보 확인용)
+      allow read: if true;
       allow create: if isOwner(userId);
       allow update: if isOwner(userId);
       allow delete: if false;
@@ -24,23 +33,27 @@ service cloud.firestore {
     // ==================== ITEMS ====================
     
     match /items/{itemId} {
-      allow read: if isAuthenticated();
+      // 상품 목록 및 상세 정보는 비회원도 조회 가능
+      allow read: if true;
       
       allow create: if isAuthenticated() && 
         request.resource.data.sellerUid == request.auth.uid;
       
-      // 상품 업데이트: 본인만 가능, 단 상태 변경은 제한적
+      // 상품 업데이트: 본인만 가능, 상태 변경은 Cloud Functions만
       allow update: if isAuthenticated() && (
-        // 일반 필드 업데이트 (판매자)
+        // 판매자: 일반 필드만 업데이트 가능 (status, soldAt, autoConfirmScheduled, buyerUid 제외)
         (resource.data.sellerUid == request.auth.uid &&
-         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'soldAt', 'autoConfirmScheduled'])) ||
+         request.resource.data.status == resource.data.status &&
+         request.resource.data.soldAt == resource.data.soldAt &&
+         (!request.resource.data.keys().hasAny(['autoConfirmScheduled']) || 
+          request.resource.data.autoConfirmScheduled == resource.data.autoConfirmScheduled) &&
+         (!request.resource.data.keys().hasAny(['buyerUid']) || 
+          request.resource.data.buyerUid == resource.data.buyerUid)) ||
         
-        // 배송지 정보 업데이트 (구매자)
+        // 구매자: 배송지 정보만 업데이트 가능
         (resource.data.buyerUid == request.auth.uid &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shippingAddress', 'updatedAt'])) ||
-        
-        // 상태 변경은 Cloud Functions만 (status 필드는 변경 불가)
-        (request.resource.data.status == resource.data.status)
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shippingAddress', 'updatedAt']) &&
+         request.resource.data.status == resource.data.status)
       );
       
       allow delete: if resource.data.sellerUid == request.auth.uid;
@@ -49,33 +62,26 @@ service cloud.firestore {
     // ==================== CHATS ====================
     
     match /chats/{chatId} {
-      allow read: if isAuthenticated() && (
-        request.auth.uid in resource.data.participants
-      );
+      // 채팅 읽기: 로그인한 사람만 (MVP용 - 나중에 강화 가능)
+      allow read: if isAuthenticated();
       
-      allow create: if isAuthenticated() && 
-        request.auth.uid in request.resource.data.participants;
+      // 채팅 생성: 로그인한 사람만 (MVP용)
+      allow create: if isAuthenticated();
       
-      allow update: if isAuthenticated() && 
-        request.auth.uid in resource.data.participants;
+      // 채팅 업데이트: 로그인한 사람만 (MVP용)
+      allow update: if isAuthenticated();
       
-      allow delete: if isAuthenticated() && 
-        request.auth.uid in resource.data.participants;
+      // 채팅 삭제: 로그인한 사람만 (MVP용)
+      allow delete: if isAuthenticated();
       
       // ==================== MESSAGES (서브컬렉션) ====================
       
       match /messages/{messageId} {
-        allow read: if isAuthenticated() && (
-          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
-        );
+        allow read: if isAuthenticated();
         
-        allow create: if isAuthenticated() && (
-          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants ||
-          request.resource.data.senderUid == 'system'
-        );
+        allow create: if isAuthenticated();
         
-        allow update: if isAuthenticated() && 
-          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow update: if isAuthenticated();
         
         allow delete: if false;
       }
@@ -131,8 +137,20 @@ service cloud.firestore {
       
       allow update, delete: if false; // 관리자만
     }
+    
+    // ==================== TRANSACTIONS ====================
+    
+    match /transactions/{transactionId} {
+      // MVP용: 로그인한 사람만 생성 가능
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false;
+    }
   }
 }
+
+
 
 
 

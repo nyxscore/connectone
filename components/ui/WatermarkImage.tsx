@@ -116,8 +116,13 @@ export const WatermarkImage = ({
   };
 
   return (
-    <div className="relative">
-      <img src={watermarkedSrc} alt={alt} className={className} />
+    <div className="relative w-full h-full">
+      <img
+        src={watermarkedSrc}
+        alt={alt}
+        className={className}
+        style={{ display: "block" }}
+      />
       {/* 숨겨진 캔버스 */}
       <canvas ref={canvasRef} className="hidden" />
 

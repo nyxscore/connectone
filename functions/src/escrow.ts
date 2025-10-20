@@ -51,9 +51,93 @@ async function logEvent(
 
 // ==================== Cloud Functions ====================
 
-// 1. 배송 등록 (판매자)
+// 1. 거래 시작 (판매자 → 구매자 지정)
+export const startTransaction = functions.https.onCall(
+  async (data: any, context: any) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "인증이 필요합니다."
+      );
+    }
+
+    const { itemId, buyerUid, chatId } = data;
+    const sellerId = context.auth.uid;
+
+    try {
+      const itemRef = db.collection("items").doc(itemId);
+      const itemSnap = await itemRef.get();
+
+      if (!itemSnap.exists) {
+        throw new functions.https.HttpsError(
+          "not-found",
+          "상품을 찾을 수 없습니다."
+        );
+      }
+
+      const item = itemSnap.data();
+
+      // 권한 확인 (판매자만)
+      if (item?.sellerUid !== sellerId) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "판매자만 거래를 시작할 수 있습니다."
+        );
+      }
+
+      // 상태 확인
+      if (item?.status !== "active" && item?.status !== "escrow_completed") {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "거래를 시작할 수 없는 상태입니다."
+        );
+      }
+
+      // 이미 거래중인지 확인
+      if (item?.status === "reserved") {
+        throw new functions.https.HttpsError(
+          "already-exists",
+          "이미 거래가 진행중입니다."
+        );
+      }
+
+      // 상품 상태 업데이트
+      await itemRef.update({
+        status: "reserved",
+        buyerUid,
+        buyerId: buyerUid, // 호환성
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // 이벤트 로그
+      await logEvent(
+        itemId,
+        "transaction_started",
+        sellerId,
+        `거래가 시작되었습니다. (구매자: ${buyerUid})`,
+        { buyerUid, sellerId }
+      );
+
+      // 채팅에 시스템 메시지
+      if (chatId) {
+        await sendSystemMessage(
+          chatId,
+          itemId,
+          `거래가 시작되었습니다!\n판매자와 구매자가 연결되었습니다.`
+        );
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("거래 시작 오류:", error);
+      throw new functions.https.HttpsError("internal", error.message);
+    }
+  }
+);
+
+// 2. 배송 등록 (판매자)
 export const registerShipment = functions.https.onCall(
-  async (data, context) => {
+  async (data: any, context: any) => {
     if (!context.auth) {
       throw new functions.https.HttpsError(
         "unauthenticated",
@@ -130,98 +214,89 @@ export const registerShipment = functions.https.onCall(
   }
 );
 
-// 2. 구매 확정 (구매자)
-export const confirmPurchase = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "인증이 필요합니다."
-    );
-  }
-
-  const { itemId, chatId } = data;
-  const userId = context.auth.uid;
-
-  try {
-    const itemRef = db.collection("items").doc(itemId);
-    const itemSnap = await itemRef.get();
-
-    if (!itemSnap.exists) {
+// 3. 구매 확정 (구매자)
+export const confirmPurchase = functions.https.onCall(
+  async (data: any, context: any) => {
+    if (!context.auth) {
       throw new functions.https.HttpsError(
-        "not-found",
-        "상품을 찾을 수 없습니다."
+        "unauthenticated",
+        "인증이 필요합니다."
       );
     }
 
-    const item = itemSnap.data();
+    const { itemId, chatId } = data;
+    const userId = context.auth.uid;
 
-    // 권한 확인 (구매자만)
-    if (item?.buyerUid !== userId) {
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        "구매자만 구매확정이 가능합니다."
-      );
-    }
-
-    // 상태 확인
-    if (item?.status !== "shipping" && item?.status !== "shipped") {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "배송 중 또는 배송 완료 상태에서만 구매확정이 가능합니다."
-      );
-    }
-
-    // 상품 상태 업데이트
-    await itemRef.update({
-      status: "sold",
-      soldAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      autoConfirmScheduled: false,
-    });
-
-    // 이벤트 로그
-    await logEvent(
-      itemId,
-      "purchase_confirmed",
-      userId,
-      "구매자가 거래를 확정했습니다.",
-      { confirmedBy: userId }
-    );
-
-    // 채팅에 시스템 메시지
-    if (chatId) {
-      await sendSystemMessage(
-        chatId,
-        itemId,
-        `거래가 성공적으로 완료되었습니다!\n거래 완료 시간: ${new Date().toLocaleString()}\n감사합니다!`
-      );
-    }
-
-    // 판매자에게 알림 전송
     try {
-      const { notificationTrigger } = await import(
-        "../../lib/notifications/trigger"
-      );
-      await notificationTrigger.triggerPurchaseConfirmation({
-        userId: item.sellerUid,
-        productTitle: item.title,
-        buyerNickname: context.auth.token.name || "구매자",
+      const itemRef = db.collection("items").doc(itemId);
+      const itemSnap = await itemRef.get();
+
+      if (!itemSnap.exists) {
+        throw new functions.https.HttpsError(
+          "not-found",
+          "상품을 찾을 수 없습니다."
+        );
+      }
+
+      const item = itemSnap.data();
+
+      // 권한 확인 (구매자만)
+      if (item?.buyerUid !== userId) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "구매자만 구매확정이 가능합니다."
+        );
+      }
+
+      // 상태 확인
+      if (item?.status !== "shipping" && item?.status !== "shipped") {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "배송 중 또는 배송 완료 상태에서만 구매확정이 가능합니다."
+        );
+      }
+
+      // 상품 상태 업데이트
+      await itemRef.update({
+        status: "sold",
+        soldAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        autoConfirmScheduled: false,
       });
-    } catch (notifError) {
-      console.error("알림 전송 실패:", notifError);
+
+      // 이벤트 로그
+      await logEvent(
+        itemId,
+        "purchase_confirmed",
+        userId,
+        "구매자가 거래를 확정했습니다.",
+        { confirmedBy: userId }
+      );
+
+      // 채팅에 시스템 메시지
+      if (chatId) {
+        await sendSystemMessage(
+          chatId,
+          itemId,
+          `거래가 성공적으로 완료되었습니다!\n거래 완료 시간: ${new Date().toLocaleString()}\n감사합니다!`
+        );
+      }
+
+      // TODO: 판매자에게 알림 전송 (나중에 구현)
+      console.log("알림 전송 필요:", item.sellerUid);
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("구매확정 오류:", error);
+      throw new functions.https.HttpsError("internal", error.message);
     }
-
-    return { success: true };
-  } catch (error: any) {
-    console.error("구매확정 오류:", error);
-    throw new functions.https.HttpsError("internal", error.message);
   }
-});
+);
 
-// 3. 자동 구매확정 (Scheduled - 매 1시간마다)
+// 4. 자동 구매확정 (Scheduled - 매 1시간마다)
 export const autoConfirmPurchases = functions.pubsub
   .schedule("every 1 hours")
-  .onRun(async context => {
+  .onRun(async (context: any) => {
     const now = admin.firestore.Timestamp.now();
     const cutoffTime = admin.firestore.Timestamp.fromMillis(
       now.toMillis() - 72 * 60 * 60 * 1000 // 72시간 전
@@ -277,19 +352,8 @@ export const autoConfirmPurchases = functions.pubsub
             );
           }
 
-          // 판매자에게 알림
-          try {
-            const { notificationTrigger } = await import(
-              "../../lib/notifications/trigger"
-            );
-            await notificationTrigger.triggerPurchaseConfirmation({
-              userId: item.sellerUid,
-              productTitle: item.title,
-              buyerNickname: "구매자",
-            });
-          } catch (notifError) {
-            console.error("알림 전송 실패:", notifError);
-          }
+          // TODO: 판매자에게 알림 (나중에 구현)
+          console.log("자동확정 알림 필요:", item.sellerUid);
 
           console.log(`자동 확정 완료: ${itemId}`);
         } catch (error) {
@@ -307,9 +371,9 @@ export const autoConfirmPurchases = functions.pubsub
     }
   });
 
-// 4. 거래 취소 (구매자/판매자)
+// 5. 거래 취소 (구매자/판매자)
 export const cancelTransaction = functions.https.onCall(
-  async (data, context) => {
+  async (data: any, context: any) => {
     if (!context.auth) {
       throw new functions.https.HttpsError(
         "unauthenticated",
@@ -341,18 +405,20 @@ export const cancelTransaction = functions.https.onCall(
         );
       }
 
-      // 상태 확인 (sold나 cancelled가 아닌 경우만)
-      if (item?.status === "sold" || item?.status === "cancelled") {
+      // 상태 확인 (sold가 아닌 경우만)
+      if (item?.status === "sold") {
         throw new functions.https.HttpsError(
           "failed-precondition",
-          "이미 완료되거나 취소된 거래입니다."
+          "이미 완료된 거래입니다."
         );
       }
 
-      // 상품 상태 업데이트
+      // 상품 상태 업데이트 (다시 판매중으로)
       await itemRef.update({
-        status: "cancelled",
-        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: "active",
+        buyerUid: admin.firestore.FieldValue.delete(),
+        buyerId: admin.firestore.FieldValue.delete(),
+        transactionCancelledAt: admin.firestore.FieldValue.serverTimestamp(),
         cancelReason: reason,
         cancelledBy: userId,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -395,6 +461,3 @@ function getCourierName(code: string): string {
   };
   return couriers[code] || code;
 }
-
-
-

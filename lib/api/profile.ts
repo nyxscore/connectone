@@ -3,7 +3,14 @@ import { getFirebaseDb } from "./firebase-ultra-safe";
 
 export interface MyItemsParams {
   userId: string;
-  type: "all" | "selling" | "buying" | "trading" | "sold" | "payment_completed";
+  type:
+    | "all"
+    | "selling"
+    | "buying"
+    | "trading"
+    | "sold"
+    | "payment_completed"
+    | "shipping";
 }
 
 export async function getMyItems({ userId, type }: MyItemsParams) {
@@ -12,18 +19,20 @@ export async function getMyItems({ userId, type }: MyItemsParams) {
     let items: any[] = [];
 
     if (type === "all" || type === "selling") {
-      // 판매중인 상품 (active 상태만)
+      // 판매중인 상품 (active + cancelled 상태)
       const sellingQuery = query(
         collection(db, "items"),
         where("sellerUid", "==", userId),
-        where("status", "==", "active")
+        where("status", "in", ["active", "cancelled"])
       );
       const sellingSnapshot = await getDocs(sellingQuery);
       sellingSnapshot.forEach(doc => {
         items.push({ id: doc.id, ...doc.data() });
       });
 
-      console.log(`판매중 상품: ${sellingSnapshot.size}개`);
+      console.log(
+        `판매중 상품: ${sellingSnapshot.size}개 (active + cancelled)`
+      );
     }
 
     if (type === "all" || type === "trading") {
@@ -125,6 +134,26 @@ export async function getMyItems({ userId, type }: MyItemsParams) {
       });
 
       console.log(`결제 완료 상품: ${paymentCompletedSnapshot.size}개`);
+    }
+
+    if (type === "shipping") {
+      // 배송중인 상품 (판매자 + 구매자)
+      const shippingQuery = query(
+        collection(db, "items"),
+        where("status", "==", "shipping")
+      );
+
+      const shippingSnapshot = await getDocs(shippingQuery);
+
+      // 사용자가 판매자이거나 구매자인 상품만 필터링
+      shippingSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.sellerUid === userId || data.buyerUid === userId) {
+          items.push({ id: doc.id, ...data });
+        }
+      });
+
+      console.log(`배송중 상품: ${items.length}개`);
     }
 
     // 중복 제거 (같은 상품이 여러 카테고리에 포함될 수 있음)

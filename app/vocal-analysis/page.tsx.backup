@@ -1,0 +1,995 @@
+"use client";
+
+import { useState, useRef } from "react";
+import Link from "next/link";
+import { useAuth } from "../../lib/hooks/useAuth";
+import { Button } from "../../components/ui/Button";
+import {
+  Upload,
+  Mic,
+  Play,
+  Pause,
+  Download,
+  Copy,
+  Check,
+  Loader2,
+  AlertCircle,
+  Music,
+  BarChart3,
+  FileAudio,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+
+// 분석 결과 타입 정의
+interface AnalysisResult {
+  transcription: {
+    text: string;
+    language: string;
+    confidence: number;
+  };
+  emotion: {
+    label: string;
+    label_ko: string;
+    scores: { [key: string]: number };
+    scores_ko: { [key: string]: number };
+  };
+  pitch: {
+    average_hz: number;
+    stddev_hz: number;
+    pitch_stability: number;
+  };
+  tempo: {
+    bpm: number;
+    confidence: number;
+  };
+  key: {
+    tonic: string;
+    mode: string;
+    confidence: number;
+  };
+  metadata: {
+    duration_seconds: number;
+    file_name: string;
+  };
+  cost_estimate_usd: number;
+  report_ko: string;
+  summary_ko: string;
+}
+
+export default function VocalAnalysisPage() {
+  const { user, loading } = useAuth();
+
+  // 상태 관리
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
+    null
+  );
+  const [copiedText, setCopiedText] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [showResults, setShowResults] = useState(false); // 결과 페이지 표시 여부
+
+  // refs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  // 파일 선택 핸들러
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      validateAndSetFile(file);
+    }
+  };
+
+  // 파일 유효성 검사 및 설정
+  const validateAndSetFile = (file: File) => {
+    // 파일 타입 검증
+    const validTypes = [
+      "audio/wav",
+      "audio/mpeg",
+      "audio/mp3",
+      "audio/ogg",
+      "audio/webm",
+    ];
+    if (
+      !validTypes.includes(file.type) &&
+      !file.name.match(/\.(wav|mp3|ogg|webm)$/i)
+    ) {
+      toast.error(
+        "지원되지 않는 파일 형식입니다. WAV, MP3, OGG, WEBM 파일만 업로드 가능합니다."
+      );
+      return;
+    }
+
+    // 파일 크기 검증 (30MB)
+    const maxSize = 30 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("파일 크기가 너무 큽니다. 최대 30MB까지 업로드 가능합니다.");
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    console.log("📁 파일 선택됨:", file.name);
+    console.log("🔗 오디오 URL 생성:", url);
+
+    setSelectedFile(file);
+    setAudioUrl(url);
+    setAnalysisResult(null); // 이전 결과 초기화
+    toast.success(`${file.name} 파일이 선택되었습니다.`);
+  };
+
+  // 드래그 앤 드롭 핸들러
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      validateAndSetFile(file);
+    }
+  };
+
+  // 녹음 시작
+  const startRecording = async () => {
+    try {
+      console.log("🎤 녹음 시작 시도...");
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("이 브라우저는 녹음을 지원하지 않습니다.");
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log("✅ 마이크 접근 허용됨");
+
+      const mediaRecorder = new MediaRecorder(stream);
+      console.log("✅ MediaRecorder 생성:", mediaRecorder.mimeType);
+
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) {
+          console.log("📦 오디오 청크 수신:", event.data.size, "bytes");
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        console.log("⏹️ 녹음 중지, 총 청크:", audioChunksRef.current.length);
+
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        console.log("📁 Blob 생성:", audioBlob.size, "bytes");
+
+        const audioFile = new File(
+          [audioBlob],
+          `recording_${Date.now()}.webm`,
+          {
+            type: "audio/webm",
+          }
+        );
+
+        setSelectedFile(audioFile);
+        setAudioUrl(URL.createObjectURL(audioBlob));
+        setAnalysisResult(null);
+        toast.success("녹음이 완료되었습니다!");
+
+        // 스트림 정리
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast.success("녹음이 시작되었습니다.");
+      console.log("🔴 녹음 시작됨");
+    } catch (error) {
+      console.error("❌ 녹음 시작 실패:", error);
+      toast.error(
+        error instanceof Error ? error.message : "마이크 권한을 허용해주세요."
+      );
+    }
+  };
+
+  // 녹음 중지
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  // 오디오 재생/정지
+  const togglePlay = async () => {
+    if (!audioRef.current) {
+      console.error("❌ audioRef가 없습니다!");
+      return;
+    }
+
+    try {
+      if (isPlaying) {
+        console.log("⏸️ 오디오 일시정지");
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        console.log("▶️ 오디오 재생 시도...");
+        console.log("📁 오디오 URL:", audioUrl);
+        console.log("🔊 오디오 요소:", audioRef.current);
+
+        await audioRef.current.play();
+        console.log("✅ 오디오 재생 시작됨");
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error("❌ 오디오 재생 실패:", error);
+      toast.error("오디오 재생에 실패했습니다.");
+      setIsPlaying(false);
+    }
+  };
+
+  // AI 분석 실행
+  const handleAnalyze = async () => {
+    if (!selectedFile) {
+      toast.error("분석할 오디오 파일을 선택해주세요.");
+      return;
+    }
+
+    console.log("🎯 분석 시작:", selectedFile.name);
+    setIsAnalyzing(true);
+
+    try {
+      // 간단한 Mock 분석 결과 생성 (실제 Replicate API는 클라이언트에서 호출 불가)
+      console.log("🤖 Mock 분석 중...");
+
+      // 파일 재생 시간 추정
+      const estimatedDuration = selectedFile.size / (128000 / 8); // 128kbps 가정
+
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2초 대기 (분석 시뮬레이션)
+
+      const mockResult: AnalysisResult = {
+        transcription: {
+          text: "음성 파일이 업로드되었습니다. 실제 분석을 위해서는 서버 기반 API가 필요합니다.",
+          language: "ko",
+          confidence: 0.85,
+        },
+        emotion: {
+          label: "neutral",
+          label_ko: "중립",
+          scores: {
+            happy: 0.2,
+            neutral: 0.5,
+            calm: 0.3,
+          },
+          scores_ko: {
+            행복: 0.2,
+            중립: 0.5,
+            차분함: 0.3,
+          },
+        },
+        pitch: {
+          average_hz: 220 + Math.random() * 100,
+          stddev_hz: 5 + Math.random() * 10,
+          pitch_stability: 0.75 + Math.random() * 0.2,
+        },
+        tempo: {
+          bpm: Math.floor(80 + Math.random() * 60),
+          confidence: 0.7 + Math.random() * 0.2,
+        },
+        key: {
+          tonic: ["C", "D", "E", "F", "G", "A", "B"][
+            Math.floor(Math.random() * 7)
+          ],
+          mode: Math.random() > 0.5 ? "major" : "minor",
+          confidence: 0.6 + Math.random() * 0.3,
+        },
+        metadata: {
+          duration_seconds: estimatedDuration,
+          file_name: selectedFile.name,
+        },
+        cost_estimate_usd: 0,
+        report_ko:
+          "😊 이 보컬은 **중립** 감정을 은은하게 표현하고 있습니다 (신뢰도 50%).\n\n⭐ 중간 음역(평균 " +
+          (220 + Math.random() * 100).toFixed(1) +
+          "Hz)에서 좋아요 음정을 유지하며, 편안한 템포로 진행됩니다.\n\n음정 컨트롤이 안정적입니다. 전반적으로 우수한 수준입니다.",
+        summary_ko: "중립 감정의 좋아요 보컬 (220Hz, 100BPM)",
+      };
+
+      console.log("✅ Mock 분석 결과:", mockResult);
+      setAnalysisResult(mockResult);
+      toast.success("분석이 완료되었습니다!");
+      
+      // 결과 페이지로 전환
+      setTimeout(() => {
+        setShowResults(true);
+      }, 500);
+    } catch (error) {
+      console.error("❌ 분석 오류:", error);
+      toast.error(
+        error instanceof Error ? error.message : "분석 중 오류가 발생했습니다."
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 트랜스크립션 복사
+  const copyTranscription = () => {
+    if (analysisResult?.transcription.text) {
+      navigator.clipboard.writeText(analysisResult.transcription.text);
+      setCopiedText(true);
+      toast.success("텍스트가 복사되었습니다!");
+      setTimeout(() => setCopiedText(false), 2000);
+    }
+  };
+
+  // SRT 파일 다운로드
+  const downloadSRT = () => {
+    if (!analysisResult?.transcription.text) return;
+
+    const srtContent = `1\n00:00:00,000 --> 00:${String(Math.floor(analysisResult.metadata.duration_seconds / 60)).padStart(2, "0")}:${String(Math.floor(analysisResult.metadata.duration_seconds % 60)).padStart(2, "0")},000\n${analysisResult.transcription.text}\n`;
+
+    const blob = new Blob([srtContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${analysisResult.metadata.file_name.replace(/\.[^/.]+$/, "")}.srt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("SRT 파일이 다운로드되었습니다!");
+  };
+
+  // 로딩 중
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  // 로그인 필요
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="text-center">
+          <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            로그인이 필요합니다
+          </h2>
+          <p className="text-gray-600 mb-6">
+            AI 보컬 분석 기능을 사용하려면 로그인해주세요.
+          </p>
+          <Button onClick={() => (window.location.href = "/auth/login")}>
+            로그인하기
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // 결과 페이지만 별도로 표시
+  if (showResults && analysisResult) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12 px-4"
+      >
+        <div className="max-w-6xl mx-auto">
+          {/* 상단 헤더 */}
+          <div className="mb-8">
+            <button
+              onClick={() => {
+                setShowResults(false);
+              }}
+              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+            >
+              <span>←</span>
+              <span>새로운 분석</span>
+            </button>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              🎤 음성 분석 리포트
+            </h1>
+            <p className="text-gray-600">
+              회원님의 보컬을 AI가 분석한 결과입니다
+            </p>
+          </div>
+
+          {/* 한국어 종합 리포트 */}
+          {analysisResult.report_ko && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-lg p-8 border-2 border-blue-200"
+            >
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <BarChart3 className="w-6 h-6 text-blue-600" />
+                종합 분석 리포트
+              </h2>
+              <div className="prose prose-lg max-w-none">
+                <p className="text-gray-800 leading-relaxed whitespace-pre-line text-lg">
+                  {analysisResult.report_ko}
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* 감정 분석 */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl shadow-lg p-8"
+            >
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <FileAudio className="w-5 h-5 text-blue-600" />
+                오디오 파일
+              </h2>
+
+              {/* 드래그 앤 드롭 영역 */}
+              <div
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                  dragActive
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-300 hover:border-blue-400"
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-700 font-medium mb-2">
+                  파일을 드래그하거나 클릭하여 업로드
+                </p>
+                <p className="text-sm text-gray-500 mb-4">
+                  WAV, MP3, OGG, WEBM (최대 30MB)
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                  className="mb-2"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  파일 선택
+                </Button>
+              </div>
+
+              {/* 또는 구분선 */}
+              <div className="flex items-center my-6">
+                <div className="flex-1 border-t border-gray-300"></div>
+                <span className="px-4 text-gray-500 text-sm">또는</span>
+                <div className="flex-1 border-t border-gray-300"></div>
+              </div>
+
+              {/* 녹음 버튼 */}
+              <div className="text-center">
+                {!isRecording ? (
+                  <Button
+                    onClick={startRecording}
+                    className="bg-red-600 hover:bg-red-700"
+                    disabled={isRecording}
+                  >
+                    <Mic className="w-4 h-4 mr-2" />
+                    녹음 시작
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={stopRecording}
+                    className="bg-gray-600 hover:bg-gray-700 animate-pulse"
+                  >
+                    <div className="w-4 h-4 mr-2 bg-red-500 rounded-full animate-ping absolute" />
+                    <span className="relative">녹음 중지</span>
+                  </Button>
+                )}
+              </div>
+
+              {/* 선택된 파일 정보 */}
+              {selectedFile && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200"
+                >
+                  <p className="text-sm font-medium text-blue-900">
+                    📁 {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                  </p>
+                </motion.div>
+              )}
+
+              {/* 오디오 플레이어 */}
+              {audioUrl && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-6"
+                >
+                  <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    onEnded={() => setIsPlaying(false)}
+                    className="hidden"
+                  />
+                  <div className="flex items-center gap-4">
+                    <Button
+                      onClick={togglePlay}
+                      variant="outline"
+                      className="flex-shrink-0"
+                    >
+                      {isPlaying ? (
+                        <Pause className="w-4 h-4" />
+                      ) : (
+                        <Play className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-600 rounded-full w-0 animate-pulse"></div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* 분석 버튼 */}
+              <Button
+                onClick={handleAnalyze}
+                disabled={!selectedFile || isAnalyzing}
+                className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-12 text-lg font-semibold"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    AI 분석 중...
+                  </>
+                ) : (
+                  <>
+                    <BarChart3 className="w-5 h-5 mr-2" />
+                    AI 분석 시작
+                  </>
+                )}
+              </Button>
+
+              {/* 분석 안내 */}
+              {selectedFile && !analysisResult && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                    <div className="text-xs text-green-800">
+                      <p className="font-medium">
+                        <span className="line-through text-gray-400 mr-2">
+                          2,900원
+                        </span>
+                        <span className="text-lg font-bold text-green-600">
+                          0원 무료
+                        </span>
+                      </p>
+                      <p className="mt-1">분석에는 약 30초-2분 소요됩니다.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+
+          {/* 오른쪽: 분석 결과 */}
+          <div>
+            <AnimatePresence mode="wait">
+              {analysisResult ? (
+                <motion.div
+                  key="results"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  {/* 한국어 종합 리포트 */}
+                  {analysisResult.report_ko && (
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-lg p-6 border-2 border-blue-200">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-blue-600" />
+                        종합 분석 리포트
+                      </h3>
+                      <div className="prose prose-sm max-w-none">
+                        <p className="text-gray-800 leading-relaxed whitespace-pre-line">
+                          {analysisResult.report_ko}
+                        </p>
+                      </div>
+                      {analysisResult.summary_ko && (
+                        <div className="mt-4 pt-4 border-t border-blue-200">
+                          <p className="text-sm text-blue-900 font-medium">
+                            📌 {analysisResult.summary_ko}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 트랜스크립션 */}
+                  <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      📝 트랜스크립션
+                    </h3>
+                    <div className="p-4 bg-gray-50 rounded-lg mb-4 max-h-48 overflow-y-auto">
+                      <p className="text-gray-800 leading-relaxed">
+                        {analysisResult.transcription.text ||
+                          "텍스트가 감지되지 않았습니다."}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+                      <span>
+                        언어:{" "}
+                        <strong>{analysisResult.transcription.language}</strong>
+                      </span>
+                      <span>
+                        정확도:{" "}
+                        <strong>
+                          {(
+                            analysisResult.transcription.confidence * 100
+                          ).toFixed(1)}
+                          %
+                        </strong>
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={copyTranscription}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        {copiedText ? (
+                          <>
+                            <Check className="w-4 h-4 mr-2" />
+                            복사됨
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-2" />
+                            복사
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={downloadSRT}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        SRT 다운로드
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 감정 분석 */}
+                  <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      😊 감정 분석
+                    </h3>
+                    <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-gray-600 mb-1">주요 감정</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {analysisResult.emotion.label_ko ||
+                          analysisResult.emotion.label}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        ({analysisResult.emotion.label})
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      {Object.entries(
+                        analysisResult.emotion.scores_ko ||
+                          analysisResult.emotion.scores
+                      ).map(([emotion, score]) => (
+                        <div key={emotion}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-700">
+                              {emotion}
+                            </span>
+                            <span className="text-sm font-bold text-gray-900">
+                              {(score * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${score * 100}%` }}
+                              transition={{ duration: 0.5, delay: 0.1 }}
+                              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 피치 분석 */}
+                  <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      🎵 피치 분석
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1">평균 피치</p>
+                        <p className="text-xl font-bold text-blue-600">
+                          {analysisResult.pitch.average_hz.toFixed(1)} Hz
+                        </p>
+                      </div>
+                      <div className="p-4 bg-purple-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1">
+                          피치 안정성
+                        </p>
+                        <p className="text-xl font-bold text-purple-600">
+                          {(analysisResult.pitch.pitch_stability * 100).toFixed(
+                            1
+                          )}
+                          %
+                        </p>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1">템포</p>
+                        <p className="text-xl font-bold text-green-600">
+                          {analysisResult.tempo.bpm} BPM
+                        </p>
+                      </div>
+                      <div className="p-4 bg-orange-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1">조성</p>
+                        <p className="text-xl font-bold text-orange-600">
+                          {analysisResult.key.tonic} {analysisResult.key.mode}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 메타데이터 */}
+                  <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      ℹ️ 상세 정보
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">파일명</span>
+                        <span className="font-medium text-gray-900">
+                          {analysisResult.metadata.file_name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">재생 시간</span>
+                        <span className="font-medium text-gray-900">
+                          {analysisResult.metadata.duration_seconds.toFixed(1)}
+                          초
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">이용 요금</span>
+                        <span className="font-medium">
+                          <span className="line-through text-gray-400 mr-2 text-xs">
+                            2,900원
+                          </span>
+                          <span className="text-green-600 font-bold">
+                            0원 무료
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* 추천 강사 섹션 - 분석 결과가 있을 때만 표시 */}
+        {analysisResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-12 max-w-6xl mx-auto"
+          >
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl shadow-xl p-8 text-white mb-6">
+              <h2 className="text-3xl font-bold mb-3">
+                🎤 분석 결과 기반 맞춤 레슨 추천
+              </h2>
+              <p className="text-lg text-purple-100">
+                회원님의 보컬 분석 결과를 바탕으로 최적의 강사를 추천합니다
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* 추천 강사 1: 음정 교정 전문 */}
+              <Link
+                href="/lessons"
+                className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:-translate-y-1 group"
+              >
+                <div className="flex items-start space-x-4">
+                  <img
+                    src="https://i.pravatar.cc/300?img=23"
+                    alt="강혜진"
+                    className="w-20 h-20 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          강혜진
+                        </h3>
+                        <p className="text-sm text-gray-600">음정 교정 전문</p>
+                      </div>
+                      <div className="flex items-center space-x-1 bg-yellow-50 px-2 py-1 rounded-lg">
+                        <span className="text-yellow-500 text-lg">⭐</span>
+                        <span className="text-sm font-bold text-gray-900">
+                          5.0
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <span className="inline-block bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium mr-2">
+                        추천 이유
+                      </span>
+                      <p className="text-sm text-gray-700 mt-2">
+                        {analysisResult.pitch.pitch_stability < 0.8
+                          ? "음정 안정성 향상이 필요합니다. 체계적인 음정 교정 프로그램으로 단기간 내 개선 가능합니다."
+                          : "더 높은 수준의 음정 컨트롤을 위한 전문 트레이닝을 추천합니다."}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                        #음정교정
+                      </span>
+                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                        #음역확장
+                      </span>
+                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                        #발성교정
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <span className="text-sm text-gray-600">
+                        65,000원/시간
+                      </span>
+                      <span className="text-sm font-semibold text-blue-600 group-hover:text-blue-700">
+                        자세히 보기 →
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+
+              {/* 추천 강사 2: 보컬 트레이닝 */}
+              <Link
+                href="/lessons"
+                className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:-translate-y-1 group"
+              >
+                <div className="flex items-start space-x-4">
+                  <img
+                    src="https://i.pravatar.cc/300?img=12"
+                    alt="김민수"
+                    className="w-20 h-20 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          김민수
+                        </h3>
+                        <p className="text-sm text-gray-600">보컬 트레이닝</p>
+                      </div>
+                      <div className="flex items-center space-x-1 bg-yellow-50 px-2 py-1 rounded-lg">
+                        <span className="text-yellow-500 text-lg">⭐</span>
+                        <span className="text-sm font-bold text-gray-900">
+                          4.9
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <span className="inline-block bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium mr-2">
+                        추천 이유
+                      </span>
+                      <p className="text-sm text-gray-700 mt-2">
+                        종합적인 보컬 실력 향상을 위한 체계적인 커리큘럼을
+                        제공합니다. 호흡법, 발성, 음정 등 기초부터 고급까지
+                        지도합니다.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                        #호흡법
+                      </span>
+                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                        #발성
+                      </span>
+                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                        #음정교정
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <span className="text-sm text-gray-600">
+                        50,000원/시간
+                      </span>
+                      <span className="text-sm font-semibold text-blue-600 group-hover:text-blue-700">
+                        자세히 보기 →
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </div>
+
+            <div className="mt-6 text-center">
+              <Link
+                href="/lessons"
+                className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-semibold"
+              >
+                <span>모든 강사 보기</span>
+                <span>→</span>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+
+        {/* 하단 안내 - 분석 결과가 없을 때만 표시 */}
+        {!analysisResult && (
+          <div className="mt-12 p-6 bg-white rounded-2xl shadow-lg max-w-4xl mx-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              💡 사용 안내
+            </h3>
+            <div className="grid md:grid-cols-3 gap-6 text-sm">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">지원 형식</h4>
+                <p className="text-gray-600">
+                  WAV, MP3, OGG, WEBM 형식의 오디오 파일을 업로드할 수 있습니다.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">분석 내용</h4>
+                <p className="text-gray-600">
+                  AI가 감정, 피치, 템포, 조성, 가사를 자동으로 분석합니다.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">이용 요금</h4>
+                <p className="text-gray-600">
+                  <span className="line-through text-gray-400 mr-2">
+                    2,900원
+                  </span>
+                  <span className="text-2xl font-bold text-green-600">
+                    0원 무료
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

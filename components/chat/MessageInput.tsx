@@ -48,7 +48,13 @@ export const MessageInput = memo(function MessageInput({
 
     // 포커스 유지 루프 - 모바일에서 강제 포커스
     const keepFocused = () => {
-      if (isFocused && document.activeElement !== textarea) {
+      // 모달이 열려있는지 확인 (z-index 50 이상인 요소가 있으면 모달로 간주)
+      const hasOpenModal = document.querySelector(
+        '.fixed.z-50, [role="dialog"]'
+      );
+
+      // 모달이 열려있지 않고, 현재 포커스가 textarea가 아닐 때만 강제 포커스
+      if (isFocused && !hasOpenModal && document.activeElement !== textarea) {
         textarea.focus();
       }
       requestAnimationFrame(keepFocused);
@@ -57,8 +63,17 @@ export const MessageInput = memo(function MessageInput({
     // 포커스 유지 루프 시작
     requestAnimationFrame(keepFocused);
 
-    // blur 이벤트 완전 차단
+    // blur 이벤트 완전 차단 (단, 모달이 없을 때만)
     const preventBlur = (e: FocusEvent) => {
+      const hasOpenModal = document.querySelector(
+        '.fixed.z-50, [role="dialog"]'
+      );
+
+      // 모달이 열려있으면 blur 허용
+      if (hasOpenModal) {
+        return;
+      }
+
       e.preventDefault();
       e.stopPropagation();
       textarea.focus();
@@ -123,31 +138,40 @@ export const MessageInput = memo(function MessageInput({
         return;
       }
 
+      // 먼저 포커스 저장
+      const textarea = textareaRef.current;
+      const wasFocused = textarea && document.activeElement === textarea;
+
       setMessage("");
       setSelectedFiles([]);
 
       // 텍스트 영역 높이 초기화
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "auto";
+      if (textarea) {
+        textarea.style.height = "auto";
       }
 
-      // 입력창 초기화 (DOM 리마운트 없이)
-      setMessage("");
-      setSelectedFiles([]);
+      // 키보드 유지를 위해 포커스 즉시 복구 (메시지 업데이트 전)
+      if (textarea && wasFocused) {
+        textarea.focus();
+      }
 
       // 새로고침 없이 메시지 목록만 업데이트
       onMessageSent?.();
 
-      // 키보드 절대 내려가지 않도록 강제 포커스 (즉시 + 반복)
-      const textarea = textareaRef.current;
+      // 메시지 업데이트 후에도 포커스 강제 유지
       if (textarea) {
+        // 동기 포커스
         textarea.focus();
+
+        // 비동기 포커스 (여러 타이밍에 시도)
         requestAnimationFrame(() => {
           textarea.focus();
-          setTimeout(() => textarea.focus(), 10);
-          setTimeout(() => textarea.focus(), 50);
-          setTimeout(() => textarea.focus(), 100);
         });
+        setTimeout(() => textarea.focus(), 0);
+        setTimeout(() => textarea.focus(), 10);
+        setTimeout(() => textarea.focus(), 50);
+        setTimeout(() => textarea.focus(), 100);
+        setTimeout(() => textarea.focus(), 200);
       }
     } catch (error) {
       console.error("메시지 전송 실패:", error);
@@ -223,27 +247,27 @@ export const MessageInput = memo(function MessageInput({
       )}
 
       <form onSubmit={handleSubmit} className="flex items-center space-x-3">
-        {/* + 버튼 (모바일) 또는 이미지 버튼 (데스크톱) */}
+        {/* + 버튼 (모바일 & 데스크톱) */}
         {onPlusClick ? (
           <button
             type="button"
             onClick={onPlusClick}
-            className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center md:hidden"
+            className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center"
           >
             <Plus className="w-6 h-6" />
           </button>
-        ) : null}
-
-        {/* 이미지 버튼 (데스크톱에서만 또는 onPlusClick이 없을 때) */}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={openFileDialog}
-          className={`flex-shrink-0 h-10 w-10 p-0 flex items-center justify-center ${onPlusClick ? "hidden md:flex" : ""}`}
-        >
-          <Image className="w-5 h-5" />
-        </Button>
+        ) : (
+          /* 이미지 버튼 (onPlusClick이 없을 때만) */
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={openFileDialog}
+            className="flex-shrink-0 h-10 w-10 p-0 flex items-center justify-center"
+          >
+            <Image className="w-5 h-5" />
+          </Button>
+        )}
 
         {/* 메시지 입력 */}
         <div className="flex-1 relative">
@@ -278,7 +302,6 @@ export const MessageInput = memo(function MessageInput({
         onChange={handleFileSelect}
         className="hidden"
       />
-
     </div>
   );
 });

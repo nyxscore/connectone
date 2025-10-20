@@ -53,11 +53,11 @@ export function TossPaymentDemo({
     const initializeTossPayments = async () => {
       try {
         console.log("토스페이먼츠 SDK 초기화 시작...");
-        
+
         // 재시도 로직 추가
         let retries = 0;
         const maxRetries = 3;
-        
+
         while (retries < maxRetries) {
           try {
             const tossPayments = await loadTossPayments(
@@ -68,29 +68,28 @@ export function TossPaymentDemo({
             return; // 성공하면 종료
           } catch (err) {
             retries++;
-            console.warn(`토스페이먼츠 SDK 로딩 실패 (시도 ${retries}/${maxRetries})`, err);
-            
+            console.warn(
+              `토스페이먼츠 SDK 로딩 실패 (시도 ${retries}/${maxRetries})`,
+              err
+            );
+
             if (retries < maxRetries) {
               // 재시도 전 대기
               await new Promise(resolve => setTimeout(resolve, 1000));
             }
           }
         }
-        
+
         // 모든 재시도 실패
         throw new Error("SDK 로딩 최대 재시도 초과");
-        
       } catch (error) {
         console.error("❌ 토스페이먼츠 SDK 초기화 최종 실패:", error);
-        
+
         // Mock 결제 안내 (에러가 아닌 정보로)
-        toast(
-          "💡 테스트용 Mock 결제를 사용하세요",
-          { 
-            icon: "ℹ️",
-            duration: 4000,
-          }
-        );
+        toast("💡 테스트용 Mock 결제를 사용하세요", {
+          icon: "ℹ️",
+          duration: 4000,
+        });
       }
     };
 
@@ -146,7 +145,7 @@ export function TossPaymentDemo({
       if (error.code === "USER_CANCEL") {
         toast("결제가 취소되었습니다.");
       } else {
-        // 더 구체적인 에러 메시지 제공
+        // 실제 결제 에러만 처리 (Mock 결제 안내는 제외)
         let errorMessage = "결제 요청에 실패했습니다.";
 
         if (error.code) {
@@ -179,12 +178,12 @@ export function TossPaymentDemo({
               errorMessage =
                 error.message || "결제 처리 중 오류가 발생했습니다.";
           }
-        } else {
-          errorMessage = error.message || "결제 처리 중 오류가 발생했습니다.";
-        }
 
-        toast.error(errorMessage);
-        onFail?.(errorMessage);
+          // 실제 결제 에러만 토스트 표시
+          toast.error(errorMessage);
+          onFail?.(errorMessage);
+        }
+        // error.code가 없는 경우는 조용히 처리 (Mock 결제 사용 권장)
       }
     }
   };
@@ -202,7 +201,8 @@ export function TossPaymentDemo({
       sellerUid,
     });
 
-    toast.success("테스트 결제가 완료되었습니다!");
+    // Mock 결제는 조용히 처리 (success 페이지에서 알림)
+    // toast는 success 페이지에서만 표시
 
     // 성공 페이지로 이동
     const successUrl = `${window.location.origin}/payment/success?orderId=${orderId}&amount=${totalAmount}&escrow=${escrowEnabled}&itemId=${itemId || ""}&sellerUid=${sellerUid || ""}`;

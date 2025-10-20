@@ -49,14 +49,14 @@ function PaymentSuccessContent() {
         itemId,
         sellerUid,
       });
-      
+
       // 안전결제인 경우 즉시 채팅창 열기
       if (escrow && itemId && sellerUid) {
         console.log("안전결제 완료 - 즉시 채팅창 열기");
         setShowChatModal(true);
         setAutoChatOpened(true);
       }
-      
+
       // 테스트 결제인 경우 조용히 처리
       if (orderId.startsWith("MOCK_ORDER_")) {
         console.log("테스트 결제 완료:", orderId);
@@ -118,24 +118,25 @@ function PaymentSuccessContent() {
 
             console.log("안전결제 완료 상태로 업데이트됨");
 
-            // 안전결제 완료 시스템 메시지 전송
+            // 안전결제 완료 시스템 메시지는 API에서 처리하므로 여기서는 제거
+            // (중복 알림 방지)
             try {
               const { getOrCreateChat } = await import("@/lib/chat/api");
               const chatResult = await getOrCreateChat(
                 orderInfo.itemId,
                 user.uid,
-                orderInfo.sellerUid,
-                "🎉 구매자가 안전결제를 완료했습니다!\n거래를 진행해주세요."
+                orderInfo.sellerUid
+                // 시스템 메시지는 제거 (API에서 처리)
               );
 
               if (chatResult.success) {
                 console.log(
-                  "안전결제 완료 시스템 메시지 전송 완료:",
+                  "채팅방 생성 완료 (시스템 메시지는 API에서 처리):",
                   chatResult.chatId
                 );
               }
             } catch (error) {
-              console.error("안전결제 완료 시스템 메시지 전송 실패:", error);
+              console.error("채팅방 생성 실패:", error);
             }
 
             // 상품 상태 변경 이벤트 발생

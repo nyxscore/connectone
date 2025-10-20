@@ -98,30 +98,51 @@ export function StartChatButton({
               원하시는 거래 방식을 선택해주세요
             </p>
             <div className="space-y-2">
-              {tradeOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => handleTradeTypeSelect(option)}
-                  className="w-full p-3 text-left border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-                >
-                  <span className="font-medium text-gray-900">{option}</span>
-                  {option === "안전결제" && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      거래 보호 서비스 제공
-                    </p>
-                  )}
-                  {option === "택배" && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      택배 거래
-                    </p>
-                  )}
-                  {option === "직거래" && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      직접 만나서 거래
-                    </p>
-                  )}
-                </button>
-              ))}
+              {tradeOptions.map(option => {
+                const isEscrow = option === "안전결제";
+                const isDisabled = isEscrow; // 안전결제는 비활성화
+
+                return (
+                  <button
+                    key={option}
+                    onClick={() => !isDisabled && handleTradeTypeSelect(option)}
+                    disabled={isDisabled}
+                    className={`w-full p-3 text-left border-2 rounded-lg transition-colors relative ${
+                      isDisabled
+                        ? "border-gray-200 bg-gray-50 cursor-not-allowed opacity-60"
+                        : "border-gray-200 hover:border-green-500 hover:bg-green-50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`font-medium ${isDisabled ? "text-gray-500" : "text-gray-900"}`}
+                      >
+                        {option}
+                      </span>
+                      {isDisabled && (
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
+                          🔒 준비중
+                        </span>
+                      )}
+                    </div>
+                    {option === "안전결제" && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        정식 오픈 후 이용 가능합니다
+                      </p>
+                    )}
+                    {option === "택배" && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        택배비는 개인간 합의 (계좌송금)
+                      </p>
+                    )}
+                    {option === "직거래" && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        안전한 공공장소에서 거래하세요
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

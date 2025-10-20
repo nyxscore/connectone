@@ -8,12 +8,14 @@ interface CategorySelectorProps {
   value?: string;
   onChange?: (category: string) => void;
   onSelect?: (category: any) => void;
+  onBack?: () => void;
 }
 
 export default function CategorySelector({
   value,
   onChange,
   onSelect,
+  onBack,
 }: CategorySelectorProps) {
   const [selectedTop, setSelectedTop] = useState<any>(null);
   const [selectedItem, setSelectedItem] = useState<string>("");
@@ -39,6 +41,30 @@ export default function CategorySelector({
 
   return (
     <div className="w-full space-y-6 relative pb-20">
+      {/* 뒤로가기 버튼 (onBack prop이 있을 때만 표시) */}
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors mb-4"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          <span className="font-medium">이전으로</span>
+        </button>
+      )}
+
       {/* 카테고리 카드들 - 항상 표시 */}
       <CategoryCards
         onSelect={cat => setSelectedTop(cat)}

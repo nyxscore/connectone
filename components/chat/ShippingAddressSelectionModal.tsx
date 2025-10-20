@@ -62,9 +62,11 @@ export default function ShippingAddressSelectionModal({
     setShowAddModal(false);
     loadAddresses(); // 배송지 목록 새로고침
 
-    // 새로 추가된 배송지가 있으면 자동으로 선택
+    // 새로 추가된 배송지가 있으면 자동으로 선택하고 바로 전송
     if (newAddress) {
       setSelectedAddress(newAddress);
+      // 바로 전송
+      onAddressSelect(newAddress);
     }
   };
 

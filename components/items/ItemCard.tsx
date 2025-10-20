@@ -270,13 +270,13 @@ export function ItemCard({
     >
       {/* 썸네일 */}
       <div
-        className={`aspect-square bg-gray-200 relative overflow-hidden ${isSold ? "grayscale" : ""}`}
+        className={`aspect-square bg-gray-100 relative overflow-hidden ${isSold ? "grayscale" : ""}`}
       >
         {item.images && item.images.length > 0 ? (
           <WatermarkImage
             src={item.images[0]}
             alt={`${item.brand} ${item.model}`}
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover"
             isAiProcessed={
               item.aiProcessedImages?.some(aiImg => aiImg.imageIndex === 0) ||
               false
@@ -310,23 +310,7 @@ export function ItemCard({
           {formatPrice(item.price)}
         </div>
 
-        {/* 배송 정보 표시 (구매자에게만) */}
-        {item.status === "shipping" && item.shippingInfo && isBuyer && (
-          <div className="mb-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center space-x-1 mb-1">
-              <Truck className="w-3 h-3 text-blue-600" />
-              <span className="text-xs font-medium text-blue-800">배송중</span>
-            </div>
-            <div className="text-xs text-blue-700">
-              <div className="flex items-center justify-between">
-                <span>{getCourierName(item.shippingInfo.courier)}</span>
-                <span className="font-mono">
-                  {item.shippingInfo.trackingNumber}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* 배송 정보는 상품 목록에서 제거 - 채팅에서만 표시 */}
 
         <div className="flex items-center text-xs text-gray-600 space-x-1 sm:space-x-2">
           <span className="flex items-center min-w-0">
@@ -345,8 +329,10 @@ export function ItemCard({
           </span>
         </div>
 
-        {/* 거래중 상태 표시 */}
-        {(item.status === "reserved" || item.status === "escrow_completed") && (
+        {/* 거래중 상태 표시 (배송중 포함) */}
+        {(item.status === "reserved" ||
+          item.status === "escrow_completed" ||
+          item.status === "shipping") && (
           <div className="w-full h-8 bg-orange-100 border border-orange-300 rounded-lg flex items-center justify-center mt-2">
             <Clock className="w-4 h-4 mr-1 text-orange-600" />
             <span className="text-sm font-bold text-orange-600">거래중</span>

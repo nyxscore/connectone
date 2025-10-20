@@ -347,26 +347,26 @@ export function subscribeToNotifications(
         let notifications = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-          })) as Notification[];
+        })) as Notification[];
 
-          // 클라이언트에서 시간순 정렬
-          notifications = notifications.sort((a, b) => {
-            const aTime = a.createdAt?.seconds || 0;
-            const bTime = b.createdAt?.seconds || 0;
-            return bTime - aTime; // 최신순
-          });
+        // 클라이언트에서 시간순 정렬
+        notifications = notifications.sort((a, b) => {
+          const aTime = a.createdAt?.seconds || 0;
+          const bTime = b.createdAt?.seconds || 0;
+          return bTime - aTime; // 최신순
+        });
 
-          // 최근 50개만 반환
-          notifications = notifications.slice(0, 50);
+        // 최근 50개만 반환
+        notifications = notifications.slice(0, 50);
 
-          console.log("실시간 알림 업데이트:", notifications.length, "개");
-          callback(notifications);
-        },
-        error => {
-          console.error("실시간 알림 구독 오류:", error);
-          onError?.(error);
-        }
-      );
+        console.log("실시간 알림 업데이트:", notifications.length, "개");
+        callback(notifications);
+      },
+      error => {
+        console.error("실시간 알림 구독 오류:", error);
+        onError?.(error);
+      }
+    );
   } catch (error) {
     console.error("❌ DB 초기화 오류:", error);
     onError?.(error);
@@ -460,7 +460,40 @@ export async function createTransactionUpdateNotification(data: {
   productTitle: string;
   amount: number;
   counterpartName: string;
+  itemId?: string; // 상품 ID 추가
 }): Promise<{ success: boolean; notificationId?: string; error?: string }> {
+  let actualStatus = data.status;
+  let statusLabel = data.status;
+
+  // 실제 상품 상태 확인 (itemId가 있는 경우)
+  if (data.itemId) {
+    try {
+      const { doc, getDoc } = await import("firebase/firestore");
+      const db = await getDb();
+      const itemRef = doc(db, "items", data.itemId);
+      const itemSnap = await getDoc(itemRef);
+
+      if (itemSnap.exists()) {
+        const itemData = itemSnap.data();
+        actualStatus = itemData.status || data.status;
+
+        // 실제 상태에 따른 라벨 매핑
+        const statusLabels: Record<string, string> = {
+          active: "판매중",
+          reserved: "거래중",
+          escrow_completed: "결제완료",
+          shipping: "배송중",
+          sold: "거래완료",
+          cancelled: "거래취소",
+        };
+        statusLabel = statusLabels[actualStatus] || actualStatus;
+      }
+    } catch (error) {
+      console.error("상품 상태 확인 실패:", error);
+      // 실패 시 원래 상태 사용
+    }
+  }
+
   const statusMessages: Record<string, string> = {
     paid_hold: "결제가 완료되어 안전거래가 시작되었습니다",
     shipped: "상품이 배송되었습니다",
@@ -468,19 +501,26 @@ export async function createTransactionUpdateNotification(data: {
     released: "거래가 완료되어 정산이 완료되었습니다",
     refunded: "환불이 완료되었습니다",
     cancelled: "거래가 취소되었습니다",
+    active: "상품이 다시 판매중으로 변경되었습니다",
+    reserved: "거래가 시작되었습니다",
+    escrow_completed: "안전결제가 완료되었습니다",
+    shipping: "상품이 발송되었습니다",
+    sold: "거래가 완료되었습니다",
   };
 
   return createNotification({
     userId: data.userId,
     type: "transaction_update",
     title: "거래 상태 업데이트",
-    message: `"${data.productTitle}" 거래가 ${statusMessages[data.status] || "상태가 변경되었습니다"}`,
+    message: `"${data.productTitle}" 거래가 ${statusMessages[actualStatus] || "상태가 변경되었습니다"}`,
     data: {
       transactionId: data.transactionId,
-      status: data.status,
+      status: actualStatus, // 실제 상태 사용
+      statusLabel: statusLabel, // 상태 라벨 추가
       productTitle: data.productTitle,
       amount: data.amount,
       counterpartName: data.counterpartName,
+      itemId: data.itemId,
     },
     link: `/profile/transactions`,
     priority: "high",

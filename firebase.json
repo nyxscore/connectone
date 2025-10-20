@@ -1,4 +1,10 @@
 {
+  "functions": {
+    "source": "functions"
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
     "public": "out",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
@@ -30,11 +36,11 @@
           },
           {
             "key": "Permissions-Policy",
-            "value": "geolocation=(), microphone=(), camera=()"
+            "value": "geolocation=(), microphone=(self), camera=(self)"
           },
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://*.daumcdn.net https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.daumcdn.net; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google.com https://api.ipify.org https://*.firebaseapp.com https://*.daumcdn.net; frame-src 'self' https://www.google.com https://apis.google.com https://*.firebaseapp.com https://*.daumcdn.net https://*.daum.net; frame-ancestors 'none';"
+            "value": "default-src 'self' blob: data:; media-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://*.daumcdn.net https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.daumcdn.net; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google.com https://api.ipify.org https://*.firebaseapp.com https://*.daumcdn.net https://api.replicate.com https://api.assemblyai.com blob:; frame-src 'self' https://www.google.com https://apis.google.com https://*.firebaseapp.com https://*.daumcdn.net https://*.daum.net; frame-ancestors 'none'; worker-src 'self' blob:;"
           }
         ]
       },

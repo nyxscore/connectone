@@ -15,6 +15,7 @@ import {
   profileUpdateSchema,
   ProfileUpdateInput,
 } from "../../../data/profile/schemas";
+import { KOREAN_REGIONS } from "../../../lib/utils";
 
 export default function ProfileEditPage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
@@ -176,39 +177,25 @@ export default function ProfileEditPage() {
               </p>
             </div>
 
-            {/* 지역 */}
+            {/* 거래 지역 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                지역
+                거래 지역
               </label>
-              <select
+              <input
                 {...register("region")}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">지역을 선택하세요</option>
-                <option value="서울특별시">서울특별시</option>
-                <option value="부산광역시">부산광역시</option>
-                <option value="대구광역시">대구광역시</option>
-                <option value="인천광역시">인천광역시</option>
-                <option value="광주광역시">광주광역시</option>
-                <option value="대전광역시">대전광역시</option>
-                <option value="울산광역시">울산광역시</option>
-                <option value="세종특별자치시">세종특별자치시</option>
-                <option value="경기도">경기도</option>
-                <option value="강원도">강원도</option>
-                <option value="충청북도">충청북도</option>
-                <option value="충청남도">충청남도</option>
-                <option value="전라북도">전라북도</option>
-                <option value="전라남도">전라남도</option>
-                <option value="경상북도">경상북도</option>
-                <option value="경상남도">경상남도</option>
-                <option value="제주특별자치도">제주특별자치도</option>
-              </select>
+                placeholder="예: 서울시 강남구, 경기도 성남시"
+                maxLength={50}
+              />
               {errors.region && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.region.message}
                 </p>
               )}
+              <p className="text-xs text-gray-500 mt-1">
+                직거래를 주로 하시는 지역을 입력해주세요.
+              </p>
             </div>
 
             {/* 한 줄 소개 */}
@@ -286,24 +273,3 @@ export default function ProfileEditPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

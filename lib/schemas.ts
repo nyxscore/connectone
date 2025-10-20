@@ -7,6 +7,10 @@ export const signUpSchema = z
       .min(4, "아이디는 4자 이상이어야 합니다.")
       .max(20, "아이디는 20자 이하여야 합니다.")
       .regex(/^[a-zA-Z0-9]+$/, "아이디는 영어와 숫자만 사용 가능합니다."),
+    email: z
+      .string()
+      .min(1, "이메일을 입력해주세요.")
+      .email("올바른 이메일 형식이 아닙니다."),
     password: z
       .string()
       .min(8, "비밀번호는 8자 이상이어야 합니다.")

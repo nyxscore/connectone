@@ -29,7 +29,7 @@ const convertUserProfileToUser = (
     id: profile.uid,
     uid: profile.uid,
     email: firebaseUser.email || "",
-    phoneNumber: firebaseUser.phoneNumber || undefined,
+    phoneNumber: profile.phoneNumber || firebaseUser.phoneNumber || undefined,
     nickname: profile.nickname,
     region: profile.region,
     grade: profile.grade,
@@ -39,7 +39,8 @@ const convertUserProfileToUser = (
     safeTransactionCount: 0, // UserProfile에 없으므로 기본값
     averageRating: 0, // UserProfile에 없으므로 기본값
     disputeCount: 0, // UserProfile에 없으므로 기본값
-    isPhoneVerified: false, // UserProfile에 없으므로 기본값
+    isPhoneVerified: profile.phoneVerified || false,
+    points: (profile as any).points || 0, // 포인트 필드 추가!
     createdAt: toDateSafe((profile as any).createdAt),
     updatedAt: toDateSafe((profile as any).updatedAt),
   };

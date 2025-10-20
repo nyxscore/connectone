@@ -357,6 +357,258 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
     createdAt: new Date(),
     updatedAt: new Date(),
   },
+
+  // 이메일 인증 템플릿
+  email_verification: {
+    id: "email_verification",
+    name: "이메일 인증",
+    subject: "ConnecTone - 이메일 인증을 완료해주세요",
+    htmlContent: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>이메일 인증</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
+          .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; }
+          .content { padding: 40px 20px; }
+          .verification-card { background-color: #f8fafc; border-radius: 12px; padding: 32px; margin: 20px 0; text-align: center; border: 2px solid #e2e8f0; }
+          .verification-code { font-size: 32px; font-weight: 700; color: #667eea; margin: 20px 0; letter-spacing: 4px; font-family: monospace; }
+          .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; margin: 24px 0; }
+          .warning-box { background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0; }
+          .warning-text { color: #92400e; font-size: 14px; margin: 0; }
+          .footer { background-color: #f7fafc; padding: 24px 20px; text-align: center; color: #718096; font-size: 14px; }
+          .footer a { color: #667eea; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎵 ConnecTone</h1>
+          </div>
+          <div class="content">
+            <h2 style="color: #1a202c; margin-bottom: 24px;">이메일 인증을 완료해주세요</h2>
+            
+            <p style="color: #4a5568; margin-bottom: 24px;">
+              안녕하세요, {{nickname}}님!<br>
+              ConnecTone 회원가입을 완료하기 위해 이메일 인증이 필요합니다.
+            </p>
+            
+            <div class="verification-card">
+              <h3 style="color: #1a202c; margin-bottom: 16px;">인증 코드</h3>
+              <div class="verification-code">{{verificationCode}}</div>
+              <p style="color: #718096; font-size: 14px; margin: 0;">
+                위 코드를 앱에 입력하여 이메일 인증을 완료해주세요.
+              </p>
+            </div>
+            
+            <div class="warning-box">
+              <p class="warning-text">
+                ⚠️ 이 인증 코드는 {{expiryMinutes}}분 후에 만료됩니다.<br>
+                코드를 안전하게 보관하고 타인에게 공유하지 마세요.
+              </p>
+            </div>
+            
+            <div style="text-align: center;">
+              <a href="{{verificationUrl}}" class="cta-button">인증 완료하기</a>
+            </div>
+            
+            <p style="color: #718096; font-size: 14px; margin-top: 24px;">
+              만약 회원가입을 하지 않으셨다면 이 이메일을 무시해주세요.
+            </p>
+          </div>
+          <div class="footer">
+            <p>이 이메일은 ConnecTone에서 자동으로 발송되었습니다.</p>
+            <p><a href="{{supportUrl}}">고객지원</a> | <a href="{{privacyUrl}}">개인정보처리방침</a></p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    textContent: `
+      ConnecTone - 이메일 인증을 완료해주세요
+      
+      안녕하세요, {{nickname}}님!
+      
+      ConnecTone 회원가입을 완료하기 위해 이메일 인증이 필요합니다.
+      
+      인증 코드: {{verificationCode}}
+      
+      위 코드를 앱에 입력하여 이메일 인증을 완료해주세요.
+      
+      ⚠️ 이 인증 코드는 {{expiryMinutes}}분 후에 만료됩니다.
+      코드를 안전하게 보관하고 타인에게 공유하지 마세요.
+      
+      인증 완료하기: {{verificationUrl}}
+      
+      만약 회원가입을 하지 않으셨다면 이 이메일을 무시해주세요.
+      
+      ---
+      ConnecTone
+      고객지원: {{supportUrl}}
+      개인정보처리방침: {{privacyUrl}}
+    `,
+    variables: [
+      "nickname",
+      "verificationCode",
+      "verificationUrl",
+      "expiryMinutes",
+      "supportUrl",
+      "privacyUrl",
+    ],
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+
+  // 핸드폰 인증 템플릿 (SMS용)
+  phone_verification: {
+    id: "phone_verification",
+    name: "핸드폰 인증",
+    subject: "ConnecTone 핸드폰 인증",
+    htmlContent: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>핸드폰 인증</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
+          .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; }
+          .content { padding: 40px 20px; }
+          .verification-card { background-color: #f8fafc; border-radius: 12px; padding: 32px; margin: 20px 0; text-align: center; border: 2px solid #e2e8f0; }
+          .verification-code { font-size: 32px; font-weight: 700; color: #667eea; margin: 20px 0; letter-spacing: 4px; font-family: monospace; }
+          .warning-box { background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0; }
+          .warning-text { color: #92400e; font-size: 14px; margin: 0; }
+          .footer { background-color: #f7fafc; padding: 24px 20px; text-align: center; color: #718096; font-size: 14px; }
+          .footer a { color: #667eea; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎵 ConnecTone</h1>
+          </div>
+          <div class="content">
+            <h2 style="color: #1a202c; margin-bottom: 24px;">핸드폰 인증</h2>
+            
+            <p style="color: #4a5568; margin-bottom: 24px;">
+              ConnecTone 핸드폰 인증을 위해 아래 코드를 입력해주세요.
+            </p>
+            
+            <div class="verification-card">
+              <h3 style="color: #1a202c; margin-bottom: 16px;">인증 코드</h3>
+              <div class="verification-code">{{verificationCode}}</div>
+              <p style="color: #718096; font-size: 14px; margin: 0;">
+                위 코드를 앱에 입력하여 핸드폰 인증을 완료해주세요.
+              </p>
+            </div>
+            
+            <div class="warning-box">
+              <p class="warning-text">
+                ⚠️ 이 인증 코드는 {{expiryMinutes}}분 후에 만료됩니다.<br>
+                코드를 안전하게 보관하고 타인에게 공유하지 마세요.
+              </p>
+            </div>
+            
+            <p style="color: #718096; font-size: 14px; margin-top: 24px;">
+              본인이 요청한 인증이 아니라면 이 메시지를 무시해주세요.
+            </p>
+          </div>
+          <div class="footer">
+            <p>이 메시지는 ConnecTone에서 자동으로 발송되었습니다.</p>
+            <p><a href="{{supportUrl}}">고객지원</a></p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    textContent: `
+      ConnecTone 핸드폰 인증
+      
+      ConnecTone 핸드폰 인증을 위해 아래 코드를 입력해주세요.
+      
+      인증 코드: {{verificationCode}}
+      
+      위 코드를 앱에 입력하여 핸드폰 인증을 완료해주세요.
+      
+      ⚠️ 이 인증 코드는 {{expiryMinutes}}분 후에 만료됩니다.
+      코드를 안전하게 보관하고 타인에게 공유하지 마세요.
+      
+      본인이 요청한 인증이 아니라면 이 메시지를 무시해주세요.
+      
+      ---
+      ConnecTone
+      고객지원: {{supportUrl}}
+    `,
+    variables: ["verificationCode", "expiryMinutes", "supportUrl"],
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+
+  // 기본 템플릿
+  default: {
+    id: "default",
+    name: "기본 템플릿",
+    subject: "ConnecTone 알림",
+    htmlContent: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ConnecTone 알림</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
+          .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; }
+          .content { padding: 40px 20px; }
+          .footer { background-color: #f7fafc; padding: 24px 20px; text-align: center; color: #718096; font-size: 14px; }
+          .footer a { color: #667eea; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎵 ConnecTone</h1>
+          </div>
+          <div class="content">
+            <h2 style="color: #1a202c; margin-bottom: 24px;">{{title}}</h2>
+            <p style="color: #4a5568; line-height: 1.6;">{{content}}</p>
+          </div>
+          <div class="footer">
+            <p>이 이메일은 ConnecTone에서 자동으로 발송되었습니다.</p>
+            <p><a href="{{supportUrl}}">고객지원</a></p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    textContent: `
+      ConnecTone 알림
+      
+      {{title}}
+      
+      {{content}}
+      
+      ---
+      ConnecTone
+      고객지원: {{supportUrl}}
+    `,
+    variables: ["title", "content", "supportUrl"],
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
 };
 
 // 상태별 색상 매핑
@@ -391,31 +643,3 @@ export const STATUS_DESCRIPTIONS = {
   refunded: "거래가 취소되어 환불이 처리되었습니다.",
   cancelled: "거래가 취소되었습니다.",
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

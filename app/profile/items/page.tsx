@@ -41,7 +41,7 @@ function MyItemsPageContent() {
 
   // 탭 상태 관리
   const [activeTab, setActiveTab] = useState<
-    "selling" | "trading" | "buying" | "sold" | "payment_completed"
+    "selling" | "trading" | "buying" | "sold" | "payment_completed" | "shipping"
   >("selling");
 
   // 외부 클릭 시 메뉴 닫기
@@ -76,7 +76,12 @@ function MyItemsPageContent() {
         // 새로운 API 사용
         const result = await getMyItems({
           userId,
-          type: activeTab as "selling" | "trading" | "buying" | "sold",
+          type: activeTab as
+            | "selling"
+            | "trading"
+            | "buying"
+            | "sold"
+            | "shipping",
         });
 
         if (result.success && result.items) {
@@ -341,6 +346,16 @@ function MyItemsPageContent() {
                 구매중
               </button>
               <button
+                onClick={() => setActiveTab("shipping")}
+                className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
+                  activeTab === "shipping"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                배송중
+              </button>
+              <button
                 onClick={() => setActiveTab("sold")}
                 className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                   activeTab === "sold"
@@ -391,9 +406,11 @@ function MyItemsPageContent() {
                         ? "거래중인 상품이 없습니다."
                         : activeTab === "buying"
                           ? "구매중인 상품이 없습니다."
-                          : activeTab === "payment_completed"
-                            ? "결제 완료된 상품이 없습니다."
-                            : "거래완료된 상품이 없습니다."}
+                          : activeTab === "shipping"
+                            ? "배송중인 상품이 없습니다."
+                            : activeTab === "payment_completed"
+                              ? "결제 완료된 상품이 없습니다."
+                              : "거래완료된 상품이 없습니다."}
                 </p>
                 <p className="text-gray-400 text-xs sm:text-sm">
                   {isViewingOtherUser
@@ -404,9 +421,11 @@ function MyItemsPageContent() {
                         ? "현재 진행중인 거래가 없습니다."
                         : activeTab === "buying"
                           ? "구매중인 상품이 없습니다."
-                          : activeTab === "payment_completed"
-                            ? "결제가 완료된 상품이 없습니다."
-                            : "완료된 거래가 없습니다."}
+                          : activeTab === "shipping"
+                            ? "배송중인 상품이 없습니다."
+                            : activeTab === "payment_completed"
+                              ? "결제가 완료된 상품이 없습니다."
+                              : "완료된 거래가 없습니다."}
                 </p>
               </div>
             </div>

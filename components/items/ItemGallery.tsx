@@ -286,7 +286,7 @@ export function ItemGallery({
       {/* 풀스크린 모달 */}
       {isFullscreen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-90 z-[9999] flex items-center justify-center"
+          className="fixed inset-0 bg-black z-[9999] flex items-center justify-center"
           onClick={closeFullscreen}
         >
           <div
@@ -307,7 +307,7 @@ export function ItemGallery({
               {/* 이미지 슬라이드 */}
               <div className="slides relative overflow-hidden">
                 <div
-                  className="image-frame relative mx-auto bg-black/90 rounded-lg overflow-hidden flex items-center justify-center"
+                  className="image-frame relative mx-auto bg-black rounded-lg overflow-hidden flex items-center justify-center"
                   style={{
                     width: "min(760px, 90vw)",
                     height: "80vh",

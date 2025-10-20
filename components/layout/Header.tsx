@@ -16,7 +16,7 @@ import {
   subscribeToNotifications,
   subscribeToUnreadNotificationCount,
 } from "../../lib/api/notifications";
-import { Notification } from "../../data/types";
+import { Notification } from "../../data/types/index";
 import {
   MessageCircle,
   Menu,
@@ -66,7 +66,32 @@ export function Header() {
     const unsubscribe = subscribeToUnreadCount(
       user.uid,
       count => {
+        const previousCount = unreadCount;
         setUnreadCount(count);
+
+        // 새로운 메시지가 있을 때 브라우저 알림 표시
+        if (count > previousCount && previousCount > 0) {
+          // 브라우저 알림 권한 확인 및 요청
+          if (Notification.permission === "granted") {
+            new Notification("ConnecTone", {
+              body: `새로운 메시지가 ${count - previousCount}개 도착했습니다!`,
+              icon: "/favicon.ico",
+              badge: "/favicon.ico",
+              tag: "new-message",
+            });
+          } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(permission => {
+              if (permission === "granted") {
+                new Notification("ConnecTone", {
+                  body: `새로운 메시지가 ${count - previousCount}개 도착했습니다!`,
+                  icon: "/favicon.ico",
+                  badge: "/favicon.ico",
+                  tag: "new-message",
+                });
+              }
+            });
+          }
+        }
       },
       error => {
         console.error("읽지 않은 메시지 구독 오류:", error);
@@ -212,17 +237,20 @@ export function Header() {
               상품 등록
             </Link>
             <Link
-              href={user ? "/chat" : "/auth/login?next=/chat"}
-              className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors"
+              href={
+                user ? "/vocal-analysis" : "/auth/login?next=/vocal-analysis"
+              }
+              className="text-gray-700 hover:text-blue-600 transition-colors"
             >
-              <MessageCircle className="w-4 h-4" />
-              <span>채팅</span>
-              {user && unreadCount > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
+              AI 음악 분석
             </Link>
+            {/* 임시로 비활성화 */}
+            {/* <Link
+              href="/lessons"
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
+              개인레슨
+            </Link> */}
           </nav>
 
           {/* 데스크톱 사용자 메뉴 */}
@@ -352,72 +380,214 @@ export function Header() {
                         </div>
                       ) : notifications.length > 0 ? (
                         <>
-                          <div className="flex justify-end px-2 py-1">
+                          <div className="flex justify-end items-center gap-3 px-2 py-1">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  // 모든 읽지 않은 알림을 읽음 처리
+                                  const unreadNotifications =
+                                    notifications.filter(n => !n.read);
+                                  await Promise.all(
+                                    unreadNotifications.map(n =>
+                                      markNotificationAsRead(n.id)
+                                    )
+                                  );
+                                  toast.success(
+                                    "모든 알림을 읽음 처리했습니다."
+                                  );
+                                } catch (error) {
+                                  console.error("알림 읽음 처리 실패:", error);
+                                  toast.error("알림 읽음 처리에 실패했습니다.");
+                                }
+                              }}
+                              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                              모두 읽음
+                            </button>
                             <button
                               onClick={handleDeleteAllNotifications}
-                              className="text-xs text-red-600 hover:text-red-700"
+                              className="text-xs text-red-600 hover:text-red-700 font-medium"
                             >
                               모두 삭제
                             </button>
                           </div>
-                          {notifications.map(notification => (
-                            <div
-                              key={notification.id}
-                              className={`flex items-start justify-between px-3 py-2 rounded-lg group cursor-pointer transition-colors ${
-                                notification.isRead
-                                  ? "hover:bg-gray-50"
-                                  : "bg-blue-50 hover:bg-blue-100"
-                              }`}
-                              onClick={() =>
-                                handleNotificationClick(notification)
+                          {notifications.map(notification => {
+                            // 상태별 색상 매핑
+                            const getStatusColor = (status: string) => {
+                              switch (status) {
+                                case "active":
+                                  return "bg-green-100 text-green-800";
+                                case "reserved":
+                                case "escrow_completed":
+                                  return "bg-orange-100 text-orange-800";
+                                case "shipping":
+                                  return "bg-blue-100 text-blue-800";
+                                case "sold":
+                                  return "bg-purple-100 text-purple-800";
+                                case "cancelled":
+                                  return "bg-red-100 text-red-800";
+                                default:
+                                  return "bg-gray-100 text-gray-800";
                               }
-                            >
-                              <div className="flex-1 pr-2">
-                                <p
-                                  className={`text-xs ${
-                                    notification.isRead
-                                      ? "text-gray-600"
-                                      : "text-blue-900 font-medium"
-                                  }`}
-                                >
-                                  {notification.message}
-                                </p>
-                                <div className="flex items-center justify-between mt-1">
-                                  <p className="text-xs text-gray-400">
-                                    {notification.createdAt &&
-                                      new Date(
-                                        notification.createdAt.seconds * 1000
-                                      ).toLocaleString("ko-KR", {
-                                        month: "short",
-                                        day: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}
-                                  </p>
-                                  {/* 모바일용 작은 X 버튼 */}
-                                  <button
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      handleDeleteNotification(notification.id);
-                                    }}
-                                    className="md:hidden text-gray-400 hover:text-red-600 transition-colors"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              </div>
-                              {/* 데스크톱용 삭제 버튼 */}
-                              <button
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleDeleteNotification(notification.id);
-                                }}
-                                className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            };
+
+                            // 알림 메시지 내용으로 실제 상태 추론
+                            const getActualStatusFromMessage = (
+                              message: string,
+                              currentStatus: string
+                            ) => {
+                              if (!message) return currentStatus;
+
+                              // 취소 관련 메시지들 (최우선 처리)
+                              if (
+                                message.includes("취소") ||
+                                message.includes("거부") ||
+                                message.includes("거래가 취소되었습니다") ||
+                                message.includes("거래 취소") ||
+                                message.includes("요청을 승인했습니다") ||
+                                message.includes("요청을 거절했습니다")
+                              ) {
+                                return "cancelled";
+                              }
+
+                              // 거래 완료 메시지들
+                              if (
+                                message.includes("완료") &&
+                                message.includes("거래") &&
+                                !message.includes("취소")
+                              ) {
+                                return "sold";
+                              }
+
+                              // 결제 완료 메시지들
+                              if (
+                                message.includes("안전결제") &&
+                                message.includes("완료")
+                              ) {
+                                return "escrow_completed";
+                              }
+
+                              // 거래 시작 메시지들
+                              if (
+                                message.includes("거래") &&
+                                message.includes("시작")
+                              ) {
+                                return "reserved";
+                              }
+
+                              // 판매중으로 변경 메시지들
+                              if (
+                                message.includes("판매중") ||
+                                message.includes("다시 판매")
+                              ) {
+                                return "active";
+                              }
+
+                              // 배송 관련 메시지들 (취소가 아닌 경우에만)
+                              if (
+                                (message.includes("발송") ||
+                                  message.includes("배송")) &&
+                                !message.includes("취소")
+                              ) {
+                                return "shipping";
+                              }
+
+                              return currentStatus;
+                            };
+
+                            const actualStatus = getActualStatusFromMessage(
+                              notification.message,
+                              notification.data?.status || "active"
+                            );
+
+                            return (
+                              <div
+                                key={notification.id}
+                                className={`flex items-start justify-between px-3 py-2 rounded-lg group cursor-pointer transition-colors ${
+                                  notification.isRead
+                                    ? "hover:bg-gray-50"
+                                    : "bg-blue-50 hover:bg-blue-100"
+                                }`}
+                                onClick={() =>
+                                  handleNotificationClick(notification)
+                                }
                               >
-                                <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-600" />
-                              </button>
-                            </div>
-                          ))}
+                                <div className="flex-1 pr-2">
+                                  <p
+                                    className={`text-xs ${
+                                      notification.isRead
+                                        ? "text-gray-600"
+                                        : "text-blue-900 font-medium"
+                                    }`}
+                                  >
+                                    {notification.message}
+                                  </p>
+                                  <div className="flex items-center justify-between mt-1">
+                                    <div className="flex items-center space-x-2">
+                                      <p className="text-xs text-gray-400">
+                                        {notification.createdAt &&
+                                          new Date(
+                                            notification.createdAt.seconds *
+                                              1000
+                                          ).toLocaleString("ko-KR", {
+                                            month: "short",
+                                            day: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
+                                      </p>
+                                      {/* 상태 태그 표시 - 실제 상태 기반 */}
+                                      {actualStatus && (
+                                        <span
+                                          className={`px-2 py-0.5 text-xs rounded-full font-medium ${getStatusColor(actualStatus)}`}
+                                        >
+                                          {(() => {
+                                            const statusLabels: Record<
+                                              string,
+                                              string
+                                            > = {
+                                              active: "판매중",
+                                              reserved: "거래중",
+                                              escrow_completed: "결제완료",
+                                              shipping: "배송중",
+                                              sold: "거래완료",
+                                              cancelled: "거래취소",
+                                            };
+                                            return (
+                                              statusLabels[actualStatus] ||
+                                              actualStatus
+                                            );
+                                          })()}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {/* 모바일용 작은 X 버튼 */}
+                                    <button
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        handleDeleteNotification(
+                                          notification.id
+                                        );
+                                      }}
+                                      className="md:hidden text-gray-400 hover:text-red-600 transition-colors"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                                {/* 데스크톱용 삭제 버튼 */}
+                                <button
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    handleDeleteNotification(notification.id);
+                                  }}
+                                  className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                >
+                                  <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-600" />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </>
                       ) : (
                         <div className="px-3 py-4 text-center">
@@ -453,22 +623,22 @@ export function Header() {
                 상품 등록
               </Link>
               <Link
-                href={user ? "/chat" : "/auth/login?next=/chat"}
+                href={
+                  user ? "/vocal-analysis" : "/auth/login?next=/vocal-analysis"
+                }
                 className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <MessageCircle className="w-4 h-4" />
-                    <span>채팅</span>
-                  </div>
-                  {user && unreadCount > 0 && (
-                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </div>
+                AI 음악 분석
               </Link>
+              {/* 임시로 비활성화 */}
+              {/* <Link
+                href="/lessons"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                개인레슨
+              </Link> */}
             </div>
 
             {/* 프로필 관련 메뉴 */}
@@ -493,6 +663,22 @@ export function Header() {
           </div>
         )}
       </div>
+
+      {/* 플로팅 채팅 버튼 */}
+      {user && (
+        <Link href="/chat" className="fixed bottom-6 right-6 z-50 group">
+          <div className="relative">
+            <button className="rounded-full shadow-lg bg-blue-600 text-white p-4 hover:bg-blue-700 transition-all transform hover:scale-110">
+              <MessageCircle className="w-6 h-6" />
+            </button>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold animate-pulse">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
+        </Link>
+      )}
     </header>
   );
 }

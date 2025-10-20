@@ -181,6 +181,17 @@ export function ProfileAbout({
           </form>
         ) : (
           <div className="space-y-4">
+            {/* 거래 지역 */}
+            {user.region && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  거래 지역
+                </h3>
+                <p className="text-gray-900">{user.region}</p>
+              </div>
+            )}
+
             {/* 한 줄 소개 */}
             {user.introShort && (
               <div>

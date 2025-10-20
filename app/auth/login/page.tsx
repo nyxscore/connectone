@@ -665,29 +665,32 @@ export default function LoginPage() {
 
           {/* 하단 링크들 */}
           <div className="mt-8 space-y-4">
-            {/* 로그인/회원가입 토글 */}
+            {/* 로그인/회원가입 링크 */}
             <div className="text-center">
-              <button
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  // 폼 초기화
-                  if (isSignUp) {
+              {isSignUp ? (
+                <button
+                  onClick={() => {
+                    setIsSignUp(false);
+                    // 폼 초기화
                     loginForm.reset();
-                  } else {
-                    signUpForm.reset();
-                    setUsernameChecked(false);
-                    setUsernameAvailable(null);
-                  }
-                }}
-                className="text-blue-600 hover:text-blue-500 font-medium"
-              >
-                {isSignUp ? "로그인하기" : "회원가입하기"}
-              </button>
+                  }}
+                  className="text-blue-600 hover:text-blue-500 font-medium"
+                >
+                  로그인하기
+                </button>
+              ) : (
+                <Link
+                  href="/auth/signup"
+                  className="text-blue-600 hover:text-blue-500 font-medium"
+                >
+                  회원가입하기
+                </Link>
+              )}
             </div>
 
             {/* 기타 링크들 */}
             <div className="flex justify-center space-x-4 text-sm text-gray-600">
-              <Link href="/auth/reset-password" className="hover:text-blue-600">
+              <Link href="/auth/find-email" className="hover:text-blue-600">
                 아이디 찾기
               </Link>
               <span className="text-gray-300">|</span>

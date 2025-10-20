@@ -400,3 +400,8 @@ export const handleRedirectResult = async () => {
 
 // getRedirectResult를 firebaseGetRedirectResult로 export
 export { firebaseGetRedirectResult };
+
+// 직접 사용할 수 있도록 인스턴스 export
+export const auth = getFirebaseAuth();
+export const db = getFirebaseDb();
+export const storage = getFirebaseStorage();

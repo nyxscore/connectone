@@ -44,8 +44,8 @@ const getErrorMessage = (error: FirebaseAuthError): string => {
 // 회원가입
 export const signUp = async (data: SignUpData): Promise<User> => {
   try {
-    // 아이디를 이메일로 변환
-    const email = usernameToEmail(data.username);
+    // 실제 이메일 사용
+    const email = data.email;
 
     // Firebase Auth로 사용자 생성
     const userCredential = await createUserWithEmailAndPassword(
@@ -61,6 +61,7 @@ export const signUp = async (data: SignUpData): Promise<User> => {
     const userData: Omit<User, "createdAt" | "updatedAt"> = {
       uid: firebaseUser.uid,
       username: data.username,
+      email: data.email,
       nickname: data.nickname,
       region: data.region,
       grade: "C",

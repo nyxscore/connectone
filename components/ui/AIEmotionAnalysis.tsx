@@ -38,14 +38,17 @@ export const AIEmotionAnalysis = ({
     setError(null);
 
     try {
-      // 실제 Vision API 호출
-      const response = await fetch("/api/vision/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ imageUrl: imageDataUrl }),
-      });
+      // Firebase Cloud Function으로 Vision API 호출
+      const response = await fetch(
+        "https://us-central1-connectone-8b414.cloudfunctions.net/analyzeImage",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ imageUrl: imageDataUrl }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Vision API 호출 실패");
