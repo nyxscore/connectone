@@ -676,8 +676,3 @@ export default function FeedbackViewPage() {
     </div>
   );
 }
-
-
-
-
-

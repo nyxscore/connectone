@@ -5,6 +5,7 @@ export type UserGrade = "C" | "D" | "E" | "F" | "G" | "A" | "B";
 export interface UserProfile {
   uid: string;
   nickname: string;
+  email?: string; // 이메일 (선택적)
   region: string; // 시/군/구
   photoURL?: string; // 아바타
   grade: UserGrade; // 등급
