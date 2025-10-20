@@ -763,30 +763,35 @@ export function EnhancedChatModal({
 
         // 없으면 Firestore에서 가져오기
         let otherUser: UserProfile | null = null;
-        console.log("저장된 상대방 정보:", storedOtherUser);
+        console.log("🔍 저장된 상대방 정보:", storedOtherUser);
+        console.log("🔍 otherUid:", otherUid);
 
         if (
           !storedOtherUser?.nickname ||
           (!storedOtherUser?.profileImage && !storedOtherUser?.photoURL)
         ) {
-          console.log("상대방 프로필을 Firestore에서 가져오기:", otherUid);
+          console.log("🔍 상대방 프로필을 Firestore에서 가져오기:", otherUid);
           const otherUserResult = await getUserProfile(otherUid);
-          console.log("상대방 프로필 로드 결과:", otherUserResult);
+          console.log("🔍 상대방 프로필 로드 결과:", otherUserResult);
           otherUser =
             otherUserResult.success && otherUserResult.data
               ? otherUserResult.data
               : null;
           if (otherUser) {
+            console.log("✅ 상대방 프로필 설정 완료:", otherUser);
             setOtherUserProfile(otherUser);
+          } else {
+            console.log("❌ 상대방 프로필 로드 실패");
           }
         } else {
-          console.log("저장된 상대방 정보 사용:", storedOtherUser);
+          console.log("🔍 저장된 상대방 정보 사용:", storedOtherUser);
           // photoURL을 profileImage로 매핑
           const mappedUser = {
             ...storedOtherUser,
             profileImage:
               storedOtherUser.profileImage || storedOtherUser.photoURL,
           };
+          console.log("✅ 매핑된 상대방 정보 설정:", mappedUser);
           setOtherUserProfile(mappedUser as UserProfile);
         }
 
