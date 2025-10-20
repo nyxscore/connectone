@@ -288,12 +288,12 @@ export function ItemCard({
             {(item as any).tradeType === "buy" ? (
               <div className="text-center px-4">
                 <div className="text-4xl mb-2">🔍</div>
-                <div className="text-lg font-bold text-gray-700">구매합니다</div>
+                <div className="text-lg font-bold text-gray-700">
+                  구매합니다
+                </div>
               </div>
             ) : (
-              <div className="text-4xl">
-                {getCategoryIcon(item.category)}
-              </div>
+              <div className="text-4xl">{getCategoryIcon(item.category)}</div>
             )}
           </div>
         )}
