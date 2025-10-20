@@ -58,27 +58,23 @@ export async function getUserProfile(
       introLong: userData.introLong || "",
     } as UserProfile;
 
-    // 응답률이 없거나 오래된 경우 업데이트
-    if (!userData.responseRate || !userData.lastResponseRateUpdate) {
-      try {
-        // calculateResponseRate는 이미 import됨
-        const responseRate = await calculateResponseRate(uid);
-
-        // 응답률 업데이트
-        const userRef = doc(db, "users", uid);
-        await updateDoc(userRef, {
-          responseRate,
-          lastResponseRateUpdate: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-
-        profile.responseRate = responseRate;
-        console.log("사용자 응답률 자동 업데이트:", { uid, responseRate });
-      } catch (error) {
-        console.error("응답률 계산 실패:", error);
-        // 응답률 계산 실패해도 프로필은 반환
-      }
-    }
+    // 응답률 자동 계산 비활성화 (성능 문제로 인해)
+    // TODO: 백그라운드 작업으로 처리하거나, 주기적인 배치 작업으로 변경 필요
+    // if (!userData.responseRate || !userData.lastResponseRateUpdate) {
+    //   try {
+    //     const responseRate = await calculateResponseRate(uid);
+    //     const userRef = doc(db, "users", uid);
+    //     await updateDoc(userRef, {
+    //       responseRate,
+    //       lastResponseRateUpdate: serverTimestamp(),
+    //       updatedAt: serverTimestamp(),
+    //     });
+    //     profile.responseRate = responseRate;
+    //     console.log("사용자 응답률 자동 업데이트:", { uid, responseRate });
+    //   } catch (error) {
+    //     console.error("응답률 계산 실패:", error);
+    //   }
+    // }
 
     return {
       success: true,
