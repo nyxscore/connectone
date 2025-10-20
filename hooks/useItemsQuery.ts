@@ -68,7 +68,21 @@ export function useItemsQuery(
 
         const result = await getItemList(queryOptions);
 
+        console.log("📦 getItemList 결과:", {
+          success: result.success,
+          itemsCount: result.items?.length || 0,
+          error: result.error,
+          filters: queryOptions.filters,
+        });
+
         if (result.success && result.items) {
+          console.log("✅ 상품 로드 성공:", result.items.length, "개");
+          console.log("상품 샘플:", result.items.slice(0, 3).map(i => ({
+            id: i.id,
+            title: i.title,
+            status: i.status,
+          })));
+          
           if (reset) {
             setItems(result.items);
           } else {
@@ -77,6 +91,7 @@ export function useItemsQuery(
           setLastDoc(result.lastDoc);
           setHasMore(result.items.length === limit);
         } else {
+          console.error("❌ 상품 로드 실패:", result.error);
           setError(result.error || "상품을 불러오는데 실패했습니다.");
         }
       } catch (err) {
@@ -109,7 +124,8 @@ export function useItemsQuery(
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]); // loadItems는 의도적으로 제외 (무한 루프 방지)
 
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {

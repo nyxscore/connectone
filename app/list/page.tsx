@@ -40,11 +40,12 @@ export default function ListPage() {
     limit: 20,
   });
 
-  // 페이지 마운트 시 필터 초기화
+  // 페이지 마운트 시 필터 초기화 (한 번만 실행)
   useEffect(() => {
     console.log("ListPage 마운트됨 - 필터 초기화");
     setFilters({});
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 마운트 시 한 번만 실행
 
   // 무한 스크롤 설정
   useEffect(() => {
