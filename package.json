@@ -18,7 +18,10 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "vitest run test/e2e",
     "test:unit": "vitest run test/unit",
-    "test:integration": "vitest run test/integration"
+    "test:integration": "vitest run test/integration",
+    "deploy": "git push origin main && npx --yes firebase-tools deploy --only firestore:rules",
+    "deploy:firebase": "npx --yes firebase-tools deploy --only firestore:rules",
+    "deploy:vercel": "git push origin main"
   },
   "dependencies": {
     "@firebase/auth": "^1.11.0",
