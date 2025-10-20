@@ -450,7 +450,7 @@ export default function ProductWizardPage() {
                           })}
                           placeholder={
                             formData.tradeType === "buy"
-                              ? "예: 아이폰 15 Pro 구매합니다"
+                              ? "예: 야마하 디지털 피아노 구매합니다"
                               : "상품명을 입력해주세요"
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
