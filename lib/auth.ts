@@ -89,15 +89,24 @@ export const signUp = async (data: SignUpData): Promise<User> => {
 // 로그인
 export const signIn = async (data: LoginData): Promise<FirebaseUser> => {
   try {
-    // 아이디를 이메일로 변환
-    const email = usernameToEmail(data.username);
-
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      data.password
-    );
-    return userCredential.user;
+    // 먼저 아이디로 시도 (새로운 방식)
+    try {
+      const email = usernameToEmail(data.username);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        data.password
+      );
+      return userCredential.user;
+    } catch (firstError) {
+      // 아이디로 실패하면 실제 이메일로 시도 (기존 사용자)
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        data.username, // username이 실제 이메일일 수도 있음
+        data.password
+      );
+      return userCredential.user;
+    }
   } catch (error) {
     const authError = error as FirebaseAuthError;
     throw new Error(getErrorMessage(authError));
