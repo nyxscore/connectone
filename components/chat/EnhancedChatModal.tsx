@@ -3226,7 +3226,7 @@ export function EnhancedChatModal({
                 <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-red-600 mb-2">
-                    ⚠️ 안전 거래 가이드
+                    안전 거래 가이드
                   </p>
                   <div className="space-y-1">
                     <p className="text-xs text-gray-700 font-semibold">
@@ -3248,7 +3248,10 @@ export function EnhancedChatModal({
                       • 수령 확인 후 거래완료 처리하세요
                     </p>
                     <p className="text-xs text-red-600 mt-2 font-semibold">
-                      ⚠️ 선입금, 외부 링크 클릭 요청은 거부하세요!
+                      선입금 요청은 거부하세요!
+                    </p>
+                    <p className="text-xs text-red-600 font-semibold">
+                      시세보다 지나치게 저렴한 물건을 주의하세요
                     </p>
                   </div>
                 </div>
