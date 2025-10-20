@@ -4,7 +4,13 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { CheckCircle, Home, Package, MessageCircle, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  Home,
+  Package,
+  MessageCircle,
+  XCircle,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { EnhancedChatModal } from "@/components/chat/EnhancedChatModal";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -256,10 +262,48 @@ function PaymentSuccessContent() {
                 거래 내역 보기
               </Button>
               <Button
-                onClick={() => {
-                  if (confirm("정말로 거래를 취소하시겠습니까?")) {
-                    toast.success("거래 취소 요청이 전송되었습니다.");
-                    // TODO: 실제 거래 취소 API 호출
+                onClick={async () => {
+                  if (!orderInfo.itemId || !user?.uid) {
+                    toast.error("거래 정보를 찾을 수 없습니다.");
+                    return;
+                  }
+
+                  const confirmMessage = orderInfo.escrow
+                    ? "정말로 거래를 취소하시겠습니까?\n안전결제가 취소되고 환불이 처리됩니다."
+                    : "정말로 거래를 취소하시겠습니까?\n상품 상태가 '판매중'으로 변경됩니다.";
+
+                  if (confirm(confirmMessage)) {
+                    try {
+                      // Firebase에서 거래 취소 처리
+                      const { doc, updateDoc } = await import("firebase/firestore");
+                      const { getDb } = await import("@/lib/api/firebase-lazy");
+
+                      const db = getDb();
+                      const itemRef = doc(db, "items", orderInfo.itemId);
+
+                      await updateDoc(itemRef, {
+                        status: "active",
+                        buyerUid: null,
+                        buyerId: null,
+                        cancelledAt: new Date(),
+                        cancelledBy: user.uid,
+                        updatedAt: new Date(),
+                      });
+
+                      console.log("✅ 거래 취소 완료");
+
+                      if (orderInfo.escrow) {
+                        toast.success("안전결제가 취소되었습니다. 환불이 처리됩니다.");
+                      } else {
+                        toast.success("거래가 취소되었습니다. 상품이 다시 판매중으로 변경되었습니다.");
+                      }
+
+                      // 거래 내역 페이지로 이동
+                      router.push("/profile/transactions");
+                    } catch (error) {
+                      console.error("거래 취소 실패:", error);
+                      toast.error("거래 취소 중 오류가 발생했습니다.");
+                    }
                   }
                 }}
                 variant="outline"
