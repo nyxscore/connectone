@@ -4642,12 +4642,22 @@ export function EnhancedChatModal({
                     </Button>
                   )}
 
-                  {/* 거래 취소 버튼 - 결제완료 단계에서 판매자와 구매자 모두 */}
-                  {(chatData.item.status === "escrow_completed" ||
-                    (autoSendSystemMessage === "escrow_completed" &&
-                      chatData.tradeType?.includes("안전결제"))) &&
-                    user &&
-                    chatData && (
+                  {/* 거래 취소 버튼 - 결제완료/거래중 단계에서 판매자와 구매자 모두 */}
+                  {user && chatData && (() => {
+                    const showCancelButton = 
+                      chatData.item.status === "escrow_completed" ||
+                      chatData.item.status === "reserved" ||
+                      autoSendSystemMessage === "escrow_completed";
+                    
+                    console.log("🔍 거래취소 버튼 조건 확인:", {
+                      status: chatData.item.status,
+                      autoSendSystemMessage,
+                      showCancelButton,
+                      user: user?.uid,
+                      chatData: !!chatData
+                    });
+                    
+                    return showCancelButton && (
                       <div className="mt-4">
                         <Button
                           onClick={handleCancelTransaction}
@@ -4668,7 +4678,8 @@ export function EnhancedChatModal({
                           )}
                         </Button>
                       </div>
-                    )}
+                    );
+                  })()}
                 </div>
               )}
 
