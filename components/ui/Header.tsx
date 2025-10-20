@@ -36,7 +36,7 @@ export function Header() {
               악기 둘러보기
             </Link>
             <Link
-              href="/sell"
+              href="/product/new"
               className="text-gray-700 hover:text-blue-600 transition-colors"
             >
               판매하기
@@ -67,7 +67,7 @@ export function Header() {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <Link href="/sell">
+                <Link href="/product/new">
                   <Button className="flex items-center space-x-2">
                     <Plus className="w-4 h-4" />
                     <span className="hidden sm:inline">판매하기</span>
@@ -154,7 +154,7 @@ export function Header() {
                   악기 둘러보기
                 </Link>
                 <Link
-                  href="/sell"
+                  href="/product/new"
                   className="block px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >

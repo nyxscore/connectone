@@ -247,7 +247,7 @@ export default function HomePage() {
                   님! 👋
                 </p>
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 justify-center max-w-sm sm:max-w-md md:max-w-none mx-auto">
-                  <Link href="/sell" className="w-full sm:w-auto">
+                  <Link href="/product/new" className="w-full sm:w-auto">
                     <Button
                       size="lg"
                       className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"

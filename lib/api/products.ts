@@ -1,6 +1,7 @@
 import {
   collection,
   addDoc,
+  setDoc,
   serverTimestamp,
   doc,
   getDoc,
@@ -74,9 +75,17 @@ export async function createItem(
     tradeOptions?: string[];
   }
 ): Promise<{ success: boolean; itemId?: string; error?: string }> {
-  const db = await getDb();
   try {
     console.log("createItem 호출:", itemData);
+
+    const db = await getDb();
+    if (!db) {
+      console.error("❌ Firebase DB가 초기화되지 않았습니다.");
+      return {
+        success: false,
+        error: "데이터베이스 연결에 실패했습니다.",
+      };
+    }
 
     // 판매자 프로필 확인 및 생성
     try {
@@ -84,13 +93,13 @@ export async function createItem(
       if (!userDoc.exists()) {
         console.log("사용자 프로필이 없어서 생성합니다:", itemData.sellerUid);
 
-        // 기본 사용자 프로필 생성
-        await addDoc(collection(db, "users"), {
+        // 기본 사용자 프로필 생성 (setDoc으로 uid를 document ID로 사용)
+        await setDoc(doc(db, "users", itemData.sellerUid), {
           uid: itemData.sellerUid,
           username: itemData.sellerUid,
           nickname: "사용자",
           region: "서울시 강남구",
-          grade: "E",
+          grade: "C",
           tradesCount: 0,
           reviewsCount: 0,
           createdAt: serverTimestamp(),
@@ -112,21 +121,25 @@ export async function createItem(
       // 프로필 오류가 있어도 상품 등록은 계속 진행
     }
 
+    // 상품 데이터 저장
+    console.log("상품 저장 시작 - images:", itemData.images);
     const docRef = await addDoc(collection(db, "items"), {
       ...itemData,
-      aiTags: itemData.aiTags || [], // AI 태그는 나중에 추가
+      aiTags: itemData.aiTags || [],
       status: "active",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
-    console.log("아이템 생성 성공:", docRef.id);
+    console.log("✅ 아이템 생성 성공:", docRef.id);
+    console.log("저장된 images 필드:", itemData.images);
+    
     return {
       success: true,
       itemId: docRef.id,
     };
   } catch (error) {
-    console.error("아이템 생성 실패:", error);
+    console.error("❌ 아이템 생성 실패:", error);
     return {
       success: false,
       error:

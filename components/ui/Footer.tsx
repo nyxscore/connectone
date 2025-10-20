@@ -74,7 +74,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/sell"
+                  href="/product/new"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   판매하기

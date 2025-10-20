@@ -19,9 +19,9 @@
     "test:e2e": "vitest run test/e2e",
     "test:unit": "vitest run test/unit",
     "test:integration": "vitest run test/integration",
-    "deploy": "git push origin main && npx --yes firebase-tools deploy --only firestore:rules",
-    "deploy:firebase": "npx --yes firebase-tools deploy --only firestore:rules",
-    "deploy:vercel": "git push origin main"
+    "deploy": "npm run build && npx --yes firebase-tools deploy",
+    "deploy:firebase": "npm run build && npx --yes firebase-tools deploy --only hosting",
+    "deploy:rules": "npx --yes firebase-tools deploy --only firestore:rules"
   },
   "dependencies": {
     "@firebase/auth": "^1.11.0",

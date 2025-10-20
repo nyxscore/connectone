@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Firebase 호스팅용 설정 (SSR 모드로 API 지원)
-  // output: "export", // SSR 모드에서는 비활성화
+  // Firebase 호스팅용 설정
+  output: "export", // Static export 활성화
 
   // 이미지 최적화 설정
   images: {

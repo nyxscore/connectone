@@ -29,6 +29,15 @@ export async function uploadImage(
   onProgress?: (progress: UploadProgress) => void
 ): Promise<UploadResult> {
   try {
+    // Storage 초기화 확인
+    if (!storage) {
+      console.error("❌ Firebase Storage가 초기화되지 않았습니다.");
+      return {
+        success: false,
+        error: "Storage 서비스를 사용할 수 없습니다.",
+      };
+    }
+
     // 파일 타입 검증
     if (!file.type.startsWith("image/")) {
       return {
