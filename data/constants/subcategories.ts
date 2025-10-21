@@ -51,12 +51,13 @@ export const INSTRUMENT_SUBCATEGORIES = {
   // 타악기
   타악: [
     { key: "drum_set", label: "드럼세트", icon: "🥁" },
+    { key: "cymbals", label: "심벌즈", icon: "🥁" },
+    { key: "hi_hat", label: "하이햇심벌", icon: "🥁" },
+    { key: "crash_cymbal", label: "크래시심벌", icon: "🥁" },
+    { key: "ride_cymbal", label: "라이드심벌", icon: "🥁" },
     { key: "snare_drum", label: "스네어드럼", icon: "🥁" },
     { key: "bass_drum", label: "베이스드럼", icon: "🥁" },
     { key: "tom_tom", label: "톰톰", icon: "🥁" },
-    { key: "hi_hat", label: "하이햇", icon: "🥁" },
-    { key: "crash_cymbal", label: "크래시심벌", icon: "🥁" },
-    { key: "ride_cymbal", label: "라이드심벌", icon: "🥁" },
     { key: "timpani", label: "팀파니", icon: "🥁" },
     { key: "xylophone", label: "실로폰", icon: "🎵" },
     { key: "marimba", label: "마림바", icon: "🎵" },
