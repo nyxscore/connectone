@@ -571,8 +571,12 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
 
     // 클라이언트 사이드 필터링 및 정렬
 
-    // 거래 당사자 필터링 (거래중/배송중 상품은 거래 당사자만 볼 수 있음)
-    if (options.currentUserId) {
+    // 거래 당사자 필터링 (프로필 페이지에서만 작동)
+    // 주의: 전체 목록에서는 거래중 상품도 모두에게 표시됨 (개인정보는 마스킹)
+    const isProfilePage = filters.status === "reserved" || filters.status === "shipping";
+    
+    if (isProfilePage && options.currentUserId) {
+      // 프로필 페이지에서 "거래중" 또는 "배송중" 필터 선택 시에만 당사자 필터링
       items = items.filter(item => {
         // 거래중/배송중 상태인 경우 거래 당사자인지 확인
         if (
@@ -586,7 +590,7 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
 
           if (!isParticipant) {
             console.log(
-              `🔒 거래중 상품 숨김: ${item.title} (상태: ${item.status})`
+              `🔒 [프로필] 거래중 상품 필터링: ${item.title} (상태: ${item.status})`
             );
           }
 
@@ -595,22 +599,8 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
         // 다른 상태는 모든 사용자가 볼 수 있음
         return true;
       });
-    } else {
-      // 로그인하지 않은 사용자는 거래중/배송중 상품을 볼 수 없음
-      items = items.filter(item => {
-        if (
-          ["reserved", "escrow_completed", "shipping", "shipped"].includes(
-            item.status
-          )
-        ) {
-          console.log(
-            `🔒 비로그인 사용자 - 거래중 상품 숨김: ${item.title} (상태: ${item.status})`
-          );
-          return false;
-        }
-        return true;
-      });
     }
+    // 전체 목록에서는 거래중 상품도 표시 (개인정보는 상품 상세/채팅에서 보호)
 
     // 가격 필터링
     if (filters.minPrice !== undefined) {
