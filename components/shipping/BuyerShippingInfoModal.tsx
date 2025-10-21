@@ -39,44 +39,29 @@ export default function BuyerShippingInfoModal({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Daum Postcode 스크립트 로드 (대안 방법 포함)
+  // Daum Postcode 스크립트 확인 (이미 layout.tsx에서 로드됨)
   useEffect(() => {
-    console.log("🔍 Daum Postcode 스크립트 로드 시작");
-    console.log("현재 window.daum 상태:", !!window.daum);
-
-    if (!window.daum) {
-      console.log("📦 Daum 스크립트 로드 중...");
-      const script = document.createElement("script");
-      script.src =
-        "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
-      script.async = true;
-      script.onload = () => {
-        console.log("✅ 다음 주소 검색 API 로드 완료");
-        console.log("window.daum 확인:", !!window.daum);
-        console.log("window.daum.Postcode 확인:", !!window.daum?.Postcode);
-      };
-      script.onerror = error => {
-        console.error("❌ 다음 주소 검색 API 로드 실패:", error);
-        console.log("🔄 대안 CDN으로 전환합니다");
-        
-        // 대안 CDN 시도
-        const alternativeScript = document.createElement("script");
-        alternativeScript.src = "https://ssl.daumcdn.net/dmaps/map_js_init/postcode.v2.js";
-        alternativeScript.async = true;
-        alternativeScript.onload = () => {
-          console.log("✅ 대안 CDN 로드 성공");
-        };
-        alternativeScript.onerror = () => {
-          console.error("❌ 대안 CDN도 실패");
-          toast.error("주소 검색 서비스를 불러올 수 없습니다. 직접 입력해주세요.");
-        };
-        document.head.appendChild(alternativeScript);
-      };
-      document.head.appendChild(script);
-      console.log("📦 스크립트가 document.head에 추가됨");
-    } else {
-      console.log("✅ Daum API가 이미 로드되어 있음");
-    }
+    console.log("🔍 Daum Postcode 스크립트 확인");
+    
+    // 스크립트 로딩 대기 (최대 5초)
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const checkScript = setInterval(() => {
+      attempts++;
+      console.log(`📦 스크립트 확인 시도 ${attempts}/${maxAttempts}`);
+      
+      if (window.daum && window.daum.Postcode) {
+        console.log("✅ Daum Postcode API 준비 완료");
+        clearInterval(checkScript);
+      } else if (attempts >= maxAttempts) {
+        console.error("❌ Daum Postcode API 로드 실패 (타임아웃)");
+        toast.error("주소 검색 서비스를 불러올 수 없습니다. 페이지를 새로고침해주세요.");
+        clearInterval(checkScript);
+      }
+    }, 500);
+    
+    return () => clearInterval(checkScript);
   }, []);
 
   // 주소 검색 팝업 열기
@@ -300,7 +285,8 @@ export default function BuyerShippingInfoModal({
                   } else {
                     // 카카오 API 로드 시도
                     const kakaoScript = document.createElement("script");
-                    kakaoScript.src = "https://dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_APP_KEY&libraries=services";
+                    kakaoScript.src =
+                      "https://dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_APP_KEY&libraries=services";
                     kakaoScript.onload = () => {
                       console.log("✅ 카카오 API 로드 성공");
                       toast.success("카카오 주소 검색이 준비되었습니다.");
@@ -343,7 +329,7 @@ export default function BuyerShippingInfoModal({
               className="w-full"
               list="address-suggestions"
             />
-            
+
             {/* 주소 자동완성 데이터 */}
             <datalist id="address-suggestions">
               <option value="서울시 강남구 테헤란로 123" />
@@ -357,13 +343,15 @@ export default function BuyerShippingInfoModal({
               <option value="경기도 수원시 영통구 광교로 123" />
               <option value="인천시 연수구 컨벤시아대로 123" />
             </datalist>
-            
+
             {/* 주소 입력 도움말 */}
             <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-              💡 <strong>주소 입력 팁:</strong><br/>
-              • 우편번호: 12345 (5자리 숫자)<br/>
-              • 주소: 시/도 + 구/군 + 도로명 + 건물번호<br/>
-              • 예시: 서울시 강남구 테헤란로 123
+              💡 <strong>주소 입력 팁:</strong>
+              <br />
+              • 우편번호: 12345 (5자리 숫자)
+              <br />
+              • 주소: 시/도 + 구/군 + 도로명 + 건물번호
+              <br />• 예시: 서울시 강남구 테헤란로 123
             </div>
 
             {/* 상세 주소 */}

@@ -25,8 +25,9 @@ export default function RootLayout({
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script
-          src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+          src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
           async
+          defer
         ></script>
         <script
           src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"
