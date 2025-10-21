@@ -106,6 +106,7 @@ export interface AIProcessedImage {
 export interface SellItem {
   id: string;
   sellerUid: string;
+  buyerUid?: string; // 구매자 UID (거래 시작 시 설정)
   category: InstrumentCategory;
   brand: string;
   model: string;
@@ -120,7 +121,7 @@ export interface SellItem {
   escrowEnabled: boolean;
   shippingTypes: ShippingType[];
   parcelPaymentType?: string; // "seller" or "buyer"
-  status: "active" | "sold" | "inactive";
+  status: "active" | "reserved" | "escrow_completed" | "shipping" | "shipped" | "sold" | "cancelled" | "inactive";
   createdAt: any;
   updatedAt: any;
 }

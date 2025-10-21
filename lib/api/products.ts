@@ -446,15 +446,11 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       };
     }
 
-    // 상태 필터 처리
+    // 상태 필터 처리 - 거래중/배송중 상품은 거래 당사자만 볼 수 있음
     let statusFilter = [
       "active",
-      "reserved",
-      "escrow_completed",
-      "shipping",
-      "shipped",
       "sold",
-    ]; // 기본값: 전체 상품 (취소된 것 제외)
+    ]; // 기본값: 거래가능한 상품과 거래완료된 상품만 (거래중/배송중 제외)
 
     if (filters.status) {
       switch (filters.status) {
@@ -504,6 +500,7 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     // 기본 쿼리: 필터에 따라 상태별 조회
     console.log("🔍 getItemList 호출 - statusFilter:", statusFilter);
     console.log("🔍 getItemList 호출 - filters:", filters);
+    console.log("🔍 getItemList 호출 - currentUserId:", options.currentUserId);
     let q = query(collection(db, "items"), where("status", "in", statusFilter));
 
     // 디버깅: 모든 상품의 카테고리 확인 (개발 중에만)
@@ -576,6 +573,36 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     });
 
     // 클라이언트 사이드 필터링 및 정렬
+    
+    // 거래 당사자 필터링 (거래중/배송중 상품은 거래 당사자만 볼 수 있음)
+    if (options.currentUserId) {
+      items = items.filter(item => {
+        // 거래중/배송중 상태인 경우 거래 당사자인지 확인
+        if (["reserved", "escrow_completed", "shipping", "shipped"].includes(item.status)) {
+          const isSeller = item.sellerUid === options.currentUserId;
+          const isBuyer = item.buyerUid === options.currentUserId;
+          const isParticipant = isSeller || isBuyer;
+          
+          if (!isParticipant) {
+            console.log(`🔒 거래중 상품 숨김: ${item.title} (상태: ${item.status})`);
+          }
+          
+          return isParticipant;
+        }
+        // 다른 상태는 모든 사용자가 볼 수 있음
+        return true;
+      });
+    } else {
+      // 로그인하지 않은 사용자는 거래중/배송중 상품을 볼 수 없음
+      items = items.filter(item => {
+        if (["reserved", "escrow_completed", "shipping", "shipped"].includes(item.status)) {
+          console.log(`🔒 비로그인 사용자 - 거래중 상품 숨김: ${item.title} (상태: ${item.status})`);
+          return false;
+        }
+        return true;
+      });
+    }
+    
     // 가격 필터링
     if (filters.minPrice !== undefined) {
       items = items.filter(item => item.price >= filters.minPrice!);
@@ -865,18 +892,18 @@ export async function submitBuyerShippingInfo(
       buyerUid,
       shippingInfo,
     });
-    
+
     const itemRef = doc(db, "items", itemId);
     const buyerShippingData = {
       ...shippingInfo,
       submittedAt: new Date().toISOString(), // ISO 문자열로 변환하여 Vercel 호환성 개선
     };
-    
+
     await updateDoc(itemRef, {
       buyerShippingInfo: buyerShippingData,
       updatedAt: new Date().toISOString(),
     });
-    
+
     console.log("✅ 배송지 정보 저장 완료:", buyerShippingData);
     return { success: true };
   } catch (error) {
