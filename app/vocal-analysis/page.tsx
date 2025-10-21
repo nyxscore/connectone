@@ -427,26 +427,26 @@ export default function VocalAnalysisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-6 sm:py-12 px-4">
       <div className="max-w-6xl mx-auto">
         {/* 헤더 */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-3">
-            <Music className="w-10 h-10 text-blue-600" />
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-2 sm:gap-3">
+            <Music className="w-6 h-6 sm:w-10 sm:h-10 text-blue-600" />
             AI 음악 분석
           </h1>
           {selectedTier === "free" && (
-            <p className="text-lg text-gray-600 mb-8">
+            <p className="text-sm sm:text-lg text-gray-600 mb-6 sm:mb-8 px-4">
               음악 파일을 업로드하고 AI가 감정, 피치, 템포, 장르를
               분석해드립니다
             </p>
           )}
           {selectedTier === "advanced" && (
-            <div className="mb-8">
-              <p className="text-lg text-gray-600 mb-2">
+            <div className="mb-6 sm:mb-8">
+              <p className="text-sm sm:text-lg text-gray-600 mb-2 px-4">
                 AI 심화 분석으로 더욱 자세하고 전문적인 피드백을 받아보세요
               </p>
-              <div className="flex justify-center gap-6 text-sm text-gray-500">
+              <div className="flex flex-wrap justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-500">
                 <span>📊 상세 점수 분석</span>
                 <span>📈 시각화 차트</span>
                 <span>💎 맞춤형 피드백</span>
@@ -454,34 +454,34 @@ export default function VocalAnalysisPage() {
             </div>
           )}
 
-          {/* 분석 티어 선택 탭 */}
-          <div className="flex justify-center gap-4 max-w-3xl mx-auto">
+          {/* 분석 티어 선택 탭 - 모바일 최적화 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-4xl mx-auto">
             <button
               onClick={() => setSelectedTier("free")}
-              className={`flex-1 py-4 px-6 rounded-xl font-semibold transition-all ${
+              className={`py-4 px-4 rounded-xl font-semibold transition-all ${
                 selectedTier === "free"
                   ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105"
                   : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200"
               }`}
             >
-              <div className="text-sm mb-1">🆓</div>
-              <div className="text-base">AI 무료 분석</div>
+              <div className="text-lg mb-2">🆓</div>
+              <div className="text-sm font-bold">AI 무료 분석</div>
               <div className="text-xs mt-1 opacity-80">기본 분석</div>
             </button>
 
             <button
               onClick={() => setSelectedTier("advanced")}
-              className={`flex-1 py-4 px-6 rounded-xl font-semibold transition-all ${
+              className={`py-4 px-4 rounded-xl font-semibold transition-all ${
                 selectedTier === "advanced"
                   ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105"
                   : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200"
               }`}
             >
-              <div className="text-sm mb-1">💎</div>
-              <div className="text-base">AI 심화 분석</div>
-              <div className="text-xs mt-1 opacity-80 flex items-center justify-center gap-2">
-                <span className="line-through text-gray-400">9,900원</span>
-                <span className="font-bold text-red-600">2,900원</span>
+              <div className="text-lg mb-2">💎</div>
+              <div className="text-sm font-bold">AI 심화 분석</div>
+              <div className="text-xs mt-1 opacity-80">
+                <div className="line-through text-gray-400">9,900원</div>
+                <div className="font-bold text-red-600">2,900원</div>
               </div>
             </button>
 
@@ -489,29 +489,27 @@ export default function VocalAnalysisPage() {
               onClick={() => {
                 window.location.href = "/expert-analysis";
               }}
-              className="flex-1 py-4 px-6 rounded-xl font-semibold transition-all bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-purple-400"
+              className="py-4 px-4 rounded-xl font-semibold transition-all bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-purple-400"
             >
-              <div className="text-sm mb-1">👨‍🏫</div>
-              <div className="text-base">전문가 분석</div>
+              <div className="text-lg mb-2">👨‍🏫</div>
+              <div className="text-sm font-bold">전문가 분석</div>
               <div className="text-xs mt-1 opacity-80">
-                <span className="line-through text-gray-400 mr-1">
-                  35,000원
-                </span>
-                <span className="font-bold text-red-600">19,000원</span>
+                <div className="line-through text-gray-400">35,000원</div>
+                <div className="font-bold text-red-600">19,000원</div>
               </div>
             </button>
           </div>
         </div>
 
         {/* 전체 세로 레이아웃 */}
-        <div className="max-w-3xl mx-auto space-y-8">
+        <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
           {/* 업로드 및 녹음 */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* 파일 업로드 영역 */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-lg p-8"
+              className="bg-white rounded-2xl shadow-lg p-4 sm:p-8"
             >
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <FileAudio className="w-5 h-5 text-blue-600" />
@@ -520,7 +518,7 @@ export default function VocalAnalysisPage() {
 
               {/* 드래그 앤 드롭 영역 */}
               <div
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                className={`border-2 border-dashed rounded-xl p-4 sm:p-8 text-center transition-all ${
                   dragActive
                     ? "border-blue-500 bg-blue-50"
                     : "border-gray-300 hover:border-blue-400"
@@ -530,11 +528,11 @@ export default function VocalAnalysisPage() {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-700 font-medium mb-2">
+                <Upload className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                <p className="text-sm sm:text-base text-gray-700 font-medium mb-2">
                   파일을 드래그하거나 클릭하여 업로드
                 </p>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
                   WAV, MP3, OGG, WEBM (최대 30MB)
                 </p>
                 <input
@@ -1003,27 +1001,27 @@ export default function VocalAnalysisPage() {
             </h3>
 
             {selectedTier === "free" ? (
-              <div className="grid md:grid-cols-3 gap-6 text-sm">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">
-                    지원 형식
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    📁 지원 형식
                   </h4>
                   <p className="text-gray-600">
                     WAV, MP3, OGG, WEBM 형식의 오디오 파일을 업로드할 수
                     있습니다.
                   </p>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">
-                    분석 내용
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    🔍 분석 내용
                   </h4>
                   <p className="text-gray-600">
                     AI가 감정, 피치, 템포, 조성, 장르를 자동으로 분석합니다.
                   </p>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">
-                    이용 요금
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200 sm:col-span-2 lg:col-span-1">
+                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    💰 이용 요금
                   </h4>
                   <p className="text-gray-600">
                     <span className="text-2xl font-bold text-green-600">
@@ -1034,7 +1032,7 @@ export default function VocalAnalysisPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
                     <h4 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
                       📊 상세 점수 분석
