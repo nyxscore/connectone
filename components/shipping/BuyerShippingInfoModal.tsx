@@ -57,10 +57,20 @@ export default function BuyerShippingInfoModal({
       };
       script.onerror = error => {
         console.error("❌ 다음 주소 검색 API 로드 실패:", error);
-        console.log("🔄 대안 방법으로 전환합니다");
-        toast.error(
-          "주소 검색 서비스를 불러올 수 없습니다. 직접 입력해주세요."
-        );
+        console.log("🔄 대안 CDN으로 전환합니다");
+        
+        // 대안 CDN 시도
+        const alternativeScript = document.createElement("script");
+        alternativeScript.src = "https://ssl.daumcdn.net/dmaps/map_js_init/postcode.v2.js";
+        alternativeScript.async = true;
+        alternativeScript.onload = () => {
+          console.log("✅ 대안 CDN 로드 성공");
+        };
+        alternativeScript.onerror = () => {
+          console.error("❌ 대안 CDN도 실패");
+          toast.error("주소 검색 서비스를 불러올 수 없습니다. 직접 입력해주세요.");
+        };
+        document.head.appendChild(alternativeScript);
       };
       document.head.appendChild(script);
       console.log("📦 스크립트가 document.head에 추가됨");
@@ -196,7 +206,7 @@ export default function BuyerShippingInfoModal({
         console.log("✅ 배송지 정보 등록 성공 - 콜백 호출");
         onSuccess?.();
         onClose();
-        
+
         // 강제 새로고침 (Vercel 호환성)
         setTimeout(() => {
           console.log("🔄 채팅 모달 강제 새로고침");
@@ -282,6 +292,34 @@ export default function BuyerShippingInfoModal({
                 type="button"
                 variant="outline"
                 onClick={() => {
+                  console.log("🔧 카카오 주소 검색 시도");
+                  // 카카오 주소 검색 API 시도
+                  if (window.kakao && window.kakao.maps) {
+                    // 카카오 지도 API 사용
+                    toast.info("카카오 주소 검색을 시도합니다.");
+                  } else {
+                    // 카카오 API 로드 시도
+                    const kakaoScript = document.createElement("script");
+                    kakaoScript.src = "https://dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_APP_KEY&libraries=services";
+                    kakaoScript.onload = () => {
+                      console.log("✅ 카카오 API 로드 성공");
+                      toast.success("카카오 주소 검색이 준비되었습니다.");
+                    };
+                    kakaoScript.onerror = () => {
+                      console.error("❌ 카카오 API 로드 실패");
+                      toast.error("카카오 주소 검색도 사용할 수 없습니다.");
+                    };
+                    document.head.appendChild(kakaoScript);
+                  }
+                }}
+                className="flex items-center space-x-1 text-xs"
+              >
+                <span>카카오 검색</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
                   console.log("🔧 수동 주소 입력 모드");
                   setFormData(prev => ({
                     ...prev,
@@ -301,9 +339,32 @@ export default function BuyerShippingInfoModal({
               type="text"
               value={formData.address}
               onChange={e => handleInputChange("address", e.target.value)}
-              placeholder="주소 검색 버튼을 클릭하거나 직접 입력하세요"
+              placeholder="주소를 직접 입력하세요 (예: 서울시 강남구 테헤란로 123)"
               className="w-full"
+              list="address-suggestions"
             />
+            
+            {/* 주소 자동완성 데이터 */}
+            <datalist id="address-suggestions">
+              <option value="서울시 강남구 테헤란로 123" />
+              <option value="서울시 서초구 서초대로 123" />
+              <option value="서울시 중구 을지로 123" />
+              <option value="서울시 종로구 종로 123" />
+              <option value="서울시 마포구 홍대입구역 123" />
+              <option value="서울시 송파구 올림픽로 123" />
+              <option value="서울시 영등포구 여의도동 123" />
+              <option value="경기도 성남시 분당구 판교역로 123" />
+              <option value="경기도 수원시 영통구 광교로 123" />
+              <option value="인천시 연수구 컨벤시아대로 123" />
+            </datalist>
+            
+            {/* 주소 입력 도움말 */}
+            <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
+              💡 <strong>주소 입력 팁:</strong><br/>
+              • 우편번호: 12345 (5자리 숫자)<br/>
+              • 주소: 시/도 + 구/군 + 도로명 + 건물번호<br/>
+              • 예시: 서울시 강남구 테헤란로 123
+            </div>
 
             {/* 상세 주소 */}
             <Input

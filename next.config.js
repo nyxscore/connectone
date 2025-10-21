@@ -67,7 +67,7 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; media-src 'self' blob: data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://t1.daumcdn.net https://t1.kakaocdn.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; font-src 'self' data: https://cdn.jsdelivr.net; worker-src 'self' blob:;",
+              "default-src 'self'; media-src 'self' blob: data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://t1.daumcdn.net https://t1.kakaocdn.net https://ssl.daumcdn.net https://t.daumcdn.net; style-src 'self' 'unsafe-inline' https://t1.daumcdn.net; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; font-src 'self' data: https://cdn.jsdelivr.net; worker-src 'self' blob:; frame-src 'self' https://t1.daumcdn.net;",
           },
           {
             key: "Permissions-Policy",
