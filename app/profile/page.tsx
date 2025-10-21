@@ -44,6 +44,11 @@ import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
 import { EmailInputModal } from "../../components/auth/EmailInputModal";
 import { PhoneInputModal } from "../../components/auth/PhoneInputModal";
 import { Star } from "lucide-react";
+import {
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+} from "firebase/auth";
 
 // 후기 카드 컴포넌트
 const ReviewCard = ({
@@ -273,6 +278,17 @@ export default function MyProfilePage() {
   // 인증 모달 상태
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [showPhoneInput, setShowPhoneInput] = useState(false);
+  
+  // 비밀번호 변경 상태
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  
+  // 거래지역 변경 상태
+  const [showRegionEdit, setShowRegionEdit] = useState(false);
+  const [editingRegion, setEditingRegion] = useState("");
 
   // 탭 상태
   const [activeTab, setActiveTab] = useState<
@@ -421,6 +437,126 @@ export default function MyProfilePage() {
       console.error("후기 로딩 실패:", error);
     } finally {
       setReviewsLoading(false);
+    }
+  };
+
+  // 비밀번호 변경 함수
+  const handlePasswordChange = async () => {
+    if (!currentUser) {
+      toast.error("로그인이 필요합니다.");
+      return;
+    }
+
+    // 유효성 검사
+    if (!currentPassword.trim()) {
+      toast.error("현재 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    if (!newPassword.trim()) {
+      toast.error("새 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    if (newPassword.length < 10) {
+      toast.error("새 비밀번호는 10자 이상이어야 합니다.");
+      return;
+    }
+
+    // 비밀번호 강도 검사: 소문자 + 숫자 + 특수문자
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumbers = /\d/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+    if (!hasLowerCase || !hasNumbers || !hasSpecialChar) {
+      toast.error("새 비밀번호는 소문자, 숫자, 특수문자를 포함해야 합니다.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("새 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      toast.error("현재 비밀번호와 새 비밀번호가 같습니다.");
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const { getAuth } = await import("../../lib/api/firebase-ultra-safe");
+      const auth = await getAuth();
+      const firebaseUser = auth.currentUser;
+
+      if (!firebaseUser || !firebaseUser.email) {
+        toast.error("사용자 정보를 찾을 수 없습니다.");
+        return;
+      }
+
+      // 현재 사용자 재인증
+      const credential = EmailAuthProvider.credential(
+        firebaseUser.email,
+        currentPassword
+      );
+
+      console.log("🔑 사용자 재인증 중...");
+      await reauthenticateWithCredential(firebaseUser, credential);
+      console.log("✅ 재인증 성공");
+
+      // 비밀번호 업데이트
+      console.log("🔐 비밀번호 업데이트 중...");
+      await updatePassword(firebaseUser, newPassword);
+      console.log("✅ 비밀번호 업데이트 성공");
+
+      toast.success("비밀번호가 성공적으로 변경되었습니다!");
+
+      // 폼 초기화
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowPasswordChange(false);
+    } catch (error: any) {
+      console.error("❌ 비밀번호 변경 실패:", error);
+
+      if (error.code === "auth/wrong-password") {
+        toast.error("현재 비밀번호가 올바르지 않습니다.");
+      } else if (error.code === "auth/weak-password") {
+        toast.error("새 비밀번호가 너무 약합니다.");
+      } else if (error.code === "auth/requires-recent-login") {
+        toast.error("보안을 위해 다시 로그인해주세요.");
+      } else {
+        toast.error(`비밀번호 변경 실패: ${error.message || "알 수 없는 오류"}`);
+      }
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  // 거래지역 변경 함수
+  const handleRegionChange = async () => {
+    if (!currentUser) {
+      toast.error("로그인이 필요합니다.");
+      return;
+    }
+
+    try {
+      const result = await updateUserProfile(currentUser.uid, {
+        region: editingRegion.trim() || null,
+      });
+
+      if (result.success) {
+        toast.success("거래지역이 변경되었습니다.");
+        setProfile(prev => prev ? { ...prev, region: editingRegion.trim() || null } : null);
+        setShowRegionEdit(false);
+        setEditingRegion("");
+      } else {
+        toast.error(result.error || "거래지역 변경에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("거래지역 변경 실패:", error);
+      toast.error("거래지역 변경 중 오류가 발생했습니다.");
     }
   };
 
@@ -688,7 +824,10 @@ export default function MyProfilePage() {
                 </div>
 
                 {/* 비밀번호 */}
-                <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
+                <div
+                  onClick={() => setShowPasswordChange(true)}
+                  className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                     <div>
@@ -700,13 +839,24 @@ export default function MyProfilePage() {
                       </p>
                     </div>
                   </div>
-                  <Button size="sm" variant="ghost" className="p-1 sm:p-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="p-1 sm:p-2"
+                    onClick={() => setShowPasswordChange(true)}
+                  >
                     <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
 
                 {/* 지역 */}
-                <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div
+                  onClick={() => {
+                    setEditingRegion(profile.region || "");
+                    setShowRegionEdit(true);
+                  }}
+                  className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                     <div>
@@ -718,6 +868,18 @@ export default function MyProfilePage() {
                       </p>
                     </div>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="p-1 sm:p-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingRegion(profile.region || "");
+                      setShowRegionEdit(true);
+                    }}
+                  >
+                    <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                  </Button>
                 </div>
 
                 {/* 핸드폰 인증 (SMS만) */}
@@ -1012,6 +1174,125 @@ export default function MyProfilePage() {
           refreshUser(); // 사용자 정보 새로고침
         }}
       />
+
+      {/* 비밀번호 변경 모달 */}
+      {showPasswordChange && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">비밀번호 변경</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  현재 비밀번호
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="현재 비밀번호를 입력하세요"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  새 비밀번호
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="새 비밀번호 (10자 이상, 소문자+숫자+특수문자)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  새 비밀번호 확인
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="새 비밀번호를 다시 입력하세요"
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPasswordChange(false);
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                  className="flex-1"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handlePasswordChange}
+                  disabled={changingPassword}
+                  className="flex-1"
+                >
+                  {changingPassword ? "변경 중..." : "변경"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 거래지역 변경 모달 */}
+      {showRegionEdit && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">거래지역 변경</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  거래지역
+                </label>
+                <input
+                  type="text"
+                  value={editingRegion}
+                  onChange={e => setEditingRegion(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="예: 서울시 강남구, 경기도 성남시"
+                  maxLength={50}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  직거래를 주로 하시는 지역을 입력해주세요.
+                </p>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowRegionEdit(false);
+                    setEditingRegion("");
+                  }}
+                  className="flex-1"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleRegionChange}
+                  className="flex-1"
+                >
+                  저장
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
