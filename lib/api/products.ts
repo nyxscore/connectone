@@ -123,7 +123,7 @@ export async function createItem(
 
     // 상품 데이터 저장
     console.log("상품 저장 시작 - images:", itemData.images);
-    
+
     // 클라이언트 타임스탬프 사용 (즉시 쿼리 가능하도록)
     const now = new Date();
     const itemToSave = {
@@ -133,7 +133,7 @@ export async function createItem(
       createdAt: now,
       updatedAt: now,
     };
-    
+
     console.log("🔥 저장할 상품 데이터:", {
       ...itemToSave,
       status: itemToSave.status,
@@ -141,7 +141,7 @@ export async function createItem(
       title: itemData.title,
       createdAt: now.toISOString(),
     });
-    
+
     const docRef = await addDoc(collection(db, "items"), itemToSave);
 
     console.log("✅ 아이템 생성 성공:", docRef.id);
@@ -544,16 +544,18 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     //   q = query(q, where("price", "<=", filters.maxPrice));
     // }
 
-    // 정렬 추가 (최신순)
-    q = query(q, orderBy("createdAt", "desc"));
+    // 정렬은 클라이언트 사이드에서 처리 (복합 인덱스 방지)
+    // Firestore에서 status IN 쿼리 + orderBy는 복합 인덱스 필요
+    // q = query(q, orderBy("createdAt", "desc"));
 
     // 페이지네이션
     if (lastDoc) {
       q = query(q, startAfter(lastDoc));
     }
 
-    // 제한 적용 (키워드 검색을 위해 더 많이 가져옴)
-    const fetchLimit = filters.keyword ? limitCount * 3 : limitCount;
+    // 제한 적용 (클라이언트 정렬을 위해 더 많이 가져옴)
+    // 복합 인덱스 없이도 작동하도록 많이 가져온 후 클라이언트에서 정렬
+    const fetchLimit = filters.keyword ? limitCount * 3 : limitCount * 2;
     q = query(q, limit(fetchLimit));
 
     const querySnapshot = await getDocs(q);
@@ -767,9 +769,12 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       newLastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
     }
 
+    const finalItems = items.slice(0, limitCount);
+    console.log("✅ 최종 반환:", finalItems.length, "개 (정렬 후", items.length, "개 중에서", limitCount, "개 선택)");
+
     return {
       success: true,
-      items: items.slice(0, limitCount), // 정확한 개수로 제한
+      items: finalItems,
       lastDoc: newLastDoc,
     };
   } catch (error) {
