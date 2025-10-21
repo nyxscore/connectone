@@ -365,6 +365,13 @@ export async function sendMessage(
   data: SendMessageData
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log("📤 sendMessage 호출됨:", {
+      chatId: data.chatId,
+      senderUid: data.senderUid,
+      content: data.content.substring(0, 50) + "...",
+      type: data.imageUrl ? "image" : "text",
+    });
+    
     const db = getDb();
     if (!db) {
       console.error("❌ Firebase DB가 초기화되지 않음");
@@ -383,7 +390,7 @@ export async function sendMessage(
       senderUid: data.senderUid,
       content: data.content,
       type: data.imageUrl ? "image" : "text", // 이미지가 있으면 image 타입, 없으면 text 타입
-      createdAt: serverTimestamp() as Timestamp,
+      createdAt: new Date().toISOString() as any, // Vercel 호환성을 위해 ISO 문자열 사용
       readBy: data.senderUid === "system" ? [] : [data.senderUid], // 시스템 메시지는 읽음 처리하지 않음
     };
 
@@ -399,7 +406,8 @@ export async function sendMessage(
       hasImageUrl: !!messageData.imageUrl,
     });
 
-    await addDoc(messagesRef, messageData);
+    const messageRef = await addDoc(messagesRef, messageData);
+    console.log("✅ 메시지 저장 완료:", messageRef.id);
 
     // 채팅의 lastMessage와 updatedAt 업데이트 (채팅이 존재하지 않으면 생성)
     const chatRef = doc(db, "chats", data.chatId);
@@ -409,7 +417,7 @@ export async function sendMessage(
       const chatData = chatSnap.data() as Chat;
       const updates: any = {
         lastMessage: data.content,
-        updatedAt: serverTimestamp(),
+        updatedAt: new Date().toISOString(),
       };
 
       // 상대방의 unreadCount 증가
@@ -425,7 +433,7 @@ export async function sendMessage(
       }
 
       await updateDoc(chatRef, updates);
-      console.log("채팅 업데이트 완료:", updates);
+      console.log("✅ 채팅 업데이트 완료:", updates);
 
       // 시스템 메시지가 아닌 경우에만 상대방에게 새 메시지 알림 전송
       if (data.senderUid !== "system") {
@@ -433,6 +441,7 @@ export async function sendMessage(
           chatData.buyerUid === data.senderUid
             ? chatData.sellerUid
             : chatData.buyerUid;
+        console.log("📢 알림 대상:", { senderUid: data.senderUid, recipientUid });
         if (recipientUid !== data.senderUid) {
           try {
             // 상대방 정보와 상품 정보 가져오기
@@ -444,6 +453,11 @@ export async function sendMessage(
             const senderProfile = await getUserProfile(data.senderUid);
 
             if (recipientProfile && senderProfile && itemResult.item) {
+              console.log("📢 알림 전송 시작:", {
+                recipientUid,
+                senderName: senderProfile.nickname,
+                productTitle: itemResult.item.title,
+              });
               await notificationTrigger.triggerNewMessage({
                 userId: recipientUid,
                 senderName: senderProfile.nickname || "알 수 없음",
@@ -453,6 +467,13 @@ export async function sendMessage(
                     ? data.content.substring(0, 50) + "..."
                     : data.content,
                 chatId: data.chatId,
+              });
+              console.log("✅ 알림 전송 완료");
+            } else {
+              console.warn("⚠️ 알림 전송 실패 - 프로필 또는 상품 정보 부족:", {
+                recipientProfile: !!recipientProfile,
+                senderProfile: !!senderProfile,
+                itemResult: !!itemResult.item,
               });
             }
           } catch (error) {
@@ -476,7 +497,7 @@ export async function sendMessage(
           buyerUid,
           sellerUid,
           lastMessage: data.content,
-          updatedAt: serverTimestamp() as Timestamp,
+          updatedAt: new Date().toISOString() as any,
           buyerUnreadCount: 0,
           sellerUnreadCount: 0,
         };

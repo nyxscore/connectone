@@ -115,7 +115,7 @@ export const MessageInput = memo(function MessageInput({
       }
 
       // 메시지 전송
-      console.log("메시지 전송 시작:", {
+      console.log("📤 메시지 전송 시작:", {
         chatId,
         senderUid,
         content: message.trim(),
@@ -130,13 +130,16 @@ export const MessageInput = memo(function MessageInput({
         imageUrl: imageUrls[0], // 첫 번째 이미지만 사용 (단일 이미지)
       });
 
-      console.log("메시지 전송 결과:", result);
+      console.log("📤 메시지 전송 결과:", result);
 
       if (!result.success) {
+        console.error("❌ 메시지 전송 실패:", result.error);
         toast.error(result.error || "메시지 전송에 실패했습니다.");
         isSendingRef.current = false;
         return;
       }
+
+      console.log("✅ 메시지 전송 성공!");
 
       // 먼저 포커스 저장
       const textarea = textareaRef.current;
