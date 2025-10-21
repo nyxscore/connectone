@@ -41,35 +41,60 @@ export default function BuyerShippingInfoModal({
 
   // Daum Postcode 스크립트 로드
   useEffect(() => {
+    console.log("🔍 Daum Postcode 스크립트 로드 시작");
+    console.log("현재 window.daum 상태:", !!window.daum);
+    
     if (!window.daum) {
+      console.log("📦 Daum 스크립트 로드 중...");
       const script = document.createElement("script");
-      script.src = "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+      script.src =
+        "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
       script.async = true;
       script.onload = () => {
         console.log("✅ 다음 주소 검색 API 로드 완료");
+        console.log("window.daum 확인:", !!window.daum);
+        console.log("window.daum.Postcode 확인:", !!window.daum?.Postcode);
       };
-      script.onerror = () => {
-        console.error("❌ 다음 주소 검색 API 로드 실패");
+      script.onerror = (error) => {
+        console.error("❌ 다음 주소 검색 API 로드 실패:", error);
         toast.error("주소 검색 서비스를 불러올 수 없습니다.");
       };
       document.head.appendChild(script);
+      console.log("📦 스크립트가 document.head에 추가됨");
+    } else {
+      console.log("✅ Daum API가 이미 로드되어 있음");
     }
   }, []);
 
   // 주소 검색 팝업 열기
   const openAddressSearch = () => {
+    console.log("🔍 주소 검색 버튼 클릭됨");
+    console.log("window.daum 상태:", !!window.daum);
+    console.log("window.daum.Postcode 상태:", !!window.daum?.Postcode);
+    
     if (!window.daum) {
+      console.error("❌ window.daum이 없음");
       toast.error(
         "주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요."
       );
       return;
     }
 
+    if (!window.daum.Postcode) {
+      console.error("❌ window.daum.Postcode가 없음");
+      toast.error("주소 검색 API가 아직 로드되지 않았습니다.");
+      return;
+    }
+
+    console.log("🚀 Daum Postcode 팝업 열기 시도");
     try {
       new window.daum.Postcode({
         oncomplete: function (data: any) {
+          console.log("✅ 주소 선택 완료:", data);
           // 도로명 주소 또는 지번 주소 선택
           const fullAddress = data.roadAddress || data.jibunAddress;
+          console.log("선택된 주소:", fullAddress);
+          console.log("우편번호:", data.zonecode);
 
           setFormData(prev => ({
             ...prev,
@@ -211,9 +236,9 @@ export default function BuyerShippingInfoModal({
               <Input
                 type="text"
                 value={formData.zipCode}
+                onChange={e => handleInputChange("zipCode", e.target.value)}
                 placeholder="우편번호"
                 className="w-32"
-                readOnly
               />
               <Button
                 type="button"
@@ -224,15 +249,31 @@ export default function BuyerShippingInfoModal({
                 <Search className="w-4 h-4" />
                 <span>주소 검색</span>
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  console.log("🔧 수동 주소 입력 모드");
+                  setFormData(prev => ({
+                    ...prev,
+                    zipCode: "00000",
+                    address: "수동 입력",
+                  }));
+                  toast.info("주소를 직접 입력해주세요.");
+                }}
+                className="flex items-center space-x-1 text-xs"
+              >
+                <span>직접 입력</span>
+              </Button>
             </div>
 
             {/* 기본 주소 */}
             <Input
               type="text"
               value={formData.address}
-              placeholder="주소 검색 버튼을 클릭하세요"
+              onChange={e => handleInputChange("address", e.target.value)}
+              placeholder="주소 검색 버튼을 클릭하거나 직접 입력하세요"
               className="w-full"
-              readOnly
             />
 
             {/* 상세 주소 */}
