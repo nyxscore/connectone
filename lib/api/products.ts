@@ -869,12 +869,12 @@ export async function submitBuyerShippingInfo(
     const itemRef = doc(db, "items", itemId);
     const buyerShippingData = {
       ...shippingInfo,
-      submittedAt: new Date(), // serverTimestamp() 대신 즉시 사용 가능한 Date 사용
+      submittedAt: new Date().toISOString(), // ISO 문자열로 변환하여 Vercel 호환성 개선
     };
     
     await updateDoc(itemRef, {
       buyerShippingInfo: buyerShippingData,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     });
     
     console.log("✅ 배송지 정보 저장 완료:", buyerShippingData);

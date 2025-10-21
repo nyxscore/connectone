@@ -43,7 +43,7 @@ export default function BuyerShippingInfoModal({
   useEffect(() => {
     console.log("🔍 Daum Postcode 스크립트 로드 시작");
     console.log("현재 window.daum 상태:", !!window.daum);
- 
+
     if (!window.daum) {
       console.log("📦 Daum 스크립트 로드 중...");
       const script = document.createElement("script");
@@ -58,7 +58,9 @@ export default function BuyerShippingInfoModal({
       script.onerror = error => {
         console.error("❌ 다음 주소 검색 API 로드 실패:", error);
         console.log("🔄 대안 방법으로 전환합니다");
-        toast.error("주소 검색 서비스를 불러올 수 없습니다. 직접 입력해주세요.");
+        toast.error(
+          "주소 검색 서비스를 불러올 수 없습니다. 직접 입력해주세요."
+        );
       };
       document.head.appendChild(script);
       console.log("📦 스크립트가 document.head에 추가됨");
@@ -83,7 +85,9 @@ export default function BuyerShippingInfoModal({
 
     if (!window.daum.Postcode) {
       console.error("❌ window.daum.Postcode가 없음");
-      toast.error("주소 검색 API가 아직 로드되지 않았습니다. '직접 입력' 버튼을 사용해주세요.");
+      toast.error(
+        "주소 검색 API가 아직 로드되지 않았습니다. '직접 입력' 버튼을 사용해주세요."
+      );
       return;
     }
 
@@ -92,7 +96,9 @@ export default function BuyerShippingInfoModal({
       // 팝업 차단 감지를 위한 타이머
       const popupTimer = setTimeout(() => {
         console.log("⚠️ 팝업이 차단되었을 가능성이 있습니다");
-        toast.error("팝업이 차단되었습니다. 브라우저 설정에서 팝업을 허용해주세요.");
+        toast.error(
+          "팝업이 차단되었습니다. 브라우저 설정에서 팝업을 허용해주세요."
+        );
       }, 2000);
 
       const postcode = new window.daum.Postcode({
@@ -115,7 +121,9 @@ export default function BuyerShippingInfoModal({
           console.log("🔍 주소 검색 팝업 닫힘:", state);
           clearTimeout(popupTimer); // 타이머 정리
           if (state === "FORCE_CLOSE") {
-            toast.error("주소 검색이 강제로 닫혔습니다. 팝업 차단을 해제해주세요.");
+            toast.error(
+              "주소 검색이 강제로 닫혔습니다. 팝업 차단을 해제해주세요."
+            );
           } else if (state === "COMPLETE_CLOSE") {
             // 정상적으로 닫힌 경우 (주소 선택 완료)
             console.log("✅ 주소 검색 정상 완료");
@@ -148,7 +156,7 @@ export default function BuyerShippingInfoModal({
           outlineColor: "#e0e0e0",
         },
       });
-      
+
       postcode.open();
       console.log("✅ 주소 검색 팝업 열기 완료");
     } catch (error) {
@@ -185,8 +193,15 @@ export default function BuyerShippingInfoModal({
 
       if (result.success) {
         toast.success("배송지 정보가 등록되었습니다.");
+        console.log("✅ 배송지 정보 등록 성공 - 콜백 호출");
         onSuccess?.();
         onClose();
+        
+        // 강제 새로고침 (Vercel 호환성)
+        setTimeout(() => {
+          console.log("🔄 채팅 모달 강제 새로고침");
+          window.location.reload();
+        }, 1000);
       } else {
         toast.error(result.error || "배송지 정보 등록에 실패했습니다.");
       }

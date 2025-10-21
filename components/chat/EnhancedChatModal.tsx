@@ -1234,6 +1234,7 @@ export function EnhancedChatModal({
               if (doc.exists()) {
                 const itemData = doc.data();
                 console.log("상품 상태 실시간 업데이트:", itemData.status);
+                console.log("🔄 배송지 정보 실시간 업데이트:", itemData.buyerShippingInfo);
 
                 // chatData의 item 상태만 업데이트 (cancelRequest 포함)
                 setChatData(prev => {
@@ -2819,8 +2820,13 @@ export function EnhancedChatModal({
                                                       ) : (
                                                         <>
                                                           {/* 배송지 정보 보기 (구매자가 입력한 경우) */}
-                                                          {chatData.item
-                                                            .buyerShippingInfo ? (
+                                                          {(() => {
+                                                            console.log("🔍 배송지 정보 표시 조건 확인:", {
+                                                              hasBuyerShippingInfo: !!chatData.item.buyerShippingInfo,
+                                                              buyerShippingInfo: chatData.item.buyerShippingInfo,
+                                                            });
+                                                            return chatData.item.buyerShippingInfo;
+                                                          })() ? (
                                                             <div className="p-3 space-y-2">
                                                               <div className="text-xs text-gray-500 font-medium mb-2">
                                                                 📍 배송지 정보
@@ -4091,9 +4097,17 @@ export function EnhancedChatModal({
               {user && chatData && user.uid === chatData.buyerUid && (
                 <div className="mb-4 space-y-2">
                   {/* 배송지 입력 버튼 - 구매자이고 배송지가 없을 때만 */}
-                  {(chatData.item.status === "escrow_completed" ||
-                    chatData.item.status === "reserved") &&
-                    !chatData.item.buyerShippingInfo && (
+                  {(() => {
+                    const shouldShowButton = (chatData.item.status === "escrow_completed" ||
+                      chatData.item.status === "reserved") &&
+                      !chatData.item.buyerShippingInfo;
+                    console.log("🔍 배송지 입력 버튼 표시 조건:", {
+                      status: chatData.item.status,
+                      hasBuyerShippingInfo: !!chatData.item.buyerShippingInfo,
+                      shouldShowButton,
+                    });
+                    return shouldShowButton;
+                  })() && (
                       <Button
                         onClick={() => setShowShippingAddressModal(true)}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
