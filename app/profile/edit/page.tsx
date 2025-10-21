@@ -156,8 +156,18 @@ export default function ProfileEditPage() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error("새 비밀번호는 6자 이상이어야 합니다.");
+    if (newPassword.length < 10) {
+      toast.error("새 비밀번호는 10자 이상이어야 합니다.");
+      return;
+    }
+
+    // 비밀번호 강도 검사: 소문자 + 숫자 + 특수문자
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumbers = /\d/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+    if (!hasLowerCase || !hasNumbers || !hasSpecialChar) {
+      toast.error("새 비밀번호는 소문자, 숫자, 특수문자를 포함해야 합니다.");
       return;
     }
 
@@ -170,7 +180,6 @@ export default function ProfileEditPage() {
       toast.error("현재 비밀번호와 새 비밀번호가 같습니다.");
       return;
     }
-
 
     setChangingPassword(true);
 
@@ -220,7 +229,9 @@ export default function ProfileEditPage() {
       } else if (error.code === "auth/user-not-found") {
         toast.error("사용자를 찾을 수 없습니다. 다시 로그인해주세요.");
       } else {
-        toast.error(`비밀번호 변경 실패: ${error.message || "알 수 없는 오류"}`);
+        toast.error(
+          `비밀번호 변경 실패: ${error.message || "알 수 없는 오류"}`
+        );
       }
     } finally {
       setChangingPassword(false);
@@ -311,17 +322,32 @@ export default function ProfileEditPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 거래 지역
               </label>
-              <input
-                {...register("region")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="예: 서울시 강남구, 경기도 성남시"
-                maxLength={50}
-                onChange={e => {
-                  // 실시간으로 입력값 업데이트
-                  const value = e.target.value;
-                  console.log("📍 거래지역 입력:", value);
-                }}
-              />
+              <div className="flex gap-2">
+                <input
+                  {...register("region")}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="예: 서울시 강남구, 경기도 성남시"
+                  maxLength={50}
+                  onChange={e => {
+                    // 실시간으로 입력값 업데이트
+                    const value = e.target.value;
+                    console.log("📍 거래지역 입력:", value);
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentRegion = watch("region");
+                    console.log("📍 거래지역 수정 버튼 클릭:", currentRegion);
+                    toast.success("거래지역이 업데이트됩니다. 저장 버튼을 눌러주세요.");
+                  }}
+                  className="px-4"
+                >
+                  수정
+                </Button>
+              </div>
               {errors.region && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.region.message}
@@ -433,7 +459,7 @@ export default function ProfileEditPage() {
                         value={newPassword}
                         onChange={e => setNewPassword(e.target.value)}
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="새 비밀번호를 입력하세요 (6자 이상)"
+                        placeholder="새 비밀번호를 입력하세요 (10자 이상, 소문자+숫자+특수문자)"
                       />
                       <button
                         type="button"
