@@ -3235,7 +3235,7 @@ export function EnhancedChatModal({
                     📢 플랫폼 안내
                   </p>
                   <p className="text-xs text-gray-600">
-                    ConnectOne은 중개 플랫폼입니다. 거래는 사용자 간 직접
+                    ConnecTone은 중개 플랫폼입니다. 거래는 사용자 간 직접
                     진행되며, 플랫폼은 거래에 대한 책임을 지지 않습니다.
                   </p>
                 </div>
