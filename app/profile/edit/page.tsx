@@ -104,23 +104,29 @@ export default function ProfileEditPage() {
     console.log("🔍 프로필 업데이트 시작:", data);
     setSaving(true);
     try {
-      // 빈 문자열을 null로 변환하여 Firestore에 저장
+      // 데이터 정리 및 검증
       const updateData = {
         nickname: data.nickname?.trim(),
-        region: data.region?.trim() || "",
-        introShort: data.introShort?.trim() || "",
-        introLong: data.introLong?.trim() || "",
+        region: data.region?.trim() || null,
+        introShort: data.introShort?.trim() || null,
+        introLong: data.introLong?.trim() || null,
       };
 
-      console.log("📦 업데이트 데이터:", updateData);
+      // 빈 문자열을 제거하여 Firestore에 저장
+      const cleanUpdateData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, value]) => value !== null && value !== "")
+      );
 
-      const result = await updateUserProfile(currentUser.uid, updateData);
+      console.log("📦 원본 데이터:", updateData);
+      console.log("📦 정리된 데이터:", cleanUpdateData);
+
+      const result = await updateUserProfile(currentUser.uid, cleanUpdateData);
       console.log("📦 프로필 업데이트 결과:", result);
 
       if (result.success) {
         toast.success("프로필이 업데이트되었습니다.");
         // 프로필 상태도 업데이트
-        setProfile(prev => (prev ? { ...prev, ...updateData } : null));
+        setProfile(prev => (prev ? { ...prev, ...cleanUpdateData } : null));
         router.push("/profile");
       } else {
         console.error("❌ 프로필 업데이트 실패:", result.error);
@@ -341,7 +347,11 @@ export default function ProfileEditPage() {
                   onClick={() => {
                     const currentRegion = watch("region");
                     console.log("📍 거래지역 수정 버튼 클릭:", currentRegion);
-                    toast.success("거래지역이 업데이트됩니다. 저장 버튼을 눌러주세요.");
+                    if (currentRegion && currentRegion.trim()) {
+                      toast.success(`거래지역이 "${currentRegion}"로 설정됩니다. 저장 버튼을 눌러주세요.`);
+                    } else {
+                      toast.info("거래지역을 입력한 후 수정 버튼을 눌러주세요.");
+                    }
                   }}
                   className="px-4"
                 >

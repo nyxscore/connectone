@@ -8,18 +8,15 @@ export const profileUpdateSchema = z.object({
   region: z
     .string()
     .max(50, "거래지역은 50자 이하여야 합니다")
-    .optional()
-    .or(z.literal("")),
+    .optional(),
   introShort: z
     .string()
     .max(50, "한 줄 소개는 50자 이하여야 합니다")
-    .optional()
-    .or(z.literal("")),
+    .optional(),
   introLong: z
     .string()
     .max(500, "자기소개는 500자 이하여야 합니다")
-    .optional()
-    .or(z.literal("")),
+    .optional(),
 });
 
 export const avatarUploadSchema = z.object({
