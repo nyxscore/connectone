@@ -123,15 +123,25 @@ export async function createItem(
 
     // 상품 데이터 저장
     console.log("상품 저장 시작 - images:", itemData.images);
-    const docRef = await addDoc(collection(db, "items"), {
+    const itemToSave = {
       ...itemData,
       aiTags: itemData.aiTags || [],
       status: "active",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+    };
+    
+    console.log("🔥 저장할 상품 데이터:", {
+      ...itemToSave,
+      status: itemToSave.status,
+      category: itemData.category,
+      title: itemData.title,
     });
+    
+    const docRef = await addDoc(collection(db, "items"), itemToSave);
 
     console.log("✅ 아이템 생성 성공:", docRef.id);
+    console.log("✅ 저장된 status:", itemToSave.status);
     console.log("저장된 images 필드:", itemData.images);
 
     return {
@@ -488,6 +498,8 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     }
 
     // 기본 쿼리: 필터에 따라 상태별 조회
+    console.log("🔍 getItemList 호출 - statusFilter:", statusFilter);
+    console.log("🔍 getItemList 호출 - filters:", filters);
     let q = query(collection(db, "items"), where("status", "in", statusFilter));
 
     // 디버깅: 모든 상품의 카테고리 확인 (개발 중에만)
