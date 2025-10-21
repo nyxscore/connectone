@@ -106,21 +106,21 @@ export default function ProfileEditPage() {
     try {
       // 빈 문자열을 null로 변환하여 Firestore에 저장
       const updateData = {
-        ...data,
-        region: data.region?.trim() || null,
-        introShort: data.introShort?.trim() || null,
-        introLong: data.introLong?.trim() || null,
+        nickname: data.nickname?.trim(),
+        region: data.region?.trim() || "",
+        introShort: data.introShort?.trim() || "",
+        introLong: data.introLong?.trim() || "",
       };
 
       console.log("📦 업데이트 데이터:", updateData);
-      
+
       const result = await updateUserProfile(currentUser.uid, updateData);
       console.log("📦 프로필 업데이트 결과:", result);
 
       if (result.success) {
         toast.success("프로필이 업데이트되었습니다.");
         // 프로필 상태도 업데이트
-        setProfile(prev => prev ? { ...prev, ...updateData } : null);
+        setProfile(prev => (prev ? { ...prev, ...updateData } : null));
         router.push("/profile");
       } else {
         console.error("❌ 프로필 업데이트 실패:", result.error);
@@ -156,8 +156,8 @@ export default function ProfileEditPage() {
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast.error("새 비밀번호는 8자 이상이어야 합니다.");
+    if (newPassword.length < 6) {
+      toast.error("새 비밀번호는 6자 이상이어야 합니다.");
       return;
     }
 
@@ -171,22 +171,13 @@ export default function ProfileEditPage() {
       return;
     }
 
-    // 비밀번호 강도 검사
-    const hasUpperCase = /[A-Z]/.test(newPassword);
-    const hasLowerCase = /[a-z]/.test(newPassword);
-    const hasNumbers = /\d/.test(newPassword);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
-
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
-      toast.error("새 비밀번호는 대문자, 소문자, 숫자를 포함해야 합니다.");
-      return;
-    }
 
     setChangingPassword(true);
 
     try {
       console.log("🔐 비밀번호 변경 시작...");
-      
+      console.log("현재 사용자:", currentUser.email);
+
       // 현재 사용자 재인증
       const credential = EmailAuthProvider.credential(
         currentUser.email || "",
@@ -202,7 +193,7 @@ export default function ProfileEditPage() {
       await updatePassword(currentUser, newPassword);
       console.log("✅ 비밀번호 업데이트 성공");
 
-      toast.success("비밀번호가 성공적으로 변경되었습니다.");
+      toast.success("비밀번호가 성공적으로 변경되었습니다!");
 
       // 폼 초기화
       setCurrentPassword("");
@@ -211,21 +202,25 @@ export default function ProfileEditPage() {
       setShowPasswordChange(false);
     } catch (error: any) {
       console.error("❌ 비밀번호 변경 실패:", error);
+      console.error("에러 코드:", error.code);
+      console.error("에러 메시지:", error.message);
 
       if (error.code === "auth/wrong-password") {
         toast.error("현재 비밀번호가 올바르지 않습니다.");
       } else if (error.code === "auth/weak-password") {
-        toast.error(
-          "새 비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용해주세요."
-        );
+        toast.error("새 비밀번호가 너무 약합니다. 6자 이상 입력해주세요.");
       } else if (error.code === "auth/requires-recent-login") {
         toast.error("보안을 위해 다시 로그인해주세요.");
       } else if (error.code === "auth/too-many-requests") {
         toast.error("너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.");
       } else if (error.code === "auth/network-request-failed") {
         toast.error("네트워크 연결을 확인해주세요.");
+      } else if (error.code === "auth/user-mismatch") {
+        toast.error("사용자 정보가 일치하지 않습니다. 다시 로그인해주세요.");
+      } else if (error.code === "auth/user-not-found") {
+        toast.error("사용자를 찾을 수 없습니다. 다시 로그인해주세요.");
       } else {
-        toast.error(`비밀번호 변경 중 오류가 발생했습니다: ${error.message}`);
+        toast.error(`비밀번호 변경 실패: ${error.message || "알 수 없는 오류"}`);
       }
     } finally {
       setChangingPassword(false);
@@ -321,7 +316,7 @@ export default function ProfileEditPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="예: 서울시 강남구, 경기도 성남시"
                 maxLength={50}
-                onChange={(e) => {
+                onChange={e => {
                   // 실시간으로 입력값 업데이트
                   const value = e.target.value;
                   console.log("📍 거래지역 입력:", value);
@@ -438,7 +433,7 @@ export default function ProfileEditPage() {
                         value={newPassword}
                         onChange={e => setNewPassword(e.target.value)}
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="새 비밀번호를 입력하세요 (8자 이상)"
+                        placeholder="새 비밀번호를 입력하세요 (6자 이상)"
                       />
                       <button
                         type="button"
