@@ -42,123 +42,68 @@ export default function BuyerShippingInfoModal({
   // Daum Postcode 스크립트 확인 (이미 layout.tsx에서 로드됨)
   useEffect(() => {
     console.log("🔍 Daum Postcode 스크립트 확인");
-    
+
     // 스크립트 로딩 대기 (최대 5초)
     let attempts = 0;
     const maxAttempts = 10;
-    
+
     const checkScript = setInterval(() => {
       attempts++;
       console.log(`📦 스크립트 확인 시도 ${attempts}/${maxAttempts}`);
-      
+
       if (window.daum && window.daum.Postcode) {
         console.log("✅ Daum Postcode API 준비 완료");
         clearInterval(checkScript);
       } else if (attempts >= maxAttempts) {
         console.error("❌ Daum Postcode API 로드 실패 (타임아웃)");
-        toast.error("주소 검색 서비스를 불러올 수 없습니다. 페이지를 새로고침해주세요.");
+        toast.error(
+          "주소 검색 서비스를 불러올 수 없습니다. 페이지를 새로고침해주세요."
+        );
         clearInterval(checkScript);
       }
     }, 500);
-    
+
     return () => clearInterval(checkScript);
   }, []);
 
-  // 주소 검색 팝업 열기
+  // 주소 검색 iframe 표시 상태
+  const [showAddressIframe, setShowAddressIframe] = useState(false);
+
+  // 주소 검색 팝업 열기 (iframe 방식)
   const openAddressSearch = () => {
     console.log("🔍 주소 검색 버튼 클릭됨");
-    console.log("window.daum 상태:", !!window.daum);
-    console.log("window.daum.Postcode 상태:", !!window.daum?.Postcode);
-
-    if (!window.daum) {
-      console.error("❌ window.daum이 없음");
-      toast.error(
-        "주소 검색 서비스가 차단되었습니다. '직접 입력' 버튼을 사용해주세요."
-      );
-      return;
-    }
-
-    if (!window.daum.Postcode) {
-      console.error("❌ window.daum.Postcode가 없음");
-      toast.error(
-        "주소 검색 API가 아직 로드되지 않았습니다. '직접 입력' 버튼을 사용해주세요."
-      );
-      return;
-    }
-
-    console.log("🚀 Daum Postcode 팝업 열기 시도");
-    try {
-      // 팝업 차단 감지를 위한 타이머
-      const popupTimer = setTimeout(() => {
-        console.log("⚠️ 팝업이 차단되었을 가능성이 있습니다");
-        toast.error(
-          "팝업이 차단되었습니다. 브라우저 설정에서 팝업을 허용해주세요."
-        );
-      }, 2000);
-
-      const postcode = new window.daum.Postcode({
-        oncomplete: function (data: any) {
-          console.log("✅ 주소 선택 완료:", data);
-          // 도로명 주소 또는 지번 주소 선택
-          const fullAddress = data.roadAddress || data.jibunAddress;
-          console.log("선택된 주소:", fullAddress);
-          console.log("우편번호:", data.zonecode);
-
-          setFormData(prev => ({
-            ...prev,
-            zipCode: data.zonecode,
-            address: fullAddress,
-          }));
-
-          toast.success(`주소가 선택되었습니다.\n${fullAddress}`);
-        },
-        onclose: function (state: string) {
-          console.log("🔍 주소 검색 팝업 닫힘:", state);
-          clearTimeout(popupTimer); // 타이머 정리
-          if (state === "FORCE_CLOSE") {
-            toast.error(
-              "주소 검색이 강제로 닫혔습니다. 팝업 차단을 해제해주세요."
-            );
-          } else if (state === "COMPLETE_CLOSE") {
-            // 정상적으로 닫힌 경우 (주소 선택 완료)
-            console.log("✅ 주소 검색 정상 완료");
-          } else {
-            toast.info("주소 검색이 취소되었습니다.");
-          }
-        },
-        width: "100%",
-        height: "100%",
-        maxSuggestItems: 5,
-        showMoreHints: true,
-        hideMapBtn: false,
-        hideEngBtn: true,
-        alwaysShowEngAddr: false,
-        submitMode: false,
-        useBanner: true,
-        useSuggest: true,
-        autoMapping: true,
-        autoMappingRoad: true,
-        autoMappingJibun: true,
-        theme: {
-          bgColor: "#ffffff",
-          searchBgColor: "#f8f9fa",
-          contentBgColor: "#ffffff",
-          pageBgColor: "#ffffff",
-          textColor: "#333333",
-          queryTextColor: "#222222",
-          postcodeTextColor: "#fa4256",
-          emphTextColor: "#008bd3",
-          outlineColor: "#e0e0e0",
-        },
-      });
-
-      postcode.open();
-      console.log("✅ 주소 검색 팝업 열기 완료");
-    } catch (error) {
-      console.error("주소 검색 팝업 오류:", error);
-      toast.error("주소 검색 중 오류가 발생했습니다.");
-    }
+    
+    // iframe 방식으로 열기
+    setShowAddressIframe(true);
   };
+
+  // postMessage로 주소 데이터 받기
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.origin !== "https://t1.daumcdn.net") return;
+      
+      console.log("📬 주소 데이터 수신:", e.data);
+      
+      const data = e.data;
+      if (data.zonecode) {
+        const fullAddress = data.roadAddress || data.jibunAddress;
+        console.log("선택된 주소:", fullAddress);
+        console.log("우편번호:", data.zonecode);
+
+        setFormData(prev => ({
+          ...prev,
+          zipCode: data.zonecode,
+          address: fullAddress,
+        }));
+
+        toast.success(`주소가 선택되었습니다.\n${fullAddress}`);
+        setShowAddressIframe(false);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,10 +213,9 @@ export default function BuyerShippingInfoModal({
                 variant="outline"
                 onClick={openAddressSearch}
                 className="flex items-center space-x-1"
-                disabled={!window.daum}
               >
                 <Search className="w-4 h-4" />
-                <span>{window.daum ? "주소 검색" : "검색 불가"}</span>
+                <span>주소 검색</span>
               </Button>
               <Button
                 type="button"
@@ -412,6 +356,28 @@ export default function BuyerShippingInfoModal({
           </div>
         </form>
       </div>
+
+      {/* 주소 검색 iframe 모달 */}
+      {showAddressIframe && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg w-full max-w-2xl h-[600px] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold">주소 검색</h3>
+              <button
+                onClick={() => setShowAddressIframe(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <iframe
+              src="data:text/html;charset=utf-8,%3C!DOCTYPE%20html%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%20%20%3Cmeta%20charset%3D%22utf-8%22%3E%0A%20%20%3Cscript%20src%3D%22https%3A//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js%22%3E%3C/script%3E%0A%3C/head%3E%0A%3Cbody%3E%0A%20%20%3Cdiv%20id%3D%22postcode%22%20style%3D%22width%3A100%25%3Bheight%3A100%25%22%3E%3C/div%3E%0A%20%20%3Cscript%3E%0A%20%20%20%20new%20daum.Postcode(%7B%0A%20%20%20%20%20%20oncomplete%3A%20function(data)%20%7B%0A%20%20%20%20%20%20%20%20parent.postMessage(data%2C%20'*')%3B%0A%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20width%3A%20'100%25'%2C%0A%20%20%20%20%20%20height%3A%20'100%25'%0A%20%20%20%20%7D).embed(document.getElementById('postcode'))%3B%0A%20%20%3C/script%3E%0A%3C/body%3E%0A%3C/html%3E"
+              className="flex-1 w-full"
+              style={{ border: 'none' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
