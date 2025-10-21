@@ -475,7 +475,9 @@ export default function ExpertAnalysisPage() {
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 sm:mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="font-medium text-sm sm:text-base">AI 음악 분석으로 돌아가기</span>
+          <span className="font-medium text-sm sm:text-base">
+            AI 음악 분석으로 돌아가기
+          </span>
         </Link>
 
         {/* 헤더 */}
@@ -486,7 +488,9 @@ export default function ExpertAnalysisPage() {
         >
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
             <Award className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="font-bold text-xs sm:text-sm">PREMIUM SERVICE</span>
+            <span className="font-bold text-xs sm:text-sm">
+              PREMIUM SERVICE
+            </span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
             👨‍🏫 전문가 피드백 서비스
@@ -534,8 +538,12 @@ export default function ExpertAnalysisPage() {
                   </span>
                   <span className="text-base sm:text-xl">→</span>
                   <div className="flex items-baseline">
-                    <span className="text-3xl sm:text-5xl font-black">19,000</span>
-                    <span className="text-lg sm:text-2xl font-bold ml-1">원</span>
+                    <span className="text-3xl sm:text-5xl font-black">
+                      19,000
+                    </span>
+                    <span className="text-lg sm:text-2xl font-bold ml-1">
+                      원
+                    </span>
                   </div>
                 </div>
                 <span className="px-2 sm:px-3 py-1 bg-red-500 text-white text-xs sm:text-sm font-bold rounded-full animate-pulse">
@@ -549,21 +557,27 @@ export default function ExpertAnalysisPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4">
                   <Target className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2" />
-                  <div className="font-semibold mb-1 text-sm sm:text-base">맞춤형 분석</div>
+                  <div className="font-semibold mb-1 text-sm sm:text-base">
+                    맞춤형 분석
+                  </div>
                   <div className="text-purple-100 text-xs">
                     회원님의 수준과 목표에 맞춘 분석
                   </div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4">
                   <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2" />
-                  <div className="font-semibold mb-1 text-sm sm:text-base">PDF 문서 제공</div>
+                  <div className="font-semibold mb-1 text-sm sm:text-base">
+                    PDF 문서 제공
+                  </div>
                   <div className="text-purple-100 text-xs">
                     체계적으로 정리된 전문가 피드백 문서
                   </div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4">
                   <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2" />
-                  <div className="font-semibold mb-1 text-sm sm:text-base">평생 보관</div>
+                  <div className="font-semibold mb-1 text-sm sm:text-base">
+                    평생 보관
+                  </div>
                   <div className="text-purple-100 text-xs">
                     언제든 다시 확인 가능한 나만의 피드백
                   </div>
@@ -867,18 +881,21 @@ export default function ExpertAnalysisPage() {
                   (analysisCategory === "other" && !customCategory.trim()) ||
                   isSubmitting
                 }
-                className="w-full mt-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white h-14 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-4 sm:mt-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white h-12 sm:h-14 text-sm sm:text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    업로드 중...
+                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
+                    <span className="text-sm sm:text-base">업로드 중...</span>
                   </>
                 ) : (
-                  <>
-                    <Award className="w-5 h-5 mr-2" />
-                    전문가 피드백 신청하기 (19,000원)
-                  </>
+                  <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-sm sm:text-base">전문가 피드백 신청하기</span>
+                    </div>
+                    <span className="text-xs sm:text-sm opacity-90">(19,000원)</span>
+                  </div>
                 )}
               </Button>
 
@@ -946,7 +963,9 @@ export default function ExpertAnalysisPage() {
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
               </div>
-              <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">⚡ 24-48시간</h4>
+              <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">
+                ⚡ 24-48시간
+              </h4>
               <p className="text-gray-600 text-xs sm:text-sm">
                 결제 완료 후 24-48시간 내에 전문가의 상세한 피드백 문서를 받으실
                 수 있습니다. 알림으로 안내해드립니다.
