@@ -278,14 +278,14 @@ export default function MyProfilePage() {
   // 인증 모달 상태
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [showPhoneInput, setShowPhoneInput] = useState(false);
-  
+
   // 비밀번호 변경 상태
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
-  
+
   // 거래지역 변경 상태
   const [showRegionEdit, setShowRegionEdit] = useState(false);
   const [editingRegion, setEditingRegion] = useState("");
@@ -527,7 +527,9 @@ export default function MyProfilePage() {
       } else if (error.code === "auth/requires-recent-login") {
         toast.error("보안을 위해 다시 로그인해주세요.");
       } else {
-        toast.error(`비밀번호 변경 실패: ${error.message || "알 수 없는 오류"}`);
+        toast.error(
+          `비밀번호 변경 실패: ${error.message || "알 수 없는 오류"}`
+        );
       }
     } finally {
       setChangingPassword(false);
@@ -548,7 +550,9 @@ export default function MyProfilePage() {
 
       if (result.success) {
         toast.success("거래지역이 변경되었습니다.");
-        setProfile(prev => prev ? { ...prev, region: editingRegion.trim() || null } : null);
+        setProfile(prev =>
+          prev ? { ...prev, region: editingRegion.trim() || null } : null
+        );
         setShowRegionEdit(false);
         setEditingRegion("");
       } else {
@@ -872,7 +876,7 @@ export default function MyProfilePage() {
                     size="sm"
                     variant="ghost"
                     className="p-1 sm:p-2"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       setEditingRegion(profile.region || "");
                       setShowRegionEdit(true);
@@ -1180,7 +1184,7 @@ export default function MyProfilePage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">비밀번호 변경</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1251,23 +1255,39 @@ export default function MyProfilePage() {
       {showRegionEdit && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">거래지역 변경</h3>
-            
+            <h3 className="text-lg font-semibold mb-4">거래지역 선택</h3>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   거래지역
                 </label>
-                <input
-                  type="text"
+                <select
                   value={editingRegion}
                   onChange={e => setEditingRegion(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="예: 서울시 강남구, 경기도 성남시"
-                  maxLength={50}
-                />
+                >
+                  <option value="">지역을 선택하세요</option>
+                  <option value="서울특별시">서울특별시</option>
+                  <option value="부산광역시">부산광역시</option>
+                  <option value="대구광역시">대구광역시</option>
+                  <option value="인천광역시">인천광역시</option>
+                  <option value="광주광역시">광주광역시</option>
+                  <option value="대전광역시">대전광역시</option>
+                  <option value="울산광역시">울산광역시</option>
+                  <option value="세종특별자치시">세종특별자치시</option>
+                  <option value="경기도">경기도</option>
+                  <option value="강원도">강원도</option>
+                  <option value="충청북도">충청북도</option>
+                  <option value="충청남도">충청남도</option>
+                  <option value="전라북도">전라북도</option>
+                  <option value="전라남도">전라남도</option>
+                  <option value="경상북도">경상북도</option>
+                  <option value="경상남도">경상남도</option>
+                  <option value="제주특별자치도">제주특별자치도</option>
+                </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  직거래를 주로 하시는 지역을 입력해주세요.
+                  직거래를 주로 하시는 지역을 선택해주세요.
                 </p>
               </div>
 
@@ -1282,10 +1302,7 @@ export default function MyProfilePage() {
                 >
                   취소
                 </Button>
-                <Button
-                  onClick={handleRegionChange}
-                  className="flex-1"
-                >
+                <Button onClick={handleRegionChange} className="flex-1">
                   저장
                 </Button>
               </div>
