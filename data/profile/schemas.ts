@@ -5,7 +5,7 @@ export const profileUpdateSchema = z.object({
     .string()
     .min(2, "닉네임은 2자 이상이어야 합니다")
     .max(20, "닉네임은 20자 이하여야 합니다"),
-  region: z.string().min(1, "지역을 선택해주세요"),
+  region: z.string().min(1, "지역을 입력해주세요").optional(),
   introShort: z
     .string()
     .max(50, "한 줄 소개는 50자 이하여야 합니다")

@@ -95,17 +95,23 @@ export async function updateUserProfile(
   updateData: ProfileUpdateData
 ): Promise<ApiResponse<void>> {
   try {
+    console.log("🔍 updateUserProfile 호출:", { uid, updateData });
     const db = await getDb();
     const userRef = doc(db, "users", uid);
 
-    await updateDoc(userRef, {
+    const updatePayload = {
       ...updateData,
       updatedAt: serverTimestamp(),
-    });
+    };
+    
+    console.log("📦 Firestore 업데이트 페이로드:", updatePayload);
+
+    await updateDoc(userRef, updatePayload);
+    console.log("✅ Firestore 업데이트 완료");
 
     return { success: true };
   } catch (error) {
-    console.error("사용자 프로필 업데이트 실패:", error);
+    console.error("❌ 사용자 프로필 업데이트 실패:", error);
     return { success: false, error: "프로필 업데이트에 실패했습니다." };
   }
 }

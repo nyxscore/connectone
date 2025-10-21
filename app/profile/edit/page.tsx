@@ -16,7 +16,11 @@ import {
   ProfileUpdateInput,
 } from "../../../data/profile/schemas";
 import { KOREAN_REGIONS } from "../../../lib/utils";
-import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import {
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+} from "firebase/auth";
 
 export default function ProfileEditPage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
@@ -25,7 +29,7 @@ export default function ProfileEditPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  
+
   // 비밀번호 변경 관련 상태
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -97,18 +101,21 @@ export default function ProfileEditPage() {
   const onSubmit = async (data: ProfileUpdateInput) => {
     if (!currentUser) return;
 
+    console.log("🔍 프로필 업데이트 시작:", data);
     setSaving(true);
     try {
       const result = await updateUserProfile(currentUser.uid, data);
+      console.log("📦 프로필 업데이트 결과:", result);
 
       if (result.success) {
         toast.success("프로필이 업데이트되었습니다.");
         router.push("/profile");
       } else {
+        console.error("❌ 프로필 업데이트 실패:", result.error);
         toast.error(result.error || "프로필 업데이트에 실패했습니다.");
       }
     } catch (error) {
-      console.error("프로필 업데이트 실패:", error);
+      console.error("❌ 프로필 업데이트 실패:", error);
       toast.error("프로필 업데이트 중 오류가 발생했습니다.");
     } finally {
       setSaving(false);
@@ -160,27 +167,28 @@ export default function ProfileEditPage() {
         currentUser.email || "",
         currentPassword
       );
-      
+
       await reauthenticateWithCredential(currentUser, credential);
-      
+
       // 비밀번호 업데이트
       await updatePassword(currentUser, newPassword);
-      
+
       toast.success("비밀번호가 성공적으로 변경되었습니다.");
-      
+
       // 폼 초기화
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setShowPasswordChange(false);
-      
     } catch (error: any) {
       console.error("비밀번호 변경 실패:", error);
-      
+
       if (error.code === "auth/wrong-password") {
         toast.error("현재 비밀번호가 올바르지 않습니다.");
       } else if (error.code === "auth/weak-password") {
-        toast.error("새 비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용해주세요.");
+        toast.error(
+          "새 비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용해주세요."
+        );
       } else if (error.code === "auth/requires-recent-login") {
         toast.error("보안을 위해 다시 로그인해주세요.");
       } else {
@@ -192,10 +200,10 @@ export default function ProfileEditPage() {
   };
 
   // 비밀번호 표시/숨김 토글
-  const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
+  const togglePasswordVisibility = (field: "current" | "new" | "confirm") => {
     setShowPasswords(prev => ({
       ...prev,
-      [field]: !prev[field]
+      [field]: !prev[field],
     }));
   };
 
@@ -363,13 +371,13 @@ export default function ProfileEditPage() {
                       <input
                         type={showPasswords.current ? "text" : "password"}
                         value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        onChange={e => setCurrentPassword(e.target.value)}
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="현재 비밀번호를 입력하세요"
                       />
                       <button
                         type="button"
-                        onClick={() => togglePasswordVisibility('current')}
+                        onClick={() => togglePasswordVisibility("current")}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         {showPasswords.current ? (
@@ -390,13 +398,13 @@ export default function ProfileEditPage() {
                       <input
                         type={showPasswords.new ? "text" : "password"}
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={e => setNewPassword(e.target.value)}
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="새 비밀번호를 입력하세요 (8자 이상)"
                       />
                       <button
                         type="button"
-                        onClick={() => togglePasswordVisibility('new')}
+                        onClick={() => togglePasswordVisibility("new")}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         {showPasswords.new ? (
@@ -417,13 +425,13 @@ export default function ProfileEditPage() {
                       <input
                         type={showPasswords.confirm ? "text" : "password"}
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={e => setConfirmPassword(e.target.value)}
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="새 비밀번호를 다시 입력하세요"
                       />
                       <button
                         type="button"
-                        onClick={() => togglePasswordVisibility('confirm')}
+                        onClick={() => togglePasswordVisibility("confirm")}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         {showPasswords.confirm ? (
@@ -454,7 +462,12 @@ export default function ProfileEditPage() {
                     <Button
                       type="button"
                       onClick={handlePasswordChange}
-                      disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+                      disabled={
+                        changingPassword ||
+                        !currentPassword ||
+                        !newPassword ||
+                        !confirmPassword
+                      }
                       className="flex-1"
                     >
                       {changingPassword ? (
@@ -490,6 +503,11 @@ export default function ProfileEditPage() {
               <Button
                 type="submit"
                 disabled={saving}
+                onClick={() => {
+                  console.log("🔍 저장 버튼 클릭됨");
+                  console.log("현재 폼 데이터:", watch());
+                  console.log("폼 에러:", errors);
+                }}
                 className="flex-1 flex items-center justify-center"
               >
                 {saving ? (
