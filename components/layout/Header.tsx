@@ -236,6 +236,12 @@ export function Header() {
             >
               상품 등록
             </Link>
+            <Link
+              href="/vocal-analysis"
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
+              AI 음악 분석
+            </Link>
           </nav>
 
           {/* 데스크톱 사용자 메뉴 */}
@@ -606,6 +612,13 @@ export function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 상품 등록
+              </Link>
+              <Link
+                href="/vocal-analysis"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                AI 음악 분석
               </Link>
             </div>
 
