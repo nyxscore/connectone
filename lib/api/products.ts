@@ -446,60 +446,9 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       };
     }
 
-    // 상태 필터 처리
-    let statusFilter = [
-      "active",
-      "reserved",
-      "escrow_completed",
-      "shipping",
-      "shipped",
-      "sold",
-    ]; // 기본값: 모든 활성 상품 (취소된 것만 제외)
-
-    if (filters.status) {
-      switch (filters.status) {
-        case "available":
-          statusFilter = ["active"]; // 거래가능한 상품 (active만)
-          break;
-        case "reserved":
-          statusFilter = [
-            "reserved",
-            "escrow_completed",
-            "shipping",
-            "shipped",
-          ]; // 거래중인 상품 (안전결제 완료 + 배송중 포함)
-          break;
-        case "shipping":
-          statusFilter = ["shipping", "shipped"]; // 배송중인 상품만
-          break;
-        case "sold":
-          statusFilter = ["sold"]; // 거래완료된 상품만
-          break;
-        case "cancelled":
-          statusFilter = ["cancelled"]; // 취소된 상품만
-          break;
-        case "all":
-          statusFilter = [
-            "active",
-            "reserved",
-            "escrow_completed",
-            "shipping",
-            "shipped",
-            "sold",
-            "cancelled",
-          ]; // 전체 (취소된 것 포함)
-          break;
-        default:
-          statusFilter = [
-            "active",
-            "reserved",
-            "escrow_completed",
-            "shipping",
-            "shipped",
-            "sold",
-          ]; // 기본값: 전체 상품 (취소된 것 제외)
-      }
-    }
+    // 상태 필터 처리 - 중앙 집중식 관리
+    const { getStatusFilterArray } = await import("./product-status");
+    const statusFilter = getStatusFilterArray(filters.status);
 
     // 기본 쿼리: 필터에 따라 상태별 조회
     console.log("🔍 getItemList 호출 - statusFilter:", statusFilter);

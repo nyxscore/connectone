@@ -19,6 +19,8 @@
     "test:e2e": "vitest run test/e2e",
     "test:unit": "vitest run test/unit",
     "test:integration": "vitest run test/integration",
+    "verify:products": "node scripts/verify-product-visibility.mjs",
+    "prebuild": "npm run verify:products",
     "deploy": "npm run build && npx --yes firebase-tools deploy",
     "deploy:firebase": "npm run build && npx --yes firebase-tools deploy --only hosting",
     "deploy:rules": "npx --yes firebase-tools deploy --only firestore:rules"
