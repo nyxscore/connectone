@@ -39,11 +39,11 @@ export default function BuyerShippingInfoModal({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Daum Postcode 스크립트 로드
+  // Daum Postcode 스크립트 로드 (대안 방법 포함)
   useEffect(() => {
     console.log("🔍 Daum Postcode 스크립트 로드 시작");
     console.log("현재 window.daum 상태:", !!window.daum);
-    
+ 
     if (!window.daum) {
       console.log("📦 Daum 스크립트 로드 중...");
       const script = document.createElement("script");
@@ -55,9 +55,10 @@ export default function BuyerShippingInfoModal({
         console.log("window.daum 확인:", !!window.daum);
         console.log("window.daum.Postcode 확인:", !!window.daum?.Postcode);
       };
-      script.onerror = (error) => {
+      script.onerror = error => {
         console.error("❌ 다음 주소 검색 API 로드 실패:", error);
-        toast.error("주소 검색 서비스를 불러올 수 없습니다.");
+        console.log("🔄 대안 방법으로 전환합니다");
+        toast.error("주소 검색 서비스를 불러올 수 없습니다. 직접 입력해주세요.");
       };
       document.head.appendChild(script);
       console.log("📦 스크립트가 document.head에 추가됨");
@@ -71,24 +72,30 @@ export default function BuyerShippingInfoModal({
     console.log("🔍 주소 검색 버튼 클릭됨");
     console.log("window.daum 상태:", !!window.daum);
     console.log("window.daum.Postcode 상태:", !!window.daum?.Postcode);
-    
+
     if (!window.daum) {
       console.error("❌ window.daum이 없음");
       toast.error(
-        "주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요."
+        "주소 검색 서비스가 차단되었습니다. '직접 입력' 버튼을 사용해주세요."
       );
       return;
     }
 
     if (!window.daum.Postcode) {
       console.error("❌ window.daum.Postcode가 없음");
-      toast.error("주소 검색 API가 아직 로드되지 않았습니다.");
+      toast.error("주소 검색 API가 아직 로드되지 않았습니다. '직접 입력' 버튼을 사용해주세요.");
       return;
     }
 
     console.log("🚀 Daum Postcode 팝업 열기 시도");
     try {
-      new window.daum.Postcode({
+      // 팝업 차단 감지를 위한 타이머
+      const popupTimer = setTimeout(() => {
+        console.log("⚠️ 팝업이 차단되었을 가능성이 있습니다");
+        toast.error("팝업이 차단되었습니다. 브라우저 설정에서 팝업을 허용해주세요.");
+      }, 2000);
+
+      const postcode = new window.daum.Postcode({
         oncomplete: function (data: any) {
           console.log("✅ 주소 선택 완료:", data);
           // 도로명 주소 또는 지번 주소 선택
@@ -105,10 +112,13 @@ export default function BuyerShippingInfoModal({
           toast.success(`주소가 선택되었습니다.\n${fullAddress}`);
         },
         onclose: function (state: string) {
+          console.log("🔍 주소 검색 팝업 닫힘:", state);
+          clearTimeout(popupTimer); // 타이머 정리
           if (state === "FORCE_CLOSE") {
-            toast.error("주소 검색이 강제로 닫혔습니다.");
+            toast.error("주소 검색이 강제로 닫혔습니다. 팝업 차단을 해제해주세요.");
           } else if (state === "COMPLETE_CLOSE") {
             // 정상적으로 닫힌 경우 (주소 선택 완료)
+            console.log("✅ 주소 검색 정상 완료");
           } else {
             toast.info("주소 검색이 취소되었습니다.");
           }
@@ -137,7 +147,10 @@ export default function BuyerShippingInfoModal({
           emphTextColor: "#008bd3",
           outlineColor: "#e0e0e0",
         },
-      }).open();
+      });
+      
+      postcode.open();
+      console.log("✅ 주소 검색 팝업 열기 완료");
     } catch (error) {
       console.error("주소 검색 팝업 오류:", error);
       toast.error("주소 검색 중 오류가 발생했습니다.");
@@ -245,9 +258,10 @@ export default function BuyerShippingInfoModal({
                 variant="outline"
                 onClick={openAddressSearch}
                 className="flex items-center space-x-1"
+                disabled={!window.daum}
               >
                 <Search className="w-4 h-4" />
-                <span>주소 검색</span>
+                <span>{window.daum ? "주소 검색" : "검색 불가"}</span>
               </Button>
               <Button
                 type="button"
@@ -256,8 +270,8 @@ export default function BuyerShippingInfoModal({
                   console.log("🔧 수동 주소 입력 모드");
                   setFormData(prev => ({
                     ...prev,
-                    zipCode: "00000",
-                    address: "수동 입력",
+                    zipCode: "",
+                    address: "",
                   }));
                   toast.info("주소를 직접 입력해주세요.");
                 }}
