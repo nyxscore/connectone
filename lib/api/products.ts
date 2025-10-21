@@ -123,21 +123,25 @@ export async function createItem(
 
     // 상품 데이터 저장
     console.log("상품 저장 시작 - images:", itemData.images);
+    
+    // 클라이언트 타임스탬프 사용 (즉시 쿼리 가능하도록)
+    const now = new Date();
     const itemToSave = {
       ...itemData,
       aiTags: itemData.aiTags || [],
       status: "active",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: now,
+      updatedAt: now,
     };
-
+    
     console.log("🔥 저장할 상품 데이터:", {
       ...itemToSave,
       status: itemToSave.status,
       category: itemData.category,
       title: itemData.title,
+      createdAt: now.toISOString(),
     });
-
+    
     const docRef = await addDoc(collection(db, "items"), itemToSave);
 
     console.log("✅ 아이템 생성 성공:", docRef.id);
@@ -540,8 +544,8 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     //   q = query(q, where("price", "<=", filters.maxPrice));
     // }
 
-    // 정렬은 클라이언트 사이드에서 처리 (복합 인덱스 방지)
-    // q = query(q, orderBy(sortBy, sortOrder));
+    // 정렬 추가 (최신순)
+    q = query(q, orderBy("createdAt", "desc"));
 
     // 페이지네이션
     if (lastDoc) {
