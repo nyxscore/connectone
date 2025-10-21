@@ -770,7 +770,15 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     }
 
     const finalItems = items.slice(0, limitCount);
-    console.log("✅ 최종 반환:", finalItems.length, "개 (정렬 후", items.length, "개 중에서", limitCount, "개 선택)");
+    console.log(
+      "✅ 최종 반환:",
+      finalItems.length,
+      "개 (정렬 후",
+      items.length,
+      "개 중에서",
+      limitCount,
+      "개 선택)"
+    );
 
     return {
       success: true,
@@ -852,17 +860,27 @@ export async function submitBuyerShippingInfo(
 }> {
   const db = await getDb();
   try {
-    const itemRef = doc(db, "items", itemId);
-    await updateDoc(itemRef, {
-      buyerShippingInfo: {
-        ...shippingInfo,
-        submittedAt: serverTimestamp(),
-      },
-      updatedAt: serverTimestamp(),
+    console.log("🚚 구매자 배송지 정보 제출:", {
+      itemId,
+      buyerUid,
+      shippingInfo,
     });
+    
+    const itemRef = doc(db, "items", itemId);
+    const buyerShippingData = {
+      ...shippingInfo,
+      submittedAt: new Date(), // serverTimestamp() 대신 즉시 사용 가능한 Date 사용
+    };
+    
+    await updateDoc(itemRef, {
+      buyerShippingInfo: buyerShippingData,
+      updatedAt: new Date(),
+    });
+    
+    console.log("✅ 배송지 정보 저장 완료:", buyerShippingData);
     return { success: true };
   } catch (error) {
-    console.error("배송지 정보 제출 에러:", error);
+    console.error("❌ 배송지 정보 제출 에러:", error);
     return { success: false, error: "배송지 정보 제출에 실패했습니다." };
   }
 }

@@ -4643,70 +4643,53 @@ export function EnhancedChatModal({
                   )}
 
                   {/* 거래 취소 버튼 - 결제완료/거래중 단계에서 판매자와 구매자 모두 */}
-                  {user && chatData && (() => {
-                    const showCancelButton = 
-                      chatData.item.status === "escrow_completed" ||
-                      chatData.item.status === "reserved" ||
-                      autoSendSystemMessage === "escrow_completed";
-                    
-                    console.log("🔍 거래취소 버튼 조건 확인:", {
-                      status: chatData.item.status,
-                      autoSendSystemMessage,
-                      showCancelButton,
-                      user: user?.uid,
-                      chatData: !!chatData
-                    });
-                    
-                    return showCancelButton && (
-                      <div className="mt-4">
-                        <Button
-                          onClick={handleCancelTransaction}
-                          variant="outline"
-                          className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
-                          disabled={isCancelingTransaction}
-                        >
-                          {isCancelingTransaction ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              취소 처리 중...
-                            </>
-                          ) : (
-                            <>
-                              <X className="w-4 h-4 mr-2" />
-                              거래 취소하기
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    );
-                  })()}
+                  {user &&
+                    chatData &&
+                    (() => {
+                      const showCancelButton =
+                        chatData.item.status === "escrow_completed" ||
+                        chatData.item.status === "reserved" ||
+                        autoSendSystemMessage === "escrow_completed";
+
+                      console.log("🔍 거래취소 버튼 조건 확인:", {
+                        status: chatData.item.status,
+                        autoSendSystemMessage,
+                        showCancelButton,
+                        user: user?.uid,
+                        chatData: !!chatData,
+                      });
+
+                      return (
+                        showCancelButton && (
+                          <div className="mt-4">
+                            <Button
+                              onClick={handleCancelTransaction}
+                              variant="outline"
+                              className="w-full border-red-300 text-red-600 hover:bg-red-50 h-10"
+                              disabled={isCancelingTransaction}
+                            >
+                              {isCancelingTransaction ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  취소 처리 중...
+                                </>
+                              ) : (
+                                <>
+                                  <X className="w-4 h-4 mr-2" />
+                                  거래 취소하기
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )
+                      );
+                    })()}
                 </div>
               )}
 
               {/* 거래 취소된 상품 안내 - 재거래 가능하도록 제거 */}
 
-              {/* 거래 취소 버튼 (거래중일 때만, 판매자와 구매자 모두) */}
-              {user && chatData && chatData.item.status === "reserved" && (
-                <div className="mb-4">
-                  <Button
-                    onClick={handleCancelTransaction}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white"
-                    disabled={isCancelingTransaction}
-                  >
-                    {isCancelingTransaction ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        거래 취소 중...
-                      </>
-                    ) : (
-                      <>
-                        <X className="w-4 h-4 mr-2" />
-                        거래 취소하기
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+              {/* 거래 취소 버튼 제거 - 중복 방지 */}
 
               {/* 판매자 취소 요청 승인 버튼 */}
               {user &&
