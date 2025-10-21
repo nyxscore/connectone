@@ -1,4 +1,5 @@
 import { AssemblyAI } from "assemblyai";
+import toast from "react-hot-toast";
 
 // AssemblyAI 클라이언트 초기화
 const ASSEMBLYAI_API_KEY = process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY;
@@ -496,10 +497,53 @@ export async function analyzeAudio(
 ): Promise<any> {
   try {
     console.log("🎤 AssemblyAI 오디오 분석 시작");
+    console.log("🔑 API 키 확인:", ASSEMBLYAI_API_KEY ? "✅ 있음" : "❌ 없음");
 
-    // AssemblyAI 토큰 체크
+    // AssemblyAI 토큰 체크 - 없으면 데모 모드
     if (!ASSEMBLYAI_API_KEY) {
-      throw new Error("AssemblyAI API 키가 설정되지 않았습니다.");
+      console.warn("⚠️ AssemblyAI API 키가 없습니다. 데모 분석을 제공합니다.");
+      
+      // 데모 분석 결과 생성
+      const demoResult = {
+        transcription: {
+          text: "음악 파일 분석 데모 모드입니다. 실제 API 키를 설정하면 정확한 분석 결과를 받을 수 있습니다.",
+          language: "ko",
+          confidence: 0.85,
+        },
+        emotion: {
+          label: "positive",
+          label_ko: "긍정적",
+          scores: { positive: 0.7, neutral: 0.2, negative: 0.1 },
+          scores_ko: { "뛰어난 표현력": 0.7, "안정적인 표현": 0.2, "개선 필요한 표현": 0.1 },
+          confidence: 0.75,
+        },
+        pitch: {
+          average_hz: 220 + Math.random() * 100,
+          stddev_hz: 15 + Math.random() * 10,
+          pitch_stability: 0.7 + Math.random() * 0.2,
+        },
+        tempo: {
+          bpm: 100 + Math.random() * 40,
+          confidence: 0.8,
+          tempo_stability: 0.75 + Math.random() * 0.15,
+        },
+        key: {
+          tonic: "C",
+          mode: "major",
+          confidence: 0.7,
+        },
+        metadata: {
+          duration_seconds: 180,
+          file_name: audioFile.name,
+        },
+        cost_estimate_usd: 0,
+        report_ko: "🎵 데모 분석 모드\n\n이 결과는 데모 버전입니다. 실제 AI 분석을 원하시면 AssemblyAI API 키를 설정해주세요.\n\n기본적으로 양호한 음악 파일로 판단됩니다.",
+        summary_ko: "데모 분석 결과입니다. 실제 분석을 위해서는 API 키가 필요합니다.",
+        isDemo: true,
+      };
+      
+      toast.info("데모 분석 모드로 실행됩니다.");
+      return demoResult;
     }
 
     // 파일 크기 검증
