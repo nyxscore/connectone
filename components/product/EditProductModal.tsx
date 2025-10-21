@@ -391,6 +391,8 @@ export default function EditProductModal({
     setCapturedImage(imageDataUrl);
     setIsCameraActive(false);
 
+    console.log("🎭 AI 감정 분석 시작");
+    
     try {
       // AI 감정 분석 API 호출
       const response = await fetch("/api/ai/emotion", {
@@ -401,16 +403,26 @@ export default function EditProductModal({
         body: JSON.stringify({ image: imageDataUrl }),
       });
 
+      console.log("📡 API 응답 상태:", response.status);
+
       if (response.ok) {
         const result = await response.json();
+        console.log("✅ AI 감정 분석 성공:", result);
         setAiAnalysisResult(result);
+        
+        if (result.isMock) {
+          toast.success("AI 감정 분석 완료 (데모 모드)");
+        } else {
+          toast.success("AI 감정 분석 완료");
+        }
       } else {
-        console.error("AI 감정 분석 실패");
-        toast.error("AI 감정 분석에 실패했습니다.");
+        const errorData = await response.json();
+        console.error("❌ AI 감정 분석 실패:", errorData);
+        toast.error(`AI 감정 분석 실패: ${errorData.error || "알 수 없는 오류"}`);
       }
     } catch (error) {
-      console.error("AI 감정 분석 오류:", error);
-      toast.error("AI 감정 분석 중 오류가 발생했습니다.");
+      console.error("❌ AI 감정 분석 오류:", error);
+      toast.error("AI 감정 분석 중 오류가 발생했습니다. 네트워크를 확인해주세요.");
     }
   };
 
