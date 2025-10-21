@@ -7,7 +7,7 @@ import { getUserProfile, updateUserProfile } from "../../../lib/profile/api";
 import { UserProfile } from "../../../data/profile/types";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
-import { ArrowLeft, Save, X, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Save, X, Lock, Eye, EyeOff, Settings, User, Shield, Smartphone, Mail } from "lucide-react";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,6 +41,7 @@ export default function ProfileEditPage() {
     confirm: false,
   });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState<"profile" | "account">("profile");
 
   const {
     register,
@@ -114,7 +115,9 @@ export default function ProfileEditPage() {
 
       // 빈 문자열을 제거하여 Firestore에 저장
       const cleanUpdateData = Object.fromEntries(
-        Object.entries(updateData).filter(([_, value]) => value !== null && value !== "")
+        Object.entries(updateData).filter(
+          ([_, value]) => value !== null && value !== ""
+        )
       );
 
       console.log("📦 원본 데이터:", updateData);
@@ -300,8 +303,37 @@ export default function ProfileEditPage() {
 
       {/* 메인 내용 */}
       <div className="max-w-2xl mx-auto px-4 py-8">
+        {/* 탭 네비게이션 */}
+        <div className="mb-6">
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "profile"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <User className="w-4 h-4 mr-2" />
+              프로필 정보
+            </button>
+            <button
+              onClick={() => setActiveTab("account")}
+              className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "account"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              계정 설정
+            </button>
+          </div>
+        </div>
+
         <Card>
-          <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+          {activeTab === "profile" ? (
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
             {/* 닉네임 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -348,9 +380,13 @@ export default function ProfileEditPage() {
                     const currentRegion = watch("region");
                     console.log("📍 거래지역 수정 버튼 클릭:", currentRegion);
                     if (currentRegion && currentRegion.trim()) {
-                      toast.success(`거래지역이 "${currentRegion}"로 설정됩니다. 저장 버튼을 눌러주세요.`);
+                      toast.success(
+                        `거래지역이 "${currentRegion}"로 설정됩니다. 저장 버튼을 눌러주세요.`
+                      );
                     } else {
-                      toast.info("거래지역을 입력한 후 수정 버튼을 눌러주세요.");
+                      toast.info(
+                        "거래지역을 입력한 후 수정 버튼을 눌러주세요."
+                      );
                     }
                   }}
                   className="px-4"
@@ -588,6 +624,299 @@ export default function ProfileEditPage() {
               </Button>
             </div>
           </form>
+          ) : (
+            <div className="p-6 space-y-6">
+              {/* 계정 설정 헤더 */}
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                  <Settings className="w-8 h-8 text-blue-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">계정 설정</h2>
+                <p className="text-gray-600">계정 보안 및 연락처 정보를 관리하세요</p>
+              </div>
+
+              {/* 이메일 인증 */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <Mail className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">이메일 인증</h3>
+                      <p className="text-sm text-gray-600">{user?.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      인증됨
+                    </span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  이메일 인증이 완료되어 안전하게 서비스를 이용할 수 있습니다.
+                </p>
+                <Button variant="outline" size="sm" disabled>
+                  <Mail className="w-4 h-4 mr-2" />
+                  이메일 재인증
+                </Button>
+              </div>
+
+              {/* 핸드폰 인증 */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Smartphone className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">핸드폰 인증</h3>
+                      <p className="text-sm text-gray-600">SMS 알림 수신</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      미인증
+                    </span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  핸드폰 인증을 통해 실시간 SMS 알림을 받고, 거래를 더욱 안전하게 진행하세요.
+                </p>
+                <Button variant="outline" size="sm">
+                  <Smartphone className="w-4 h-4 mr-2" />
+                  핸드폰 인증하기
+                </Button>
+              </div>
+
+              {/* 거래지역 설정 */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Shield className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">거래지역 설정</h3>
+                      <p className="text-sm text-gray-600">직거래 가능 지역</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      거래지역
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        {...register("region")}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="예: 서울시 강남구, 경기도 성남시"
+                        maxLength={50}
+                        onChange={e => {
+                          const value = e.target.value;
+                          console.log("📍 거래지역 입력:", value);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const currentRegion = watch("region");
+                          console.log("📍 거래지역 수정 버튼 클릭:", currentRegion);
+                          if (currentRegion && currentRegion.trim()) {
+                            toast.success(`거래지역이 "${currentRegion}"로 설정됩니다. 저장 버튼을 눌러주세요.`);
+                          } else {
+                            toast.info("거래지역을 입력한 후 수정 버튼을 눌러주세요.");
+                          }
+                        }}
+                        className="px-4"
+                      >
+                        수정
+                      </Button>
+                    </div>
+                    {errors.region && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.region.message}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      직거래를 주로 하시는 지역을 입력해주세요. (선택사항)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 비밀번호 변경 */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                      <Lock className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">비밀번호 변경</h3>
+                      <p className="text-sm text-gray-600">계정 보안 강화</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {!showPasswordChange ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      정기적으로 비밀번호를 변경하여 계정을 안전하게 보호하세요.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowPasswordChange(true)}
+                      className="w-full"
+                    >
+                      <Lock className="w-4 h-4 mr-2" />
+                      비밀번호 변경하기
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        현재 비밀번호
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.current ? "text" : "password"}
+                          value={currentPassword}
+                          onChange={e => setCurrentPassword(e.target.value)}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="현재 비밀번호를 입력하세요"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("current")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPasswords.current ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        새 비밀번호
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.new ? "text" : "password"}
+                          value={newPassword}
+                          onChange={e => setNewPassword(e.target.value)}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="새 비밀번호를 입력하세요 (10자 이상, 소문자+숫자+특수문자)"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("new")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPasswords.new ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        새 비밀번호 확인
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.confirm ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={e => setConfirmPassword(e.target.value)}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="새 비밀번호를 다시 입력하세요"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("confirm")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPasswords.confirm ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex space-x-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowPasswordChange(false);
+                          setCurrentPassword("");
+                          setNewPassword("");
+                          setConfirmPassword("");
+                        }}
+                        className="flex-1"
+                      >
+                        취소
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handlePasswordChange}
+                        disabled={changingPassword}
+                        className="flex-1"
+                      >
+                        {changingPassword ? (
+                          <>
+                            <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            변경 중...
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-4 h-4 mr-2" />
+                            비밀번호 변경
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 저장 버튼 */}
+              <div className="flex space-x-3 pt-6 border-t border-gray-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  className="flex-1 flex items-center justify-center"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  취소
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleSubmit(onSubmit)}
+                  className="flex-1 flex items-center justify-center"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  저장
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </div>
