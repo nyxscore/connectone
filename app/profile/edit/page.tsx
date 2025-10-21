@@ -104,11 +104,23 @@ export default function ProfileEditPage() {
     console.log("🔍 프로필 업데이트 시작:", data);
     setSaving(true);
     try {
-      const result = await updateUserProfile(currentUser.uid, data);
+      // 빈 문자열을 null로 변환하여 Firestore에 저장
+      const updateData = {
+        ...data,
+        region: data.region?.trim() || null,
+        introShort: data.introShort?.trim() || null,
+        introLong: data.introLong?.trim() || null,
+      };
+
+      console.log("📦 업데이트 데이터:", updateData);
+      
+      const result = await updateUserProfile(currentUser.uid, updateData);
       console.log("📦 프로필 업데이트 결과:", result);
 
       if (result.success) {
         toast.success("프로필이 업데이트되었습니다.");
+        // 프로필 상태도 업데이트
+        setProfile(prev => prev ? { ...prev, ...updateData } : null);
         router.push("/profile");
       } else {
         console.error("❌ 프로필 업데이트 실패:", result.error);
@@ -159,19 +171,36 @@ export default function ProfileEditPage() {
       return;
     }
 
+    // 비밀번호 강도 검사
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumbers = /\d/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      toast.error("새 비밀번호는 대문자, 소문자, 숫자를 포함해야 합니다.");
+      return;
+    }
+
     setChangingPassword(true);
 
     try {
+      console.log("🔐 비밀번호 변경 시작...");
+      
       // 현재 사용자 재인증
       const credential = EmailAuthProvider.credential(
         currentUser.email || "",
         currentPassword
       );
 
+      console.log("🔑 사용자 재인증 중...");
       await reauthenticateWithCredential(currentUser, credential);
+      console.log("✅ 재인증 성공");
 
       // 비밀번호 업데이트
+      console.log("🔐 비밀번호 업데이트 중...");
       await updatePassword(currentUser, newPassword);
+      console.log("✅ 비밀번호 업데이트 성공");
 
       toast.success("비밀번호가 성공적으로 변경되었습니다.");
 
@@ -181,7 +210,7 @@ export default function ProfileEditPage() {
       setConfirmPassword("");
       setShowPasswordChange(false);
     } catch (error: any) {
-      console.error("비밀번호 변경 실패:", error);
+      console.error("❌ 비밀번호 변경 실패:", error);
 
       if (error.code === "auth/wrong-password") {
         toast.error("현재 비밀번호가 올바르지 않습니다.");
@@ -191,8 +220,12 @@ export default function ProfileEditPage() {
         );
       } else if (error.code === "auth/requires-recent-login") {
         toast.error("보안을 위해 다시 로그인해주세요.");
+      } else if (error.code === "auth/too-many-requests") {
+        toast.error("너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.");
+      } else if (error.code === "auth/network-request-failed") {
+        toast.error("네트워크 연결을 확인해주세요.");
       } else {
-        toast.error("비밀번호 변경 중 오류가 발생했습니다.");
+        toast.error(`비밀번호 변경 중 오류가 발생했습니다: ${error.message}`);
       }
     } finally {
       setChangingPassword(false);
@@ -288,6 +321,11 @@ export default function ProfileEditPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="예: 서울시 강남구, 경기도 성남시"
                 maxLength={50}
+                onChange={(e) => {
+                  // 실시간으로 입력값 업데이트
+                  const value = e.target.value;
+                  console.log("📍 거래지역 입력:", value);
+                }}
               />
               {errors.region && (
                 <p className="text-red-500 text-sm mt-1">
@@ -295,7 +333,7 @@ export default function ProfileEditPage() {
                 </p>
               )}
               <p className="text-xs text-gray-500 mt-1">
-                직거래를 주로 하시는 지역을 입력해주세요.
+                직거래를 주로 하시는 지역을 입력해주세요. (선택사항)
               </p>
             </div>
 
