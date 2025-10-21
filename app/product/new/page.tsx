@@ -282,7 +282,12 @@ export default function ProductWizardPage() {
             ? "구매글이 성공적으로 등록되었습니다!"
             : "상품이 성공적으로 등록되었습니다!"
         );
-        router.push("/list");
+        
+        // Firestore 인덱싱 대기 후 리다이렉트
+        console.log("✅ 상품 등록 완료 - 1초 후 목록으로 이동");
+        setTimeout(() => {
+          router.push("/list");
+        }, 1000);
       } else {
         toast.error(
           result.error ||

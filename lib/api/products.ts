@@ -130,14 +130,14 @@ export async function createItem(
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    
+
     console.log("🔥 저장할 상품 데이터:", {
       ...itemToSave,
       status: itemToSave.status,
       category: itemData.category,
       title: itemData.title,
     });
-    
+
     const docRef = await addDoc(collection(db, "items"), itemToSave);
 
     console.log("✅ 아이템 생성 성공:", docRef.id);
