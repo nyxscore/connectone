@@ -17,7 +17,7 @@ const firebaseConfig = {
   authDomain:
     process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
     "connectone-8b414.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "connectone-8b414",
+  projectId: (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "connectone-8b414").trim(),
   storageBucket:
     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
     "connectone-8b414.firebasestorage.app",
