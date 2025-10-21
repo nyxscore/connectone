@@ -446,8 +446,15 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       };
     }
 
-    // 상태 필터 처리 - 거래중/배송중 상품은 거래 당사자만 볼 수 있음
-    let statusFilter = ["active", "sold"]; // 기본값: 거래가능한 상품과 거래완료된 상품만 (거래중/배송중 제외)
+    // 상태 필터 처리
+    let statusFilter = [
+      "active",
+      "reserved",
+      "escrow_completed",
+      "shipping",
+      "shipped",
+      "sold",
+    ]; // 기본값: 모든 활성 상품 (취소된 것만 제외)
 
     if (filters.status) {
       switch (filters.status) {
@@ -573,8 +580,9 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
 
     // 거래 당사자 필터링 (프로필 페이지에서만 작동)
     // 주의: 전체 목록에서는 거래중 상품도 모두에게 표시됨 (개인정보는 마스킹)
-    const isProfilePage = filters.status === "reserved" || filters.status === "shipping";
-    
+    const isProfilePage =
+      filters.status === "reserved" || filters.status === "shipping";
+
     if (isProfilePage && options.currentUserId) {
       // 프로필 페이지에서 "거래중" 또는 "배송중" 필터 선택 시에만 당사자 필터링
       items = items.filter(item => {
