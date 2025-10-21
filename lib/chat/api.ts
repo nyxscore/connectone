@@ -371,7 +371,7 @@ export async function sendMessage(
       content: data.content.substring(0, 50) + "...",
       type: data.imageUrl ? "image" : "text",
     });
-    
+
     const db = getDb();
     if (!db) {
       console.error("❌ Firebase DB가 초기화되지 않음");
@@ -441,7 +441,10 @@ export async function sendMessage(
           chatData.buyerUid === data.senderUid
             ? chatData.sellerUid
             : chatData.buyerUid;
-        console.log("📢 알림 대상:", { senderUid: data.senderUid, recipientUid });
+        console.log("📢 알림 대상:", {
+          senderUid: data.senderUid,
+          recipientUid,
+        });
         if (recipientUid !== data.senderUid) {
           try {
             // 상대방 정보와 상품 정보 가져오기

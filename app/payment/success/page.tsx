@@ -275,7 +275,9 @@ function PaymentSuccessContent() {
                   if (confirm(confirmMessage)) {
                     try {
                       // Firebase에서 거래 취소 처리
-                      const { doc, updateDoc } = await import("firebase/firestore");
+                      const { doc, updateDoc } = await import(
+                        "firebase/firestore"
+                      );
                       const { getDb } = await import("@/lib/api/firebase-lazy");
 
                       const db = getDb();
@@ -293,9 +295,13 @@ function PaymentSuccessContent() {
                       console.log("✅ 거래 취소 완료");
 
                       if (orderInfo.escrow) {
-                        toast.success("안전결제가 취소되었습니다. 환불이 처리됩니다.");
+                        toast.success(
+                          "안전결제가 취소되었습니다. 환불이 처리됩니다."
+                        );
                       } else {
-                        toast.success("거래가 취소되었습니다. 상품이 다시 판매중으로 변경되었습니다.");
+                        toast.success(
+                          "거래가 취소되었습니다. 상품이 다시 판매중으로 변경되었습니다."
+                        );
                       }
 
                       // 거래 내역 페이지로 이동

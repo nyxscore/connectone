@@ -121,7 +121,15 @@ export interface SellItem {
   escrowEnabled: boolean;
   shippingTypes: ShippingType[];
   parcelPaymentType?: string; // "seller" or "buyer"
-  status: "active" | "reserved" | "escrow_completed" | "shipping" | "shipped" | "sold" | "cancelled" | "inactive";
+  status:
+    | "active"
+    | "reserved"
+    | "escrow_completed"
+    | "shipping"
+    | "shipped"
+    | "sold"
+    | "cancelled"
+    | "inactive";
   createdAt: any;
   updatedAt: any;
 }

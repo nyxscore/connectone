@@ -502,7 +502,7 @@ export async function analyzeAudio(
     // AssemblyAI 토큰 체크 - 없으면 데모 모드
     if (!ASSEMBLYAI_API_KEY) {
       console.warn("⚠️ AssemblyAI API 키가 없습니다. 데모 분석을 제공합니다.");
-      
+
       // 데모 분석 결과 생성
       const demoResult = {
         transcription: {
@@ -514,7 +514,11 @@ export async function analyzeAudio(
           label: "positive",
           label_ko: "긍정적",
           scores: { positive: 0.7, neutral: 0.2, negative: 0.1 },
-          scores_ko: { "뛰어난 표현력": 0.7, "안정적인 표현": 0.2, "개선 필요한 표현": 0.1 },
+          scores_ko: {
+            "뛰어난 표현력": 0.7,
+            "안정적인 표현": 0.2,
+            "개선 필요한 표현": 0.1,
+          },
           confidence: 0.75,
         },
         pitch: {
@@ -537,11 +541,13 @@ export async function analyzeAudio(
           file_name: audioFile.name,
         },
         cost_estimate_usd: 0,
-        report_ko: "🎵 데모 분석 모드\n\n이 결과는 데모 버전입니다. 실제 AI 분석을 원하시면 AssemblyAI API 키를 설정해주세요.\n\n기본적으로 양호한 음악 파일로 판단됩니다.",
-        summary_ko: "데모 분석 결과입니다. 실제 분석을 위해서는 API 키가 필요합니다.",
+        report_ko:
+          "🎵 데모 분석 모드\n\n이 결과는 데모 버전입니다. 실제 AI 분석을 원하시면 AssemblyAI API 키를 설정해주세요.\n\n기본적으로 양호한 음악 파일로 판단됩니다.",
+        summary_ko:
+          "데모 분석 결과입니다. 실제 분석을 위해서는 API 키가 필요합니다.",
         isDemo: true,
       };
-      
+
       toast.info("데모 분석 모드로 실행됩니다.");
       return demoResult;
     }

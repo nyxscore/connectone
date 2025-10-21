@@ -89,7 +89,7 @@ export const useAuth = () => {
                 firebaseUser.displayName ||
                 firebaseUser.email?.split("@")[0] ||
                 "사용자",
-              region: "서울시 강남구",
+              region: "지역 정보 없음",
               grade: "C",
               tradeCount: 0,
               reviewCount: 0,

@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     console.log("🎭 AI 감정 분석 API 호출됨");
-    
+
     const { image } = await request.json();
-    
+
     if (!image) {
       return NextResponse.json(
         { error: "이미지가 필요합니다." },
@@ -16,11 +16,15 @@ export async function POST(request: NextRequest) {
     console.log("📸 이미지 데이터 수신:", image.substring(0, 50) + "...");
 
     // Google Cloud Vision API를 사용한 감정 분석
-    const visionApiKey = process.env.GOOGLE_VISION_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_VISION_API_KEY;
-    
+    const visionApiKey =
+      process.env.GOOGLE_VISION_API_KEY ||
+      process.env.NEXT_PUBLIC_GOOGLE_VISION_API_KEY;
+
     if (!visionApiKey) {
-      console.warn("⚠️ Google Vision API 키가 없습니다. 모의 감정 분석을 제공합니다.");
-      
+      console.warn(
+        "⚠️ Google Vision API 키가 없습니다. 모의 감정 분석을 제공합니다."
+      );
+
       // 모의 감정 분석 결과 제공
       const mockResult = {
         success: true,
@@ -41,19 +45,20 @@ export async function POST(request: NextRequest) {
           { description: "smile", score: 0.8 },
         ],
         texts: [],
-        summary: "주요 감정: 기쁨 (신뢰도: 80%)\n인식된 객체: person, face, smile",
+        summary:
+          "주요 감정: 기쁨 (신뢰도: 80%)\n인식된 객체: person, face, smile",
         isMock: true,
       };
-      
+
       console.log("🎭 모의 감정 분석 결과:", mockResult);
       return NextResponse.json(mockResult);
     }
 
     // Base64 이미지 데이터 처리
     const base64Image = image.replace(/^data:image\/[a-z]+;base64,/, "");
-    
+
     console.log("🤖 Google Vision API 호출 중...");
-    
+
     const response = await fetch(
       `https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`,
       {
@@ -90,17 +95,18 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json();
       console.error("❌ Vision API 오류:", errorData);
-      
+
       if (response.status === 403) {
         return NextResponse.json(
           {
             success: false,
-            error: "Vision API가 활성화되지 않았습니다. Google Cloud Console에서 Cloud Vision API를 활성화해주세요.",
+            error:
+              "Vision API가 활성화되지 않았습니다. Google Cloud Console에서 Cloud Vision API를 활성화해주세요.",
           },
           { status: 503 }
         );
       }
-      
+
       return NextResponse.json(
         {
           success: false,
@@ -168,7 +174,12 @@ export async function POST(request: NextRequest) {
     // 주요 감정 결정
     const dominantEmotion = Object.entries(avgEmotionScores)
       .filter(([key]) => key !== "confidence")
-      .reduce((a, b) => (avgEmotionScores[a[0] as keyof typeof avgEmotionScores] > avgEmotionScores[b[0] as keyof typeof avgEmotionScores] ? a : b))[0];
+      .reduce((a, b) =>
+        avgEmotionScores[a[0] as keyof typeof avgEmotionScores] >
+        avgEmotionScores[b[0] as keyof typeof avgEmotionScores]
+          ? a
+          : b
+      )[0];
 
     // 감정 분석 결과
     const analysisResult = {
@@ -180,20 +191,26 @@ export async function POST(request: NextRequest) {
       },
       labels: labels.slice(0, 5), // 상위 5개 라벨
       texts: texts.slice(0, 3), // 상위 3개 텍스트
-      summary: generateEmotionSummary(avgEmotionScores, dominantEmotion, labels),
+      summary: generateEmotionSummary(
+        avgEmotionScores,
+        dominantEmotion,
+        labels
+      ),
     };
 
     console.log("🎭 감정 분석 결과:", analysisResult);
 
     return NextResponse.json(analysisResult);
-
   } catch (error: any) {
     console.error("❌ AI 감정 분석 오류:", error);
-    
+
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "AI 감정 분석 중 오류가 발생했습니다.",
+        error:
+          error instanceof Error
+            ? error.message
+            : "AI 감정 분석 중 오류가 발생했습니다.",
       },
       { status: 500 }
     );
@@ -208,15 +225,18 @@ function generateEmotionSummary(
 ): string {
   const emotionMap: { [key: string]: string } = {
     joy: "기쁨",
-    sorrow: "슬픔", 
+    sorrow: "슬픔",
     anger: "분노",
     surprise: "놀라움",
   };
 
   const dominantKorean = emotionMap[dominant] || "중립";
   const confidence = Math.round(scores.confidence * 100);
-  
-  const topLabels = labels.slice(0, 3).map(l => l.description).join(", ");
-  
+
+  const topLabels = labels
+    .slice(0, 3)
+    .map(l => l.description)
+    .join(", ");
+
   return `주요 감정: ${dominantKorean} (신뢰도: ${confidence}%)${topLabels ? `\n인식된 객체: ${topLabels}` : ""}`;
 }

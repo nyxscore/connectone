@@ -103,7 +103,7 @@ export async function updateUserProfile(
       ...updateData,
       updatedAt: serverTimestamp(),
     };
-    
+
     console.log("📦 Firestore 업데이트 페이로드:", updatePayload);
 
     await updateDoc(userRef, updatePayload);

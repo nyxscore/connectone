@@ -72,7 +72,7 @@ export default function BuyerShippingInfoModal({
   // 주소 검색 팝업 열기 (iframe 방식)
   const openAddressSearch = () => {
     console.log("🔍 주소 검색 버튼 클릭됨");
-    
+
     // iframe 방식으로 열기
     setShowAddressIframe(true);
   };
@@ -81,9 +81,9 @@ export default function BuyerShippingInfoModal({
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
       if (e.origin !== "https://t1.daumcdn.net") return;
-      
+
       console.log("📬 주소 데이터 수신:", e.data);
-      
+
       const data = e.data;
       if (data.zonecode) {
         const fullAddress = data.roadAddress || data.jibunAddress;
@@ -373,7 +373,7 @@ export default function BuyerShippingInfoModal({
             <iframe
               src="data:text/html;charset=utf-8,%3C!DOCTYPE%20html%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%20%20%3Cmeta%20charset%3D%22utf-8%22%3E%0A%20%20%3Cscript%20src%3D%22https%3A//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js%22%3E%3C/script%3E%0A%3C/head%3E%0A%3Cbody%3E%0A%20%20%3Cdiv%20id%3D%22postcode%22%20style%3D%22width%3A100%25%3Bheight%3A100%25%22%3E%3C/div%3E%0A%20%20%3Cscript%3E%0A%20%20%20%20new%20daum.Postcode(%7B%0A%20%20%20%20%20%20oncomplete%3A%20function(data)%20%7B%0A%20%20%20%20%20%20%20%20parent.postMessage(data%2C%20'*')%3B%0A%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20width%3A%20'100%25'%2C%0A%20%20%20%20%20%20height%3A%20'100%25'%0A%20%20%20%20%7D).embed(document.getElementById('postcode'))%3B%0A%20%20%3C/script%3E%0A%3C/body%3E%0A%3C/html%3E"
               className="flex-1 w-full"
-              style={{ border: 'none' }}
+              style={{ border: "none" }}
             />
           </div>
         </div>

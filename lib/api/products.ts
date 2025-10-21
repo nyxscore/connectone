@@ -98,7 +98,7 @@ export async function createItem(
           uid: itemData.sellerUid,
           username: itemData.sellerUid,
           nickname: "사용자",
-          region: "서울시 강남구",
+          region: "지역 정보 없음",
           grade: "C",
           tradesCount: 0,
           reviewsCount: 0,
@@ -447,10 +447,7 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     }
 
     // 상태 필터 처리 - 거래중/배송중 상품은 거래 당사자만 볼 수 있음
-    let statusFilter = [
-      "active",
-      "sold",
-    ]; // 기본값: 거래가능한 상품과 거래완료된 상품만 (거래중/배송중 제외)
+    let statusFilter = ["active", "sold"]; // 기본값: 거래가능한 상품과 거래완료된 상품만 (거래중/배송중 제외)
 
     if (filters.status) {
       switch (filters.status) {
@@ -573,20 +570,26 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     });
 
     // 클라이언트 사이드 필터링 및 정렬
-    
+
     // 거래 당사자 필터링 (거래중/배송중 상품은 거래 당사자만 볼 수 있음)
     if (options.currentUserId) {
       items = items.filter(item => {
         // 거래중/배송중 상태인 경우 거래 당사자인지 확인
-        if (["reserved", "escrow_completed", "shipping", "shipped"].includes(item.status)) {
+        if (
+          ["reserved", "escrow_completed", "shipping", "shipped"].includes(
+            item.status
+          )
+        ) {
           const isSeller = item.sellerUid === options.currentUserId;
           const isBuyer = item.buyerUid === options.currentUserId;
           const isParticipant = isSeller || isBuyer;
-          
+
           if (!isParticipant) {
-            console.log(`🔒 거래중 상품 숨김: ${item.title} (상태: ${item.status})`);
+            console.log(
+              `🔒 거래중 상품 숨김: ${item.title} (상태: ${item.status})`
+            );
           }
-          
+
           return isParticipant;
         }
         // 다른 상태는 모든 사용자가 볼 수 있음
@@ -595,14 +598,20 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
     } else {
       // 로그인하지 않은 사용자는 거래중/배송중 상품을 볼 수 없음
       items = items.filter(item => {
-        if (["reserved", "escrow_completed", "shipping", "shipped"].includes(item.status)) {
-          console.log(`🔒 비로그인 사용자 - 거래중 상품 숨김: ${item.title} (상태: ${item.status})`);
+        if (
+          ["reserved", "escrow_completed", "shipping", "shipped"].includes(
+            item.status
+          )
+        ) {
+          console.log(
+            `🔒 비로그인 사용자 - 거래중 상품 숨김: ${item.title} (상태: ${item.status})`
+          );
           return false;
         }
         return true;
       });
     }
-    
+
     // 가격 필터링
     if (filters.minPrice !== undefined) {
       items = items.filter(item => item.price >= filters.minPrice!);

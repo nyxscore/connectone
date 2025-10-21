@@ -21,24 +21,31 @@ const getFirebaseConfig = () => {
   }
 
   const config = {
-    apiKey:
-      (process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 
-      "AIzaSyDy-EXIHVfzBhKcsNq93BfmQ2SQCWRszOs").trim(),
-    authDomain:
-      (process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-      "connectone-8b414.firebaseapp.com").trim(),
-    projectId:
-      (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "connectone-8b414").trim(),
-    storageBucket:
-      (process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-      "connectone-8b414.firebasestorage.app").trim(),
-    messagingSenderId:
-      (process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "567550026947").trim(),
-    appId:
-      (process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
-      "1:567550026947:web:92120b0c926db2ece06e76").trim(),
-    measurementId:
-      (process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-P7KKSEF6SZ").trim(),
+    apiKey: (
+      process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
+      "AIzaSyDy-EXIHVfzBhKcsNq93BfmQ2SQCWRszOs"
+    ).trim(),
+    authDomain: (
+      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
+      "connectone-8b414.firebaseapp.com"
+    ).trim(),
+    projectId: (
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "connectone-8b414"
+    ).trim(),
+    storageBucket: (
+      process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+      "connectone-8b414.firebasestorage.app"
+    ).trim(),
+    messagingSenderId: (
+      process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "567550026947"
+    ).trim(),
+    appId: (
+      process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
+      "1:567550026947:web:92120b0c926db2ece06e76"
+    ).trim(),
+    measurementId: (
+      process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-P7KKSEF6SZ"
+    ).trim(),
   };
 
   console.log("🔥 Firebase 환경변수 확인:", {

@@ -123,16 +123,16 @@ export const signUp = async (data: SignUpData): Promise<User> => {
 export const signIn = async (data: LoginData): Promise<FirebaseUser> => {
   try {
     console.log("🔐 로그인 시도:", data.username);
-    
+
     // 아이디를 이메일로 변환해서 로그인 (간단한 방식)
     const email = usernameToEmail(data.username);
-    
+
     const userCredential = await signInWithEmailAndPassword(
       auth,
       email,
       data.password
     );
-    
+
     console.log("✅ 로그인 성공!");
     return userCredential.user;
   } catch (error) {

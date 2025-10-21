@@ -31,7 +31,7 @@ export default function UsersPage() {
       id: "u1",
       email: "user1@example.com",
       nickname: "김악기",
-      region: "서울시 강남구",
+      region: "지역 정보 없음",
       grade: "D",
       tradeCount: 15,
       reviewCount: 12,

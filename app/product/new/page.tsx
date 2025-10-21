@@ -251,7 +251,7 @@ export default function ProductWizardPage() {
         description: data.description,
         category: data.category,
         price: formData.price, // 로컬 상태의 가격 사용
-        region: "서울시 강남구", // 기본값, 나중에 GPS로 설정
+        region: user?.region || "지역 정보 없음", // 사용자 프로필의 지역 정보 사용
         condition: formData.tradeType === "buy" ? "구매" : "A", // 구매하기일 때는 "구매"로 설정
         images: imageUrls, // 업로드된 이미지 URL들
         aiProcessedImages:
@@ -282,7 +282,7 @@ export default function ProductWizardPage() {
             ? "구매글이 성공적으로 등록되었습니다!"
             : "상품이 성공적으로 등록되었습니다!"
         );
-        
+
         // Firestore 인덱싱 대기 후 리다이렉트
         console.log("✅ 상품 등록 완료 - 1초 후 목록으로 이동");
         setTimeout(() => {
