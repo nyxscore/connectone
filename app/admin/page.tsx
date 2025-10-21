@@ -38,7 +38,7 @@ export default function AdminDashboard() {
   const handleGrantPoints = async () => {
     if (!user) return;
     if (!targetUserId.trim()) {
-      toast.error("사용자 UID를 입력해주세요.");
+      toast.error("사용자 아이디를 입력해주세요.");
       return;
     }
     if (
@@ -60,26 +60,37 @@ export default function AdminDashboard() {
         collection,
         addDoc,
         serverTimestamp,
+        query,
+        where,
+        getDocs,
       } = await import("firebase/firestore");
 
-      // 사용자 존재 여부 확인
-      const userDoc = await getDoc(doc(db, "users", targetUserId));
-      if (!userDoc.exists()) {
+      // username으로 사용자 찾기
+      const usersQuery = query(
+        collection(db, "users"),
+        where("username", "==", targetUserId.trim())
+      );
+      const querySnapshot = await getDocs(usersQuery);
+
+      if (querySnapshot.empty) {
         toast.error("해당 사용자를 찾을 수 없습니다.");
         return;
       }
 
-      const targetUser = userDoc.data();
+      // 첫 번째 매칭 사용자 (username은 고유해야 함)
+      const userDocSnap = querySnapshot.docs[0];
+      const targetUserUid = userDocSnap.id;
+      const targetUser = userDocSnap.data();
       const points = Number(pointAmount);
 
       // 포인트 지급
-      await updateDoc(doc(db, "users", targetUserId), {
+      await updateDoc(doc(db, "users", targetUserUid), {
         points: increment(points),
       });
 
       // 포인트 이력 기록
       await addDoc(collection(db, "point_transactions"), {
-        userId: targetUserId,
+        userId: targetUserUid,
         amount: points,
         type: "admin_grant",
         description: pointReason.trim() || "관리자 지급",
@@ -96,17 +107,18 @@ export default function AdminDashboard() {
         adminNickname: user.nickname || "관리자",
         action: "GRANT_POINTS",
         targetType: "user",
-        targetId: targetUserId,
+        targetId: targetUserUid,
         details: {
           amount: points,
           reason: pointReason.trim() || "관리자 지급",
+          targetUsername: targetUser.username || targetUserId.trim(),
           targetNickname: targetUser.nickname || "Unknown",
         },
         status: "success",
       });
 
       toast.success(
-        `${targetUser.nickname || targetUserId}님에게 ${points.toLocaleString()}P를 지급했습니다!`
+        `${targetUser.nickname || targetUser.username}님 (${targetUserId.trim()})에게 ${points.toLocaleString()}P를 지급했습니다!`
       );
 
       // 입력 필드 초기화
@@ -492,15 +504,18 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    사용자 UID
+                    사용자 아이디 (username)
                   </label>
                   <input
                     type="text"
                     value={targetUserId}
                     onChange={e => setTargetUserId(e.target.value)}
-                    placeholder="사용자 UID를 입력하세요"
+                    placeholder="사용자 아이디를 입력하세요 (예: user123)"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    로그인할 때 사용하는 아이디를 입력하세요
+                  </p>
                 </div>
 
                 <div>
