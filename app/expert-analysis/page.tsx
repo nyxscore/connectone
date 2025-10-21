@@ -467,48 +467,48 @@ export default function ExpertAnalysisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 py-6 sm:py-12 px-4">
       <div className="container mx-auto px-4 max-w-6xl">
         {/* 뒤로가기 */}
         <Link
           href="/vocal-analysis"
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 sm:mb-6 transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">AI 음악 분석으로 돌아가기</span>
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="font-medium text-sm sm:text-base">AI 음악 분석으로 돌아가기</span>
         </Link>
 
         {/* 헤더 */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-12"
         >
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full mb-4">
-            <Award className="w-5 h-5" />
-            <span className="font-bold text-sm">PREMIUM SERVICE</span>
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
+            <Award className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="font-bold text-xs sm:text-sm">PREMIUM SERVICE</span>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
             👨‍🏫 전문가 피드백 서비스
           </h1>
-          <p className="text-xl text-gray-600 mb-2">
+          <p className="text-base sm:text-xl text-gray-600 mb-1 sm:mb-2 px-4">
             현직 전문가가 직접 작성한{" "}
             <span className="font-bold text-purple-600">PDF 문서</span>로 받는
           </p>
-          <p className="text-xl text-gray-600 mb-6">
+          <p className="text-base sm:text-xl text-gray-600 mb-4 sm:mb-6 px-4">
             체계적이고 상세한 맞춤형 피드백
           </p>
-          <div className="flex justify-center items-center gap-6 text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
+          <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-500">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>PDF 문서 제공</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Star className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>전문가 1:1 피드백</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>24-48시간 내 완성</span>
             </div>
           </div>
@@ -519,49 +519,51 @@ export default function ExpertAnalysisPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl shadow-xl p-8">
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl shadow-xl p-4 sm:p-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4 flex items-center justify-center gap-2">
-                <Sparkles className="w-6 h-6" />
+              <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center justify-center gap-2">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
                 전문가 피드백 서비스
               </h2>
-              <div className="flex justify-center items-center gap-4 mb-4">
-                <span className="text-2xl line-through opacity-60">
-                  35,000원
-                </span>
-                <span className="text-xl">→</span>
-                <div className="flex items-baseline">
-                  <span className="text-5xl font-black">19,000</span>
-                  <span className="text-2xl font-bold ml-1">원</span>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <span className="text-lg sm:text-2xl line-through opacity-60">
+                    35,000원
+                  </span>
+                  <span className="text-base sm:text-xl">→</span>
+                  <div className="flex items-baseline">
+                    <span className="text-3xl sm:text-5xl font-black">19,000</span>
+                    <span className="text-lg sm:text-2xl font-bold ml-1">원</span>
+                  </div>
                 </div>
-                <span className="px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full animate-pulse">
+                <span className="px-2 sm:px-3 py-1 bg-red-500 text-white text-xs sm:text-sm font-bold rounded-full animate-pulse">
                   46% 할인
                 </span>
               </div>
-              <p className="text-purple-100 mb-6">
+              <p className="text-purple-100 mb-4 sm:mb-6 text-sm sm:text-base px-2">
                 전문가가 직접 작성한 체계적인 PDF 문서로 평생 보관 가능한 나만의
                 피드백
               </p>
-              <div className="grid md:grid-cols-3 gap-4 text-sm">
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                  <Target className="w-6 h-6 mx-auto mb-2" />
-                  <div className="font-semibold mb-1">맞춤형 분석</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4">
+                  <Target className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2" />
+                  <div className="font-semibold mb-1 text-sm sm:text-base">맞춤형 분석</div>
                   <div className="text-purple-100 text-xs">
                     회원님의 수준과 목표에 맞춘 분석
                   </div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                  <TrendingUp className="w-6 h-6 mx-auto mb-2" />
-                  <div className="font-semibold mb-1">PDF 문서 제공</div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4">
+                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2" />
+                  <div className="font-semibold mb-1 text-sm sm:text-base">PDF 문서 제공</div>
                   <div className="text-purple-100 text-xs">
                     체계적으로 정리된 전문가 피드백 문서
                   </div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                  <MessageCircle className="w-6 h-6 mx-auto mb-2" />
-                  <div className="font-semibold mb-1">평생 보관</div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4">
+                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2" />
+                  <div className="font-semibold mb-1 text-sm sm:text-base">평생 보관</div>
                   <div className="text-purple-100 text-xs">
                     언제든 다시 확인 가능한 나만의 피드백
                   </div>
@@ -577,17 +579,17 @@ export default function ExpertAnalysisPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="space-y-6"
+            className="space-y-4 sm:space-y-6"
           >
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <Music className="w-6 h-6 text-purple-600" />
+            <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2">
+                <Music className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                 오디오 업로드
               </h3>
 
               {/* 드래그 앤 드롭 영역 */}
               <div
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                className={`border-2 border-dashed rounded-xl p-4 sm:p-8 text-center transition-colors ${
                   dragActive
                     ? "border-purple-500 bg-purple-50"
                     : "border-gray-300 hover:border-purple-400"
@@ -597,11 +599,11 @@ export default function ExpertAnalysisPage() {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
-                <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-700 font-medium mb-2">
+                <Upload className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                <p className="text-sm sm:text-base text-gray-700 font-medium mb-2">
                   파일을 드래그하거나 클릭하여 업로드
                 </p>
-                <p className="text-sm text-gray-500 mb-6">
+                <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">
                   WAV, MP3, OGG, WEBM • 최대 30MB • 최대 5분
                 </p>
                 <input
@@ -910,42 +912,42 @@ export default function ExpertAnalysisPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-12 bg-white rounded-2xl shadow-lg p-8"
+          className="mt-8 sm:mt-12 bg-white rounded-2xl shadow-lg p-4 sm:p-8"
         >
-          <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
             💡 전문가 피드백 안내
           </h3>
-          <div className="grid md:grid-cols-3 gap-6 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-sm">
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FileText className="w-8 h-8 text-purple-600" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
               </div>
-              <h4 className="font-semibold text-gray-900 mb-2">
+              <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">
                 📄 PDF 문서 제공
               </h4>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-xs sm:text-sm">
                 전문가가 직접 작성한 상세한 피드백을 <strong>PDF 문서</strong>로
                 제공합니다. 체계적으로 정리된 분석 내용을 언제든 확인하세요.
               </p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Star className="w-8 h-8 text-purple-600" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Star className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
               </div>
-              <h4 className="font-semibold text-gray-900 mb-2">
+              <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">
                 🎯 맞춤형 분석
               </h4>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-xs sm:text-sm">
                 현직 보컬 트레이너, 음악 프로듀서 등 검증된 전문가가 회원님의
                 수준과 목표에 맞춘 피드백을 제공합니다.
               </p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-8 h-8 text-purple-600" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
               </div>
-              <h4 className="font-semibold text-gray-900 mb-2">⚡ 24-48시간</h4>
-              <p className="text-gray-600">
+              <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">⚡ 24-48시간</h4>
+              <p className="text-gray-600 text-xs sm:text-sm">
                 결제 완료 후 24-48시간 내에 전문가의 상세한 피드백 문서를 받으실
                 수 있습니다. 알림으로 안내해드립니다.
               </p>
