@@ -35,6 +35,7 @@ export const INSTRUMENT_SUBCATEGORIES = {
     { key: "piccolo", label: "피콜로", icon: "🎺" },
     { key: "clarinet", label: "클라리넷", icon: "🎺" },
     { key: "oboe", label: "오보에", icon: "🎺" },
+    { key: "english_horn", label: "잉글리시호른", icon: "🎺" },
     { key: "bassoon", label: "바순", icon: "🎺" },
     { key: "saxophone", label: "색소폰", icon: "🎷" },
     { key: "alto_sax", label: "알토색소폰", icon: "🎷" },

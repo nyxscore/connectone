@@ -125,6 +125,7 @@ export default function EditProductModal({
       "플루트",
       "클라리넷",
       "오보에",
+      "잉글리시호른",
       "바순",
       "색소폰",
       "트럼펫",
@@ -392,7 +393,7 @@ export default function EditProductModal({
     setIsCameraActive(false);
 
     console.log("🎭 AI 감정 분석 시작");
-    
+
     try {
       // AI 감정 분석 API 호출
       const response = await fetch("/api/ai/emotion", {
@@ -409,7 +410,7 @@ export default function EditProductModal({
         const result = await response.json();
         console.log("✅ AI 감정 분석 성공:", result);
         setAiAnalysisResult(result);
-        
+
         if (result.isMock) {
           toast.success("AI 감정 분석 완료 (데모 모드)");
         } else {
@@ -418,11 +419,15 @@ export default function EditProductModal({
       } else {
         const errorData = await response.json();
         console.error("❌ AI 감정 분석 실패:", errorData);
-        toast.error(`AI 감정 분석 실패: ${errorData.error || "알 수 없는 오류"}`);
+        toast.error(
+          `AI 감정 분석 실패: ${errorData.error || "알 수 없는 오류"}`
+        );
       }
     } catch (error) {
       console.error("❌ AI 감정 분석 오류:", error);
-      toast.error("AI 감정 분석 중 오류가 발생했습니다. 네트워크를 확인해주세요.");
+      toast.error(
+        "AI 감정 분석 중 오류가 발생했습니다. 네트워크를 확인해주세요."
+      );
     }
   };
 

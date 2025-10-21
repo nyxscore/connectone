@@ -91,6 +91,7 @@ export default function ExpertAnalysisPage() {
         "플룻",
         "클라리넷",
         "오보에",
+        "잉글리시호른",
         "바순",
         "색소폰",
         "트럼펫",
