@@ -85,10 +85,12 @@ export default function AdminExpertFeedbackPage() {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { collection, query, where, orderBy, getDocs } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const q = query(
         collection(db, "expert_analysis_requests"),
@@ -162,10 +164,12 @@ export default function AdminExpertFeedbackPage() {
 
     setSaving(true);
     try {
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { doc, updateDoc, serverTimestamp } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const requestRef = doc(
         db,

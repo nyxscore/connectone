@@ -256,9 +256,10 @@ export const signInWithGoogle = async () => {
   }
 
   try {
-    const result = await signInWithPopup(auth, provider);
-    console.log("✅ Google 로그인 성공:", result.user.email);
-    return result;
+    // 팝업 대신 리다이렉트 방식 사용
+    await signInWithRedirect(auth, provider);
+    console.log("✅ Google 로그인 리다이렉트 시작");
+    return null; // 리다이렉트되므로 null 반환
   } catch (error) {
     console.error("❌ Google 로그인 실패:", error);
     throw error;

@@ -23,6 +23,9 @@ import {
   Activity,
   Star,
   ShoppingBag,
+  Plus,
+  Minus,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -63,6 +66,15 @@ export default function UsersPage() {
   const [suspensionDays, setSuspensionDays] = useState("7");
   const [actionLoading, setActionLoading] = useState(false);
 
+  // 포인트 관련 상태
+  const [showPointModal, setShowPointModal] = useState(false);
+  const [pointAmount, setPointAmount] = useState("");
+  const [pointReason, setPointReason] = useState("");
+  const [pointAction, setPointAction] = useState<"add" | "subtract">("add");
+
+  // 상세보기 모달 상태
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
   useEffect(() => {
     loadUsers();
   }, []);
@@ -70,10 +82,12 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { collection, getDocs, orderBy, query } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
@@ -102,10 +116,12 @@ export default function UsersPage() {
 
     setActionLoading(true);
     try {
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { doc, updateDoc, serverTimestamp } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const days = parseInt(suspensionDays);
       const endDate = new Date();
@@ -156,10 +172,12 @@ export default function UsersPage() {
 
     setActionLoading(true);
     try {
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { doc, updateDoc, deleteField } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       await updateDoc(doc(db, "users", user.id), {
         isSuspended: false,
@@ -204,13 +222,138 @@ export default function UsersPage() {
     return isSuspended ? "정지됨" : "활성";
   };
 
+  // 포인트 지급/차감 함수
+  const handlePointAction = async () => {
+    if (!selectedUser || !pointAmount) {
+      toast.error("사용자와 포인트 금액을 확인해주세요.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const { getDb } = await import("@/lib/api/firebase-lazy");
+      const { doc, updateDoc, increment, addDoc, collection, serverTimestamp } =
+        await import("firebase/firestore");
+
+      const db = getDb();
+      const points = Number(pointAmount);
+      const currentPoints = selectedUser.points || 0;
+
+      if (pointAction === "subtract" && points > currentPoints) {
+        toast.error("차감할 포인트가 보유 포인트보다 많습니다.");
+        return;
+      }
+
+      const pointChange = pointAction === "add" ? points : -points;
+      const newBalance = currentPoints + pointChange;
+
+      // 사용자 포인트 업데이트
+      await updateDoc(doc(db, "users", selectedUser.id), {
+        points: increment(pointChange),
+      });
+
+      // 포인트 거래 기록
+      await addDoc(collection(db, "point_transactions"), {
+        userId: selectedUser.id,
+        userNickname: selectedUser.nickname || "알 수 없음",
+        userEmail: selectedUser.email || selectedUser.id,
+        amount: Math.abs(pointChange),
+        type: pointAction === "add" ? "admin_grant" : "admin_deduct",
+        description:
+          pointReason.trim() ||
+          `관리자 ${pointAction === "add" ? "지급" : "차감"}`,
+        reason: pointReason.trim() || "관리자 처리",
+        balance: newBalance,
+        status: "completed",
+        relatedId: `admin_${Date.now()}`,
+        processedBy: currentAdmin?.uid || "admin",
+        processedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      });
+
+      // 알림 전송
+      try {
+        const { createNotification } = await import(
+          "../../../lib/api/notifications"
+        );
+        await createNotification({
+          userId: selectedUser.id,
+          type: "system",
+          title: `🎁 포인트가 ${pointAction === "add" ? "지급" : "차감"}되었습니다`,
+          message: `${points.toLocaleString()}P가 ${pointAction === "add" ? "지급" : "차감"}되었습니다. 사유: ${pointReason.trim() || "관리자 처리"}`,
+          data: {
+            amount: pointChange,
+            reason:
+              pointReason.trim() ||
+              `관리자 ${pointAction === "add" ? "지급" : "차감"}`,
+            balanceAfter: newBalance,
+          },
+          link: "/profile/points",
+          priority: "high",
+        });
+
+        // 이메일 발송
+        try {
+          const emailResponse = await fetch("/api/send-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: selectedUser.email || selectedUser.id,
+              subject: `🎁 ConnecTone 포인트 ${pointAction === "add" ? "지급" : "차감"} 알림`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #2563eb;">🎁 포인트가 ${pointAction === "add" ? "지급" : "차감"}되었습니다!</h2>
+                  <p>안녕하세요, ${selectedUser.nickname || "고객"}님!</p>
+                  <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #1f2937; margin-top: 0;">${pointAction === "add" ? "지급" : "차감"} 내역</h3>
+                    <p><strong>${pointAction === "add" ? "지급" : "차감"} 포인트:</strong> ${points.toLocaleString()}P</p>
+                    <p><strong>사유:</strong> ${pointReason.trim() || `관리자 ${pointAction === "add" ? "지급" : "차감"}`}</p>
+                    <p><strong>현재 잔액:</strong> ${newBalance.toLocaleString()}P</p>
+                  </div>
+                  <p>포인트는 즉시 사용 가능합니다. 마이페이지에서 확인해보세요!</p>
+                  <a href="${window.location.origin}/profile/points" 
+                     style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
+                    포인트 내역 확인하기
+                  </a>
+                </div>
+              `,
+            }),
+          });
+          console.log("이메일 발송:", emailResponse.ok ? "성공" : "실패");
+        } catch (emailError) {
+          console.log("이메일 발송 오류:", emailError);
+        }
+      } catch (e) {
+        console.log("알림 전송 실패 (무시):", e);
+      }
+
+      toast.success(
+        `${selectedUser.nickname}님에게 ${points.toLocaleString()}P를 ${pointAction === "add" ? "지급" : "차감"}했습니다!`
+      );
+
+      // 모달 닫기 및 데이터 새로고침
+      setShowPointModal(false);
+      setPointAmount("");
+      setPointReason("");
+      setSelectedUser(null);
+      loadUsers();
+    } catch (error) {
+      console.error("포인트 처리 오류:", error);
+      toast.error(
+        `포인트 ${pointAction === "add" ? "지급" : "차감"} 중 오류가 발생했습니다.`
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
-      user.nickname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.username &&
-        user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      user.region.toLowerCase().includes(searchTerm.toLowerCase());
+      (user.nickname || "").toLowerCase().includes(searchLower) ||
+      (user.email || "").toLowerCase().includes(searchLower) ||
+      (user.username || "").toLowerCase().includes(searchLower) ||
+      (user.region || "").toLowerCase().includes(searchLower);
 
     const matchesStatus =
       statusFilter === "all" ||
@@ -318,8 +461,8 @@ export default function UsersPage() {
                           {user.nickname}
                         </h3>
                         {user.username && (
-                          <span className="text-sm text-gray-500">
-                            @{user.username}
+                          <span className="text-sm text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">
+                            {user.username}
                           </span>
                         )}
                         <UserGradeBadge
@@ -349,6 +492,11 @@ export default function UsersPage() {
                           <p className="text-sm text-gray-900 ml-6">
                             {user.email}
                           </p>
+                          {user.username && (
+                            <p className="text-xs text-blue-600 ml-6 font-medium">
+                              아이디: {user.username}
+                            </p>
+                          )}
                           <div className="flex items-center text-xs text-gray-500 ml-6">
                             <MapPin className="w-3 h-3 mr-1" />
                             {user.region || "지역 정보 없음"}
@@ -392,12 +540,42 @@ export default function UsersPage() {
 
                       {user.points !== undefined && (
                         <div className="mb-3">
-                          <span className="text-sm font-medium text-gray-700">
-                            보유 포인트:
-                          </span>
-                          <span className="ml-2 text-sm font-bold text-yellow-600">
-                            {user.points.toLocaleString()}P
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium text-gray-700">
+                              보유 포인트:
+                            </span>
+                            <span className="text-sm font-bold text-yellow-600">
+                              {user.points.toLocaleString()}P
+                            </span>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setPointAction("add");
+                                  setShowPointModal(true);
+                                }}
+                                className="text-green-600 border-green-300 hover:bg-green-50 text-xs px-2 py-1 h-6"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                지급
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setPointAction("subtract");
+                                  setShowPointModal(true);
+                                }}
+                                className="text-red-600 border-red-300 hover:bg-red-50 text-xs px-2 py-1 h-6"
+                              >
+                                <Minus className="w-3 h-3 mr-1" />
+                                차감
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       )}
 
@@ -422,7 +600,14 @@ export default function UsersPage() {
                     </div>
 
                     <div className="flex flex-col space-y-2 ml-4">
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setShowDetailModal(true);
+                        }}
+                      >
                         <Eye className="w-4 h-4 mr-2" />
                         상세보기
                       </Button>
@@ -544,6 +729,375 @@ export default function UsersPage() {
                   ) : (
                     "정지하기"
                   )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 포인트 지급/차감 모달 */}
+        {showPointModal && selectedUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  포인트 {pointAction === "add" ? "지급" : "차감"}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowPointModal(false);
+                    setSelectedUser(null);
+                    setPointAmount("");
+                    setPointReason("");
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-2">
+                    대상:{" "}
+                    <span className="font-medium">{selectedUser.nickname}</span>
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    현재 포인트:{" "}
+                    <span className="font-medium text-yellow-600">
+                      {(selectedUser.points || 0).toLocaleString()}P
+                    </span>
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {pointAction === "add" ? "지급" : "차감"}할 포인트{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="number"
+                    value={pointAmount}
+                    onChange={e => setPointAmount(e.target.value)}
+                    placeholder="포인트 금액을 입력하세요"
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    사유
+                  </label>
+                  <textarea
+                    value={pointReason}
+                    onChange={e => setPointReason(e.target.value)}
+                    rows={3}
+                    placeholder={`${pointAction === "add" ? "지급" : "차감"} 사유를 입력하세요`}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {pointAction === "subtract" &&
+                  pointAmount &&
+                  Number(pointAmount) > (selectedUser.points || 0) && (
+                    <div className="p-3 bg-red-100 border border-red-300 rounded-lg">
+                      <p className="text-sm text-red-700">
+                        ⚠️ 차감할 포인트가 보유 포인트보다 많습니다.
+                      </p>
+                    </div>
+                  )}
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <Button
+                  onClick={() => {
+                    setShowPointModal(false);
+                    setSelectedUser(null);
+                    setPointAmount("");
+                    setPointReason("");
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={actionLoading}
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handlePointAction}
+                  disabled={
+                    actionLoading ||
+                    !pointAmount ||
+                    (pointAction === "subtract" &&
+                      Number(pointAmount) > (selectedUser.points || 0))
+                  }
+                  className={`flex-1 ${
+                    pointAction === "add"
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-red-600 hover:bg-red-700"
+                  }`}
+                >
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      처리 중...
+                    </>
+                  ) : (
+                    `${pointAction === "add" ? "지급" : "차감"}하기`
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 상세보기 모달 */}
+        {showDetailModal && selectedUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  사용자 상세 정보
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    setSelectedUser(null);
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-6">
+                {/* 기본 정보 */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-3">
+                    기본 정보
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        닉네임
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.nickname || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        아이디
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.username || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        이메일
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.email || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        지역
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.region || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        등급
+                      </label>
+                      <div className="mt-1">
+                        <UserGradeBadge
+                          grade={selectedUser.grade}
+                          size="sm"
+                          showDescription={true}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        상태
+                      </label>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${getStatusColor(selectedUser.isSuspended)}`}
+                      >
+                        {getStatusLabel(selectedUser.isSuspended)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 포인트 정보 */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-3">
+                    포인트 정보
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        보유 포인트
+                      </label>
+                      <p className="text-lg font-bold text-yellow-600">
+                        {(selectedUser.points || 0).toLocaleString()}P
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        응답률
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.responseRate
+                          ? `${selectedUser.responseRate}%`
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 거래 정보 */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-3">
+                    거래 정보
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        총 거래 횟수
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.tradeCount || 0}회
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        안전거래 횟수
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.safeTransactionCount || 0}회
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        평점
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.averageRating
+                          ? selectedUser.averageRating.toFixed(1)
+                          : "0.0"}
+                        ({selectedUser.reviewCount || 0}개 후기)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 활동 정보 */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-3">
+                    활동 정보
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        가입일
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.createdAt
+                          ?.toDate?.()
+                          ?.toLocaleDateString("ko-KR") || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">
+                        최근 활동
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.lastActiveAt
+                          ?.toDate?.()
+                          ?.toLocaleDateString("ko-KR") || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 정지 정보 (정지된 경우만) */}
+                {selectedUser.isSuspended && (
+                  <div>
+                    <h4 className="text-md font-semibold text-gray-900 mb-3">
+                      정지 정보
+                    </h4>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-red-600">
+                            정지 사유
+                          </label>
+                          <p className="text-sm text-red-800">
+                            {selectedUser.suspensionReason || "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-red-600">
+                            정지 종료일
+                          </label>
+                          <p className="text-sm text-red-800">
+                            {selectedUser.suspensionEndDate
+                              ? new Date(
+                                  selectedUser.suspensionEndDate.seconds * 1000
+                                ).toLocaleDateString("ko-KR")
+                              : "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 분쟁 정보 */}
+                {selectedUser.disputeCount > 0 && (
+                  <div>
+                    <h4 className="text-md font-semibold text-gray-900 mb-3">
+                      분쟁 정보
+                    </h4>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <p className="text-sm text-yellow-800">
+                        <AlertTriangle className="w-4 h-4 inline mr-1" />
+                        현재 {selectedUser.disputeCount}건의 분쟁이 진행
+                        중입니다.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <Button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    setSelectedUser(null);
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  닫기
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    setSelectedUser(selectedUser);
+                    setPointAction("add");
+                    setShowPointModal(true);
+                  }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  포인트 지급
                 </Button>
               </div>
             </div>

@@ -66,10 +66,12 @@ export default function ProductsPage() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { collection, getDocs, orderBy, query } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
@@ -98,10 +100,12 @@ export default function ProductsPage() {
 
     setActionLoading(true);
     try {
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { doc, updateDoc, serverTimestamp } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       await updateDoc(doc(db, "products", selectedProduct.id), {
         isHidden: true,
@@ -146,10 +150,12 @@ export default function ProductsPage() {
 
     setActionLoading(true);
     try {
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { doc, updateDoc, deleteField, serverTimestamp } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       await updateDoc(doc(db, "products", product.id), {
         isHidden: false,
@@ -226,11 +232,12 @@ export default function ProductsPage() {
   };
 
   const filteredProducts = products.filter(product => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
-      product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.sellerNickname.toLowerCase().includes(searchTerm.toLowerCase());
+      (product.title || "").toLowerCase().includes(searchLower) ||
+      (product.brand || "").toLowerCase().includes(searchLower) ||
+      (product.model || "").toLowerCase().includes(searchLower) ||
+      (product.sellerNickname || "").toLowerCase().includes(searchLower);
 
     const matchesStatus =
       statusFilter === "all" ||

@@ -15,6 +15,11 @@ export function UserGradeBadge({
   size = "md",
   showDescription = false,
 }: UserGradeBadgeProps) {
+  // 유효한 등급인지 확인
+  if (!grade || !["C", "D", "E", "F", "G", "A", "B"].includes(grade)) {
+    grade = "C" as UserGrade; // 기본값
+  }
+
   const gradeInfo = getGradeInfo(grade);
   const colorClasses = getGradeColor(grade);
 
@@ -29,6 +34,15 @@ export function UserGradeBadge({
     md: "w-4 h-4",
     lg: "w-5 h-5",
   };
+
+  // gradeInfo가 없으면 기본 배지 표시
+  if (!gradeInfo) {
+    return (
+      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+        C
+      </span>
+    );
+  }
 
   return (
     <div className="flex items-center space-x-2">
@@ -45,42 +59,3 @@ export function UserGradeBadge({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

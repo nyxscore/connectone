@@ -16,7 +16,7 @@ import {
   subscribeToNotifications,
   subscribeToUnreadNotificationCount,
 } from "../../lib/api/notifications";
-import { Notification } from "../../data/types/index";
+import type { Notification } from "../../data/types";
 import {
   MessageCircle,
   Menu,

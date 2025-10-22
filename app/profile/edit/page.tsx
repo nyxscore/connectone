@@ -7,7 +7,19 @@ import { getUserProfile, updateUserProfile } from "../../../lib/profile/api";
 import { UserProfile } from "../../../data/profile/types";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
-import { ArrowLeft, Save, X, Lock, Eye, EyeOff, Settings, User, Shield, Smartphone, Mail } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  X,
+  Lock,
+  Eye,
+  EyeOff,
+  Settings,
+  User,
+  Shield,
+  Smartphone,
+  Mail,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -334,296 +346,296 @@ export default function ProfileEditPage() {
         <Card>
           {activeTab === "profile" ? (
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-            {/* 닉네임 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                닉네임
-              </label>
-              <input
-                {...register("nickname")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="닉네임을 입력하세요"
-                maxLength={20}
-              />
-              {errors.nickname && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.nickname.message}
-                </p>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                최대 20자까지 입력 가능합니다.
-              </p>
-            </div>
-
-            {/* 거래 지역 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                거래 지역
-              </label>
-              <div className="flex gap-2">
+              {/* 닉네임 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  닉네임
+                </label>
                 <input
-                  {...register("region")}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="예: 서울시 강남구, 경기도 성남시"
-                  maxLength={50}
-                  onChange={e => {
-                    // 실시간으로 입력값 업데이트
-                    const value = e.target.value;
-                    console.log("📍 거래지역 입력:", value);
-                  }}
+                  {...register("nickname")}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="닉네임을 입력하세요"
+                  maxLength={20}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const currentRegion = watch("region");
-                    console.log("📍 거래지역 수정 버튼 클릭:", currentRegion);
-                    if (currentRegion && currentRegion.trim()) {
-                      toast.success(
-                        `거래지역이 "${currentRegion}"로 설정됩니다. 저장 버튼을 눌러주세요.`
-                      );
-                    } else {
-                      toast.info(
-                        "거래지역을 입력한 후 수정 버튼을 눌러주세요."
-                      );
-                    }
-                  }}
-                  className="px-4"
-                >
-                  수정
-                </Button>
-              </div>
-              {errors.region && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.region.message}
-                </p>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                직거래를 주로 하시는 지역을 입력해주세요. (선택사항)
-              </p>
-            </div>
-
-            {/* 한 줄 소개 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                한 줄 소개
-                <span className="text-gray-500 text-xs ml-1">
-                  ({watchedIntroShort?.length || 0}/50)
-                </span>
-              </label>
-              <input
-                {...register("introShort")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="간단한 자기소개를 입력하세요"
-                maxLength={50}
-              />
-              {errors.introShort && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.introShort.message}
-                </p>
-              )}
-            </div>
-
-            {/* 자세한 자기소개 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                자세한 자기소개
-                <span className="text-gray-500 text-xs ml-1">
-                  ({watchedIntroLong?.length || 0}/500)
-                </span>
-              </label>
-              <textarea
-                {...register("introLong")}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="자세한 자기소개를 입력하세요"
-                maxLength={500}
-              />
-              {errors.introLong && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.introLong.message}
-                </p>
-              )}
-            </div>
-
-            {/* 비밀번호 변경 섹션 */}
-            <div className="pt-6 border-t border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Lock className="w-5 h-5 mr-2" />
-                  비밀번호 변경
-                </h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPasswordChange(!showPasswordChange)}
-                  className="text-sm"
-                >
-                  {showPasswordChange ? "닫기" : "변경하기"}
-                </Button>
-              </div>
-
-              {showPasswordChange && (
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                  {/* 현재 비밀번호 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      현재 비밀번호
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.current ? "text" : "password"}
-                        value={currentPassword}
-                        onChange={e => setCurrentPassword(e.target.value)}
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="현재 비밀번호를 입력하세요"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility("current")}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPasswords.current ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 새 비밀번호 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      새 비밀번호
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.new ? "text" : "password"}
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="새 비밀번호를 입력하세요 (10자 이상, 소문자+숫자+특수문자)"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility("new")}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPasswords.new ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 새 비밀번호 확인 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      새 비밀번호 확인
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.confirm ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="새 비밀번호를 다시 입력하세요"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility("confirm")}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPasswords.confirm ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 비밀번호 변경 버튼 */}
-                  <div className="flex space-x-3 pt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setCurrentPassword("");
-                        setNewPassword("");
-                        setConfirmPassword("");
-                        setShowPasswordChange(false);
-                      }}
-                      disabled={changingPassword}
-                      className="flex-1"
-                    >
-                      취소
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handlePasswordChange}
-                      disabled={
-                        changingPassword ||
-                        !currentPassword ||
-                        !newPassword ||
-                        !confirmPassword
-                      }
-                      className="flex-1"
-                    >
-                      {changingPassword ? (
-                        <>
-                          <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          변경 중...
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-4 h-4 mr-2" />
-                          비밀번호 변경
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 버튼들 */}
-            <div className="flex space-x-3 pt-6 border-t border-gray-200">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={saving}
-                className="flex-1 flex items-center justify-center"
-              >
-                <X className="w-4 h-4 mr-2" />
-                취소
-              </Button>
-
-              <Button
-                type="submit"
-                disabled={saving}
-                onClick={() => {
-                  console.log("🔍 저장 버튼 클릭됨");
-                  console.log("현재 폼 데이터:", watch());
-                  console.log("폼 에러:", errors);
-                }}
-                className="flex-1 flex items-center justify-center"
-              >
-                {saving ? (
-                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
+                {errors.nickname && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.nickname.message}
+                  </p>
                 )}
-                {saving ? "저장 중..." : "저장"}
-              </Button>
-            </div>
-          </form>
+                <p className="text-xs text-gray-500 mt-1">
+                  최대 20자까지 입력 가능합니다.
+                </p>
+              </div>
+
+              {/* 거래 지역 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  거래 지역
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    {...register("region")}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="예: 서울시 강남구, 경기도 성남시"
+                    maxLength={50}
+                    onChange={e => {
+                      // 실시간으로 입력값 업데이트
+                      const value = e.target.value;
+                      console.log("📍 거래지역 입력:", value);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentRegion = watch("region");
+                      console.log("📍 거래지역 수정 버튼 클릭:", currentRegion);
+                      if (currentRegion && currentRegion.trim()) {
+                        toast.success(
+                          `거래지역이 "${currentRegion}"로 설정됩니다. 저장 버튼을 눌러주세요.`
+                        );
+                      } else {
+                        toast.info(
+                          "거래지역을 입력한 후 수정 버튼을 눌러주세요."
+                        );
+                      }
+                    }}
+                    className="px-4"
+                  >
+                    수정
+                  </Button>
+                </div>
+                {errors.region && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.region.message}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  직거래를 주로 하시는 지역을 입력해주세요. (선택사항)
+                </p>
+              </div>
+
+              {/* 한 줄 소개 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  한 줄 소개
+                  <span className="text-gray-500 text-xs ml-1">
+                    ({watchedIntroShort?.length || 0}/50)
+                  </span>
+                </label>
+                <input
+                  {...register("introShort")}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="간단한 자기소개를 입력하세요"
+                  maxLength={50}
+                />
+                {errors.introShort && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.introShort.message}
+                  </p>
+                )}
+              </div>
+
+              {/* 자세한 자기소개 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  자세한 자기소개
+                  <span className="text-gray-500 text-xs ml-1">
+                    ({watchedIntroLong?.length || 0}/500)
+                  </span>
+                </label>
+                <textarea
+                  {...register("introLong")}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="자세한 자기소개를 입력하세요"
+                  maxLength={500}
+                />
+                {errors.introLong && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.introLong.message}
+                  </p>
+                )}
+              </div>
+
+              {/* 비밀번호 변경 섹션 */}
+              <div className="pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                    <Lock className="w-5 h-5 mr-2" />
+                    비밀번호 변경
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPasswordChange(!showPasswordChange)}
+                    className="text-sm"
+                  >
+                    {showPasswordChange ? "닫기" : "변경하기"}
+                  </Button>
+                </div>
+
+                {showPasswordChange && (
+                  <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                    {/* 현재 비밀번호 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        현재 비밀번호
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.current ? "text" : "password"}
+                          value={currentPassword}
+                          onChange={e => setCurrentPassword(e.target.value)}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="현재 비밀번호를 입력하세요"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("current")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPasswords.current ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 새 비밀번호 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        새 비밀번호
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.new ? "text" : "password"}
+                          value={newPassword}
+                          onChange={e => setNewPassword(e.target.value)}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="새 비밀번호를 입력하세요 (10자 이상, 소문자+숫자+특수문자)"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("new")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPasswords.new ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 새 비밀번호 확인 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        새 비밀번호 확인
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.confirm ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={e => setConfirmPassword(e.target.value)}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="새 비밀번호를 다시 입력하세요"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("confirm")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPasswords.confirm ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 비밀번호 변경 버튼 */}
+                    <div className="flex space-x-3 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setCurrentPassword("");
+                          setNewPassword("");
+                          setConfirmPassword("");
+                          setShowPasswordChange(false);
+                        }}
+                        disabled={changingPassword}
+                        className="flex-1"
+                      >
+                        취소
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handlePasswordChange}
+                        disabled={
+                          changingPassword ||
+                          !currentPassword ||
+                          !newPassword ||
+                          !confirmPassword
+                        }
+                        className="flex-1"
+                      >
+                        {changingPassword ? (
+                          <>
+                            <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            변경 중...
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-4 h-4 mr-2" />
+                            비밀번호 변경
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 버튼들 */}
+              <div className="flex space-x-3 pt-6 border-t border-gray-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={saving}
+                  className="flex-1 flex items-center justify-center"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  취소
+                </Button>
+
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  onClick={() => {
+                    console.log("🔍 저장 버튼 클릭됨");
+                    console.log("현재 폼 데이터:", watch());
+                    console.log("폼 에러:", errors);
+                  }}
+                  className="flex-1 flex items-center justify-center"
+                >
+                  {saving ? (
+                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  {saving ? "저장 중..." : "저장"}
+                </Button>
+              </div>
+            </form>
           ) : (
             <div className="p-6 space-y-6">
               {/* 계정 설정 헤더 */}
@@ -631,8 +643,12 @@ export default function ProfileEditPage() {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
                   <Settings className="w-8 h-8 text-blue-600" />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">계정 설정</h2>
-                <p className="text-gray-600">계정 보안 및 연락처 정보를 관리하세요</p>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  계정 설정
+                </h2>
+                <p className="text-gray-600">
+                  계정 보안 및 연락처 정보를 관리하세요
+                </p>
               </div>
 
               {/* 이메일 인증 */}
@@ -681,7 +697,8 @@ export default function ProfileEditPage() {
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">
-                  핸드폰 인증을 통해 실시간 SMS 알림을 받고, 거래를 더욱 안전하게 진행하세요.
+                  핸드폰 인증을 통해 실시간 SMS 알림을 받고, 거래를 더욱
+                  안전하게 진행하세요.
                 </p>
                 <Button variant="outline" size="sm">
                   <Smartphone className="w-4 h-4 mr-2" />
@@ -697,7 +714,9 @@ export default function ProfileEditPage() {
                       <Shield className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">거래지역 설정</h3>
+                      <h3 className="font-medium text-gray-900">
+                        거래지역 설정
+                      </h3>
                       <p className="text-sm text-gray-600">직거래 가능 지역</p>
                     </div>
                   </div>
@@ -724,11 +743,18 @@ export default function ProfileEditPage() {
                         size="sm"
                         onClick={() => {
                           const currentRegion = watch("region");
-                          console.log("📍 거래지역 수정 버튼 클릭:", currentRegion);
+                          console.log(
+                            "📍 거래지역 수정 버튼 클릭:",
+                            currentRegion
+                          );
                           if (currentRegion && currentRegion.trim()) {
-                            toast.success(`거래지역이 "${currentRegion}"로 설정됩니다. 저장 버튼을 눌러주세요.`);
+                            toast.success(
+                              `거래지역이 "${currentRegion}"로 설정됩니다. 저장 버튼을 눌러주세요.`
+                            );
                           } else {
-                            toast.info("거래지역을 입력한 후 수정 버튼을 눌러주세요.");
+                            toast.info(
+                              "거래지역을 입력한 후 수정 버튼을 눌러주세요."
+                            );
                           }
                         }}
                         className="px-4"
@@ -756,12 +782,14 @@ export default function ProfileEditPage() {
                       <Lock className="w-5 h-5 text-red-600" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">비밀번호 변경</h3>
+                      <h3 className="font-medium text-gray-900">
+                        비밀번호 변경
+                      </h3>
                       <p className="text-sm text-gray-600">계정 보안 강화</p>
                     </div>
                   </div>
                 </div>
-                
+
                 {!showPasswordChange ? (
                   <div className="space-y-4">
                     <p className="text-sm text-gray-600">

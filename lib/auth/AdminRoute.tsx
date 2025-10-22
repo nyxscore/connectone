@@ -11,25 +11,25 @@ interface AdminRouteProps {
 }
 
 export function AdminRoute({ children }: AdminRouteProps) {
+  // 개발 환경에서는 로그인 없이 바로 접근 가능 (선택적)
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const bypassAuth = process.env.NEXT_PUBLIC_ADMIN_BYPASS === "true";
+  const bypassProduction =
+    process.env.NEXT_PUBLIC_ADMIN_BYPASS_PRODUCTION === "true";
+
+  if ((isDevelopment && bypassAuth) || bypassProduction) {
+    console.log("🔓 관리자 페이지 우회 모드 - 로그인 없이 접근 가능");
+    return <>{children}</>;
+  }
+
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
 
-  // 개발 환경에서는 권한 체크 우회
-  const isDevelopment = process.env.NODE_ENV === "development";
-
   // Firebase Custom Claims로 관리자 권한 확인
   useEffect(() => {
     const checkAdminStatus = async () => {
-      // 개발 환경에서는 즉시 통과
-      if (isDevelopment) {
-        console.log("🔓 개발 환경 - 관리자 권한 체크 우회");
-        setIsAdmin(true);
-        setCheckingAdmin(false);
-        return;
-      }
-
       if (!user) {
         setIsAdmin(false);
         setCheckingAdmin(false);
@@ -47,17 +47,24 @@ export function AdminRoute({ children }: AdminRouteProps) {
         // Firebase Custom Claims 확인
         const idTokenResult = await auth.currentUser.getIdTokenResult();
         const hasAdminClaim = idTokenResult.claims.admin === true;
-        const isGradeA = user.grade === "A";
+
+        // Firestore에서 role 확인
+        const { db } = await import("../api/firebase-lazy");
+        const { doc, getDoc } = await import("firebase/firestore");
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userData = userDoc.data();
+        const hasAdminRole =
+          userData?.role === "admin" || userData?.isAdmin === true;
 
         console.log("🔒 관리자 권한 확인:", {
           uid: user.uid,
           hasAdminClaim,
-          isGradeA,
+          hasAdminRole,
           claims: idTokenResult.claims,
         });
 
-        // Custom Claims 또는 Grade A 둘 중 하나라도 만족하면 관리자
-        const adminStatus = hasAdminClaim || isGradeA;
+        // Custom Claims 또는 Firestore role이 admin이면 관리자
+        const adminStatus = hasAdminClaim || hasAdminRole;
         setIsAdmin(adminStatus);
 
         if (!adminStatus) {
@@ -72,10 +79,10 @@ export function AdminRoute({ children }: AdminRouteProps) {
       }
     };
 
-    if (!isLoading || isDevelopment) {
+    if (!isLoading) {
       checkAdminStatus();
     }
-  }, [user, isLoading, router, isDevelopment]);
+  }, [user, isLoading, router]);
 
   if (isLoading || checkingAdmin) {
     return (

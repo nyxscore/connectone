@@ -64,10 +64,12 @@ export default function ReportsPage() {
   const loadReports = async () => {
     try {
       setLoading(true);
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { collection, getDocs, orderBy, query } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const q = query(collection(db, "reports"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
@@ -101,10 +103,12 @@ export default function ReportsPage() {
 
     setActionLoading(true);
     try {
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { doc, updateDoc, serverTimestamp } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const updateData: any = {
         status: newStatus,
@@ -216,15 +220,12 @@ export default function ReportsPage() {
   };
 
   const filteredReports = reports.filter(report => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
-      report.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.reporterNickname
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      report.reportedNickname
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      report.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (report.reason || "").toLowerCase().includes(searchLower) ||
+      (report.reporterNickname || "").toLowerCase().includes(searchLower) ||
+      (report.reportedNickname || "").toLowerCase().includes(searchLower) ||
+      (report.description || "").toLowerCase().includes(searchLower);
 
     const matchesStatus =
       statusFilter === "all" || report.status === statusFilter;

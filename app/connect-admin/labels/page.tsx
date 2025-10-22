@@ -40,6 +40,10 @@ export default function LabelsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [newLabelName, setNewLabelName] = useState("");
+  const [newLabelColor, setNewLabelColor] = useState("#3B82F6");
+  const [newLabelDescription, setNewLabelDescription] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     loadLabels();
@@ -48,10 +52,12 @@ export default function LabelsPage() {
   const loadLabels = async () => {
     try {
       setLoading(true);
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { collection, getDocs, orderBy, query } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const q = query(
         collection(db, "product_labels"),
@@ -70,6 +76,44 @@ export default function LabelsPage() {
       toast.error("라벨 목록을 불러올 수 없습니다.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddLabel = async () => {
+    if (!newLabelName.trim()) {
+      toast.error("라벨 이름을 입력해주세요.");
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const { getDb } = await import("@/lib/api/firebase-lazy");
+      const { collection, addDoc, serverTimestamp } = await import(
+        "firebase/firestore"
+      );
+
+      const db = getDb();
+      await addDoc(collection(db, "product_labels"), {
+        name: newLabelName.trim(),
+        color: newLabelColor,
+        description: newLabelDescription.trim(),
+        type: "custom",
+        isActive: true,
+        assignedAt: serverTimestamp(),
+        assignedBy: currentAdmin?.uid || "admin",
+      });
+
+      toast.success("라벨이 성공적으로 추가되었습니다.");
+      setShowAddModal(false);
+      setNewLabelName("");
+      setNewLabelColor("#3B82F6");
+      setNewLabelDescription("");
+      loadLabels();
+    } catch (error) {
+      console.error("라벨 추가 실패:", error);
+      toast.error("라벨 추가에 실패했습니다.");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -151,10 +195,11 @@ export default function LabelsPage() {
   };
 
   const filteredLabels = labels.filter(label => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
-      label.productTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      label.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      label.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (label.productTitle || "").toLowerCase().includes(searchLower) ||
+      (label.value || "").toLowerCase().includes(searchLower) ||
+      (label.description || "").toLowerCase().includes(searchLower);
 
     const matchesType = typeFilter === "all" || label.type === typeFilter;
 
@@ -379,13 +424,18 @@ export default function LabelsPage() {
                       취소
                     </Button>
                     <Button
-                      onClick={() => {
-                        toast.success("라벨이 추가되었습니다.");
-                        setShowAddModal(false);
-                      }}
+                      onClick={handleAddLabel}
+                      disabled={actionLoading}
                       className="flex-1"
                     >
-                      추가
+                      {actionLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          추가 중...
+                        </>
+                      ) : (
+                        "추가"
+                      )}
                     </Button>
                   </div>
                 </div>

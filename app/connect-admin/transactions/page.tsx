@@ -57,10 +57,12 @@ export default function TransactionsPage() {
   const loadTransactions = async () => {
     try {
       setLoading(true);
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { collection, getDocs, orderBy, query } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const q = query(
         collection(db, "transactions"),
@@ -133,17 +135,12 @@ export default function TransactionsPage() {
   };
 
   const filteredTransactions = transactions.filter(transaction => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
-      transaction.buyerNickname
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      transaction.sellerNickname
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      transaction.productTitle
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      transaction.id.toLowerCase().includes(searchTerm.toLowerCase());
+      (transaction.buyerNickname || "").toLowerCase().includes(searchLower) ||
+      (transaction.sellerNickname || "").toLowerCase().includes(searchLower) ||
+      (transaction.productTitle || "").toLowerCase().includes(searchLower) ||
+      (transaction.id || "").toLowerCase().includes(searchLower);
 
     const matchesStatus =
       statusFilter === "all" || transaction.status === statusFilter;

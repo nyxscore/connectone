@@ -63,10 +63,12 @@ export default function DisputesPage() {
   const loadDisputes = async () => {
     try {
       setLoading(true);
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { collection, getDocs, orderBy, query } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       const q = query(collection(db, "disputes"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
@@ -95,10 +97,12 @@ export default function DisputesPage() {
 
     setActionLoading(true);
     try {
-      const { db } = await import("@/lib/api/firebase-lazy");
+      const { getDb } = await import("@/lib/api/firebase-lazy");
       const { doc, updateDoc, serverTimestamp } = await import(
         "firebase/firestore"
       );
+
+      const db = getDb();
 
       let newStatus: Dispute["status"];
       switch (actionType) {
@@ -215,16 +219,13 @@ export default function DisputesPage() {
   };
 
   const filteredDisputes = disputes.filter(dispute => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
-      dispute.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      dispute.reporterNickname
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      dispute.reportedNickname
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      dispute.transactionId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      dispute.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (dispute.reason || "").toLowerCase().includes(searchLower) ||
+      (dispute.reporterNickname || "").toLowerCase().includes(searchLower) ||
+      (dispute.reportedNickname || "").toLowerCase().includes(searchLower) ||
+      (dispute.transactionId || "").toLowerCase().includes(searchLower) ||
+      (dispute.description || "").toLowerCase().includes(searchLower);
 
     const matchesStatus =
       statusFilter === "all" || dispute.status === statusFilter;

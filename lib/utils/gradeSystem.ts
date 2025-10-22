@@ -234,21 +234,33 @@ export function calculateUserProgress(user: User): UserProgress {
 
 // 등급 정보 가져오기
 export function getGradeInfo(grade: UserGrade): GradeInfo {
+  if (!grade || !GRADE_INFO[grade]) {
+    return GRADE_INFO["C"]; // 기본값
+  }
   return GRADE_INFO[grade];
 }
 
 // 등급 색상 가져오기
 export function getGradeColor(grade: UserGrade): string {
+  if (!grade || !GRADE_INFO[grade]) {
+    return GRADE_INFO["C"].color; // 기본값
+  }
   return GRADE_INFO[grade].color;
 }
 
 // 등급 이름 가져오기
 export function getGradeName(grade: UserGrade): string {
+  if (!grade || !GRADE_INFO[grade]) {
+    return GRADE_INFO["C"].name; // 기본값
+  }
   return GRADE_INFO[grade].name;
 }
 
 // 등급 설명 가져오기
 export function getGradeDescription(grade: UserGrade): string {
+  if (!grade || !GRADE_INFO[grade]) {
+    return GRADE_INFO["C"].description; // 기본값
+  }
   return GRADE_INFO[grade].description;
 }
 
