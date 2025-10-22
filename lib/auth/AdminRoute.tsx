@@ -16,9 +16,20 @@ export function AdminRoute({ children }: AdminRouteProps) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
 
+  // 개발 환경에서는 권한 체크 우회
+  const isDevelopment = process.env.NODE_ENV === "development";
+
   // Firebase Custom Claims로 관리자 권한 확인
   useEffect(() => {
     const checkAdminStatus = async () => {
+      // 개발 환경에서는 즉시 통과
+      if (isDevelopment) {
+        console.log("🔓 개발 환경 - 관리자 권한 체크 우회");
+        setIsAdmin(true);
+        setCheckingAdmin(false);
+        return;
+      }
+
       if (!user) {
         setIsAdmin(false);
         setCheckingAdmin(false);
@@ -61,10 +72,10 @@ export function AdminRoute({ children }: AdminRouteProps) {
       }
     };
 
-    if (!isLoading) {
+    if (!isLoading || isDevelopment) {
       checkAdminStatus();
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, isDevelopment]);
 
   if (isLoading || checkingAdmin) {
     return (
