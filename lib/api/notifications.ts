@@ -428,6 +428,8 @@ export async function createNewMessageNotification(data: {
   userId: string;
   senderName: string;
   productTitle: string;
+  productPrice?: number;
+  productImage?: string;
   messagePreview: string;
   chatId: string;
 }): Promise<{ success: boolean; notificationId?: string; error?: string }> {
@@ -445,6 +447,8 @@ export async function createNewMessageNotification(data: {
     data: {
       senderName: data.senderName,
       productTitle: data.productTitle,
+      productPrice: data.productPrice || 0,
+      productImage: data.productImage,
       messagePreview: data.messagePreview,
       chatId: data.chatId,
     },

@@ -465,6 +465,8 @@ export async function sendMessage(
                 userId: recipientUid,
                 senderName: senderProfile.nickname || "알 수 없음",
                 productTitle: itemResult.item.title,
+                productPrice: itemResult.item.price || 0,
+                productImage: itemResult.item.images?.[0],
                 messagePreview:
                   data.content.length > 50
                     ? data.content.substring(0, 50) + "..."
@@ -544,6 +546,8 @@ export async function sendMessage(
                 userId: sellerUid,
                 senderName: "", // 시스템 메시지는 senderName을 빈 문자열로 설정
                 productTitle: itemResult.item.title,
+                productPrice: itemResult.item.price || 0,
+                productImage: itemResult.item.images?.[0],
                 messagePreview: data.content,
                 chatId: data.chatId,
               });

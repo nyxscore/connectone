@@ -61,6 +61,7 @@ import {
 import toast from "react-hot-toast";
 import { ShippingTrackingModal } from "../shipping/ShippingTrackingModal";
 import BuyerShippingInfoModal from "../shipping/BuyerShippingInfoModal";
+import { DirectTradeStatus } from "./DirectTradeStatus";
 
 interface EnhancedChatModalProps {
   isOpen: boolean;
@@ -2365,7 +2366,10 @@ export function EnhancedChatModal({
   console.log("EnhancedChatModal: 모달 렌더링 시작", { isOpen, chatId });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 md:p-4">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 md:p-4"
+      data-chat-modal="true"
+    >
       <div className="bg-white md:rounded-lg w-full md:max-w-6xl h-full md:h-[90vh] flex">
         {/* 채팅 영역 */}
         <div
@@ -4840,52 +4844,21 @@ export function EnhancedChatModal({
                       </>
                     )}
 
-                    {/* 거래 대기 - 직거래/택배인 경우에만 표시 */}
+                    {/* 직거래 상태 표시 */}
                     {!chatData?.tradeType?.includes("안전결제") &&
                       chatData?.item?.status !== "escrow_completed" && (
-                        <div
-                          className={`flex items-center justify-between p-3 rounded-lg border-2 ${
-                            chatData?.item?.status === "active"
-                              ? "bg-green-50 border-green-300 text-green-800"
-                              : "bg-gray-50 border-gray-200 text-gray-600"
-                          }`}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium">
-                              거래 대기
-                            </span>
-                            {chatData?.item?.status === "active" && (
-                              <span className="text-green-600">✅</span>
-                            )}
-                          </div>
-                          {chatData?.item?.status === "active" ? (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <Clock className="w-5 h-5 text-gray-400" />
-                          )}
-                        </div>
+                        <DirectTradeStatus
+                          chatId={chatData?.chatId || ""}
+                          userRole={
+                            chatData?.buyerUid === user?.uid
+                              ? "buyer"
+                              : "seller"
+                          }
+                          onStatusChange={newStatus => {
+                            console.log("직거래 상태 변경:", newStatus);
+                          }}
+                        />
                       )}
-
-                    {/* 거래중 */}
-                    <div
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
-                        chatData?.item?.status === "reserved"
-                          ? "bg-orange-50 border-orange-300 text-orange-800"
-                          : "bg-gray-50 border-gray-200 text-gray-600"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">거래중</span>
-                        {chatData?.item?.status === "reserved" && (
-                          <span className="text-orange-600">✅</span>
-                        )}
-                      </div>
-                      {chatData?.item?.status === "reserved" ? (
-                        <Clock className="w-5 h-5 text-orange-600" />
-                      ) : (
-                        <Clock className="w-5 h-5 text-gray-400" />
-                      )}
-                    </div>
 
                     {/* 배송중 - 안전결제인 경우에만 표시 */}
                     {(chatData?.tradeType?.includes("안전결제") ||
