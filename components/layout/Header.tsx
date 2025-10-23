@@ -246,26 +246,6 @@ export function Header() {
 
           {/* 데스크톱 사용자 메뉴 */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* 채팅 버튼 */}
-            <Link
-              href="/chat"
-              className={`relative p-2 rounded-full text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200 ${
-                unreadCount > 0 ? 'animate-spin-slow' : ''
-              }`}
-            >
-              <MessageCircle className="w-6 h-6" />
-              {/* 새로운 메시지 알림 효과 */}
-              {unreadCount > 0 && (
-                <>
-                  {/* 빨간 점 */}
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                  {/* 맥박 효과 */}
-                  <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-5 w-5 animate-ping opacity-75"></span>
-                </>
-              )}
-            </Link>
             <ProfileDropdown />
           </div>
 
@@ -352,29 +332,6 @@ export function Header() {
                 </div>
               )}
 
-              {/* 채팅 버튼 - 사용자 프로필 바로 아래 */}
-              {user && (
-                <div className="px-4 py-2">
-                  <Link
-                    href="/chat"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center justify-between w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <MessageCircle className={`w-4 h-4 ${unreadCount > 0 ? 'animate-spin-slow' : ''}`} />
-                      <span>채팅</span>
-                      {unreadCount > 0 && (
-                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center animate-pulse">
-                          {unreadCount > 9 ? "9+" : unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    {unreadCount > 0 && (
-                      <span className="bg-red-500 rounded-full h-2 w-2 animate-ping"></span>
-                    )}
-                  </Link>
-                </div>
-              )}
 
               {/* 알림 메뉴 - 사용자 프로필 바로 아래 */}
               {user && (
@@ -693,13 +650,23 @@ export function Header() {
       {user && (
         <Link href="/chat" className="fixed bottom-6 right-6 z-50 group">
           <div className="relative">
-            <button className="rounded-full shadow-lg bg-blue-600 text-white p-4 hover:bg-blue-700 transition-all transform hover:scale-110">
+            <button className={`rounded-full shadow-lg text-white p-4 transition-all transform hover:scale-110 ${
+              unreadCount > 0 
+                ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}>
               <MessageCircle className="w-6 h-6" />
             </button>
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold animate-pulse">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
+              <>
+                {/* 알록달록 빛나는 테두리 효과 */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-spin opacity-75 blur-sm"></div>
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 animate-pulse opacity-50"></div>
+                {/* 메시지 개수 */}
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold animate-bounce">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              </>
             )}
           </div>
         </Link>
