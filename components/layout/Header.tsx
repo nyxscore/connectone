@@ -246,6 +246,24 @@ export function Header() {
 
           {/* 데스크톱 사용자 메뉴 */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* 채팅 버튼 */}
+            <Link
+              href="/chat"
+              className="relative p-2 rounded-full text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200"
+            >
+              <MessageCircle className="w-6 h-6" />
+              {/* 새로운 메시지 알림 효과 */}
+              {unreadCount > 0 && (
+                <>
+                  {/* 빨간 점 */}
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                  {/* 맥박 효과 */}
+                  <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-5 w-5 animate-ping opacity-75"></span>
+                </>
+              )}
+            </Link>
             <ProfileDropdown />
           </div>
 
@@ -328,6 +346,30 @@ export function Header() {
                     <Button variant="ghost" size="sm" className="w-full">
                       로그인
                     </Button>
+                  </Link>
+                </div>
+              )}
+
+              {/* 채팅 버튼 - 사용자 프로필 바로 아래 */}
+              {user && (
+                <div className="px-4 py-2">
+                  <Link
+                    href="/chat"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <MessageCircle className="w-4 h-4" />
+                      <span>채팅</span>
+                      {unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center animate-pulse">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    {unreadCount > 0 && (
+                      <span className="bg-red-500 rounded-full h-2 w-2 animate-ping"></span>
+                    )}
                   </Link>
                 </div>
               )}

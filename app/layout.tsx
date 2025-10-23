@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "../components/layout/Header";
 import { Toast } from "../components/ui/Toast";
-import { ChatNotificationProvider } from "../components/notifications/ChatNotificationProvider";
+// import { ChatNotificationProvider } from "../components/notifications/ChatNotificationProvider"; // Disabled chat notifications
 
 export const metadata: Metadata = {
   title: "ConnecTone - 중고 악기 거래 플랫폼",
@@ -47,13 +47,13 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-gray-50">
-        <ChatNotificationProvider>
+        {/* <ChatNotificationProvider> */}
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">{children}</main>
           </div>
           <Toast />
-        </ChatNotificationProvider>
+        {/* </ChatNotificationProvider> */}
       </body>
     </html>
   );
