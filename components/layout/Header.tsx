@@ -650,20 +650,16 @@ export function Header() {
       {user && (
         <Link href="/chat" className="fixed bottom-6 right-6 z-50 group">
           <div className="relative">
-            <button className={`rounded-full shadow-lg text-white p-4 transition-all transform hover:scale-110 ${
-              unreadCount > 0 
-                ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse' 
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}>
+            <button className="rounded-full shadow-lg bg-blue-600 text-white p-4 hover:bg-blue-700 transition-all transform hover:scale-110 relative z-10">
               <MessageCircle className="w-6 h-6" />
             </button>
             {unreadCount > 0 && (
               <>
-                {/* 알록달록 빛나는 테두리 효과 */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-spin opacity-75 blur-sm"></div>
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 animate-pulse opacity-50"></div>
+                {/* 알록달록 빛나는 테두리 효과 - 버튼 뒤에 배치 */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-spin opacity-75 blur-sm -z-10"></div>
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 animate-pulse opacity-50 -z-10"></div>
                 {/* 메시지 개수 */}
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold animate-bounce">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold animate-bounce z-20">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               </>
