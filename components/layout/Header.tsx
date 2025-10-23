@@ -332,7 +332,6 @@ export function Header() {
                 </div>
               )}
 
-
               {/* 알림 메뉴 - 사용자 프로필 바로 아래 */}
               {user && (
                 <div className="px-4 py-2">
@@ -648,9 +647,9 @@ export function Header() {
 
       {/* 플로팅 채팅 버튼 */}
       {user && (
-        <Link href="/chat" className="fixed bottom-6 right-6 z-[9999] group">
+        <Link href="/chat" className="fixed bottom-6 right-6 z-50 group">
           <div className="relative">
-            <button className="rounded-full shadow-2xl bg-blue-600 text-white p-4 hover:bg-blue-700 transition-all transform hover:scale-110 relative z-10 border-2 border-white">
+            <button className="rounded-full shadow-lg bg-blue-600 text-white p-4 hover:bg-blue-700 transition-all transform hover:scale-110 relative z-10">
               <MessageCircle className="w-6 h-6" />
             </button>
             {unreadCount > 0 && (
