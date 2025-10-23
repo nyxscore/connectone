@@ -514,6 +514,8 @@ export default function EditProductModal({
       });
 
       // 상품 정보가 변경된 경우 채팅에 시스템 메시지 전송 (거래 시작 전에만)
+      // 주석 처리: 상품 수정 시 불필요한 알림 방지
+      /*
       const titleChanged = product.title !== formData.title;
       const descriptionChanged = product.description !== formData.description;
       const categoryChanged = product.category !== formData.category;
@@ -573,6 +575,7 @@ export default function EditProductModal({
           // 시스템 메시지 전송 실패해도 상품 수정은 성공으로 처리
         }
       }
+      */
 
       toast.success("상품이 성공적으로 수정되었습니다!");
       onSuccess?.();
