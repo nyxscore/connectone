@@ -588,6 +588,10 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
             <Card
               className={`p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
                 swipedChatId === chat.id ? "transform -translate-x-16" : ""
+              } ${
+                (unreadCounts[chat.id] || 0) > 0 
+                  ? "bg-blue-50 border-l-4 border-l-blue-500 shadow-md" 
+                  : ""
               }`}
               onClick={() => {
                 // 다른 채팅이 스와이프되어 있으면 닫기
@@ -643,13 +647,17 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
                 {/* 채팅 정보 */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
+                    <h3 className={`text-xs sm:text-sm font-semibold truncate ${
+                      (unreadCounts[chat.id] || 0) > 0 
+                        ? "text-blue-900 font-bold" 
+                        : "text-gray-900"
+                    }`}>
                       {chat.otherUser.nickname}
                     </h3>
                     <div className="flex items-center space-x-1 sm:space-x-2">
                       {(unreadCounts[chat.id] || 0) > 0 && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 shadow-sm">
-                          {unreadCounts[chat.id]}
+                        <span className="inline-flex items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold bg-red-500 text-white shadow-lg animate-pulse border-2 border-white">
+                          {unreadCounts[chat.id] > 9 ? "9+" : unreadCounts[chat.id]}
                         </span>
                       )}
                       {/* 웹에서 삭제 버튼 */}
