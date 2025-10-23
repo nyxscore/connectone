@@ -86,9 +86,9 @@ export default function ProgressBar({
                 ${isActive || isCompleted ? "text-gray-900" : "text-gray-400"}
               `}
             >
-              {stepNumber === 1 && "카테고리"}
-              {stepNumber === 2 && "거래 유형"}
-              {stepNumber === 3 && "상품 검색"}
+              {stepNumber === 1 && "거래 유형"}
+              {stepNumber === 2 && "카테고리"}
+              {stepNumber === 3 && "상품 정보"}
             </div>
           );
         })}

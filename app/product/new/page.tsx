@@ -403,8 +403,8 @@ export default function ProductWizardPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            // 거래 유형 선택 단계로 돌아가기
-                            updateFormData({ tradeType: "" });
+                            // 카테고리 선택 단계로 돌아가기
+                            updateFormData({ category: "", productName: "" });
                           }}
                           className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
                         >
