@@ -372,9 +372,9 @@ function PrivacyTerms() {
             처리업무를 위탁하고 있습니다:
           </p>
           <div className="ml-4 space-y-1">
-            <p>• 클라우드 서비스: Amazon Web Services (AWS)</p>
-            <p>• 이메일 발송: SendGrid, AWS SES</p>
-            <p>• SMS 발송: Twilio, AWS SNS</p>
+            <p>• 클라우드 서비스: Firebase, Vercel</p>
+            <p>• 이메일 발송: SendGrid, AWS SES, Gmail SMTP</p>
+            <p>• SMS 발송: Twilio, AWS SNS, 네이버 클라우드</p>
             <p>• 결제 처리: PortOne (구 아임포트)</p>
           </div>
         </div>

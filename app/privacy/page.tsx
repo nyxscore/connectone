@@ -203,8 +203,16 @@ export default function PrivacyPage() {
                       </p>
                     </li>
                     <li>
-                      <strong>이메일 발송 서비스</strong>
+                      <strong>이메일 발송 서비스 (SendGrid, AWS SES, Gmail SMTP)</strong>
                       <p className="ml-6">위탁 업무: 이메일 발송 대행</p>
+                    </li>
+                    <li>
+                      <strong>SMS 발송 서비스 (Twilio, AWS SNS, 네이버 클라우드)</strong>
+                      <p className="ml-6">위탁 업무: SMS 발송 대행</p>
+                    </li>
+                    <li>
+                      <strong>결제 처리 서비스 (PortOne)</strong>
+                      <p className="ml-6">위탁 업무: 결제 처리, 본인인증</p>
                     </li>
                   </ul>
                 </li>
