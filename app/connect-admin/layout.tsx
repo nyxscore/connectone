@@ -35,8 +35,8 @@ export default function ConnectAdminLayout({
     }
   };
 
-  // 개발 환경이면서 인증 안 됐으면 로그인 화면 (비활성화)
-  if (false && isDevelopment && !isAuthenticated) {
+  // 개발 환경이면서 인증 안 됐으면 로그인 화면 (활성화)
+  if (isDevelopment && !isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
