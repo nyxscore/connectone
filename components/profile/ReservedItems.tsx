@@ -146,7 +146,13 @@ export function ReservedItems({
             <div className="absolute bottom-2 right-2">
               <Button
                 size="sm"
-                onClick={() => handleChatClick(item)}
+                onClick={() => {
+                  if (!user) {
+                    alert("채팅하기를 이용하려면 로그인이 필요합니다.");
+                    return;
+                  }
+                  handleChatClick(item);
+                }}
                 className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
               >
                 <MessageCircle className="w-4 h-4 mr-1" />

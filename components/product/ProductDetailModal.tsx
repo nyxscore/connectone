@@ -1127,8 +1127,26 @@ export default function ProductDetailModal({
                       ) : (
                         // 다른 사람 상품일 때 - 찜하기, 채팅하기, 결제하기
                         <>
-                          <div className="flex space-x-2">
-                            <button
+                          {!user ? (
+                            // 비회원일 때 - 로그인 요청
+                            <div className="text-center py-4">
+                              <p className="text-gray-600 mb-4">
+                                찜하기와 채팅하기를 이용하려면 로그인이 필요합니다.
+                              </p>
+                              <Button
+                                onClick={() => {
+                                  onClose();
+                                  router.push("/auth/login");
+                                }}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                로그인하기
+                              </Button>
+                            </div>
+                          ) : (
+                            // 회원일 때 - 찜하기, 채팅하기, 결제하기
+                            <div className="flex space-x-2">
+                              <button
                               className="flex-1 p-3 border border-gray-300 rounded-xl hover:bg-gray-50 flex items-center justify-center space-x-2"
                               onClick={() => {
                                 const newLikedState = !isLiked;
@@ -1481,6 +1499,8 @@ export default function ProductDetailModal({
                                     {loading ? "로딩 중..." : "결제하기"}
                                   </Button>
                                 )}
+                            </div>
+                          )}
                             </div>
                           )}
                         </>
