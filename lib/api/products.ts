@@ -752,7 +752,10 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       newLastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
     }
 
+    // 페이지네이션을 위해 limitCount만큼만 반환
     const finalItems = items.slice(0, limitCount);
+    const hasMoreItems = items.length > limitCount;
+    
     console.log(
       "✅ 최종 반환:",
       finalItems.length,
@@ -760,13 +763,14 @@ export async function getItemList(options: ItemListOptions = {}): Promise<{
       items.length,
       "개 중에서",
       limitCount,
-      "개 선택)"
+      "개 선택, hasMore:",
+      hasMoreItems
     );
 
     return {
       success: true,
       items: finalItems,
-      lastDoc: newLastDoc,
+      lastDoc: hasMoreItems ? newLastDoc : null, // 더 이상 가져올 데이터가 없으면 lastDoc을 null로 설정
     };
   } catch (error) {
     console.error("상품 목록 조회 실패:", error);

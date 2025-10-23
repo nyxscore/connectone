@@ -89,7 +89,7 @@ export function useItemsQuery(
             setItems(prev => [...prev, ...result.items!]);
           }
           setLastDoc(result.lastDoc);
-          setHasMore(result.items.length === limit);
+          setHasMore(!!result.lastDoc); // lastDoc이 있으면 더 가져올 데이터가 있음
         } else {
           console.error("❌ 상품 로드 실패:", result.error);
           setError(result.error || "상품을 불러오는데 실패했습니다.");

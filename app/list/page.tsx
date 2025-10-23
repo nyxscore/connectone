@@ -37,7 +37,7 @@ export default function ListPage() {
     refresh,
     clearError,
   } = useItemsQuery({
-    limit: 20,
+    limit: 50, // 20개에서 50개로 증가
   });
 
   // 페이지 마운트 시 필터 초기화 (한 번만 실행)
