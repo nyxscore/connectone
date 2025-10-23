@@ -45,6 +45,33 @@ import { ItemGallery } from "@/components/items/ItemGallery";
 import { ShippingInfoModal } from "./ShippingInfoModal";
 import { ShippingTrackingModal } from "../shipping/ShippingTrackingModal";
 
+// 찜하기 숫자를 계산하는 함수
+const getWishlistCount = (itemId: string): number => {
+  if (typeof window === "undefined") return 0;
+  
+  let totalCount = 0;
+  
+  // 모든 사용자의 찜하기 데이터를 확인
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("wishlist_")) {
+      try {
+        const wishlistData = localStorage.getItem(key);
+        if (wishlistData) {
+          const wishlistIds = JSON.parse(wishlistData);
+          if (Array.isArray(wishlistIds) && wishlistIds.includes(itemId)) {
+            totalCount++;
+          }
+        }
+      } catch (error) {
+        console.error("찜하기 데이터 파싱 오류:", error);
+      }
+    }
+  }
+  
+  return totalCount;
+};
+
 // 마그니파이어 이미지 컴포넌트
 interface MagnifierImageProps {
   src: string;
@@ -831,8 +858,8 @@ export default function ProductDetailModal({
                         ).toLocaleDateString("ko-KR")}
                       </span>
                       <span className="flex items-center">
-                        <Eye className="w-4 h-4 mr-1" />
-                        조회수 0
+                        <Heart className="w-4 h-4 mr-1" />
+                        찜하기 {getWishlistCount(product?.id || "")}
                       </span>
                     </div>
                   </div>
