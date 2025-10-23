@@ -236,6 +236,7 @@ export function EnhancedChatModal({
       tradeType?: string,
       isSeller?: boolean
     ) => {
+      console.log("🔍 시스템 메시지 로직 디버그:", { type, tradeType, isSeller });
       const isEscrow = tradeType?.includes("안전결제");
 
       switch (type) {
@@ -257,8 +258,8 @@ export function EnhancedChatModal({
               return "🚀 거래가 시작되었습니다!\n\n📍 배송지 정보를 입력하고 판매자의 발송을 기다려주세요.";
             }
           } else if (
-            tradeType?.includes("택배") &&
-            !tradeType?.includes("안전결제")
+            tradeType === "택배" ||
+            (tradeType?.includes("택배") && !tradeType?.includes("직거래"))
           ) {
             // 일반 택배거래
             if (isSeller) {
@@ -267,7 +268,7 @@ export function EnhancedChatModal({
               return "🚀 택배거래가 시작되었습니다!\n\n📍 배송지 정보를 판매자에게 알려주세요.";
             }
           } else {
-            // 직거래
+            // 직거래 (기본값)
             if (isSeller) {
               return "🚀 직거래가 시작되었습니다!\n\n📍 구매자와 만날 장소와 시간을 조율해주세요.";
             } else {
@@ -1541,7 +1542,8 @@ export function EnhancedChatModal({
 
       // 배송지 정보 처리 (택배 거래인 경우)
       if (
-        chatData.tradeType?.includes("택배") ||
+        chatData.tradeType === "택배" ||
+        (chatData.tradeType?.includes("택배") && !chatData.tradeType?.includes("직거래")) ||
         chatData.tradeType?.includes("안전결제")
       ) {
         // 구매자의 배송지 정보를 확인하고 조건부로 처리
