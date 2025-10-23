@@ -1190,24 +1190,13 @@ export function EnhancedChatModal({
           console.log("실시간 메시지 업데이트:", messages.length, "개");
           setMessages(messages);
 
-          // 새 메시지가 올 때마다 읽음 처리
-          if (messages.length > 0 && user) {
+          // 채팅이 열렸을 때 안읽은 메시지들을 읽음 처리 (한 번만)
+          if (messages.length > 0 && user && !messagesLoaded) {
             setTimeout(async () => {
-              const { markMessageAsRead } = await import("../../lib/chat/api");
+              const { markAllMessagesAsRead } = await import("../../lib/chat/api");
 
-              // 상대방이 보낸 메시지 중 읽지 않은 것들을 읽음 처리
-              const unreadMessages = messages.filter(
-                msg =>
-                  msg.senderUid !== user.uid && !msg.readBy.includes(user.uid)
-              );
-
-              console.log("읽지 않은 메시지 개수:", unreadMessages.length);
-
-              // 읽지 않은 메시지들을 읽음 처리
-              for (const message of unreadMessages) {
-                console.log("메시지 읽음 처리:", message.id);
-                await markMessageAsRead(message.id, user.uid);
-              }
+              // 채팅의 모든 안읽은 메시지를 한 번에 읽음 처리
+              await markAllMessagesAsRead(chatData.chatId, user.uid);
 
               // 채팅 리스트 업데이트를 위한 이벤트 발생
               window.dispatchEvent(
@@ -1215,7 +1204,7 @@ export function EnhancedChatModal({
                   detail: { chatId: chatData.chatId, userId: user.uid },
                 })
               );
-            }, 50);
+            }, 100);
           }
         },
         error => {

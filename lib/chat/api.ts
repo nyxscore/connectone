@@ -712,14 +712,20 @@ export async function markMessageAsRead(
           const chatData = chatSnap.data();
           const isBuyer = chatData.buyerUid === userId;
 
-          // 현재 사용자의 안읽은 메시지 개수를 0으로 설정
+          // 현재 사용자의 안읽은 메시지 개수를 1 감소
+          const currentUnreadCount = isBuyer 
+            ? (chatData.buyerUnreadCount || 0)
+            : (chatData.sellerUnreadCount || 0);
+          
+          const newUnreadCount = Math.max(0, currentUnreadCount - 1);
+          
           const updateData = isBuyer
-            ? { buyerUnreadCount: 0 }
-            : { sellerUnreadCount: 0 };
+            ? { buyerUnreadCount: newUnreadCount }
+            : { sellerUnreadCount: newUnreadCount };
 
           await updateDoc(chatRef, updateData);
           console.log(
-            `채팅 ${messageData.chatId}의 안읽은 메시지 개수 업데이트 완료`
+            `채팅 ${messageData.chatId}의 안읽은 메시지 개수 업데이트: ${currentUnreadCount} → ${newUnreadCount}`
           );
         }
       }
