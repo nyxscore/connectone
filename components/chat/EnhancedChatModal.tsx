@@ -4085,17 +4085,44 @@ export function EnhancedChatModal({
 
             <div className="flex-1 p-4 space-y-6 overflow-y-auto">
               {/* 상대방 프로필 */}
-              {chatData && otherUserProfile && (
+              {chatData && (
                 <div className="pb-6 border-b">
-                  <SellerProfileCard
-                    sellerProfile={otherUserProfile}
-                    seller={{
-                      displayName: chatData.otherUser.nickname,
-                    }}
-                    region="지역 정보 없음" // 기본값
-                    onClick={() => setShowOtherProfileModal(true)}
-                    showClickable={true}
-                  />
+                  {otherUserProfile ? (
+                    <SellerProfileCard
+                      sellerProfile={otherUserProfile}
+                      seller={{
+                        displayName: chatData.otherUser.nickname,
+                      }}
+                      region="지역 정보 없음" // 기본값
+                      onClick={() => setShowOtherProfileModal(true)}
+                      showClickable={true}
+                    />
+                  ) : (
+                    // 프로필이 로드되지 않았을 때 기본 정보 표시
+                    <div className="bg-white rounded-lg border p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                          {chatData.otherUser.profileImage ? (
+                            <img
+                              src={chatData.otherUser.profileImage}
+                              alt={chatData.otherUser.nickname}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-6 h-6 text-gray-500" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">
+                            {chatData.otherUser.nickname}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            상대방 정보를 불러오는 중...
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
