@@ -14,13 +14,19 @@ export default function ConnectAdminLayout({
   const isDevelopment = process.env.NODE_ENV === "development";
 
   useEffect(() => {
-    // 개발 환경에서는 자동 인증 (선택적)
-    const bypassAuth = process.env.NEXT_PUBLIC_ADMIN_BYPASS === "true";
-    const bypassProduction =
-      process.env.NEXT_PUBLIC_ADMIN_BYPASS_PRODUCTION === "true";
-    if ((isDevelopment && bypassAuth) || bypassProduction) {
-      setIsAuthenticated(true);
-    }
+  // 개발 환경에서는 자동 인증 (선택적)
+  const bypassAuth = process.env.NEXT_PUBLIC_ADMIN_BYPASS === "true";
+  const bypassProduction =
+    process.env.NEXT_PUBLIC_ADMIN_BYPASS_PRODUCTION === "true";
+  if ((isDevelopment && bypassAuth) || bypassProduction) {
+    setIsAuthenticated(true);
+  }
+
+  // 임시: 모든 환경에서 비밀번호 인증 활성화
+  const tempBypass = true; // 임시로 true로 설정
+  if (tempBypass) {
+    setIsAuthenticated(true);
+  }
   }, [isDevelopment]);
 
   const handleLogin = () => {
