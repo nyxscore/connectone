@@ -1421,7 +1421,8 @@ export default function ProductDetailModal({
                             <div className="space-y-3">
                               {/* 안전거래를 선택했을 때만 결제 버튼 표시 */}
                               {buyerEscrowEnabled &&
-                                selectedTradeMethod?.includes("택배") && (
+                                selectedTradeMethod?.includes("택배") &&
+                                product?.escrowEnabled && (
                                   <Button
                                     onClick={async () => {
                                       // 안전거래로 구매 - 결제창으로 이동
