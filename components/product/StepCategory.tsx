@@ -97,7 +97,7 @@ export default function StepCategory({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {!showSubcategories ? (
         // 1단계: 카테고리 선택
         <>
@@ -217,7 +217,7 @@ export default function StepCategory({
           </div>
 
           {/* 악기 카드 목록 */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto pb-20">
             {filteredInstruments.map((instrument, index) => {
               const isSelected = selectedInstrument === instrument.key;
 
