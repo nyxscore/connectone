@@ -4890,6 +4890,27 @@ export function EnhancedChatModal({
                       )}
                     </div>
 
+                    {/* 거래완료 */}
+                    <div
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                        chatData?.item?.status === "sold"
+                          ? "bg-green-50 border-green-300 text-green-800"
+                          : "bg-gray-50 border-gray-200 text-gray-600"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">거래완료</span>
+                        {chatData?.item?.status === "sold" && (
+                          <span className="text-green-600">✅</span>
+                        )}
+                      </div>
+                      {chatData?.item?.status === "sold" ? (
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+
                     {/* 배송중 - 안전결제인 경우에만 표시 */}
                     {(chatData?.tradeType?.includes("안전결제") ||
                       chatData?.item?.status === "escrow_completed") && (
