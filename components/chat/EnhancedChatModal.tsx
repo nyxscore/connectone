@@ -5059,26 +5059,6 @@ export function EnhancedChatModal({
                       </div>
                     )}
 
-                    {/* 거래완료 */}
-                    <div
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
-                        chatData?.item?.status === "sold"
-                          ? "bg-green-50 border-green-300 text-green-800"
-                          : "bg-gray-50 border-gray-200 text-gray-600"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">거래완료</span>
-                        {chatData?.item?.status === "sold" && (
-                          <span className="text-green-600">✅</span>
-                        )}
-                      </div>
-                      {chatData?.item?.status === "sold" ? (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <CheckCircle className="w-5 h-5 text-gray-400" />
-                      )}
-                    </div>
 
                     {/* 반품 승인/거절 버튼 - 판매자에게만 표시 (반품 요청이 있을 때) */}
                     {user &&
