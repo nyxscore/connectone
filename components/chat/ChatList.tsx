@@ -647,11 +647,6 @@ export function ChatList({ onChatSelect, onChatDeleted }: ChatListProps) {
                       {chat.otherUser.nickname}
                     </h3>
                     <div className="flex items-center space-x-1 sm:space-x-2">
-                      {(unreadCounts[chat.id] || 0) > 0 && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 shadow-sm">
-                          {unreadCounts[chat.id]}
-                        </span>
-                      )}
                       {/* 웹에서 삭제 버튼 */}
                       <button
                         onClick={e => handleDeleteChat(chat.id, e)}

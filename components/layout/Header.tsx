@@ -249,7 +249,9 @@ export function Header() {
             {/* 채팅 버튼 */}
             <Link
               href="/chat"
-              className="relative p-2 rounded-full text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200"
+              className={`relative p-2 rounded-full text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200 ${
+                unreadCount > 0 ? 'animate-spin-slow' : ''
+              }`}
             >
               <MessageCircle className="w-6 h-6" />
               {/* 새로운 메시지 알림 효과 */}
@@ -359,7 +361,7 @@ export function Header() {
                     className="flex items-center justify-between w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors"
                   >
                     <div className="flex items-center space-x-2">
-                      <MessageCircle className="w-4 h-4" />
+                      <MessageCircle className={`w-4 h-4 ${unreadCount > 0 ? 'animate-spin-slow' : ''}`} />
                       <span>채팅</span>
                       {unreadCount > 0 && (
                         <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center animate-pulse">
