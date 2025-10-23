@@ -48,9 +48,9 @@ import { ShippingTrackingModal } from "../shipping/ShippingTrackingModal";
 // 찜하기 숫자를 계산하는 함수
 const getWishlistCount = (itemId: string): number => {
   if (typeof window === "undefined") return 0;
-  
+
   let totalCount = 0;
-  
+
   // 모든 사용자의 찜하기 데이터를 확인
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -68,7 +68,7 @@ const getWishlistCount = (itemId: string): number => {
       }
     }
   }
-  
+
   return totalCount;
 };
 
@@ -1131,7 +1131,7 @@ export default function ProductDetailModal({
                             // 비회원일 때 - 로그인 요청
                             <div className="text-center py-4">
                               <p className="text-gray-600 mb-4">
-                                찜하기와 채팅하기를 이용하려면 로그인이 필요합니다.
+                                거래를 하려면 로그인이 필요합니다.
                               </p>
                               <Button
                                 onClick={() => {
@@ -1149,152 +1149,152 @@ export default function ProductDetailModal({
                               <button
                                 className="flex-1 p-3 border border-gray-300 rounded-xl hover:bg-gray-50 flex items-center justify-center space-x-2"
                                 onClick={() => {
-                                const newLikedState = !isLiked;
-                                setIsLiked(newLikedState);
+                                  const newLikedState = !isLiked;
+                                  setIsLiked(newLikedState);
 
-                                // 로컬 스토리지에 찜한 상품 저장/제거
-                                if (user?.uid) {
-                                  const wishlistKey = `wishlist_${user.uid}`;
-                                  const existingWishlist = JSON.parse(
-                                    localStorage.getItem(wishlistKey) || "[]"
-                                  );
+                                  // 로컬 스토리지에 찜한 상품 저장/제거
+                                  if (user?.uid) {
+                                    const wishlistKey = `wishlist_${user.uid}`;
+                                    const existingWishlist = JSON.parse(
+                                      localStorage.getItem(wishlistKey) || "[]"
+                                    );
 
-                                  if (newLikedState) {
-                                    // 찜하기 추가
-                                    if (
-                                      !existingWishlist.includes(product.id)
-                                    ) {
-                                      existingWishlist.push(product.id);
+                                    if (newLikedState) {
+                                      // 찜하기 추가
+                                      if (
+                                        !existingWishlist.includes(product.id)
+                                      ) {
+                                        existingWishlist.push(product.id);
+                                        localStorage.setItem(
+                                          wishlistKey,
+                                          JSON.stringify(existingWishlist)
+                                        );
+                                        toast.success(
+                                          "찜 목록에 추가되었습니다!"
+                                        );
+                                      }
+                                    } else {
+                                      // 찜하기 제거
+                                      const updatedWishlist =
+                                        existingWishlist.filter(
+                                          (id: string) => id !== product.id
+                                        );
                                       localStorage.setItem(
                                         wishlistKey,
-                                        JSON.stringify(existingWishlist)
+                                        JSON.stringify(updatedWishlist)
                                       );
                                       toast.success(
-                                        "찜 목록에 추가되었습니다!"
+                                        "찜 목록에서 제거되었습니다!"
                                       );
                                     }
-                                  } else {
-                                    // 찜하기 제거
-                                    const updatedWishlist =
-                                      existingWishlist.filter(
-                                        (id: string) => id !== product.id
-                                      );
-                                    localStorage.setItem(
-                                      wishlistKey,
-                                      JSON.stringify(updatedWishlist)
-                                    );
-                                    toast.success(
-                                      "찜 목록에서 제거되었습니다!"
-                                    );
                                   }
-                                }
-                              }}
-                            >
-                              <Heart
-                                className={`w-5 h-5 ${isLiked ? "text-red-500 fill-current" : "text-gray-600"}`}
-                              />
-                              <span className="text-sm font-medium text-gray-700">
-                                {isLiked ? "찜하기 해제" : "찜하기"}
-                              </span>
-                            </button>
-                            <button
-                              className={`flex-1 p-3 rounded-xl flex items-center justify-center space-x-2 ${
-                                selectedTradeMethod === "직거래"
-                                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                                  : "border border-gray-300 hover:bg-gray-50"
-                              }`}
-                              onClick={() => {
-                                // 선택된 거래 형태 저장
-                                if (
-                                  product?.tradeOptions?.includes("직거래") &&
-                                  product?.tradeOptions?.includes("택배")
-                                ) {
-                                  // 직거래와 택배 모두 가능한 경우
-                                  if (buyerEscrowEnabled) {
-                                    setSelectedTradeType("택배 + 안전결제");
+                                }}
+                              >
+                                <Heart
+                                  className={`w-5 h-5 ${isLiked ? "text-red-500 fill-current" : "text-gray-600"}`}
+                                />
+                                <span className="text-sm font-medium text-gray-700">
+                                  {isLiked ? "찜하기 해제" : "찜하기"}
+                                </span>
+                              </button>
+                              <button
+                                className={`flex-1 p-3 rounded-xl flex items-center justify-center space-x-2 ${
+                                  selectedTradeMethod === "직거래"
+                                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                    : "border border-gray-300 hover:bg-gray-50"
+                                }`}
+                                onClick={() => {
+                                  // 선택된 거래 형태 저장
+                                  if (
+                                    product?.tradeOptions?.includes("직거래") &&
+                                    product?.tradeOptions?.includes("택배")
+                                  ) {
+                                    // 직거래와 택배 모두 가능한 경우
+                                    if (buyerEscrowEnabled) {
+                                      setSelectedTradeType("택배 + 안전결제");
+                                    } else if (
+                                      product?.tradeOptions?.includes("택배")
+                                    ) {
+                                      setSelectedTradeType("택배");
+                                    } else {
+                                      setSelectedTradeType("직거래");
+                                    }
+                                  } else if (
+                                    product?.tradeOptions?.includes("직거래")
+                                  ) {
+                                    if (buyerEscrowEnabled) {
+                                      setSelectedTradeType("직거래 + 안전결제");
+                                    } else {
+                                      setSelectedTradeType("직거래");
+                                    }
                                   } else if (
                                     product?.tradeOptions?.includes("택배")
                                   ) {
-                                    setSelectedTradeType("택배");
+                                    if (buyerEscrowEnabled) {
+                                      setSelectedTradeType("택배 + 안전결제");
+                                    } else {
+                                      setSelectedTradeType("택배");
+                                    }
                                   } else {
-                                    setSelectedTradeType("직거래");
+                                    if (buyerEscrowEnabled) {
+                                      setSelectedTradeType("안전결제");
+                                    } else {
+                                      setSelectedTradeType("직거래"); // 기본값
+                                    }
                                   }
-                                } else if (
-                                  product?.tradeOptions?.includes("직거래")
-                                ) {
-                                  if (buyerEscrowEnabled) {
-                                    setSelectedTradeType("직거래 + 안전결제");
-                                  } else {
-                                    setSelectedTradeType("직거래");
-                                  }
-                                } else if (
-                                  product?.tradeOptions?.includes("택배")
-                                ) {
-                                  if (buyerEscrowEnabled) {
-                                    setSelectedTradeType("택배 + 안전결제");
-                                  } else {
-                                    setSelectedTradeType("택배");
-                                  }
-                                } else {
-                                  if (buyerEscrowEnabled) {
-                                    setSelectedTradeType("안전결제");
-                                  } else {
-                                    setSelectedTradeType("직거래"); // 기본값
-                                  }
-                                }
 
-                                // 채팅 기능 - 채팅 모달 열기
-                                console.log("🔵 채팅하기 버튼 클릭됨!");
-                                console.log(
-                                  "🔵 actualProductId:",
-                                  actualProductId
-                                );
-                                console.log(
-                                  "🔵 item?.sellerUid:",
-                                  item?.sellerUid
-                                );
-                                console.log(
-                                  "🔵 product?.sellerId:",
-                                  product?.sellerId
-                                );
+                                  // 채팅 기능 - 채팅 모달 열기
+                                  console.log("🔵 채팅하기 버튼 클릭됨!");
+                                  console.log(
+                                    "🔵 actualProductId:",
+                                    actualProductId
+                                  );
+                                  console.log(
+                                    "🔵 item?.sellerUid:",
+                                    item?.sellerUid
+                                  );
+                                  console.log(
+                                    "🔵 product?.sellerId:",
+                                    product?.sellerId
+                                  );
 
-                                const itemId = actualProductId || product?.id;
-                                const sellerId =
-                                  item?.sellerUid || product?.sellerId;
+                                  const itemId = actualProductId || product?.id;
+                                  const sellerId =
+                                    item?.sellerUid || product?.sellerId;
 
-                                if (onOpenChat && itemId && sellerId) {
-                                  console.log("🔵 onOpenChat 호출:", {
-                                    itemId,
-                                    sellerId,
-                                  });
-                                  onOpenChat(itemId, sellerId);
-                                } else {
-                                  console.error("🔵 채팅 열기 실패:", {
-                                    hasOnOpenChat: !!onOpenChat,
-                                    itemId,
-                                    sellerId,
-                                  });
-                                }
-                              }}
-                            >
-                              <MessageCircle
-                                className={`w-5 h-5 ${
-                                  selectedTradeMethod === "직거래"
-                                    ? "text-white"
-                                    : "text-gray-600"
-                                }`}
-                              />
-                              <span
-                                className={`text-sm font-medium ${
-                                  selectedTradeMethod === "직거래"
-                                    ? "text-white"
-                                    : "text-gray-700"
-                                }`}
+                                  if (onOpenChat && itemId && sellerId) {
+                                    console.log("🔵 onOpenChat 호출:", {
+                                      itemId,
+                                      sellerId,
+                                    });
+                                    onOpenChat(itemId, sellerId);
+                                  } else {
+                                    console.error("🔵 채팅 열기 실패:", {
+                                      hasOnOpenChat: !!onOpenChat,
+                                      itemId,
+                                      sellerId,
+                                    });
+                                  }
+                                }}
                               >
-                                채팅하기
-                              </span>
-                            </button>
-                          </div>
+                                <MessageCircle
+                                  className={`w-5 h-5 ${
+                                    selectedTradeMethod === "직거래"
+                                      ? "text-white"
+                                      : "text-gray-600"
+                                  }`}
+                                />
+                                <span
+                                  className={`text-sm font-medium ${
+                                    selectedTradeMethod === "직거래"
+                                      ? "text-white"
+                                      : "text-gray-700"
+                                  }`}
+                                >
+                                  채팅하기
+                                </span>
+                              </button>
+                            </div>
                           )}
                           {/* 상품 상태에 따른 버튼 표시 */}
                           {product?.status === "reserved" ? (

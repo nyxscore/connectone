@@ -148,7 +148,7 @@ export function ReservedItems({
                 size="sm"
                 onClick={() => {
                   if (!user) {
-                    alert("채팅하기를 이용하려면 로그인이 필요합니다.");
+                    alert("거래를 하려면 로그인이 필요합니다.");
                     return;
                   }
                   handleChatClick(item);
