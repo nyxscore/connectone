@@ -417,7 +417,7 @@ export async function sendMessage(
       const chatData = chatSnap.data() as Chat;
       const updates: any = {
         lastMessage: data.content,
-        updatedAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
       };
 
       // 상대방의 unreadCount 증가
@@ -502,7 +502,7 @@ export async function sendMessage(
           buyerUid,
           sellerUid,
           lastMessage: data.content,
-          updatedAt: new Date().toISOString() as any,
+          updatedAt: serverTimestamp(),
           buyerUnreadCount: 0,
           sellerUnreadCount: 0,
         };

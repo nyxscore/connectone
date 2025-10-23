@@ -354,7 +354,7 @@ export function EnhancedChatModal({
 
         // 시스템 메시지 전송 후 채팅 알림 업데이트 (빨간점 표시)
         try {
-          const { updateDoc, doc } = await import("firebase/firestore");
+          const { updateDoc, doc, serverTimestamp } = await import("firebase/firestore");
           const db = getDb();
 
           const chatRef = doc(db, "chats", chatData.chatId);
@@ -362,7 +362,7 @@ export function EnhancedChatModal({
           // 구매자와 판매자 모두에게 읽지 않음 카운트 증가
           const updateData: any = {
             lastMessage: message,
-            updatedAt: new Date(),
+            updatedAt: serverTimestamp(),
           };
 
           // 구매자 읽지 않음 카운트 증가
@@ -5058,7 +5058,6 @@ export function EnhancedChatModal({
                           )}
                       </div>
                     )}
-
 
                     {/* 반품 승인/거절 버튼 - 판매자에게만 표시 (반품 요청이 있을 때) */}
                     {user &&
