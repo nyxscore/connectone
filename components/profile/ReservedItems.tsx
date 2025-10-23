@@ -129,13 +129,13 @@ export function ReservedItems({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {reservedItems.map(item => (
           <div key={item.id} className="relative group">
-                        <ItemCard 
-                          item={item} 
-                          onClick={() => {
-                            // 거래 관리 페이지로 이동
-                            window.location.href = `/transaction/${item.id}`;
-                          }}
-                        />
+            <ItemCard
+              item={item}
+              onClick={() => {
+                // 거래 관리 페이지로 이동
+                window.location.href = `/transaction/${item.id}`;
+              }}
+            />
 
             {/* 거래중 상태 표시 */}
             <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold">

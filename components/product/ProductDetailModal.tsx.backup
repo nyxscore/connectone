@@ -1147,8 +1147,8 @@ export default function ProductDetailModal({
                             // 회원일 때 - 찜하기, 채팅하기, 결제하기
                             <div className="flex space-x-2">
                               <button
-                                className="flex-1 p-3 border border-gray-300 rounded-xl hover:bg-gray-50 flex items-center justify-center space-x-2"
-                                onClick={() => {
+                              className="flex-1 p-3 border border-gray-300 rounded-xl hover:bg-gray-50 flex items-center justify-center space-x-2"
+                              onClick={() => {
                                 const newLikedState = !isLiked;
                                 setIsLiked(newLikedState);
 
@@ -1295,8 +1295,13 @@ export default function ProductDetailModal({
                               </span>
                             </button>
                           </div>
-                          )}
                           {/* 상품 상태에 따른 버튼 표시 */}
+                          {console.log(
+                            "상품 상태 체크:",
+                            product?.status,
+                            "reserved와 비교:",
+                            product?.status === "reserved"
+                          )}
                           {product?.status === "reserved" ? (
                             <div className="space-y-3">
                               <div className="w-full h-12 bg-orange-100 border border-orange-300 rounded-xl flex items-center justify-center">
