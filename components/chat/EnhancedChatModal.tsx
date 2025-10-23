@@ -852,14 +852,14 @@ export function EnhancedChatModal({
             chatData.tradeType ||
             tradeType ||
             (() => {
-              // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
+              // escrowEnabled가 true이고 status가 escrow_completed인 경우에만 "안전결제"
               if (
-                itemResult.item?.escrowEnabled ||
+                itemResult.item?.escrowEnabled &&
                 itemResult.item?.status === "escrow_completed"
               ) {
                 return "안전결제";
               }
-              // 아니면 tradeOptions에서 가져오기
+              // 그 외에는 tradeOptions에서 가져오기 (직거래, 택배 등)
               const options = itemResult.item?.tradeOptions || ["직거래"];
               return options.join(" + ");
             })(),
@@ -956,14 +956,14 @@ export function EnhancedChatModal({
             chatData.tradeType ||
             tradeType ||
             (() => {
-              // escrowEnabled가 true면 "안전결제"만 표시 (택배는 당연하니까)
+              // escrowEnabled가 true이고 status가 escrow_completed인 경우에만 "안전결제"
               if (
-                itemResult.item?.escrowEnabled ||
+                itemResult.item?.escrowEnabled &&
                 itemResult.item?.status === "escrow_completed"
               ) {
                 return "안전결제";
               }
-              // 아니면 tradeOptions에서 가져오기
+              // 그 외에는 tradeOptions에서 가져오기 (직거래, 택배 등)
               const options = itemResult.item?.tradeOptions || ["직거래"];
               return options.join(" + ");
             })(),
