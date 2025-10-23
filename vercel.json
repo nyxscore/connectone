@@ -1,13 +1,5 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build:vercel",
-  "installCommand": "npm ci",
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "installCommand": "npm ci"
 }
