@@ -648,9 +648,9 @@ export function Header() {
 
       {/* 플로팅 채팅 버튼 */}
       {user && (
-        <Link href="/chat" className="fixed bottom-6 right-6 z-50 group">
+        <Link href="/chat" className="fixed bottom-6 right-6 z-[9999] group">
           <div className="relative">
-            <button className="rounded-full shadow-lg bg-blue-600 text-white p-4 hover:bg-blue-700 transition-all transform hover:scale-110 relative z-10">
+            <button className="rounded-full shadow-2xl bg-blue-600 text-white p-4 hover:bg-blue-700 transition-all transform hover:scale-110 relative z-10 border-2 border-white">
               <MessageCircle className="w-6 h-6" />
             </button>
             {unreadCount > 0 && (
