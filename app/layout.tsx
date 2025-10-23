@@ -48,11 +48,11 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased bg-gray-50">
         {/* <ChatNotificationProvider> */}
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-          </div>
-          <Toast />
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1">{children}</main>
+        </div>
+        <Toast />
         {/* </ChatNotificationProvider> */}
       </body>
     </html>

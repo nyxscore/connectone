@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:clean": "rm -rf .next node_modules package-lock.json && npm install && next build",
+    "build:vercel": "SKIP_ENV_VALIDATION=true SKIP_LINT=true next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
