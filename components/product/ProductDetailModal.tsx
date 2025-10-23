@@ -1131,7 +1131,7 @@ export default function ProductDetailModal({
                             // 비회원일 때 - 로그인 요청
                             <div className="text-center py-4">
                               <p className="text-gray-600 mb-4">
-                                거래를 하려면 로그인이 필요합니다.
+                                로그인하고 빠르고 안전한 거래를 하세요.
                               </p>
                               <Button
                                 onClick={() => {
