@@ -233,7 +233,6 @@ export default function HomePage() {
               <p className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-4 leading-relaxed">
                 AI 감정 시스템과 안전거래로 믿을 수 있는 거래를 경험하세요
               </p>
-
             </div>
 
             {user ? (
@@ -307,7 +306,7 @@ export default function HomePage() {
               모든 악기와 음악 관련 용품을 한 곳에서 만나보세요
             </p>
           </div>
-          
+
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6 text-center">
             <div className="bg-gray-50 rounded-xl p-4 sm:p-6 hover:shadow-lg transition-all duration-300 hover:scale-105">
               <div className="text-2xl sm:text-3xl mb-2">🎸</div>
@@ -382,7 +381,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          
+
           <div className="text-center mt-8">
             <p className="text-lg text-gray-600 font-medium">
               그 외 모든 악기와 음악 관련 용품까지! 🎶
