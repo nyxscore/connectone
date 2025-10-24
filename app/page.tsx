@@ -403,6 +403,48 @@ export default function HomePage() {
               그 외 모든 악기와 음악 관련 용품까지! 🎶
             </p>
           </div>
+
+          {/* 커넥톤만의 특별한 차별화 기능 */}
+          <div className="mt-12">
+            <div className="text-center mb-8">
+              <h3
+                className="text-xl md:text-2xl font-bold text-gray-800 mb-2"
+                style={{ fontFamily: "Paperozi, sans-serif" }}
+              >
+                커넥톤만의 특별한 차별화
+              </h3>
+              <p className="text-gray-600">
+                다른 곳에서는 찾을 수 없는 특별한 악기들
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+              <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 rounded-full text-sm font-medium border border-blue-200 hover:shadow-md transition-all duration-300">
+                #클래식악기
+              </span>
+              <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 rounded-full text-sm font-medium border border-purple-200 hover:shadow-md transition-all duration-300">
+                #음향장비
+              </span>
+              <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-100 to-teal-100 text-green-800 rounded-full text-sm font-medium border border-green-200 hover:shadow-md transition-all duration-300">
+                #국악기
+              </span>
+              <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 rounded-full text-sm font-medium border border-orange-200 hover:shadow-md transition-all duration-300">
+                #특수악기
+              </span>
+              <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-800 rounded-full text-sm font-medium border border-indigo-200 hover:shadow-md transition-all duration-300">
+                #빈티지악기
+              </span>
+              <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-pink-100 to-rose-100 text-pink-800 rounded-full text-sm font-medium border border-pink-200 hover:shadow-md transition-all duration-300">
+                #전자악기
+              </span>
+              <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 rounded-full text-sm font-medium border border-yellow-200 hover:shadow-md transition-all duration-300">
+                #수제악기
+              </span>
+              <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-800 rounded-full text-sm font-medium border border-teal-200 hover:shadow-md transition-all duration-300">
+                #레어악기
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
