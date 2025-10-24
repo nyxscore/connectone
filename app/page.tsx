@@ -230,9 +230,55 @@ export default function HomePage() {
                 안전한 중고 거래
               </p>
 
-              <p className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto px-4 leading-relaxed">
+              <p className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-4 leading-relaxed">
                 AI 감정 시스템과 안전거래로 믿을 수 있는 거래를 경험하세요
               </p>
+
+              {/* 악기 종류 다양성 강조 */}
+              <div className="mb-6 sm:mb-8 md:mb-12 px-4">
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 max-w-4xl mx-auto border border-white/20">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4 text-center">
+                    🎵 모든 악기, 한 곳에서 🎵
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 text-center">
+                    <div className="bg-white/20 rounded-lg p-2 sm:p-3">
+                      <div className="text-sm sm:text-base font-semibold text-white">🎸 기타</div>
+                      <div className="text-xs sm:text-sm text-blue-100">클래식/어쿠스틱/일렉트릭</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-2 sm:p-3">
+                      <div className="text-sm sm:text-base font-semibold text-white">🎹 피아노</div>
+                      <div className="text-xs sm:text-sm text-blue-100">디지털/어쿠스틱</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-2 sm:p-3">
+                      <div className="text-sm sm:text-base font-semibold text-white">🥁 드럼</div>
+                      <div className="text-xs sm:text-sm text-blue-100">어쿠스틱/전자드럼</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-2 sm:p-3">
+                      <div className="text-sm sm:text-base font-semibold text-white">🎺 관악기</div>
+                      <div className="text-xs sm:text-sm text-blue-100">트럼펫/색소폰/플루트</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-2 sm:p-3">
+                      <div className="text-sm sm:text-base font-semibold text-white">🎻 현악기</div>
+                      <div className="text-xs sm:text-sm text-blue-100">바이올린/첼로/비올라</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-2 sm:p-3">
+                      <div className="text-sm sm:text-base font-semibold text-white">🎤 음향장비</div>
+                      <div className="text-xs sm:text-sm text-blue-100">마이크/앰프/믹서</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-2 sm:p-3">
+                      <div className="text-sm sm:text-base font-semibold text-white">🎼 국악기</div>
+                      <div className="text-xs sm:text-sm text-blue-100">가야금/거문고/해금</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-2 sm:p-3">
+                      <div className="text-sm sm:text-base font-semibold text-white">🎹 키보드</div>
+                      <div className="text-xs sm:text-sm text-blue-100">신시사이저/워크스테이션</div>
+                    </div>
+                  </div>
+                  <p className="text-xs sm:text-sm md:text-base text-blue-100 mt-3 sm:mt-4 text-center font-medium">
+                    그 외 모든 악기와 음악 관련 용품까지! 🎶
+                  </p>
+                </div>
+              </div>
             </div>
 
             {user ? (

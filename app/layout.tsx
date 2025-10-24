@@ -9,17 +9,17 @@ import { Footer } from '../components/ui/Footer';
 // import { ChatNotificationProvider } from "../components/notifications/ChatNotificationProvider"; // Disabled chat notifications
 
 export const metadata: Metadata = {
-  title: "ConnecTone - 중고 악기 거래 플랫폼",
+  title: "ConnecTone - 모든 악기 중고거래 플랫폼 | 기타, 피아노, 드럼, 국악기",
   description:
-    "안전하고 신뢰할 수 있는 중고 악기 거래의 새로운 기준, ConnecTone",
+    "기타, 피아노, 드럼, 관악기, 현악기, 음향장비, 국악기 등 모든 악기와 음악용품을 안전하게 거래하세요. AI 감정시스템과 안전거래로 믿을 수 있는 중고 악기 거래 플랫폼",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
     apple: "/favicon.svg",
   },
   openGraph: {
-    title: "ConnecTone - 중고 악기 거래 플랫폼",
-    description: "안전하고 신뢰할 수 있는 중고 악기 거래의 새로운 기준, ConnecTone",
+    title: "ConnecTone - 모든 악기 중고거래 플랫폼 | 기타, 피아노, 드럼, 국악기",
+    description: "기타, 피아노, 드럼, 관악기, 현악기, 음향장비, 국악기 등 모든 악기와 음악용품을 안전하게 거래하세요. AI 감정시스템과 안전거래로 믿을 수 있는 중고 악기 거래 플랫폼",
     url: "https://connect-tone.com",
     siteName: "ConnecTone",
     images: [
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ConnecTone - 중고 악기 거래 플랫폼",
-    description: "안전하고 신뢰할 수 있는 중고 악기 거래의 새로운 기준, ConnecTone",
+    title: "ConnecTone - 모든 악기 중고거래 플랫폼 | 기타, 피아노, 드럼, 국악기",
+    description: "기타, 피아노, 드럼, 관악기, 현악기, 음향장비, 국악기 등 모든 악기와 음악용품을 안전하게 거래하세요. AI 감정시스템과 안전거래로 믿을 수 있는 중고 악기 거래 플랫폼",
     images: ["https://connect-tone.com/logo1.png"],
   },
   robots: {

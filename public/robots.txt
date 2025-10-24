@@ -1,8 +1,13 @@
+# 모든 검색엔진 허용
 User-agent: *
 Allow: /
 
-# 네이버 검색로봇 허용
+# 네이버 검색로봇 (Yeti) 허용
 User-agent: Yeti
+Allow: /
+
+# 네이버 서치어드바이저 허용
+User-agent: NaverBot
 Allow: /
 
 # 구글 검색로봇 허용
