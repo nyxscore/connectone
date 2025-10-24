@@ -131,36 +131,14 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setSnsLoading("google");
     try {
-      const result = await nextAuthSignIn("google", {
+      // 리다이렉트 방식으로 변경 (더 안정적)
+      await nextAuthSignIn("google", {
         callbackUrl: "/",
-        redirect: false, // 수동으로 리다이렉트 처리
+        redirect: true, // NextAuth가 자동으로 리다이렉트 처리
       });
-
-      if (result?.error) {
-        console.error("구글 로그인 오류:", result.error);
-
-        // 구체적인 오류 메시지 처리
-        if (result.error === "Configuration") {
-          toast.error("구글 OAuth 설정이 올바르지 않습니다.");
-        } else if (result.error === "AccessDenied") {
-          toast.error("로그인이 취소되었습니다.");
-        } else {
-          toast.error(`구글 로그인에 실패했습니다: ${result.error}`);
-        }
-      } else if (result?.ok) {
-        toast.success("구글 로그인 성공!");
-        router.push("/");
-      } else {
-        toast.error("구글 로그인 중 알 수 없는 오류가 발생했습니다.");
-      }
     } catch (error) {
       console.error("구글 로그인 오류:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "구글 로그인 중 오류가 발생했습니다."
-      );
-    } finally {
+      toast.error("구글 로그인 중 오류가 발생했습니다.");
       setSnsLoading(null);
     }
   };
