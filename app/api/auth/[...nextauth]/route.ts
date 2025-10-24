@@ -1,8 +1,6 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { NextAuthOptions } from "next-auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getFirebaseDb } from "../../../lib/api/firebase-ultra-safe";
 
 // 환경변수 체크 (개발 환경에서만)
 if (process.env.NODE_ENV === 'development' && (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET)) {
@@ -20,7 +18,7 @@ const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // 로그인 성공 - Firestore에 사용자 프로필 저장/업데이트
+      // 로그인 성공 - 로깅만 수행
       console.log("로그인 성공:", {
         provider: account?.provider,
         userId: user.id,
@@ -28,45 +26,7 @@ const authOptions: NextAuthOptions = {
         name: user.name,
       });
 
-      try {
-        const db = await getFirebaseDb();
-        const userRef = doc(db, "users", user.id);
-        const userSnap = await getDoc(userRef);
-
-        const userData = {
-          uid: user.id,
-          email: user.email || "",
-          displayName: user.name || user.email?.split("@")[0] || "사용자",
-          photoURL: user.image || undefined,
-          provider: account?.provider || "google",
-          providerId: account?.providerAccountId || user.id,
-          isEmailVerified: true,
-          role: "user",
-          status: "active",
-          updatedAt: new Date(),
-        };
-
-        if (userSnap.exists()) {
-          // 기존 사용자 - 프로필 업데이트
-          await setDoc(userRef, {
-            ...userData,
-            lastLoginAt: new Date(),
-          }, { merge: true });
-          console.log("기존 사용자 프로필 업데이트 완료:", user.id);
-        } else {
-          // 신규 사용자 - 프로필 생성
-          await setDoc(userRef, {
-            ...userData,
-            createdAt: new Date(),
-            lastLoginAt: new Date(),
-          });
-          console.log("신규 사용자 프로필 생성 완료:", user.id);
-        }
-      } catch (error) {
-        console.error("사용자 프로필 저장 실패:", error);
-        // 프로필 저장 실패해도 로그인은 허용
-      }
-
+      // 프로필 저장은 클라이언트 사이드에서 처리
       return true;
     },
     async session({ session, token }) {

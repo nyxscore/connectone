@@ -66,6 +66,28 @@ export const useAuth = () => {
         console.log("useAuth: NextAuth 사용자 있음", {
           id: sessionUser.id,
         });
+        
+        // 먼저 프로필 동기화 시도
+        try {
+          await fetch("/api/auth/sync-profile", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              uid: sessionUser.id,
+              email: sessionUser.email,
+              name: sessionUser.name,
+              image: sessionUser.image,
+              provider: "google",
+              providerId: sessionUser.id,
+            }),
+          });
+          console.log("프로필 동기화 완료");
+        } catch (error) {
+          console.error("프로필 동기화 실패:", error);
+        }
+
         try {
           const userData = await getUserProfile(sessionUser.id);
 
