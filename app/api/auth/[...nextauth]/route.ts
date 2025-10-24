@@ -26,7 +26,16 @@ const authOptions: NextAuthOptions = {
           params: {
             response_type: "code",
           }
-        }
+        },
+        checks: ["state"],
+        profile(profile) {
+          return {
+            id: profile.response.id,
+            name: profile.response.name,
+            email: profile.response.email,
+            image: profile.response.profile_image,
+          }
+        },
       })
     ] : []),
   ],
@@ -61,6 +70,17 @@ const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30일
+  },
+  cookies: {
+    state: {
+      name: `next-auth.state`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    }
   },
   debug: process.env.NODE_ENV === "development",
 };
