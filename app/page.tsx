@@ -242,36 +242,68 @@ export default function HomePage() {
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 text-center">
                     <div className="bg-white/20 rounded-lg p-2 sm:p-3">
-                      <div className="text-sm sm:text-base font-semibold text-white">🎸 기타</div>
-                      <div className="text-xs sm:text-sm text-blue-100">클래식/어쿠스틱/일렉트릭</div>
+                      <div className="text-sm sm:text-base font-semibold text-white">
+                        🎸 기타
+                      </div>
+                      <div className="text-xs sm:text-sm text-blue-100">
+                        클래식/어쿠스틱/일렉트릭
+                      </div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-2 sm:p-3">
-                      <div className="text-sm sm:text-base font-semibold text-white">🎹 피아노</div>
-                      <div className="text-xs sm:text-sm text-blue-100">디지털/어쿠스틱</div>
+                      <div className="text-sm sm:text-base font-semibold text-white">
+                        🎹 피아노
+                      </div>
+                      <div className="text-xs sm:text-sm text-blue-100">
+                        디지털/어쿠스틱
+                      </div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-2 sm:p-3">
-                      <div className="text-sm sm:text-base font-semibold text-white">🥁 드럼</div>
-                      <div className="text-xs sm:text-sm text-blue-100">어쿠스틱/전자드럼</div>
+                      <div className="text-sm sm:text-base font-semibold text-white">
+                        🥁 드럼
+                      </div>
+                      <div className="text-xs sm:text-sm text-blue-100">
+                        어쿠스틱/전자드럼
+                      </div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-2 sm:p-3">
-                      <div className="text-sm sm:text-base font-semibold text-white">🎺 관악기</div>
-                      <div className="text-xs sm:text-sm text-blue-100">트럼펫/색소폰/플루트</div>
+                      <div className="text-sm sm:text-base font-semibold text-white">
+                        🎺 관악기
+                      </div>
+                      <div className="text-xs sm:text-sm text-blue-100">
+                        트럼펫/색소폰/플루트
+                      </div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-2 sm:p-3">
-                      <div className="text-sm sm:text-base font-semibold text-white">🎻 현악기</div>
-                      <div className="text-xs sm:text-sm text-blue-100">바이올린/첼로/비올라</div>
+                      <div className="text-sm sm:text-base font-semibold text-white">
+                        🎻 현악기
+                      </div>
+                      <div className="text-xs sm:text-sm text-blue-100">
+                        바이올린/첼로/비올라
+                      </div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-2 sm:p-3">
-                      <div className="text-sm sm:text-base font-semibold text-white">🎤 음향장비</div>
-                      <div className="text-xs sm:text-sm text-blue-100">마이크/앰프/믹서</div>
+                      <div className="text-sm sm:text-base font-semibold text-white">
+                        🎤 음향장비
+                      </div>
+                      <div className="text-xs sm:text-sm text-blue-100">
+                        마이크/앰프/믹서
+                      </div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-2 sm:p-3">
-                      <div className="text-sm sm:text-base font-semibold text-white">🎼 국악기</div>
-                      <div className="text-xs sm:text-sm text-blue-100">가야금/거문고/해금</div>
+                      <div className="text-sm sm:text-base font-semibold text-white">
+                        🎼 국악기
+                      </div>
+                      <div className="text-xs sm:text-sm text-blue-100">
+                        가야금/거문고/해금
+                      </div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-2 sm:p-3">
-                      <div className="text-sm sm:text-base font-semibold text-white">🎹 키보드</div>
-                      <div className="text-xs sm:text-sm text-blue-100">신시사이저/워크스테이션</div>
+                      <div className="text-sm sm:text-base font-semibold text-white">
+                        🎹 키보드
+                      </div>
+                      <div className="text-xs sm:text-sm text-blue-100">
+                        신시사이저/워크스테이션
+                      </div>
                     </div>
                   </div>
                   <p className="text-xs sm:text-sm md:text-base text-blue-100 mt-3 sm:mt-4 text-center font-medium">
