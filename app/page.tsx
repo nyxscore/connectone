@@ -297,12 +297,12 @@ export default function HomePage() {
       <section className="py-20 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Paperozi, sans-serif' }}>
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
                 중고 악기 거래는 커넥톤
               </span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto" style={{ fontFamily: 'Paperozi, sans-serif' }}>
               모든 악기와 음악 관련 용품을 한 곳에서 만나보세요
             </p>
           </div>
@@ -383,7 +383,7 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-8">
-            <p className="text-lg text-gray-600 font-medium">
+            <p className="text-lg text-gray-600 font-medium" style={{ fontFamily: 'Paperozi, sans-serif' }}>
               그 외 모든 악기와 음악 관련 용품까지! 🎶
             </p>
           </div>
