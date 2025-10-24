@@ -225,6 +225,12 @@ export function Header() {
           {/* 데스크톱 네비게이션 */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
+              href="/vocal-analysis"
+              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
+            >
+              AI음악분석
+            </Link>
+            <Link
               href="/list"
               className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
               onClick={() => {
@@ -233,12 +239,6 @@ export function Header() {
               }}
             >
               중고거래
-            </Link>
-            <Link
-              href="/vocal-analysis"
-              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
-            >
-              AI음악분석
             </Link>
           </nav>
 
@@ -273,19 +273,19 @@ export function Header() {
             {/* 모바일 네비게이션 */}
             <div className="px-4 py-4 border-b border-gray-200 space-y-2">
               <Link
-                href="/list"
-                className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <span className="font-medium">중고거래</span>
-              </Link>
-              <Link
                 href="/vocal-analysis"
                 className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Music className="w-5 h-5" />
                 <span className="font-medium">AI음악분석</span>
+              </Link>
+              <Link
+                href="/list"
+                className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="font-medium">중고거래</span>
               </Link>
             </div>
 
