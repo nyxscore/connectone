@@ -178,7 +178,7 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {Object.entries(analyticsData.pageViews)
+                    {Object.entries(analyticsData.pageViews || {})
                       .sort(([,a], [,b]) => b - a)
                       .map(([page, views]) => (
                         <div key={page} className="flex justify-between items-center">
@@ -186,6 +186,9 @@ export default function AnalyticsPage() {
                           <span className="font-semibold text-green-600">{views.toLocaleString()}</span>
                         </div>
                       ))}
+                    {Object.keys(analyticsData.pageViews || {}).length === 0 && (
+                      <p className="text-gray-500 text-sm">페이지뷰 데이터가 없습니다.</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -202,7 +205,7 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {Object.entries(analyticsData.userAgents)
+                    {Object.entries(analyticsData.userAgents || {})
                       .sort(([,a], [,b]) => b - a)
                       .slice(0, 8)
                       .map(([userAgent, count]) => (
@@ -213,6 +216,9 @@ export default function AnalyticsPage() {
                           <span className="font-semibold text-purple-600">{count.toLocaleString()}</span>
                         </div>
                       ))}
+                    {Object.keys(analyticsData.userAgents || {}).length === 0 && (
+                      <p className="text-gray-500 text-sm">브라우저/디바이스 데이터가 없습니다.</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
