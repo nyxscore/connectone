@@ -48,6 +48,18 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQCN3WYQK6"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-BQCN3WYQK6');
+            `,
+          }}
+        />
       </head>
       <body className="font-sans antialiased bg-gray-50">
         <NextAuthProvider>
