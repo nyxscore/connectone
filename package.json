@@ -41,6 +41,7 @@
     "@types/nodemailer": "^6.4.14",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@vercel/analytics": "^1.5.0",
     "assemblyai": "^4.17.0",
     "aws-sdk": "^2.1692.0",
     "canvas": "^3.2.0",

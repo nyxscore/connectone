@@ -9,7 +9,7 @@ import {
   getDocs,
   deleteDoc,
 } from "firebase/firestore";
-import { db } from "./config";
+import { getFirebaseDb } from "./firebase-ultra-safe";
 import { ShippingAddress } from "../schemas";
 
 // 배송지 추가
@@ -18,6 +18,7 @@ export const addShippingAddress = async (
   address: ShippingAddress
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    const db = await getFirebaseDb();
     const addressRef = doc(collection(db, "shippingAddresses"));
 
     // 기본 배송지로 설정하는 경우, 기존 기본 배송지들을 해제
@@ -48,6 +49,7 @@ export const getShippingAddresses = async (
   error?: string;
 }> => {
   try {
+    const db = await getFirebaseDb();
     const q = query(
       collection(db, "shippingAddresses"),
       where("userId", "==", userId)
@@ -80,6 +82,7 @@ export const updateShippingAddress = async (
   address: Partial<ShippingAddress>
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    const db = await getFirebaseDb();
     const addressRef = doc(db, "shippingAddresses", addressId);
 
     // 기본 배송지로 설정하는 경우, 기존 기본 배송지들을 해제
@@ -108,6 +111,7 @@ export const deleteShippingAddress = async (
   addressId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    const db = await getFirebaseDb();
     await deleteDoc(doc(db, "shippingAddresses", addressId));
     return { success: true };
   } catch (error) {
@@ -121,6 +125,7 @@ export const setDefaultAddress = async (
   addressId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    const db = await getFirebaseDb();
     const addressRef = doc(db, "shippingAddresses", addressId);
     const addressDoc = await getDoc(addressRef);
 
@@ -148,6 +153,7 @@ export const setDefaultAddress = async (
 
 // 기존 기본 배송지들을 해제하는 헬퍼 함수
 const unsetDefaultAddresses = async (userId: string): Promise<void> => {
+  const db = await getFirebaseDb();
   const q = query(
     collection(db, "shippingAddresses"),
     where("userId", "==", userId),

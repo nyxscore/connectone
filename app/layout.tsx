@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "../components/layout/Header";
 import { Toast } from "../components/ui/Toast";
+import NextAuthProvider from "../components/providers/NextAuthProvider";
+import { Analytics } from '@vercel/analytics/react';
+import VisitorTracker from '../components/analytics/VisitorTracker';
 // import { ChatNotificationProvider } from "../components/notifications/ChatNotificationProvider"; // Disabled chat notifications
 
 export const metadata: Metadata = {
@@ -47,13 +50,17 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-gray-50">
-        {/* <ChatNotificationProvider> */}
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1">{children}</main>
-        </div>
-        <Toast />
-        {/* </ChatNotificationProvider> */}
+        <NextAuthProvider>
+          {/* <ChatNotificationProvider> */}
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1">{children}</main>
+          </div>
+          <Toast />
+          {/* </ChatNotificationProvider> */}
+          <VisitorTracker />
+        </NextAuthProvider>
+        <Analytics />
       </body>
     </html>
   );

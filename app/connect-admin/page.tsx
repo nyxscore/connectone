@@ -21,6 +21,9 @@ import {
   Music,
   Settings,
   Loader2,
+  Activity,
+  Clock,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -66,20 +69,24 @@ export default function ConnectAdminDashboard() {
   const [pointAmount, setPointAmount] = useState("");
   const [pointReason, setPointReason] = useState("");
   const [loading, setLoading] = useState(true);
+  const [actionLogs, setActionLogs] = useState<any[]>([]);
+  const [actionStats, setActionStats] = useState<any>(null);
+  const [showActionLogs, setShowActionLogs] = useState(false);
 
   useEffect(() => {
     loadStats();
+    loadActionLogs();
   }, []);
 
   const loadStats = async () => {
     try {
       setLoading(true);
-      const { getDb } = await import("@/lib/api/firebase-lazy");
+      const { getFirebaseDb } = await import("@/lib/api/firebase-ultra-safe");
       const { collection, getDocs, query, where } = await import(
         "firebase/firestore"
       );
 
-      const db = getDb();
+      const db = await getFirebaseDb();
 
       // 안전하게 데이터 가져오기
       let totalUsers = 0,
@@ -362,7 +369,7 @@ export default function ConnectAdminDashboard() {
     }
 
     try {
-      const { getDb } = await import("@/lib/api/firebase-lazy");
+      const { getFirebaseDb } = await import("@/lib/api/firebase-ultra-safe");
       const {
         doc,
         updateDoc,
@@ -375,7 +382,7 @@ export default function ConnectAdminDashboard() {
         getDocs,
       } = await import("firebase/firestore");
 
-      const db = getDb();
+      const db = await getFirebaseDb();
 
       // 먼저 username으로 검색
       let usersQuery = query(
@@ -468,7 +475,7 @@ export default function ConnectAdminDashboard() {
                     <p><strong>현재 잔액:</strong> ${((targetUser.points || 0) + points).toLocaleString()}P</p>
                   </div>
                   <p>포인트는 즉시 사용 가능합니다. 마이페이지에서 확인해보세요!</p>
-                  <a href="${window.location.origin}/profile/points" 
+                  <a href="https://connect-tone.com/profile/points" 
                      style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
                     포인트 내역 확인하기
                   </a>
@@ -490,7 +497,7 @@ export default function ConnectAdminDashboard() {
                 - 현재 잔액: ${((targetUser.points || 0) + points).toLocaleString()}P
                 
                 포인트는 즉시 사용 가능합니다.
-                마이페이지에서 확인해보세요: ${window.location.origin}/profile/points
+                마이페이지에서 확인해보세요: https://connect-tone.com/profile/points
                 
                 ---
                 ConnecTone 고객센터
@@ -533,6 +540,14 @@ export default function ConnectAdminDashboard() {
         }
       }
 
+      // 액션 로그 기록
+      const { logAdminAction } = await import("../../lib/api/user-actions");
+      await logAdminAction(user.uid, "포인트 지급", targetUserUid, {
+        amount: points,
+        reason: reason,
+        targetUser: targetUser.nickname || targetUser.username,
+      });
+
       toast.success(
         `${targetUser.nickname || targetUser.username}님에게 ${points.toLocaleString()}P를 지급했습니다!`
       );
@@ -541,9 +556,46 @@ export default function ConnectAdminDashboard() {
       setPointAmount("");
       setPointReason("");
       setShowPointModal(false);
-    } catch (error) {
+
+      // 액션 로그 새로고침
+      loadActionLogs();
+    } catch (error: any) {
       console.error("포인트 지급 오류:", error);
-      toast.error(`포인트 지급 중 오류: ${error.message || error}`);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      
+      // Firebase 에러 코드별 메시지
+      if (error.code === 'permission-denied') {
+        toast.error("권한이 없습니다. 관리자 권한을 확인해주세요.");
+      } else if (error.code === 'not-found') {
+        toast.error("사용자를 찾을 수 없습니다.");
+      } else if (error.code === 'invalid-argument') {
+        toast.error("잘못된 입력값입니다.");
+      } else {
+        toast.error(`포인트 지급 중 오류: ${error.message || error}`);
+      }
+    }
+  };
+
+  const loadActionLogs = async () => {
+    try {
+      const { getUserActions, getActionStats } = await import(
+        "../../lib/api/user-actions"
+      );
+
+      // 최근 액션 로그 50개
+      const logsResult = await getUserActions({ limit: 50 });
+      if (logsResult.success) {
+        setActionLogs(logsResult.actions);
+      }
+
+      // 액션 통계
+      const statsResult = await getActionStats();
+      if (statsResult.success) {
+        setActionStats(statsResult.stats);
+      }
+    } catch (error) {
+      console.error("액션 로그 로드 실패:", error);
     }
   };
 
@@ -946,6 +998,21 @@ export default function ConnectAdminDashboard() {
                 </CardContent>
               </Card>
 
+              <Card
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => setShowActionLogs(true)}
+              >
+                <CardContent className="p-6 text-center">
+                  <Activity className="w-10 h-10 text-purple-600 mx-auto mb-3" />
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    사용자 액션 로그
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {actionStats?.last24h || 0}건 (24시간)
+                  </p>
+                </CardContent>
+              </Card>
+
               <Link href="/connect-admin/settings">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-6 text-center">
@@ -1282,6 +1349,145 @@ export default function ConnectAdminDashboard() {
                   className="flex-1 bg-yellow-600 hover:bg-yellow-700"
                 >
                   지급하기
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 액션 로그 모달 */}
+        {showActionLogs && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  사용자 액션 로그
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowActionLogs(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+
+              {/* 통계 요약 */}
+              {actionStats && (
+                <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {actionStats.last24h}
+                    </div>
+                    <div className="text-sm text-gray-600">24시간</div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {actionStats.last7d}
+                    </div>
+                    <div className="text-sm text-gray-600">7일</div>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {Object.keys(actionStats.categories || {}).length}
+                    </div>
+                    <div className="text-sm text-gray-600">카테고리</div>
+                  </div>
+                  <div className="bg-orange-50 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {actionStats.severities?.high || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">높은 우선순위</div>
+                  </div>
+                </div>
+              )}
+
+              {/* 액션 로그 목록 */}
+              <div className="overflow-y-auto max-h-96">
+                <div className="space-y-2">
+                  {actionLogs.map((log, index) => (
+                    <div
+                      key={log.id || index}
+                      className={`p-4 border rounded-lg ${
+                        log.severity === "critical"
+                          ? "border-red-200 bg-red-50"
+                          : log.severity === "high"
+                            ? "border-orange-200 bg-orange-50"
+                            : log.severity === "medium"
+                              ? "border-yellow-200 bg-yellow-50"
+                              : "border-gray-200 bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                log.category === "auth"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : log.category === "product"
+                                    ? "bg-green-100 text-green-800"
+                                    : log.category === "transaction"
+                                      ? "bg-purple-100 text-purple-800"
+                                      : log.category === "chat"
+                                        ? "bg-pink-100 text-pink-800"
+                                        : log.category === "admin"
+                                          ? "bg-red-100 text-red-800"
+                                          : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {log.category}
+                            </span>
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                log.severity === "critical"
+                                  ? "bg-red-100 text-red-800"
+                                  : log.severity === "high"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : log.severity === "medium"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {log.severity}
+                            </span>
+                          </div>
+                          <div className="font-medium text-gray-900">
+                            {log.description}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            사용자: {log.userNickname || log.userId} (
+                            {log.userEmail || "이메일 없음"})
+                          </div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            {log.timestamp?.toDate?.()?.toLocaleString() ||
+                              "시간 정보 없음"}
+                          </div>
+                          {log.details && (
+                            <div className="text-xs text-gray-500 mt-2">
+                              <details>
+                                <summary className="cursor-pointer">
+                                  상세 정보
+                                </summary>
+                                <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
+                                  {JSON.stringify(log.details, null, 2)}
+                                </pre>
+                              </details>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-4">
+                <Button
+                  onClick={() => setShowActionLogs(false)}
+                  variant="outline"
+                >
+                  닫기
                 </Button>
               </div>
             </div>

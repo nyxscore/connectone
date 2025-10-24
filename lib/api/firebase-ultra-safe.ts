@@ -86,13 +86,14 @@ export const getFirebaseApp = () => {
         return null;
       }
 
-      const apps = getApps();
-      if (apps.length === 0) {
-        _app = initializeApp(config);
-        console.log("✅ Firebase 앱 초기화 성공");
-      } else {
+      // 기존 앱이 있는지 확인
+      try {
         _app = getApp();
         console.log("✅ 기존 Firebase 앱 사용");
+      } catch (error) {
+        // 기존 앱이 없으면 새로 초기화
+        _app = initializeApp(config);
+        console.log("✅ Firebase 앱 초기화 성공");
       }
     } catch (error) {
       console.error("❌ Firebase 앱 초기화 실패:", error);
@@ -189,6 +190,11 @@ export const getGoogleProvider = () => {
       _googleProvider = new GoogleAuthProvider();
       _googleProvider.addScope("email");
       _googleProvider.addScope("profile");
+      _googleProvider.addScope("openid");
+      // 커스텀 파라미터 추가
+      _googleProvider.setCustomParameters({
+        prompt: "select_account",
+      });
       console.log("✅ Google Provider 초기화 성공");
     } catch (error) {
       console.error("❌ Google Provider 초기화 실패:", error);
@@ -231,6 +237,11 @@ export const getNaverProvider = () => {
       _naverProvider = new OAuthProvider("oidc.naver");
       _naverProvider.addScope("profile");
       _naverProvider.addScope("email");
+      _naverProvider.addScope("name");
+      // Naver 커스텀 파라미터
+      _naverProvider.setCustomParameters({
+        response_type: "code",
+      });
       console.log("✅ Naver Provider 초기화 성공");
     } catch (error) {
       console.error("❌ Naver Provider 초기화 실패:", error);
@@ -256,11 +267,18 @@ export const signInWithGoogle = async () => {
   }
 
   try {
+    console.log("🔵 Google 로그인 시도 중...");
+    console.log("Auth domain:", auth.app.options.authDomain);
+    console.log("Provider:", provider.providerId);
+
+    // 팝업 방식으로 시도
     const result = await signInWithPopup(auth, provider);
     console.log("✅ Google 로그인 성공:", result.user.email);
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Google 로그인 실패:", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
     throw error;
   }
 };
@@ -304,11 +322,18 @@ export const signInWithNaver = async () => {
   }
 
   try {
+    console.log("🔵 Naver 로그인 시도 중...");
+    console.log("Auth domain:", auth.app.options.authDomain);
+    console.log("Provider:", provider.providerId);
+
+    // 팝업 방식으로 시도
     const result = await signInWithPopup(auth, provider);
     console.log("✅ Naver 로그인 성공:", result.user.email);
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Naver 로그인 실패:", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
     throw error;
   }
 };

@@ -58,20 +58,20 @@ const nextConfig = {
     return config;
   },
 
-  // HTTP 헤더 설정 - CSP 제거 (OAuth 호환성 문제로 인해)
-  // async headers() {
-  //   return [
-  //     {
-  //       source: "/:path*",
-  //       headers: [
-  //         {
-  //           key: "Permissions-Policy",
-  //           value: "microphone=(self), camera=(self)",
-  //         },
-  //       ],
-  //     },
-  //   ];
-  // },
+  // HTTP 헤더 설정 - OAuth 팝업 호환성
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

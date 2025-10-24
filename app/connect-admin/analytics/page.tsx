@@ -1,170 +1,35 @@
 "use client";
 
-import { AdminRoute } from "../../../lib/auth/AdminRoute";
-import { Card, CardContent } from "../../../components/ui/Card";
-import { Button } from "../../../components/ui/Button";
-import { useState, useEffect } from "react";
-import {
-  BarChart3,
-  ChevronLeft,
-  Loader2,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Package,
-  DollarSign,
-  Activity,
-} from "lucide-react";
-import Link from "next/link";
-import { toast } from "react-hot-toast";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+
+interface AnalyticsData {
+  date: string;
+  totalVisits: number;
+  uniqueIPs: number;
+  loggedInVisits: number;
+  anonymousVisits: number;
+  pageViews: Record<string, number>;
+  userAgents: Record<string, number>;
+}
 
 export default function AnalyticsPage() {
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    newUsersThisWeek: 0,
-    newUsersThisMonth: 0,
-    userGrowth: 0,
-    totalProducts: 0,
-    newProductsThisWeek: 0,
-    newProductsThisMonth: 0,
-    productGrowth: 0,
-    totalRevenue: 0,
-    revenueThisWeek: 0,
-    revenueThisMonth: 0,
-    revenueGrowth: 0,
-    totalTransactions: 0,
-    transactionsThisWeek: 0,
-    transactionsThisMonth: 0,
-    transactionGrowth: 0,
-  });
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
-    loadAnalytics();
-  }, []);
+    fetchAnalytics();
+  }, [date]);
 
-  const loadAnalytics = async () => {
+  const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const { getDb } = await import("@/lib/api/firebase-lazy");
-      const { collection, getDocs } = await import("firebase/firestore");
-
-      const db = getDb();
-
-      const now = new Date();
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-      let totalUsers = 0,
-        newUsersThisWeek = 0,
-        newUsersThisMonth = 0;
-      let totalProducts = 0,
-        newProductsThisWeek = 0,
-        newProductsThisMonth = 0;
-      let totalTransactions = 0,
-        transactionsThisWeek = 0,
-        transactionsThisMonth = 0;
-      let totalRevenue = 0,
-        revenueThisWeek = 0,
-        revenueThisMonth = 0;
-
-      // 사용자 통계
-      try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const users = usersSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.(),
-        }));
-
-        totalUsers = usersSnapshot.size;
-        newUsersThisWeek = users.filter(
-          u => u.createdAt && u.createdAt >= weekAgo
-        ).length;
-        newUsersThisMonth = users.filter(
-          u => u.createdAt && u.createdAt >= monthAgo
-        ).length;
-      } catch (e) {
-        console.log("사용자 통계 로딩 실패:", e);
-      }
-
-      // 상품 통계
-      try {
-        const productsSnapshot = await getDocs(collection(db, "products"));
-        const products = productsSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.(),
-        }));
-
-        totalProducts = productsSnapshot.size;
-        newProductsThisWeek = products.filter(
-          p => p.createdAt && p.createdAt >= weekAgo
-        ).length;
-        newProductsThisMonth = products.filter(
-          p => p.createdAt && p.createdAt >= monthAgo
-        ).length;
-      } catch (e) {
-        console.log("상품 통계 로딩 실패:", e);
-      }
-
-      // 거래 통계
-      try {
-        const transactionsSnapshot = await getDocs(
-          collection(db, "transactions")
-        );
-        const transactions = transactionsSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.(),
-          amount: doc.data().amount || 0,
-        }));
-
-        totalTransactions = transactionsSnapshot.size;
-        transactionsThisWeek = transactions.filter(
-          t => t.createdAt && t.createdAt >= weekAgo
-        ).length;
-        transactionsThisMonth = transactions.filter(
-          t => t.createdAt && t.createdAt >= monthAgo
-        ).length;
-
-        totalRevenue = transactions.reduce(
-          (sum, t) => sum + (t.amount || 0),
-          0
-        );
-        revenueThisWeek = transactions
-          .filter(t => t.createdAt && t.createdAt >= weekAgo)
-          .reduce((sum, t) => sum + (t.amount || 0), 0);
-        revenueThisMonth = transactions
-          .filter(t => t.createdAt && t.createdAt >= monthAgo)
-          .reduce((sum, t) => sum + (t.amount || 0), 0);
-      } catch (e) {
-        console.log("거래 통계 로딩 실패:", e);
-      }
-
-      setStats({
-        totalUsers,
-        newUsersThisWeek,
-        newUsersThisMonth,
-        userGrowth: totalUsers > 0 ? (newUsersThisMonth / totalUsers) * 100 : 0,
-        totalProducts,
-        newProductsThisWeek,
-        newProductsThisMonth,
-        productGrowth:
-          totalProducts > 0 ? (newProductsThisMonth / totalProducts) * 100 : 0,
-        totalRevenue,
-        revenueThisWeek,
-        revenueThisMonth,
-        revenueGrowth:
-          totalRevenue > 0 ? (revenueThisMonth / totalRevenue) * 100 : 0,
-        totalTransactions,
-        transactionsThisWeek,
-        transactionsThisMonth,
-        transactionGrowth:
-          totalTransactions > 0
-            ? (transactionsThisMonth / totalTransactions) * 100
-            : 0,
-      });
+      const response = await fetch(`/api/analytics/visitor?date=${date}`);
+      const data = await response.json();
+      setAnalyticsData(data);
     } catch (error) {
-      console.error("통계 로딩 실패:", error);
-      toast.error("통계를 불러올 수 없습니다.");
+      console.error('Failed to fetch analytics:', error);
     } finally {
       setLoading(false);
     }
@@ -172,192 +37,131 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <AdminRoute>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">방문자 통계</h1>
+          <div className="animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white p-6 rounded-lg shadow h-32"></div>
+              ))}
+            </div>
+          </div>
         </div>
-      </AdminRoute>
+      </div>
     );
   }
 
   return (
-    <AdminRoute>
-      <div className="min-h-screen bg-gray-50">
-        {/* 헤더 */}
-        <div className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center space-x-4">
-                <Link href="/connect-admin">
-                  <Button variant="ghost" size="sm">
-                    <ChevronLeft className="w-4 h-4 mr-2" />
-                    대시보드
-                  </Button>
-                </Link>
-                <BarChart3 className="w-8 h-8 text-blue-600" />
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    통계 분석
-                  </h1>
-                  <p className="text-xs text-gray-500">
-                    플랫폼 통계 및 성장 지표
-                  </p>
-                </div>
-              </div>
-              <Button onClick={loadAnalytics}>새로고침</Button>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">방문자 통계</h1>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        {analyticsData ? (
+          <>
+            {/* 통계 카드 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-gray-600">총 방문수</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {analyticsData.totalVisits.toLocaleString()}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-gray-600">고유 IP 수</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {analyticsData.uniqueIPs.toLocaleString()}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-gray-600">로그인 방문</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {analyticsData.loggedInVisits.toLocaleString()}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-gray-600">비회원 방문</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {analyticsData.anonymousVisits.toLocaleString()}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+
+            {/* 페이지뷰 통계 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>페이지별 방문수</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {Object.entries(analyticsData.pageViews)
+                      .sort(([,a], [,b]) => b - a)
+                      .map(([page, views]) => (
+                        <div key={page} className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">{page}</span>
+                          <span className="font-semibold">{views.toLocaleString()}</span>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>브라우저/디바이스 통계</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {Object.entries(analyticsData.userAgents)
+                      .sort(([,a], [,b]) => b - a)
+                      .slice(0, 10)
+                      .map(([userAgent, count]) => (
+                        <div key={userAgent} className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 truncate max-w-xs">
+                            {userAgent}
+                          </span>
+                          <span className="font-semibold">{count.toLocaleString()}</span>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500">해당 날짜의 통계 데이터가 없습니다.</p>
           </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* 주요 지표 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Users className="w-8 h-8 text-blue-600" />
-                  <div
-                    className={`flex items-center text-sm ${stats.userGrowth >= 0 ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {stats.userGrowth >= 0 ? (
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 mr-1" />
-                    )}
-                    {stats.userGrowth.toFixed(1)}%
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {stats.totalUsers.toLocaleString()}
-                </h3>
-                <p className="text-sm text-gray-600">총 사용자</p>
-                <div className="mt-2 text-xs text-gray-500">
-                  이번 주: +{stats.newUsersThisWeek} | 이번 달: +
-                  {stats.newUsersThisMonth}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Package className="w-8 h-8 text-green-600" />
-                  <div
-                    className={`flex items-center text-sm ${stats.productGrowth >= 0 ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {stats.productGrowth >= 0 ? (
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 mr-1" />
-                    )}
-                    {stats.productGrowth.toFixed(1)}%
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {stats.totalProducts.toLocaleString()}
-                </h3>
-                <p className="text-sm text-gray-600">총 상품</p>
-                <div className="mt-2 text-xs text-gray-500">
-                  이번 주: +{stats.newProductsThisWeek} | 이번 달: +
-                  {stats.newProductsThisMonth}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <DollarSign className="w-8 h-8 text-yellow-600" />
-                  <div
-                    className={`flex items-center text-sm ${stats.revenueGrowth >= 0 ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {stats.revenueGrowth >= 0 ? (
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 mr-1" />
-                    )}
-                    {stats.revenueGrowth.toFixed(1)}%
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {(stats.totalRevenue / 10000).toLocaleString()}만원
-                </h3>
-                <p className="text-sm text-gray-600">총 거래액</p>
-                <div className="mt-2 text-xs text-gray-500">
-                  이번 주: {(stats.revenueThisWeek / 10000).toLocaleString()}
-                  만원 | 이번 달:{" "}
-                  {(stats.revenueThisMonth / 10000).toLocaleString()}만원
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Activity className="w-8 h-8 text-purple-600" />
-                  <div
-                    className={`flex items-center text-sm ${stats.transactionGrowth >= 0 ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {stats.transactionGrowth >= 0 ? (
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 mr-1" />
-                    )}
-                    {stats.transactionGrowth.toFixed(1)}%
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {stats.totalTransactions.toLocaleString()}
-                </h3>
-                <p className="text-sm text-gray-600">총 거래</p>
-                <div className="mt-2 text-xs text-gray-500">
-                  이번 주: +{stats.transactionsThisWeek} | 이번 달: +
-                  {stats.transactionsThisMonth}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* 추가 정보 */}
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                플랫폼 성장 요약
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    이번 주
-                  </h3>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li>• 신규 사용자: {stats.newUsersThisWeek}명</li>
-                    <li>• 신규 상품: {stats.newProductsThisWeek}개</li>
-                    <li>• 신규 거래: {stats.transactionsThisWeek}건</li>
-                    <li>
-                      • 거래액:{" "}
-                      {(stats.revenueThisWeek / 10000).toLocaleString()}만원
-                    </li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    이번 달
-                  </h3>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li>• 신규 사용자: {stats.newUsersThisMonth}명</li>
-                    <li>• 신규 상품: {stats.newProductsThisMonth}개</li>
-                    <li>• 신규 거래: {stats.transactionsThisMonth}건</li>
-                    <li>
-                      • 거래액:{" "}
-                      {(stats.revenueThisMonth / 10000).toLocaleString()}만원
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        )}
       </div>
-    </AdminRoute>
+    </div>
   );
 }

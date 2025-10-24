@@ -1198,49 +1198,18 @@ export default function ProductDetailModal({
                                 </span>
                               </button>
                               <button
-                                className={`flex-1 p-3 rounded-xl flex items-center justify-center space-x-2 ${
-                                  selectedTradeMethod === "직거래"
-                                    ? "bg-blue-600 hover:bg-blue-700 text-white"
-                                    : "border border-gray-300 hover:bg-gray-50"
+                                className={`flex-1 p-3 border rounded-xl flex items-center justify-center space-x-2 ${
+                                  selectedTradeMethod
+                                    ? "border-blue-600 bg-blue-600 hover:bg-blue-700 text-white"
+                                    : "border-gray-300 hover:bg-gray-50"
                                 }`}
                                 onClick={() => {
-                                  // 선택된 거래 형태 저장
-                                  if (
-                                    product?.tradeOptions?.includes("직거래") &&
-                                    product?.tradeOptions?.includes("택배")
-                                  ) {
-                                    // 직거래와 택배 모두 가능한 경우
-                                    if (buyerEscrowEnabled) {
-                                      setSelectedTradeType("택배 + 안전결제");
-                                    } else if (
-                                      product?.tradeOptions?.includes("택배")
-                                    ) {
-                                      setSelectedTradeType("택배");
-                                    } else {
-                                      setSelectedTradeType("직거래");
-                                    }
-                                  } else if (
-                                    product?.tradeOptions?.includes("직거래")
-                                  ) {
-                                    if (buyerEscrowEnabled) {
-                                      setSelectedTradeType("직거래 + 안전결제");
-                                    } else {
-                                      setSelectedTradeType("직거래");
-                                    }
-                                  } else if (
-                                    product?.tradeOptions?.includes("택배")
-                                  ) {
-                                    if (buyerEscrowEnabled) {
-                                      setSelectedTradeType("택배 + 안전결제");
-                                    } else {
-                                      setSelectedTradeType("택배");
-                                    }
-                                  } else {
-                                    if (buyerEscrowEnabled) {
-                                      setSelectedTradeType("안전결제");
-                                    } else {
-                                      setSelectedTradeType("직거래"); // 기본값
-                                    }
+                                  // 거래유형 선택 확인
+                                  if (!selectedTradeMethod) {
+                                    toast.error(
+                                      "거래 유형을 먼저 선택해주세요."
+                                    );
+                                    return;
                                   }
 
                                   // 채팅 기능 - 채팅 모달 열기
@@ -1257,6 +1226,10 @@ export default function ProductDetailModal({
                                     "🔵 product?.sellerId:",
                                     product?.sellerId
                                   );
+                                  console.log(
+                                    "🔵 selectedTradeMethod:",
+                                    selectedTradeMethod
+                                  );
 
                                   const itemId = actualProductId || product?.id;
                                   const sellerId =
@@ -1266,6 +1239,7 @@ export default function ProductDetailModal({
                                     console.log("🔵 onOpenChat 호출:", {
                                       itemId,
                                       sellerId,
+                                      tradeMethod: selectedTradeMethod,
                                     });
                                     onOpenChat(itemId, sellerId);
                                   } else {
@@ -1279,19 +1253,19 @@ export default function ProductDetailModal({
                               >
                                 <MessageCircle
                                   className={`w-5 h-5 ${
-                                    selectedTradeMethod === "직거래"
+                                    selectedTradeMethod
                                       ? "text-white"
-                                      : "text-gray-600"
+                                      : "text-gray-400"
                                   }`}
                                 />
                                 <span
-                                  className={`text-sm font-medium ${
-                                    selectedTradeMethod === "직거래"
+                                  className={`text-sm font-bold ${
+                                    selectedTradeMethod
                                       ? "text-white"
-                                      : "text-gray-700"
+                                      : "text-gray-400"
                                   }`}
                                 >
-                                  채팅하기
+                                  채팅문의
                                 </span>
                               </button>
                             </div>

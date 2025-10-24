@@ -121,6 +121,7 @@ export function EnhancedChatModal({
   const [otherUserProfile, setOtherUserProfile] = useState<UserProfile | null>(
     null
   );
+  const [profileLoading, setProfileLoading] = useState(true);
   const [showOtherProfileModal, setShowOtherProfileModal] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
@@ -236,7 +237,11 @@ export function EnhancedChatModal({
       tradeType?: string,
       isSeller?: boolean
     ) => {
-      console.log("🔍 시스템 메시지 로직 디버그:", { type, tradeType, isSeller });
+      console.log("🔍 시스템 메시지 로직 디버그:", {
+        type,
+        tradeType,
+        isSeller,
+      });
       const isEscrow = tradeType?.includes("안전결제");
 
       switch (type) {
@@ -355,7 +360,9 @@ export function EnhancedChatModal({
 
         // 시스템 메시지 전송 후 채팅 알림 업데이트 (빨간점 표시)
         try {
-          const { updateDoc, doc, serverTimestamp } = await import("firebase/firestore");
+          const { updateDoc, doc, serverTimestamp } = await import(
+            "firebase/firestore"
+          );
           const db = getDb();
 
           const chatRef = doc(db, "chats", chatData.chatId);
@@ -782,7 +789,20 @@ export function EnhancedChatModal({
             console.log("✅ 상대방 프로필 설정 완료:", otherUser);
             setOtherUserProfile(otherUser);
           } else {
-            console.log("❌ 상대방 프로필 로드 실패");
+            console.log("❌ 상대방 프로필 로드 실패 - 기본 정보 사용");
+            // 프로필 로드 실패 시에도 기본 정보로 설정
+            const basicProfile = {
+              uid: otherUid,
+              nickname: chatData.otherUser.nickname,
+              profileImage: chatData.otherUser.profileImage,
+              email: chatData.otherUser.email || "",
+              phoneNumber: "",
+              region: "",
+              bio: "",
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+            setOtherUserProfile(basicProfile as UserProfile);
           }
         } else {
           console.log("🔍 저장된 상대방 정보 사용:", storedOtherUser);
@@ -794,6 +814,26 @@ export function EnhancedChatModal({
           };
           console.log("✅ 매핑된 상대방 정보 설정:", mappedUser);
           setOtherUserProfile(mappedUser as UserProfile);
+        }
+
+        // 프로필 로딩 완료
+        setProfileLoading(false);
+
+        // 프로필이 없는 경우 fallback 설정
+        if (!otherUserProfile) {
+          console.log("🔄 프로필 로딩 완료 후 fallback 설정");
+          const fallbackProfile = {
+            uid: otherUid,
+            nickname: chatData.otherUser.nickname,
+            profileImage: chatData.otherUser.profileImage,
+            email: chatData.otherUser.email || "",
+            phoneNumber: "",
+            region: "",
+            bio: "",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          setOtherUserProfile(fallbackProfile as UserProfile);
         }
 
         // 아이템 정보 가져오기
@@ -1193,7 +1233,9 @@ export function EnhancedChatModal({
           // 채팅이 열렸을 때 안읽은 메시지들을 읽음 처리 (한 번만)
           if (messages.length > 0 && user && !messagesLoaded) {
             setTimeout(async () => {
-              const { markAllMessagesAsRead } = await import("../../lib/chat/api");
+              const { markAllMessagesAsRead } = await import(
+                "../../lib/chat/api"
+              );
 
               // 채팅의 모든 안읽은 메시지를 한 번에 읽음 처리
               await markAllMessagesAsRead(chatData.chatId, user.uid);
@@ -1532,7 +1574,8 @@ export function EnhancedChatModal({
       // 배송지 정보 처리 (택배 거래인 경우)
       if (
         chatData.tradeType === "택배" ||
-        (chatData.tradeType?.includes("택배") && !chatData.tradeType?.includes("직거래")) ||
+        (chatData.tradeType?.includes("택배") &&
+          !chatData.tradeType?.includes("직거래")) ||
         chatData.tradeType?.includes("안전결제")
       ) {
         // 구매자의 배송지 정보를 확인하고 조건부로 처리
@@ -4087,18 +4130,8 @@ export function EnhancedChatModal({
               {/* 상대방 프로필 */}
               {chatData && (
                 <div className="pb-6 border-b">
-                  {otherUserProfile ? (
-                    <SellerProfileCard
-                      sellerProfile={otherUserProfile}
-                      seller={{
-                        displayName: chatData.otherUser.nickname,
-                      }}
-                      region="지역 정보 없음" // 기본값
-                      onClick={() => setShowOtherProfileModal(true)}
-                      showClickable={true}
-                    />
-                  ) : (
-                    // 프로필이 로드되지 않았을 때 기본 정보 표시
+                  {profileLoading ? (
+                    // 로딩 중일 때
                     <div className="bg-white rounded-lg border p-4">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
@@ -4122,6 +4155,26 @@ export function EnhancedChatModal({
                         </div>
                       </div>
                     </div>
+                  ) : (
+                    <SellerProfileCard
+                      sellerProfile={otherUserProfile || {
+                        uid: chatData.otherUser.uid,
+                        nickname: chatData.otherUser.nickname,
+                        profileImage: chatData.otherUser.profileImage,
+                        email: chatData.otherUser.email || "",
+                        phoneNumber: "",
+                        region: "",
+                        bio: "",
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      }}
+                      seller={{
+                        displayName: chatData.otherUser.nickname,
+                      }}
+                      region={otherUserProfile?.region || "지역 정보 없음"}
+                      onClick={() => setShowOtherProfileModal(true)}
+                      showClickable={true}
+                    />
                   )}
                 </div>
               )}
@@ -4778,7 +4831,7 @@ export function EnhancedChatModal({
                   <div className="flex flex-wrap gap-2">
                     {(() => {
                       const tradeTypes = [];
-                      const currentTradeType = chatData?.tradeType || "직거래";
+                      const currentTradeType = chatData?.tradeType || tradeType || "직거래";
 
                       console.log("현재 거래 유형:", currentTradeType); // 디버그용
 

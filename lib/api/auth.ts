@@ -8,7 +8,7 @@ import {
   User as FirebaseUser,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { auth, db } from "./config";
+import { getFirebaseAuth, getFirebaseDb } from "./firebase-ultra-safe";
 import { User } from "../../data/types";
 
 // 회원가입
@@ -20,6 +20,7 @@ export const signUp = async (
 ): Promise<User> => {
   try {
     // Firebase Auth로 계정 생성
+    const auth = getFirebaseAuth();
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -47,6 +48,7 @@ export const signUp = async (
       updatedAt: new Date(),
     };
 
+    const db = await getFirebaseDb();
     await setDoc(doc(db, "users", user.uid), userData);
 
     // Firebase 프로필 업데이트
@@ -74,6 +76,7 @@ export const signIn = async (
     const user = userCredential.user;
 
     // Firestore에서 사용자 정보 가져오기
+    const db = await getFirebaseDb();
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (!userDoc.exists()) {
       throw new Error("사용자 정보를 찾을 수 없습니다.");
@@ -106,9 +109,11 @@ export const resetPassword = async (email: string): Promise<void> => {
 // 현재 사용자 정보 가져오기
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
+    const auth = getFirebaseAuth();
     const user = auth.currentUser;
     if (!user) return null;
 
+    const db = await getFirebaseDb();
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (!userDoc.exists()) return null;
 

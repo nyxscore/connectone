@@ -82,12 +82,12 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const { getDb } = await import("@/lib/api/firebase-lazy");
+      const { getFirebaseDb } = await import("@/lib/api/firebase-ultra-safe");
       const { collection, getDocs, orderBy, query } = await import(
         "firebase/firestore"
       );
 
-      const db = getDb();
+      const db = await getFirebaseDb();
 
       const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
@@ -116,12 +116,12 @@ export default function UsersPage() {
 
     setActionLoading(true);
     try {
-      const { getDb } = await import("@/lib/api/firebase-lazy");
+      const { getFirebaseDb } = await import("@/lib/api/firebase-ultra-safe");
       const { doc, updateDoc, serverTimestamp } = await import(
         "firebase/firestore"
       );
 
-      const db = getDb();
+      const db = await getFirebaseDb();
 
       const days = parseInt(suspensionDays);
       const endDate = new Date();
@@ -172,12 +172,12 @@ export default function UsersPage() {
 
     setActionLoading(true);
     try {
-      const { getDb } = await import("@/lib/api/firebase-lazy");
+      const { getFirebaseDb } = await import("@/lib/api/firebase-ultra-safe");
       const { doc, updateDoc, deleteField } = await import(
         "firebase/firestore"
       );
 
-      const db = getDb();
+      const db = await getFirebaseDb();
 
       await updateDoc(doc(db, "users", user.id), {
         isSuspended: false,
@@ -231,11 +231,11 @@ export default function UsersPage() {
 
     try {
       setActionLoading(true);
-      const { getDb } = await import("@/lib/api/firebase-lazy");
+      const { getFirebaseDb } = await import("@/lib/api/firebase-ultra-safe");
       const { doc, updateDoc, increment, addDoc, collection, serverTimestamp } =
         await import("firebase/firestore");
 
-      const db = getDb();
+      const db = await getFirebaseDb();
       const points = Number(pointAmount);
       const currentPoints = selectedUser.points || 0;
 
@@ -311,7 +311,7 @@ export default function UsersPage() {
                     <p><strong>현재 잔액:</strong> ${newBalance.toLocaleString()}P</p>
                   </div>
                   <p>포인트는 즉시 사용 가능합니다. 마이페이지에서 확인해보세요!</p>
-                  <a href="${window.location.origin}/profile/points" 
+                  <a href="https://connect-tone.com/profile/points" 
                      style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
                     포인트 내역 확인하기
                   </a>

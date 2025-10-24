@@ -16,6 +16,7 @@ function NaverCallbackContent() {
         const result = await handleRedirectResult();
 
         if (result) {
+          toast.success("네이버 로그인 성공!");
           router.push("/");
         } else {
           toast.error("네이버 로그인에 실패했습니다.");
