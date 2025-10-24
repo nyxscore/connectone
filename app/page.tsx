@@ -343,7 +343,7 @@ export default function HomePage() {
               className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed px-2"
               style={{ fontFamily: "Paperozi, sans-serif" }}
             >
-              최첨단 AI 기술과 현직 프로의 전문 피드백으로
+              AI 분석과 현직 프로의 전문 피드백으로
               <br className="sm:hidden" />
               <span className="hidden sm:inline"> </span>음악 실력을 한 단계
               업그레이드하세요
