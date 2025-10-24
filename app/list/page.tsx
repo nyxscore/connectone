@@ -139,7 +139,7 @@ export default function ListPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
                 상품 목록
@@ -147,6 +147,27 @@ export default function ListPage() {
               <p className="text-sm sm:text-base text-gray-600">
                 중고 악기를 찾아보세요
               </p>
+            </div>
+            
+            {/* 상품 등록하기 버튼 */}
+            <div className="w-full sm:w-auto">
+              <Button
+                onClick={() => {
+                  if (user) {
+                    window.location.href = "/product/new";
+                  } else {
+                    window.location.href = "/auth/login?next=/product/new";
+                  }
+                }}
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              >
+                <span className="flex items-center justify-center space-x-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span>상품 등록하기</span>
+                </span>
+              </Button>
             </div>
           </div>
         </div>

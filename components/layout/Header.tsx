@@ -222,42 +222,24 @@ export function Header() {
             </Link>
           </div>
 
-          {/* AI음악분석 링크 - 데스크톱 */}
-          <div className="hidden md:flex flex-1 justify-center">
-            <Link
-              href="/vocal-analysis"
-              className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              <Music className="w-5 h-5" />
-              <span className="font-medium">AI음악분석</span>
-            </Link>
-          </div>
-
           {/* 데스크톱 네비게이션 */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
               href="/list"
-              className="text-gray-700 hover:text-blue-600 transition-colors"
+              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
               onClick={() => {
                 // 필터 초기화를 위한 새로고침 강제
                 window.location.href = "/list";
               }}
             >
-              상품 목록
+              중고거래
             </Link>
             <Link
-              href={user ? "/product/new" : "/auth/login?next=/product/new"}
-              className="text-gray-700 hover:text-blue-600 transition-colors"
-            >
-              상품 등록
-            </Link>
-            {/* AI 음악 분석 - 임시 비활성화 */}
-            {/* <Link
               href="/vocal-analysis"
-              className="text-gray-700 hover:text-blue-600 transition-colors"
+              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
             >
-              AI 음악 분석
-            </Link> */}
+              음악분석실
+            </Link>
           </nav>
 
           {/* 데스크톱 사용자 메뉴 */}
@@ -288,15 +270,22 @@ export function Header() {
         {/* 모바일 메뉴 */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 bg-white">
-            {/* AI음악분석 링크 - 모바일 */}
-            <div className="px-4 py-4 border-b border-gray-200">
+            {/* 모바일 네비게이션 */}
+            <div className="px-4 py-4 border-b border-gray-200 space-y-2">
+              <Link
+                href="/list"
+                className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="font-medium">중고거래</span>
+              </Link>
               <Link
                 href="/vocal-analysis"
                 className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Music className="w-5 h-5" />
-                <span className="font-medium">AI음악분석</span>
+                <span className="font-medium">음악분석실</span>
               </Link>
             </div>
 

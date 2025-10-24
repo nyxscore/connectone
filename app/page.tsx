@@ -259,21 +259,11 @@ export default function HomePage() {
                   </span>
                   님! 👋
                 </p>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 justify-center max-w-sm sm:max-w-md md:max-w-none mx-auto">
-                  <Link href="/product/new" className="w-full sm:w-auto">
-                    <Button
-                      size="lg"
-                      className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
-                      style={{ fontFamily: "Paperozi, sans-serif" }}
-                    >
-                      <Music className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                      상품 등록하기
-                    </Button>
-                  </Link>
+                <div className="flex justify-center">
                   <Link href="/list" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="w-full text-sm sm:text-base bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
+                      className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4 px-8"
                       style={{ fontFamily: "Paperozi, sans-serif" }}
                     >
                       <Search className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
