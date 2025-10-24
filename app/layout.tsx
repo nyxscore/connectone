@@ -17,6 +17,39 @@ export const metadata: Metadata = {
     shortcut: "/favicon.svg",
     apple: "/favicon.svg",
   },
+  openGraph: {
+    title: "ConnecTone - 중고 악기 거래 플랫폼",
+    description: "안전하고 신뢰할 수 있는 중고 악기 거래의 새로운 기준, ConnecTone",
+    url: "https://connect-tone.com",
+    siteName: "ConnecTone",
+    images: [
+      {
+        url: "https://connect-tone.com/logo1.png",
+        width: 1200,
+        height: 630,
+        alt: "ConnecTone - 중고 악기 거래 플랫폼",
+      },
+    ],
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ConnecTone - 중고 악기 거래 플랫폼",
+    description: "안전하고 신뢰할 수 있는 중고 악기 거래의 새로운 기준, ConnecTone",
+    images: ["https://connect-tone.com/logo1.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({
