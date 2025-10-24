@@ -214,30 +214,45 @@ export default function HomePage() {
 
               {/* 메인 로고 텍스트 - 모바일 최적화 */}
               <div className="relative z-10">
-                <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold text-white mb-1 sm:mb-2 md:mb-4 leading-tight">
+                <h1 
+                  className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold text-white mb-1 sm:mb-2 md:mb-4 leading-tight"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
                   ConnecTone
                 </h1>
-                <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-white font-medium">
+                <div 
+                  className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-white font-medium"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
                   커넥톤
                 </div>
               </div>
             </div>
 
             <div className="mt-12 sm:mt-16 md:mt-24 lg:mt-32">
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-blue-100 mb-3 sm:mb-4 max-w-3xl mx-auto px-4 leading-relaxed">
+              <p 
+                className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-blue-100 mb-3 sm:mb-4 max-w-3xl mx-auto px-4 leading-relaxed"
+                style={{ fontFamily: "Paperozi, sans-serif" }}
+              >
                 음악을 사랑하는 사람들을 위한
                 <br />
                 안전한 중고 거래
               </p>
 
-              <p className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-4 leading-relaxed">
+              <p 
+                className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-4 leading-relaxed"
+                style={{ fontFamily: "Paperozi, sans-serif" }}
+              >
                 AI 감정 시스템과 안전거래로 믿을 수 있는 거래를 경험하세요
               </p>
             </div>
 
             {user ? (
               <div className="space-y-3 sm:space-y-4 md:space-y-6 animate-fade-in-up animation-delay-800 px-4">
-                <p className="text-base sm:text-lg md:text-xl font-medium text-white text-center leading-relaxed">
+                <p 
+                  className="text-base sm:text-lg md:text-xl font-medium text-white text-center leading-relaxed"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
                   안녕하세요,{" "}
                   <span className="animate-gradient-flow font-bold">
                     {user.nickname}
@@ -249,6 +264,7 @@ export default function HomePage() {
                     <Button
                       size="lg"
                       className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
+                      style={{ fontFamily: "Paperozi, sans-serif" }}
                     >
                       <Music className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       상품 등록하기
@@ -258,6 +274,7 @@ export default function HomePage() {
                     <Button
                       size="lg"
                       className="w-full text-sm sm:text-base bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
+                      style={{ fontFamily: "Paperozi, sans-serif" }}
                     >
                       <Search className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       상품 둘러보기
@@ -272,6 +289,7 @@ export default function HomePage() {
                     <Button
                       size="lg"
                       className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
+                      style={{ fontFamily: "Paperozi, sans-serif" }}
                     >
                       <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       회원가입
@@ -282,6 +300,7 @@ export default function HomePage() {
                       variant="outline"
                       size="lg"
                       className="w-full text-sm sm:text-base border-2 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
+                      style={{ fontFamily: "Paperozi, sans-serif" }}
                     >
                       로그인
                     </Button>
@@ -297,12 +316,18 @@ export default function HomePage() {
       <section className="py-20 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Paperozi, sans-serif' }}>
+            <h2
+              className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
+              style={{ fontFamily: "Paperozi, sans-serif" }}
+            >
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
                 중고 악기 거래는 커넥톤
               </span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto" style={{ fontFamily: 'Paperozi, sans-serif' }}>
+            <p
+              className="text-xl text-gray-600 max-w-2xl mx-auto"
+              style={{ fontFamily: "Paperozi, sans-serif" }}
+            >
               모든 악기와 음악 관련 용품을 한 곳에서 만나보세요
             </p>
           </div>
@@ -383,7 +408,10 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-8">
-            <p className="text-lg text-gray-600 font-medium" style={{ fontFamily: 'Paperozi, sans-serif' }}>
+            <p
+              className="text-lg text-gray-600 font-medium"
+              style={{ fontFamily: "Paperozi, sans-serif" }}
+            >
               그 외 모든 악기와 음악 관련 용품까지! 🎶
             </p>
           </div>
