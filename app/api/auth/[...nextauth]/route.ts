@@ -51,9 +51,41 @@ const authOptions: NextAuthOptions = {
         try {
           console.log("🔐 서버사이드 로그인 시도:", credentials.username);
 
-          // 1. Firebase DB 연결 비활성화 (임시)
-          // TODO: Firebase Firestore API 활성화 후 다시 활성화
-          console.log("⚠️ Firebase DB 연결 비활성화됨 - 임시 계정만 사용");
+          // 1. Firebase DB에서 실제 사용자 찾기
+          try {
+            const auth = getAuth();
+            const db = getFirestore();
+
+            // username으로 사용자 찾기
+            const usersRef = db.collection("users");
+            const userQuery = await usersRef
+              .where("username", "==", credentials.username)
+              .get();
+
+            if (!userQuery.empty) {
+              const userDoc = userQuery.docs[0];
+              const userData = userDoc.data();
+
+              console.log("✅ Firebase DB에서 사용자 찾음:", userData);
+
+              // 실제 사용자 정보 반환 (비밀번호 검증은 Firebase Auth에서)
+              return {
+                id: userDoc.id,
+                email:
+                  userData.email || `${credentials.username}@connectone.local`,
+                name:
+                  userData.nickname ||
+                  userData.displayName ||
+                  credentials.username,
+                image: userData.photoURL || null,
+              };
+            }
+          } catch (firebaseError) {
+            console.log(
+              "⚠️ Firebase DB 검색 실패, 임시 계정으로 폴백:",
+              firebaseError
+            );
+          }
 
           // 2. Firebase DB에 없으면 임시 계정으로 폴백
           console.log("🔄 임시 계정으로 폴백 시도");
@@ -96,16 +128,12 @@ const authOptions: NextAuthOptions = {
           }
 
           // 실제 사용자 계정들 (임시 하드코딩)
-          if (credentials.username === "gdragon" && credentials.password === "gdragon123") {
-            return {
-              id: "gdragon-user-id",
-              email: "gdragon@connectone.local",
-              name: "GDragon",
-              image: null,
-            };
-          }
+          // gdragon 계정은 Firebase DB에 있으므로 하드코딩하지 않음
 
-          if (credentials.username === "user1" && credentials.password === "user123") {
+          if (
+            credentials.username === "user1" &&
+            credentials.password === "user123"
+          ) {
             return {
               id: "user1-id",
               email: "user1@connectone.local",
@@ -114,7 +142,10 @@ const authOptions: NextAuthOptions = {
             };
           }
 
-          if (credentials.username === "user2" && credentials.password === "user123") {
+          if (
+            credentials.username === "user2" &&
+            credentials.password === "user123"
+          ) {
             return {
               id: "user2-id",
               email: "user2@connectone.local",
