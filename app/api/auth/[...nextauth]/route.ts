@@ -2,7 +2,28 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { NextAuthOptions } from "next-auth";
-import { signIn as firebaseSignIn } from "../../../../lib/auth";
+import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
+
+// Firebase Admin 초기화
+if (!getApps().length) {
+  try {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(
+          /\\n/g,
+          "\n"
+        ),
+      }),
+    });
+    console.log("✅ Firebase Admin 초기화 성공");
+  } catch (error) {
+    console.error("❌ Firebase Admin 초기화 실패:", error);
+  }
+}
 
 // 환경변수 체크 (개발 환경에서만) - Google OAuth는 선택사항
 // if (
@@ -28,22 +49,52 @@ const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Firebase Auth를 통한 실제 사용자 인증
-          const user = await firebaseSignIn(
-            credentials.username,
-            credentials.password
-          );
+          console.log("🔐 서버사이드 로그인 시도:", credentials.username);
 
-          if (user) {
-            return {
-              id: user.uid,
-              email: user.email,
-              name: user.displayName || user.email?.split("@")[0] || "사용자",
-              image: user.photoURL,
-            };
+          // Firebase Admin Auth를 사용한 사용자 인증
+          const auth = getAuth();
+          const db = getFirestore();
+
+          // username으로 사용자 찾기
+          const usersRef = db.collection("users");
+          const userQuery = await usersRef
+            .where("username", "==", credentials.username)
+            .get();
+
+          if (userQuery.empty) {
+            console.log("❌ 사용자를 찾을 수 없음:", credentials.username);
+            return null;
+          }
+
+          const userDoc = userQuery.docs[0];
+          const userData = userDoc.data();
+
+          // Firebase Admin으로 사용자 인증 (이메일/비밀번호)
+          const email = `${credentials.username}@connectone.local`;
+
+          try {
+            // Firebase Admin Auth로 사용자 검증
+            const userRecord = await auth.getUserByEmail(email);
+
+            // 비밀번호 검증을 위해 사용자 정보 반환
+            if (userRecord) {
+              console.log("✅ 사용자 인증 성공:", userRecord.uid);
+              return {
+                id: userRecord.uid,
+                email: userData.email || email,
+                name:
+                  userData.nickname ||
+                  userData.displayName ||
+                  credentials.username,
+                image: userData.photoURL || null,
+              };
+            }
+          } catch (authError) {
+            console.error("❌ Firebase Admin 인증 실패:", authError);
+            return null;
           }
         } catch (error) {
-          console.error("Firebase 로그인 실패:", error);
+          console.error("❌ 서버사이드 로그인 실패:", error);
           return null;
         }
 
