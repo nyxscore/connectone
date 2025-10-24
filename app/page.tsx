@@ -214,13 +214,13 @@ export default function HomePage() {
 
               {/* 메인 로고 텍스트 - 모바일 최적화 */}
               <div className="relative z-10">
-                <h1 
+                <h1
                   className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold text-white mb-1 sm:mb-2 md:mb-4 leading-tight"
                   style={{ fontFamily: "Paperozi, sans-serif" }}
                 >
                   ConnecTone
                 </h1>
-                <div 
+                <div
                   className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-white font-medium"
                   style={{ fontFamily: "Paperozi, sans-serif" }}
                 >
@@ -230,7 +230,7 @@ export default function HomePage() {
             </div>
 
             <div className="mt-12 sm:mt-16 md:mt-24 lg:mt-32">
-              <p 
+              <p
                 className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-blue-100 mb-3 sm:mb-4 max-w-3xl mx-auto px-4 leading-relaxed"
                 style={{ fontFamily: "Paperozi, sans-serif" }}
               >
@@ -239,7 +239,7 @@ export default function HomePage() {
                 안전한 중고 거래
               </p>
 
-              <p 
+              <p
                 className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-4 leading-relaxed"
                 style={{ fontFamily: "Paperozi, sans-serif" }}
               >
@@ -249,7 +249,7 @@ export default function HomePage() {
 
             {user ? (
               <div className="space-y-3 sm:space-y-4 md:space-y-6 animate-fade-in-up animation-delay-800 px-4">
-                <p 
+                <p
                   className="text-base sm:text-lg md:text-xl font-medium text-white text-center leading-relaxed"
                   style={{ fontFamily: "Paperozi, sans-serif" }}
                 >

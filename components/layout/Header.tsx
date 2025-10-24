@@ -25,7 +25,7 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
-  Search,
+  Music,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -36,8 +36,6 @@ export function Header() {
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
 
   // 알림 관련 상태
   const [isMobileNotificationOpen, setIsMobileNotificationOpen] =
@@ -211,54 +209,6 @@ export function Header() {
     }
   };
 
-  // 검색 관련 핸들러
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setShowSearchSuggestions(false);
-    }
-  };
-
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setShowSearchSuggestions(e.target.value.length > 0);
-  };
-
-  // 검색 제안 상태
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-
-  // 검색 제안 가져오기
-  const fetchSuggestions = async (query: string) => {
-    if (!query.trim()) {
-      setSearchSuggestions([]);
-      return;
-    }
-
-    setLoadingSuggestions(true);
-    try {
-      const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
-      const data = await response.json();
-      if (data.success) {
-        setSearchSuggestions(data.suggestions || []);
-      }
-    } catch (error) {
-      console.error("검색 제안 오류:", error);
-      setSearchSuggestions([]);
-    } finally {
-      setLoadingSuggestions(false);
-    }
-  };
-
-  // 검색어 변경 시 제안 업데이트
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchSuggestions(searchQuery);
-    }, 300); // 300ms 디바운스
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -272,58 +222,15 @@ export function Header() {
             </Link>
           </div>
 
-          {/* 검색바 - 데스크톱 */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
-            <form onSubmit={handleSearch} className="w-full relative">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={handleSearchInputChange}
-                  onFocus={() => setShowSearchSuggestions(searchQuery.length > 0)}
-                  onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
-                  placeholder="악기 검색 (예: 중고 기타, 피아노, 드럼...)"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <button
-                  type="submit"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 transition-colors"
-                >
-                  검색
-                </button>
-              </div>
-              
-              {/* 검색 제안 드롭다운 */}
-              {showSearchSuggestions && (searchSuggestions.length > 0 || loadingSuggestions) && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 mt-1">
-                  <div className="p-2">
-                    <div className="text-xs text-gray-500 mb-2 px-2">
-                      {loadingSuggestions ? "검색 중..." : "검색 제안"}
-                    </div>
-                    {loadingSuggestions ? (
-                      <div className="flex justify-center py-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      </div>
-                    ) : (
-                      searchSuggestions.map((suggestion, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            setSearchQuery(suggestion);
-                            router.push(`/search?q=${encodeURIComponent(suggestion)}`);
-                            setShowSearchSuggestions(false);
-                          }}
-                          className="w-full text-left px-2 py-2 hover:bg-gray-100 rounded-md text-sm"
-                        >
-                          {suggestion}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </form>
+          {/* AI음악분석 링크 - 데스크톱 */}
+          <div className="hidden md:flex flex-1 justify-center">
+            <Link
+              href="/vocal-analysis"
+              className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              <Music className="w-5 h-5" />
+              <span className="font-medium">AI음악분석</span>
+            </Link>
           </div>
 
           {/* 데스크톱 네비게이션 */}
@@ -381,59 +288,16 @@ export function Header() {
         {/* 모바일 메뉴 */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 bg-white">
-            {/* 모바일 검색바 */}
+            {/* AI음악분석 링크 - 모바일 */}
             <div className="px-4 py-4 border-b border-gray-200">
-              <form onSubmit={handleSearch} className="relative">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearchInputChange}
-                    onFocus={() => setShowSearchSuggestions(searchQuery.length > 0)}
-                    onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
-                    placeholder="악기 검색 (예: 중고 기타, 피아노...)"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 transition-colors"
-                  >
-                    검색
-                  </button>
-                </div>
-                
-                {/* 모바일 검색 제안 */}
-                {showSearchSuggestions && (searchSuggestions.length > 0 || loadingSuggestions) && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 mt-1">
-                    <div className="p-2">
-                      <div className="text-xs text-gray-500 mb-2 px-2">
-                        {loadingSuggestions ? "검색 중..." : "검색 제안"}
-                      </div>
-                      {loadingSuggestions ? (
-                        <div className="flex justify-center py-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        </div>
-                      ) : (
-                        searchSuggestions.map((suggestion, index) => (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              setSearchQuery(suggestion);
-                              router.push(`/search?q=${encodeURIComponent(suggestion)}`);
-                              setShowSearchSuggestions(false);
-                              setIsMobileMenuOpen(false);
-                            }}
-                            className="w-full text-left px-2 py-2 hover:bg-gray-100 rounded-md text-sm"
-                          >
-                            {suggestion}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </form>
+              <Link
+                href="/vocal-analysis"
+                className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Music className="w-5 h-5" />
+                <span className="font-medium">AI음악분석</span>
+              </Link>
             </div>
 
             {/* 사용자 프로필 섹션 */}
