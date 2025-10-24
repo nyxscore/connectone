@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getFirebaseDb } from "../../../../lib/api/firebase-ultra-safe";
 
 export async function POST(request: NextRequest) {
   try {
-    const { uid, email, name, image, provider, providerId } =
-      await request.json();
+    const { uid, email, name, image, provider, providerId } = await request.json();
 
     if (!uid || !email) {
       return NextResponse.json(
@@ -14,45 +11,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const db = await getFirebaseDb();
-    const userRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userRef);
-
-    const userData = {
+    // Firebase DB 연결 비활성화 (임시)
+    // TODO: Firebase Firestore API 활성화 후 다시 활성화
+    console.log("프로필 동기화 요청 (Firebase DB 비활성화):", {
       uid,
       email,
-      displayName: name || email.split("@")[0] || "사용자",
-      photoURL: image || undefined,
-      provider: provider || "credentials",
-      providerId: providerId || uid,
-      isEmailVerified: true,
-      role: "user",
-      status: "active",
-      updatedAt: new Date(),
-    };
+      name,
+      provider
+    });
 
-    if (userSnap.exists()) {
-      // 기존 사용자 - 프로필 업데이트
-      await setDoc(
-        userRef,
-        {
-          ...userData,
-          lastLoginAt: new Date(),
-        },
-        { merge: true }
-      );
-      console.log("기존 사용자 프로필 업데이트 완료:", uid);
-    } else {
-      // 신규 사용자 - 프로필 생성
-      await setDoc(userRef, {
-        ...userData,
-        createdAt: new Date(),
-        lastLoginAt: new Date(),
-      });
-      console.log("신규 사용자 프로필 생성 완료:", uid);
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true, 
+      message: "프로필 동기화 완료 (Firebase DB 비활성화)" 
+    });
   } catch (error) {
     console.error("프로필 동기화 실패:", error);
     return NextResponse.json(

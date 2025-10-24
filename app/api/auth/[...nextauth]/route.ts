@@ -51,54 +51,56 @@ const authOptions: NextAuthOptions = {
         try {
           console.log("🔐 서버사이드 로그인 시도:", credentials.username);
 
-          // Firebase Admin Auth를 사용한 사용자 인증
-          const auth = getAuth();
-          const db = getFirestore();
+          // 1. Firebase DB 연결 비활성화 (임시)
+          // TODO: Firebase Firestore API 활성화 후 다시 활성화
+          console.log("⚠️ Firebase DB 연결 비활성화됨 - 임시 계정만 사용");
 
-          // username으로 사용자 찾기
-          const usersRef = db.collection("users");
-          const userQuery = await usersRef
-            .where("username", "==", credentials.username)
-            .get();
+          // 2. Firebase DB에 없으면 임시 계정으로 폴백
+          console.log("🔄 임시 계정으로 폴백 시도");
 
-          if (userQuery.empty) {
-            console.log("❌ 사용자를 찾을 수 없음:", credentials.username);
-            return null;
+          // 임시 테스트 계정들
+          if (
+            credentials.username === "test" &&
+            credentials.password === "test123"
+          ) {
+            return {
+              id: "test-user-id",
+              email: "test@connectone.local",
+              name: "테스트 사용자",
+              image: null,
+            };
           }
 
-          const userDoc = userQuery.docs[0];
-          const userData = userDoc.data();
-
-          // Firebase Admin으로 사용자 인증 (이메일/비밀번호)
-          const email = `${credentials.username}@connectone.local`;
-
-          try {
-            // Firebase Admin Auth로 사용자 검증
-            const userRecord = await auth.getUserByEmail(email);
-
-            // 비밀번호 검증을 위해 사용자 정보 반환
-            if (userRecord) {
-              console.log("✅ 사용자 인증 성공:", userRecord.uid);
-              return {
-                id: userRecord.uid,
-                email: userData.email || email,
-                name:
-                  userData.nickname ||
-                  userData.displayName ||
-                  credentials.username,
-                image: userData.photoURL || null,
-              };
-            }
-          } catch (authError) {
-            console.error("❌ Firebase Admin 인증 실패:", authError);
-            return null;
+          if (
+            credentials.username === "admin" &&
+            credentials.password === "admin123"
+          ) {
+            return {
+              id: "admin-user-id",
+              email: "admin@connectone.local",
+              name: "관리자",
+              image: null,
+            };
           }
+
+          if (
+            credentials.username === "ctct7" &&
+            credentials.password === "ctct123"
+          ) {
+            return {
+              id: "ctct7-user-id",
+              email: "ctct7@connectone.local",
+              name: "ctct7",
+              image: null,
+            };
+          }
+
+          console.log("❌ 모든 인증 방법 실패");
+          return null;
         } catch (error) {
           console.error("❌ 서버사이드 로그인 실패:", error);
           return null;
         }
-
-        return null;
       },
     }),
     // 구글 로그인
