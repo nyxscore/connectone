@@ -36,7 +36,7 @@ export default function LoginPage() {
   const [loginError, setLoginError] = useState("");
   const [signUpError, setSignUpError] = useState("");
   // SNS 로그인은 심사 후 사용
-  const [snsLoading, setSnsLoading] = useState<"google" | "naver" | null>(null);
+  const [snsLoading, setSnsLoading] = useState<"google" | null>(null);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -127,38 +127,38 @@ export default function LoginPage() {
     }
   };
 
-  // SNS 로그인 핸들러 (NextAuth 사용)
-  const handleSNSLogin = async (provider: "google" | "naver") => {
-    setSnsLoading(provider);
+  // 구글 로그인 핸들러 (NextAuth 사용)
+  const handleGoogleLogin = async () => {
+    setSnsLoading("google");
     try {
-      const result = await nextAuthSignIn(provider, {
+      const result = await nextAuthSignIn("google", {
         callbackUrl: "/",
         redirect: false, // 수동으로 리다이렉트 처리
       });
-      
+
       if (result?.error) {
-        console.error(`${provider} 로그인 오류:`, result.error);
-        
+        console.error("구글 로그인 오류:", result.error);
+
         // 구체적인 오류 메시지 처리
         if (result.error === "Configuration") {
-          toast.error(`${provider === "google" ? "구글" : "네이버"} OAuth 설정이 올바르지 않습니다.`);
+          toast.error("구글 OAuth 설정이 올바르지 않습니다.");
         } else if (result.error === "AccessDenied") {
           toast.error("로그인이 취소되었습니다.");
         } else {
-          toast.error(`${provider === "google" ? "구글" : "네이버"} 로그인에 실패했습니다: ${result.error}`);
+          toast.error(`구글 로그인에 실패했습니다: ${result.error}`);
         }
       } else if (result?.ok) {
-        toast.success(`${provider === "google" ? "구글" : "네이버"} 로그인 성공!`);
+        toast.success("구글 로그인 성공!");
         router.push("/");
       } else {
-        toast.error(`${provider === "google" ? "구글" : "네이버"} 로그인 중 알 수 없는 오류가 발생했습니다.`);
+        toast.error("구글 로그인 중 알 수 없는 오류가 발생했습니다.");
       }
     } catch (error) {
-      console.error(`${provider} 로그인 오류:`, error);
+      console.error("구글 로그인 오류:", error);
       toast.error(
         error instanceof Error
           ? error.message
-          : `${provider === "google" ? "구글" : "네이버"} 로그인 중 오류가 발생했습니다.`
+          : "구글 로그인 중 오류가 발생했습니다."
       );
     } finally {
       setSnsLoading(null);
@@ -597,12 +597,12 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-6 space-y-3">
-              {/* 구글 로그인 */}
-              <button
-                onClick={() => handleSNSLogin("google")}
-                disabled={snsLoading === "google"}
-                className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+                     {/* 구글 로그인 */}
+                     <button
+                       onClick={handleGoogleLogin}
+                       disabled={snsLoading === "google"}
+                       className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                     >
                 {snsLoading === "google" ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
                 ) : (
@@ -630,27 +630,6 @@ export default function LoginPage() {
                 )}
               </button>
 
-              {/* 네이버 로그인 */}
-              <button
-                onClick={() => handleSNSLogin("naver")}
-                disabled={snsLoading === "naver"}
-                className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {snsLoading === "naver" ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                      <path
-                        fill="#FFFFFF"
-                        d="M16.273 12.845 7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845Z"
-                      />
-                    </svg>
-                    {isSignUp ? "네이버로 회원가입" : "네이버로 로그인"}
-                  </>
-                )}
-              </button>
-              
             </div>
           </div>
 
