@@ -216,13 +216,13 @@ export default function HomePage() {
               <div className="relative z-10">
                 <h1
                   className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold text-white mb-1 sm:mb-2 md:mb-4 leading-tight"
-                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                  style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
                 >
                   ConnecTone
                 </h1>
                 <div
                   className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-white font-medium"
-                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                  style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
                 >
                   커넥톤
                 </div>
@@ -232,14 +232,14 @@ export default function HomePage() {
             <div className="mt-12 sm:mt-16 md:mt-24 lg:mt-32">
               <p
                 className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-blue-100 mb-3 sm:mb-4 max-w-3xl mx-auto px-4 leading-relaxed"
-                style={{ fontFamily: "Paperozi, sans-serif" }}
+                style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
               >
                 모든 음악이 연결되는 곳, 커넥톤
               </p>
 
               <p
                 className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-4 leading-relaxed"
-                style={{ fontFamily: "Paperozi, sans-serif" }}
+                style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
               >
                 AI 분석과 전문가 피드백, 그리고 믿을 수 있는 악기 거래까지
               </p>
@@ -249,7 +249,7 @@ export default function HomePage() {
               <div className="space-y-3 sm:space-y-4 md:space-y-6 animate-fade-in-up animation-delay-800 px-4">
                 <p
                   className="text-base sm:text-lg md:text-xl font-medium text-white text-center leading-relaxed"
-                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                  style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
                 >
                   안녕하세요,{" "}
                   <span className="animate-gradient-flow font-bold">
@@ -262,7 +262,7 @@ export default function HomePage() {
                     <Button
                       size="lg"
                       className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4 px-8"
-                      style={{ fontFamily: "Paperozi, sans-serif" }}
+                      style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
                     >
                       <Search className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       상품 둘러보기
@@ -277,7 +277,7 @@ export default function HomePage() {
                     <Button
                       size="lg"
                       className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
-                      style={{ fontFamily: "Paperozi, sans-serif" }}
+                      style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
                     >
                       <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       회원가입
@@ -288,7 +288,7 @@ export default function HomePage() {
                       variant="outline"
                       size="lg"
                       className="w-full text-sm sm:text-base border-2 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
-                      style={{ fontFamily: "Paperozi, sans-serif" }}
+                      style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
                     >
                       로그인
                     </Button>
@@ -331,7 +331,7 @@ export default function HomePage() {
           <div className="text-center mb-8 sm:mb-12 md:mb-16">
             <h2
               className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight"
-              style={{ fontFamily: "Paperozi, sans-serif" }}
+              style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
             >
               <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 AI음악분석으로 완성하는
@@ -341,7 +341,7 @@ export default function HomePage() {
             </h2>
             <p
               className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed px-2"
-              style={{ fontFamily: "Paperozi, sans-serif" }}
+              style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
             >
               AI 분석과 현직 프로의 전문 피드백으로
               <br className="sm:hidden" />
@@ -360,7 +360,7 @@ export default function HomePage() {
                 </div>
                 <h3
                   className="text-lg sm:text-xl font-bold text-gray-900 mb-3"
-                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                  style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
                 >
                   AI 음성 분석
                 </h3>
@@ -393,7 +393,7 @@ export default function HomePage() {
                 </div>
                 <h3
                   className="text-lg sm:text-xl font-bold text-gray-900 mb-3"
-                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                  style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
                 >
                   현직 프로 피드백
                 </h3>
@@ -426,7 +426,7 @@ export default function HomePage() {
                 </div>
                 <h3
                   className="text-lg sm:text-xl font-bold text-gray-900 mb-3"
-                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                  style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
                 >
                   실시간 모니터링
                 </h3>
@@ -458,7 +458,7 @@ export default function HomePage() {
               <Button
                 size="lg"
                 className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-4 px-8 text-base sm:text-lg font-semibold"
-                style={{ fontFamily: "Paperozi, sans-serif" }}
+                style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
               >
                 <Sparkles className="w-5 h-5 mr-2" />
                 AI음악분석 체험하기
@@ -498,7 +498,7 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <h2
               className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
-              style={{ fontFamily: "Paperozi, sans-serif" }}
+              style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
             >
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
                 중고 악기 거래는 커넥톤
@@ -506,7 +506,7 @@ export default function HomePage() {
             </h2>
             <p
               className="text-xl text-gray-600 max-w-2xl mx-auto"
-              style={{ fontFamily: "Paperozi, sans-serif" }}
+              style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
             >
               모든 악기와 음악 관련 용품을 한 곳에서 만나보세요
             </p>
@@ -590,7 +590,7 @@ export default function HomePage() {
           <div className="text-center mt-8">
             <p
               className="text-lg text-gray-600 font-medium"
-              style={{ fontFamily: "Paperozi, sans-serif" }}
+              style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
             >
               그 외 모든 악기와 음악 관련 용품까지! 🎶
             </p>
@@ -601,7 +601,7 @@ export default function HomePage() {
             <div className="text-center mb-8">
               <h3
                 className="text-xl md:text-2xl font-bold text-gray-800 mb-2"
-                style={{ fontFamily: "Paperozi, sans-serif" }}
+                style={{ fontFamily: "Bobaesomjindo, sans-serif" }}
               >
                 커넥톤만의 특별한 차별화
               </h3>

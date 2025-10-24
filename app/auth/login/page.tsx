@@ -79,9 +79,21 @@ export default function LoginPage() {
     setIsLoading(true);
     setLoginError(""); // 오류 메시지 초기화
     try {
-      await signIn(data);
+      console.log("🔐 로그인 시도 시작:", data.username);
+
+      // username을 email로 변환하여 signIn 호출
+      const loginData = {
+        username: data.username,
+        password: data.password,
+      };
+
+      console.log("📤 signIn 함수 호출:", loginData);
+      const result = await signIn(loginData);
+      console.log("✅ 로그인 성공:", result);
+
       router.push("/");
     } catch (error) {
+      console.error("❌ 로그인 실패:", error);
       setLoginError(
         error instanceof Error
           ? error.message
@@ -576,12 +588,12 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-6 space-y-3">
-                     {/* 구글 로그인 */}
-                     <button
-                       onClick={handleGoogleLogin}
-                       disabled={snsLoading === "google"}
-                       className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                     >
+              {/* 구글 로그인 */}
+              <button
+                onClick={handleGoogleLogin}
+                disabled={snsLoading === "google"}
+                className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 {snsLoading === "google" ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
                 ) : (
@@ -608,7 +620,6 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
-
             </div>
           </div>
 
