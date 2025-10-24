@@ -10,6 +10,7 @@ import {
 import { User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/api/firebase-ultra-safe";
+import { logAuthAction } from "@/lib/api/user-actions";
 
 // Firebase 인스턴스 가져오기
 const getDb = getFirebaseDb;
@@ -59,6 +60,13 @@ export const handleSNSLogin = async (
         },
         { merge: true }
       );
+
+      // 기존 사용자 로그인 액션 로그
+      await logAuthAction(profile.uid, `${provider}_login_existing`, {
+        provider,
+        displayName: profile.displayName,
+        email: profile.email,
+      });
     } else {
       // 신규 사용자 - 프로필 생성
       await setDoc(userRef, {
@@ -76,6 +84,13 @@ export const handleSNSLogin = async (
         role: "user",
         status: "active",
       });
+
+      // 신규 사용자 가입 액션 로그
+      await logAuthAction(profile.uid, `${provider}_signup_new`, {
+        provider,
+        displayName: profile.displayName,
+        email: profile.email,
+      });
     }
 
     return profile;
@@ -86,14 +101,30 @@ export const handleSNSLogin = async (
 };
 
 /**
- * 구글 로그인
+ * 구글 로그인 (리디렉션 방식)
  */
-export const loginWithGoogle = async (): Promise<SNSUserProfile> => {
+export const loginWithGoogle = async (): Promise<void> => {
   try {
-    const result = await signInWithGoogle();
-    return await handleSNSLogin(result.user, "google");
-  } catch (error) {
+    await signInWithGoogleRedirect();
+    // 리디렉션 방식이므로 결과를 반환하지 않음
+  } catch (error: any) {
     console.error("구글 로그인 오류:", error);
+
+    // Firebase Auth 에러 코드별 메시지
+    if (error.code === "auth/popup-closed-by-user") {
+      throw new Error("로그인 창이 닫혔습니다. 다시 시도해주세요.");
+    } else if (error.code === "auth/popup-blocked") {
+      throw new Error(
+        "팝업이 차단되었습니다. 팝업을 허용하고 다시 시도해주세요."
+      );
+    } else if (error.code === "auth/network-request-failed") {
+      throw new Error("네트워크 연결을 확인해주세요.");
+    } else if (error.code === "auth/too-many-requests") {
+      throw new Error(
+        "너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요."
+      );
+    }
+
     throw new Error("구글 로그인에 실패했습니다.");
   }
 };
@@ -105,21 +136,53 @@ export const loginWithKakao = async (): Promise<SNSUserProfile> => {
   try {
     const result = await signInWithKakao();
     return await handleSNSLogin(result.user, "kakao");
-  } catch (error) {
+  } catch (error: any) {
     console.error("카카오 로그인 오류:", error);
+
+    // Firebase Auth 에러 코드별 메시지
+    if (error.code === "auth/popup-closed-by-user") {
+      throw new Error("로그인 창이 닫혔습니다. 다시 시도해주세요.");
+    } else if (error.code === "auth/popup-blocked") {
+      throw new Error(
+        "팝업이 차단되었습니다. 팝업을 허용하고 다시 시도해주세요."
+      );
+    } else if (error.code === "auth/network-request-failed") {
+      throw new Error("네트워크 연결을 확인해주세요.");
+    } else if (error.code === "auth/too-many-requests") {
+      throw new Error(
+        "너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요."
+      );
+    }
+
     throw new Error("카카오 로그인에 실패했습니다.");
   }
 };
 
 /**
- * 네이버 로그인
+ * 네이버 로그인 (리디렉션 방식)
  */
-export const loginWithNaver = async (): Promise<SNSUserProfile> => {
+export const loginWithNaver = async (): Promise<void> => {
   try {
-    const result = await signInWithNaver();
-    return await handleSNSLogin(result.user, "naver");
-  } catch (error) {
+    await signInWithNaverRedirect();
+    // 리디렉션 방식이므로 결과를 반환하지 않음
+  } catch (error: any) {
     console.error("네이버 로그인 오류:", error);
+
+    // Firebase Auth 에러 코드별 메시지
+    if (error.code === "auth/popup-closed-by-user") {
+      throw new Error("로그인 창이 닫혔습니다. 다시 시도해주세요.");
+    } else if (error.code === "auth/popup-blocked") {
+      throw new Error(
+        "팝업이 차단되었습니다. 팝업을 허용하고 다시 시도해주세요."
+      );
+    } else if (error.code === "auth/network-request-failed") {
+      throw new Error("네트워크 연결을 확인해주세요.");
+    } else if (error.code === "auth/too-many-requests") {
+      throw new Error(
+        "너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요."
+      );
+    }
+
     throw new Error("네이버 로그인에 실패했습니다.");
   }
 };

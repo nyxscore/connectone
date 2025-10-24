@@ -1,17 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getFirebaseAuth as getAuth } from "../api/firebase-ultra-safe";
-import { User as FirebaseUser } from "firebase/auth";
+import { useSession, signOut } from "next-auth/react";
 import { User } from "../../data/types";
 import { UserProfile } from "../../data/profile/types";
 import { getUserProfile } from "../profile/api";
-import { logout as firebaseLogout } from "../api/auth";
 
 // UserProfile을 User 타입으로 변환하는 함수
 const convertUserProfileToUser = (
   profile: UserProfile,
-  firebaseUser: FirebaseUser
+  sessionUser: any
 ): User => {
   // createdAt, updatedAt 필드가 Firestore Timestamp가 아닐 수도 있어 안전하게 변환
   const toDateSafe = (value: any): Date => {
@@ -28,8 +26,8 @@ const convertUserProfileToUser = (
   return {
     id: profile.uid,
     uid: profile.uid,
-    email: firebaseUser.email || "",
-    phoneNumber: profile.phoneNumber || firebaseUser.phoneNumber || undefined,
+    email: sessionUser?.email || "",
+    phoneNumber: profile.phoneNumber || undefined,
     nickname: profile.nickname,
     region: profile.region,
     grade: profile.grade,
@@ -49,6 +47,7 @@ const convertUserProfileToUser = (
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { data: session, status } = useSession();
 
   // 사용자 정보 업데이트 함수
   const updateUser = (updatedUserData: Partial<User>) => {
@@ -56,38 +55,35 @@ export const useAuth = () => {
   };
 
   // processUser 함수를 useEffect 밖으로 이동
-  const processUser = async (
-    firebaseUser: FirebaseUser | null,
-    isMounted: boolean
-  ) => {
+  const processUser = async (sessionUser: any, isMounted: boolean) => {
     console.log("useAuth: processUser 호출", {
-      firebaseUser: !!firebaseUser,
+      sessionUser: !!sessionUser,
     });
     if (!isMounted) return;
 
     try {
-      if (firebaseUser) {
-        console.log("useAuth: Firebase 사용자 있음", {
-          uid: firebaseUser.uid,
+      if (sessionUser) {
+        console.log("useAuth: NextAuth 사용자 있음", {
+          id: sessionUser.id,
         });
         try {
-          const userData = await getUserProfile(firebaseUser.uid);
+          const userData = await getUserProfile(sessionUser.id);
 
           if (!isMounted) return;
 
           if (userData && userData.success && userData.data) {
-            const user = convertUserProfileToUser(userData.data, firebaseUser);
+            const user = convertUserProfileToUser(userData.data, sessionUser);
             setUser(user);
           } else {
-            // Firestore에서 사용자 정보를 가져오지 못한 경우, Firebase 사용자 정보로 임시 사용자 생성
+            // Firestore에서 사용자 정보를 가져오지 못한 경우, NextAuth 사용자 정보로 임시 사용자 생성
             const tempUser: User = {
-              id: firebaseUser.uid,
-              uid: firebaseUser.uid,
-              email: firebaseUser.email || "",
-              phoneNumber: firebaseUser.phoneNumber || undefined,
+              id: sessionUser.id,
+              uid: sessionUser.id,
+              email: sessionUser.email || "",
+              phoneNumber: undefined,
               nickname:
-                firebaseUser.displayName ||
-                firebaseUser.email?.split("@")[0] ||
+                sessionUser.name ||
+                sessionUser.email?.split("@")[0] ||
                 "사용자",
               region: "지역 정보 없음",
               grade: "C",
@@ -95,7 +91,7 @@ export const useAuth = () => {
               reviewCount: 0,
               createdAt: new Date(),
               updatedAt: new Date(),
-              profileImage: firebaseUser.photoURL || undefined,
+              profileImage: sessionUser.image || undefined,
               safeTransactionCount: 0,
               averageRating: 0,
               disputeCount: 0,
@@ -107,20 +103,20 @@ export const useAuth = () => {
           console.error("사용자 정보 가져오기 실패:", error);
           if (!isMounted) return;
 
-          // 에러가 발생해도 Firebase 사용자 정보로 임시 사용자 생성
+          // 에러가 발생해도 NextAuth 사용자 정보로 임시 사용자 생성
           const tempUser: User = {
-            id: firebaseUser.uid,
-            uid: firebaseUser.uid,
-            email: firebaseUser.email || "",
-            phoneNumber: firebaseUser.phoneNumber || undefined,
-            nickname: firebaseUser.displayName || "사용자",
+            id: sessionUser.id,
+            uid: sessionUser.id,
+            email: sessionUser.email || "",
+            phoneNumber: undefined,
+            nickname: sessionUser.name || "사용자",
             region: "",
             grade: "C",
             tradeCount: 0,
             reviewCount: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
-            profileImage: firebaseUser.photoURL || undefined,
+            profileImage: sessionUser.image || undefined,
             safeTransactionCount: 0,
             averageRating: 0,
             disputeCount: 0,
@@ -129,7 +125,7 @@ export const useAuth = () => {
           setUser(tempUser);
         }
       } else {
-        console.log("useAuth: Firebase 사용자 없음");
+        console.log("useAuth: NextAuth 사용자 없음");
         setUser(null);
       }
     } catch (error) {
@@ -145,17 +141,15 @@ export const useAuth = () => {
 
   // 사용자 정보 새로고침 함수
   const refreshUser = async () => {
-    const authInstance = await getAuth();
-    const firebaseUser = authInstance?.currentUser;
-    if (firebaseUser) {
-      await processUser(firebaseUser, true);
+    if (session?.user) {
+      await processUser(session.user, true);
     }
   };
 
   // 로그아웃 함수
   const logout = async () => {
     try {
-      await firebaseLogout();
+      await signOut();
       setUser(null);
       console.log("로그아웃 성공");
     } catch (error) {
@@ -166,35 +160,23 @@ export const useAuth = () => {
 
   useEffect(() => {
     let isMounted = true;
-    console.log("useAuth: 초기화 시작");
 
     const initializeAuth = async () => {
       try {
-        const authInstance = await getAuth();
-        if (!authInstance) {
-          throw new Error("Firebase Auth not initialized");
+        if (status === "loading") {
+          return; // NextAuth가 로딩 중이면 대기
         }
 
-        console.log("useAuth: onAuthStateChanged 구독 시작");
-        const unsubscribe = authInstance.onAuthStateChanged(
-          firebaseUser => {
-            processUser(firebaseUser, isMounted);
-          },
-          error => {
-            console.error("❌ Firebase 인증 상태 변경 오류:", error);
-            if (isMounted) {
-              setUser(null);
-              setLoading(false);
-            }
+        if (session?.user) {
+          await processUser(session.user, isMounted);
+        } else {
+          if (isMounted) {
+            setUser(null);
+            setLoading(false);
           }
-        );
-
-        return () => {
-          isMounted = false;
-          unsubscribe();
-        };
+        }
       } catch (error) {
-        console.error("❌ Firebase Auth 초기화 실패:", error);
+        console.error("❌ NextAuth 초기화 실패:", error);
         if (isMounted) {
           setUser(null);
           setLoading(false);
@@ -207,7 +189,7 @@ export const useAuth = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [session, status]);
 
   return {
     user,

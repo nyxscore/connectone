@@ -13,20 +13,13 @@ import {
   type SignUpFormData,
 } from "../../../lib/schemas";
 import { signIn, signUp, checkUsernameAvailability } from "../../../lib/auth";
-import {
-  loginWithGoogle,
-  loginWithKakao,
-  loginWithNaver,
-} from "../../../lib/auth/snsAuth";
+import { signIn as nextAuthSignIn } from "next-auth/react";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
 import { Checkbox } from "../../../components/ui/Checkbox";
 import { KOREAN_REGIONS } from "../../../lib/utils";
-import {
-  validatePassword,
-  getPasswordStrength,
-} from "../../../lib/utils/passwordValidation";
+import { getPasswordStrength } from "../../../lib/utils/passwordValidation";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,9 +36,7 @@ export default function LoginPage() {
   const [loginError, setLoginError] = useState("");
   const [signUpError, setSignUpError] = useState("");
   // SNS 로그인은 심사 후 사용
-  const [snsLoading, setSnsLoading] = useState<
-    "google" | "kakao" | "naver" | null
-  >(null);
+  const [snsLoading, setSnsLoading] = useState<"google" | "naver" | null>(null);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -112,6 +103,7 @@ export default function LoginPage() {
     try {
       await signUp({
         username: data.username,
+        email: data.email,
         password: data.password,
         nickname: data.nickname,
         region: data.region,
@@ -135,30 +127,20 @@ export default function LoginPage() {
     }
   };
 
-  // SNS 로그인 핸들러
-  const handleSNSLogin = async (provider: "google" | "kakao" | "naver") => {
+  // SNS 로그인 핸들러 (NextAuth 사용)
+  const handleSNSLogin = async (provider: "google" | "naver") => {
     setSnsLoading(provider);
     try {
-      let result;
-      switch (provider) {
-        case "google":
-          result = await loginWithGoogle();
-          break;
-        case "kakao":
-          result = await loginWithKakao();
-          break;
-        case "naver":
-          result = await loginWithNaver();
-          break;
-      }
-
-      router.push("/");
+      await nextAuthSignIn(provider, {
+        callbackUrl: "/",
+        redirect: true,
+      });
     } catch (error) {
       console.error(`${provider} 로그인 오류:`, error);
       toast.error(
         error instanceof Error
           ? error.message
-          : `${provider === "google" ? "구글" : provider === "kakao" ? "카카오" : "네이버"} 로그인 중 오류가 발생했습니다.`
+          : `${provider === "google" ? "구글" : "네이버"} 로그인 중 오류가 발생했습니다.`
       );
     } finally {
       setSnsLoading(null);
@@ -370,6 +352,17 @@ export default function LoginPage() {
                   </p>
                 )}
               </div>
+
+              {/* 이메일 입력 필드 */}
+              <Input
+                label="이메일"
+                type="email"
+                autoComplete="email"
+                placeholder="이메일을 입력해주세요"
+                error={signUpForm.formState.errors.email?.message}
+                helperText="실제 이메일 주소를 입력해주세요"
+                {...signUpForm.register("email")}
+              />
 
               {/* 비밀번호 입력 필드 */}
               <div>
@@ -619,49 +612,26 @@ export default function LoginPage() {
                 )}
               </button>
 
-              {/* 카카오 로그인 */}
+              {/* 네이버 로그인 */}
               <button
-                onClick={() => handleSNSLogin("kakao")}
-                disabled={snsLoading === "kakao"}
-                className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => handleSNSLogin("naver")}
+                disabled={snsLoading === "naver"}
+                className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {snsLoading === "kakao" ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
+                {snsLoading === "naver" ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 ) : (
                   <>
                     <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                       <path
-                        fill="#000000"
-                        d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11L6.526 21.83c-.4.3-.96-.026-.86-.49l.945-3.152A10.226 10.226 0 0 1 1.5 11.185C1.5 6.665 6.201 3 12 3z"
+                        fill="#FFFFFF"
+                        d="M16.273 12.845 7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845Z"
                       />
                     </svg>
-                    {isSignUp ? "카카오로 회원가입" : "카카오로 로그인"}
+                    {isSignUp ? "네이버로 회원가입" : "네이버로 로그인"}
                   </>
                 )}
               </button>
-
-              {/* 네이버 로그인 - 배포된 사이트에서만 사용 */}
-              {process.env.NODE_ENV === "production" && (
-                <button
-                  onClick={() => handleSNSLogin("naver")}
-                  disabled={snsLoading === "naver"}
-                  className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {snsLoading === "naver" ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                        <path
-                          fill="#FFFFFF"
-                          d="M16.273 12.845 7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845Z"
-                        />
-                      </svg>
-                      {isSignUp ? "네이버로 회원가입" : "네이버로 로그인"}
-                    </>
-                  )}
-                </button>
-              )}
             </div>
           </div>
 
