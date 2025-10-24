@@ -24,3 +24,8 @@ export const deleteUserAction = async (actionId: string): Promise<void> => {
   // Implementation for deleting user actions
   console.log("Deleting user action:", actionId);
 };
+
+export const logAuthAction = async (action: string, userId?: string, metadata?: Record<string, any>): Promise<void> => {
+  // Implementation for logging authentication actions
+  console.log("Logging auth action:", { action, userId, metadata });
+};

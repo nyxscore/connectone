@@ -4,15 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useState } from "react";
-import { 
-  Phone, 
-  Mail, 
-  MessageCircle, 
-  Clock, 
-  HelpCircle,
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
 
 export default function HelpPage() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -68,7 +59,7 @@ export default function HelpPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="text-center">
-              <Phone className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+              <div className="w-8 h-8 text-blue-600 mx-auto mb-2">📞</div>
               <CardTitle className="text-lg">전화상담</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
@@ -80,7 +71,7 @@ export default function HelpPage() {
 
           <Card>
             <CardHeader className="text-center">
-              <Mail className="w-8 h-8 text-green-600 mx-auto mb-2" />
+              <div className="w-8 h-8 text-green-600 mx-auto mb-2">✉️</div>
               <CardTitle className="text-lg">이메일 문의</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
@@ -92,7 +83,7 @@ export default function HelpPage() {
 
           <Card>
             <CardHeader className="text-center">
-              <MessageCircle className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+              <div className="w-8 h-8 text-purple-600 mx-auto mb-2">💬</div>
               <CardTitle className="text-lg">카카오톡</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
@@ -107,7 +98,7 @@ export default function HelpPage() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <HelpCircle className="w-5 h-5 mr-2" />
+              <span className="w-5 h-5 mr-2">❓</span>
               1:1 문의하기
             </CardTitle>
           </CardHeader>
@@ -171,11 +162,9 @@ export default function HelpPage() {
                     onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
                   >
                     <span className="font-medium">{faq.question}</span>
-                    {expandedFaq === faq.id ? (
-                      <ChevronUp className="w-5 h-5 text-gray-500" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-500" />
-                    )}
+                    <span className="text-gray-500">
+                      {expandedFaq === faq.id ? "▲" : "▼"}
+                    </span>
                   </button>
                   {expandedFaq === faq.id && (
                     <div className="px-4 pb-3 text-gray-600">
@@ -192,7 +181,7 @@ export default function HelpPage() {
         <Card className="mt-8">
           <CardContent className="pt-6">
             <div className="flex items-center justify-center text-gray-600">
-              <Clock className="w-5 h-5 mr-2" />
+              <span className="w-5 h-5 mr-2">🕒</span>
               <span className="text-sm">
                 고객센터 운영시간: 평일 09:00 - 18:00 (토요일 09:00 - 13:00) | 일요일 및 공휴일 휴무
               </span>
