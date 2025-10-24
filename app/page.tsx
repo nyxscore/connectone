@@ -234,16 +234,14 @@ export default function HomePage() {
                 className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-blue-100 mb-3 sm:mb-4 max-w-3xl mx-auto px-4 leading-relaxed"
                 style={{ fontFamily: "Paperozi, sans-serif" }}
               >
-                음악을 사랑하는 사람들을 위한
-                <br />
-                안전한 중고 거래
+                모든 음악이 연결되는 곳, 커넥톤
               </p>
 
               <p
                 className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-4 leading-relaxed"
                 style={{ fontFamily: "Paperozi, sans-serif" }}
               >
-                AI 감정 시스템과 안전거래로 믿을 수 있는 거래를 경험하세요
+                AI 분석과 전문가 피드백, 그리고 믿을 수 있는 악기 거래까지
               </p>
             </div>
 
