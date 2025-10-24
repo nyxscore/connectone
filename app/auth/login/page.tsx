@@ -650,6 +650,11 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
+              
+              {/* 네이버 로그인 안내 */}
+              <p className="text-xs text-gray-500 text-center mt-2">
+                네이버 로그인은 현재 설정 중입니다. 구글 로그인을 이용해주세요.
+              </p>
             </div>
           </div>
 
