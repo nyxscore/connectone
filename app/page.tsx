@@ -397,7 +397,8 @@ export default function HomePage() {
               className="text-xl text-gray-600 max-w-3xl mx-auto"
               style={{ fontFamily: "Paperozi, sans-serif" }}
             >
-              최첨단 AI 기술과 현직 프로의 전문 피드백으로 음악 실력을 한 단계 업그레이드하세요
+              최첨단 AI 기술과 현직 프로의 전문 피드백으로 음악 실력을 한 단계
+              업그레이드하세요
             </p>
           </div>
 
@@ -408,11 +409,15 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2" style={{ fontFamily: "Paperozi, sans-serif" }}>
+                <h3
+                  className="text-xl font-bold text-gray-900 mb-2"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
                   AI 음성 분석
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  고급 AI 알고리즘이 당신의 음성과 연주를 정밀 분석하여 개선점을 찾아드립니다
+                  고급 AI 알고리즘이 당신의 음성과 연주를 정밀 분석하여 개선점을
+                  찾아드립니다
                 </p>
               </div>
               <ul className="space-y-2 text-sm text-gray-600">
@@ -437,11 +442,15 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Users className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2" style={{ fontFamily: "Paperozi, sans-serif" }}>
+                <h3
+                  className="text-xl font-bold text-gray-900 mb-2"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
                   현직 프로 피드백
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  음악계 현직 전문가들이 AI 분석 결과를 바탕으로 맞춤형 조언을 제공합니다
+                  음악계 현직 전문가들이 AI 분석 결과를 바탕으로 맞춤형 조언을
+                  제공합니다
                 </p>
               </div>
               <ul className="space-y-2 text-sm text-gray-600">
@@ -466,11 +475,15 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Clock className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2" style={{ fontFamily: "Paperozi, sans-serif" }}>
+                <h3
+                  className="text-xl font-bold text-gray-900 mb-2"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
                   실시간 모니터링
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  연습 과정을 실시간으로 추적하고 진전 상황을 시각적으로 확인하세요
+                  연습 과정을 실시간으로 추적하고 진전 상황을 시각적으로
+                  확인하세요
                 </p>
               </div>
               <ul className="space-y-2 text-sm text-gray-600">

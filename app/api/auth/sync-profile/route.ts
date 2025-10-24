@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getFirebaseDb } from "../../../lib/api/firebase-ultra-safe";
+import { getFirebaseDb } from "../../../../lib/api/firebase-ultra-safe";
 
 export async function POST(request: NextRequest) {
   try {
