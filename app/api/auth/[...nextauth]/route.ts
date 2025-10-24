@@ -22,6 +22,11 @@ const authOptions: NextAuthOptions = {
       NaverProvider({
         clientId: process.env.NAVER_CLIENT_ID,
         clientSecret: process.env.NAVER_CLIENT_SECRET,
+        authorization: {
+          params: {
+            response_type: "code",
+          }
+        }
       })
     ] : []),
   ],
