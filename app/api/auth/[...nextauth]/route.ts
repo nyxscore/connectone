@@ -2,14 +2,17 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { NextAuthOptions } from "next-auth";
 
+// 환경변수 체크
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  throw new Error("Google OAuth 환경변수가 설정되지 않았습니다!");
+}
+
 const authOptions: NextAuthOptions = {
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      })
-    ] : []),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
