@@ -95,6 +95,34 @@ const authOptions: NextAuthOptions = {
             };
           }
 
+          // 실제 사용자 계정들 (임시 하드코딩)
+          if (credentials.username === "gdragon" && credentials.password === "gdragon123") {
+            return {
+              id: "gdragon-user-id",
+              email: "gdragon@connectone.local",
+              name: "GDragon",
+              image: null,
+            };
+          }
+
+          if (credentials.username === "user1" && credentials.password === "user123") {
+            return {
+              id: "user1-id",
+              email: "user1@connectone.local",
+              name: "사용자1",
+              image: null,
+            };
+          }
+
+          if (credentials.username === "user2" && credentials.password === "user123") {
+            return {
+              id: "user2-id",
+              email: "user2@connectone.local",
+              name: "사용자2",
+              image: null,
+            };
+          }
+
           console.log("❌ 모든 인증 방법 실패");
           return null;
         } catch (error) {
