@@ -138,10 +138,20 @@ export default function LoginPage() {
       
       if (result?.error) {
         console.error(`${provider} 로그인 오류:`, result.error);
-        toast.error(`${provider === "google" ? "구글" : "네이버"} 로그인에 실패했습니다.`);
+        
+        // 구체적인 오류 메시지 처리
+        if (result.error === "Configuration") {
+          toast.error(`${provider === "google" ? "구글" : "네이버"} OAuth 설정이 올바르지 않습니다.`);
+        } else if (result.error === "AccessDenied") {
+          toast.error("로그인이 취소되었습니다.");
+        } else {
+          toast.error(`${provider === "google" ? "구글" : "네이버"} 로그인에 실패했습니다: ${result.error}`);
+        }
       } else if (result?.ok) {
         toast.success(`${provider === "google" ? "구글" : "네이버"} 로그인 성공!`);
         router.push("/");
+      } else {
+        toast.error(`${provider === "google" ? "구글" : "네이버"} 로그인 중 알 수 없는 오류가 발생했습니다.`);
       }
     } catch (error) {
       console.error(`${provider} 로그인 오류:`, error);
