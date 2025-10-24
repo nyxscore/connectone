@@ -39,15 +39,29 @@ export async function getUserProfile(
 ): Promise<ApiResponse<UserProfile>> {
   try {
     console.log("getUserProfile 호출:", uid);
+    
+    if (!uid) {
+      console.error("getUserProfile: uid가 없습니다");
+      return { success: false, error: "사용자 ID가 필요합니다." };
+    }
+
     const db = await getDb();
     const userDoc = await getDoc(doc(db, "users", uid));
     console.log("getUserProfile getDoc 완료:", userDoc.exists());
 
     if (!userDoc.exists()) {
+      console.warn("getUserProfile: 사용자 문서가 존재하지 않음:", uid);
       return { success: false, error: "사용자를 찾을 수 없습니다." };
     }
 
     const userData = userDoc.data();
+    console.log("getUserProfile: 사용자 데이터:", {
+      uid: userDoc.id,
+      email: userData.email,
+      displayName: userData.displayName,
+      nickname: userData.nickname,
+    });
+
     let profile = {
       uid: userDoc.id,
       ...userData,
@@ -56,25 +70,21 @@ export async function getUserProfile(
       // 자기소개 필드들 명시적으로 포함
       introShort: userData.introShort || "",
       introLong: userData.introLong || "",
+      // 기본값들 설정
+      nickname: userData.nickname || userData.displayName || "사용자",
+      grade: userData.grade || "C",
+      region: userData.region || "",
+      phoneNumber: userData.phoneNumber || "",
+      bio: userData.bio || "",
+      photoURL: userData.photoURL || userData.profileImage,
     } as UserProfile;
 
-    // 응답률 자동 계산 비활성화 (성능 문제로 인해)
-    // TODO: 백그라운드 작업으로 처리하거나, 주기적인 배치 작업으로 변경 필요
-    // if (!userData.responseRate || !userData.lastResponseRateUpdate) {
-    //   try {
-    //     const responseRate = await calculateResponseRate(uid);
-    //     const userRef = doc(db, "users", uid);
-    //     await updateDoc(userRef, {
-    //       responseRate,
-    //       lastResponseRateUpdate: serverTimestamp(),
-    //       updatedAt: serverTimestamp(),
-    //     });
-    //     profile.responseRate = responseRate;
-    //     console.log("사용자 응답률 자동 업데이트:", { uid, responseRate });
-    //   } catch (error) {
-    //     console.error("응답률 계산 실패:", error);
-    //   }
-    // }
+    console.log("getUserProfile: 최종 프로필:", {
+      uid: profile.uid,
+      nickname: profile.nickname,
+      email: profile.email,
+      grade: profile.grade,
+    });
 
     return {
       success: true,

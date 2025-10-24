@@ -90,6 +90,11 @@ const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30일
   },
+  events: {
+    async signOut({ token }) {
+      console.log("로그아웃 이벤트:", token?.sub);
+    },
+  },
   debug: process.env.NODE_ENV === "development",
 };
 

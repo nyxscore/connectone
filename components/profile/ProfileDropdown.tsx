@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "../../lib/hooks/useAuth";
 import { Button } from "../ui/Button";
-import { logout } from "../../lib/auth";
 import { useRouter } from "next/navigation";
 import {
   User,
@@ -32,7 +31,7 @@ import {
 import { Notification } from "../../data/types";
 
 export function ProfileDropdown() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -115,11 +114,13 @@ export function ProfileDropdown() {
 
   const handleLogout = async () => {
     try {
-      await logout();
-      router.push("/");
       setIsOpen(false);
+      await logout();
     } catch (error) {
+      console.error("로그아웃 실패:", error);
       toast.error("로그아웃 중 오류가 발생했습니다.");
+      // 로그아웃 실패해도 홈으로 이동
+      router.push("/");
     }
   };
 

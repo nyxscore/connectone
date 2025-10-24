@@ -326,9 +326,14 @@ export function Header() {
                   <button
                     onClick={async () => {
                       if (confirm("로그아웃 하시겠습니까?")) {
-                        await logout();
-                        setIsMobileMenuOpen(false);
-                        window.location.href = "/";
+                        try {
+                          setIsMobileMenuOpen(false);
+                          await logout();
+                        } catch (error) {
+                          console.error("로그아웃 실패:", error);
+                          // 로그아웃 실패해도 홈으로 이동
+                          window.location.href = "/";
+                        }
                       }
                     }}
                     className="px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md font-medium transition-colors"

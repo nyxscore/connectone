@@ -149,12 +149,23 @@ export const useAuth = () => {
   // 로그아웃 함수
   const logout = async () => {
     try {
-      await signOut();
+      console.log("로그아웃 시작");
+      await signOut({ 
+        redirect: false,
+        callbackUrl: "/"
+      });
       setUser(null);
       console.log("로그아웃 성공");
+      
+      // 강제 새로고침으로 세션 완전 정리
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 100);
     } catch (error) {
       console.error("로그아웃 실패:", error);
-      throw error;
+      // 로그아웃 실패해도 강제로 홈으로 이동
+      setUser(null);
+      window.location.href = "/";
     }
   };
 
