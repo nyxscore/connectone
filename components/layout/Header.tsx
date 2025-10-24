@@ -238,7 +238,7 @@ export function Header() {
               href="/vocal-analysis"
               className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
             >
-              음악분석실
+              AI음악분석
             </Link>
           </nav>
 
@@ -285,7 +285,7 @@ export function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Music className="w-5 h-5" />
-                <span className="font-medium">음악분석실</span>
+                <span className="font-medium">AI음악분석</span>
               </Link>
             </div>
 
