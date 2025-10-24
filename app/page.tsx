@@ -218,8 +218,14 @@ export default function HomePage() {
                   className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold text-white mb-1 sm:mb-2 md:mb-4 leading-tight"
                   style={{ fontFamily: "Paperozi, sans-serif" }}
                 >
-                  모든 음악이 연결되는 곳, 커넥톤
+                  ConnecTone
                 </h1>
+                <div
+                  className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-white font-medium"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
+                  커넥톤
+                </div>
               </div>
             </div>
 
@@ -228,14 +234,21 @@ export default function HomePage() {
                 className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-blue-100 mb-3 sm:mb-4 max-w-3xl mx-auto px-4 leading-relaxed"
                 style={{ fontFamily: "Paperozi, sans-serif" }}
               >
-                AI가 당신의 음악을 분석하고,
+                음악을 사랑하는 사람들을 위한
                 <br />
-                현직 프로가 체계적인 피드백으로 완성합니다.
+                안전한 중고 거래
+              </p>
+
+              <p
+                className="text-xs sm:text-sm md:text-base lg:text-lg text-blue-200 mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-4 leading-relaxed"
+                style={{ fontFamily: "Paperozi, sans-serif" }}
+              >
+                AI 감정 시스템과 안전거래로 믿을 수 있는 거래를 경험하세요
               </p>
             </div>
 
-            <div className="space-y-3 sm:space-y-4 md:space-y-6 animate-fade-in-up animation-delay-800 px-4">
-              {user && (
+            {user ? (
+              <div className="space-y-3 sm:space-y-4 md:space-y-6 animate-fade-in-up animation-delay-800 px-4">
                 <p
                   className="text-base sm:text-lg md:text-xl font-medium text-white text-center leading-relaxed"
                   style={{ fontFamily: "Paperozi, sans-serif" }}
@@ -246,31 +259,45 @@ export default function HomePage() {
                   </span>
                   님! 👋
                 </p>
-              )}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-lg mx-auto">
-                <Link href="/vocal-analysis" className="w-full sm:w-auto">
-                  <Button
-                    size="lg"
-                    className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4 px-6"
-                    style={{ fontFamily: "Paperozi, sans-serif" }}
-                  >
-                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    AI분석 체험하기
-                  </Button>
-                </Link>
-                <Link href="/list" className="w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-full text-sm sm:text-base border-2 border-white text-white hover:bg-white hover:text-blue-600 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4 px-6"
-                    style={{ fontFamily: "Paperozi, sans-serif" }}
-                  >
-                    <Search className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    악기 거래 보기
-                  </Button>
-                </Link>
+                <div className="flex justify-center">
+                  <Link href="/list" className="w-full sm:w-auto">
+                    <Button
+                      size="lg"
+                      className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4 px-8"
+                      style={{ fontFamily: "Paperozi, sans-serif" }}
+                    >
+                      <Search className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      상품 둘러보기
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4 md:space-y-6 animate-fade-in-up animation-delay-800 px-4">
+                <div className="flex flex-col gap-3 sm:gap-4 justify-center max-w-sm mx-auto">
+                  <Link href="/auth/signup" className="w-full">
+                    <Button
+                      size="lg"
+                      className="w-full text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
+                      style={{ fontFamily: "Paperozi, sans-serif" }}
+                    >
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      회원가입
+                    </Button>
+                  </Link>
+                  <Link href="/auth/login" className="w-full">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full text-sm sm:text-base border-2 transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-3 sm:py-4"
+                      style={{ fontFamily: "Paperozi, sans-serif" }}
+                    >
+                      로그인
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
