@@ -131,10 +131,18 @@ export default function LoginPage() {
   const handleSNSLogin = async (provider: "google" | "naver") => {
     setSnsLoading(provider);
     try {
-      await nextAuthSignIn(provider, {
+      const result = await nextAuthSignIn(provider, {
         callbackUrl: "/",
-        redirect: true,
+        redirect: false, // 수동으로 리다이렉트 처리
       });
+      
+      if (result?.error) {
+        console.error(`${provider} 로그인 오류:`, result.error);
+        toast.error(`${provider === "google" ? "구글" : "네이버"} 로그인에 실패했습니다.`);
+      } else if (result?.ok) {
+        toast.success(`${provider === "google" ? "구글" : "네이버"} 로그인 성공!`);
+        router.push("/");
+      }
     } catch (error) {
       console.error(`${provider} 로그인 오류:`, error);
       toast.error(
