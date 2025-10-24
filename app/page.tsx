@@ -751,9 +751,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white relative overflow-hidden">
-        {/* Background Animation */}
+      {/* Features Section - 주석처리됨 */}
+      {/* <section className="py-20 bg-white relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 opacity-50"></div>
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600"></div>
 
@@ -770,7 +769,6 @@ export default function HomePage() {
                   />
                 </span>
               </h2>
-              {/* Underline Animation */}
               <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 transform scale-x-0 animate-grow-line"></div>
             </div>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto mt-6">
@@ -784,8 +782,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Feature Details Sections */}
-      <FeatureSections />
+      <FeatureSections /> */}
 
       {/* Logo Section */}
       <section className="py-16 bg-white">
@@ -798,8 +795,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
+      {/* CTA Section - 주석처리됨 */}
+      {/* <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             지금 시작하세요
@@ -830,7 +827,7 @@ export default function HomePage() {
             </div>
           )}
         </div>
-      </section>
+      </section> */}
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
@@ -843,17 +840,6 @@ export default function HomePage() {
             <p className="text-gray-400 mb-4">
               음악을 사랑하는 사람들을 위한 안전한 거래 플랫폼
             </p>
-            <div className="flex justify-center space-x-6 text-sm text-gray-400">
-              <Link href="/list" className="hover:text-white transition-colors">
-                상품 목록
-              </Link>
-              <Link
-                href="/profile"
-                className="hover:text-white transition-colors"
-              >
-                프로필
-              </Link>
-            </div>
           </div>
         </div>
       </footer>
