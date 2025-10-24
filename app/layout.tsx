@@ -5,6 +5,7 @@ import { Toast } from "../components/ui/Toast";
 import NextAuthProvider from "../components/providers/NextAuthProvider";
 import { Analytics } from '@vercel/analytics/react';
 import VisitorTracker from '../components/analytics/VisitorTracker';
+import { Footer } from '../components/ui/Footer';
 // import { ChatNotificationProvider } from "../components/notifications/ChatNotificationProvider"; // Disabled chat notifications
 
 export const metadata: Metadata = {
@@ -67,6 +68,7 @@ export default function RootLayout({
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">{children}</main>
+            <Footer />
           </div>
           <Toast />
           {/* </ChatNotificationProvider> */}

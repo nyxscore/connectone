@@ -17,6 +17,14 @@ export function Footer() {
               중고 악기 거래의 새로운 기준, ConnecTone에서 안전하고 신뢰할 수
               있는 거래를 경험해보세요.
             </p>
+            <div className="text-gray-400 text-sm space-y-1">
+              <p>🏢 (주)커넥톤 | 대표: 김커넥</p>
+              <p>📍 서울특별시 강남구 테헤란로 123, 456호</p>
+              <p>📧 contact@connectone.com</p>
+              <p>📞 02-1234-5678</p>
+              <p>사업자등록번호: 123-45-67890</p>
+              <p>통신판매업신고: 2024-서울강남-1234</p>
+            </div>
             <div className="flex space-x-4">
               <a
                 href="#"
@@ -91,43 +99,62 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* 고객지원 */}
+          {/* 고객센터 */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">고객지원</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  href="/help"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  도움말
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contact"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  문의하기
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/terms"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  이용약관
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/privacy"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  개인정보처리방침
-                </Link>
-              </li>
-            </ul>
+            <h3 className="text-lg font-semibold mb-4">고객센터</h3>
+            <div className="space-y-3">
+              <div>
+                <p className="text-gray-400 text-sm mb-1">📞 전화상담</p>
+                <p className="text-white font-medium">1588-0000</p>
+                <p className="text-gray-400 text-xs">평일 09:00 - 18:00</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm mb-1">✉️ 이메일</p>
+                <p className="text-white font-medium">support@connectone.com</p>
+                <p className="text-gray-400 text-xs">24시간 접수</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm mb-1">💬 카카오톡</p>
+                <p className="text-white font-medium">@ConnecTone</p>
+                <p className="text-gray-400 text-xs">평일 09:00 - 18:00</p>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-800">
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    href="/help"
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
+                    자주 묻는 질문
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/contact"
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
+                    1:1 문의하기
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/terms"
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
+                    이용약관
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/privacy"
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
+                    개인정보처리방침
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
