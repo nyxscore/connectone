@@ -300,6 +300,143 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* AI음악분석 Section */}
+      <section className="py-20 bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
+            <h2
+              className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
+              style={{ fontFamily: "Paperozi, sans-serif" }}
+            >
+              <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                AI음악분석으로 완성하는 당신의 음악
+              </span>
+            </h2>
+            <p
+              className="text-xl text-gray-600 max-w-3xl mx-auto"
+              style={{ fontFamily: "Paperozi, sans-serif" }}
+            >
+              최첨단 AI 기술과 현직 프로의 전문 피드백으로 음악 실력을 한 단계
+              업그레이드하세요
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* AI 분석 카드 */}
+            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-purple-100">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <h3
+                  className="text-xl font-bold text-gray-900 mb-2"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
+                  AI 음성 분석
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  고급 AI 알고리즘이 당신의 음성과 연주를 정밀 분석하여 개선점을
+                  찾아드립니다
+                </p>
+              </div>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  음정 정확도 분석
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  리듬감 측정
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  음색 품질 평가
+                </li>
+              </ul>
+            </div>
+
+            {/* 전문가 피드백 카드 */}
+            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-blue-100">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
+                <h3
+                  className="text-xl font-bold text-gray-900 mb-2"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
+                  현직 프로 피드백
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  음악계 현직 전문가들이 AI 분석 결과를 바탕으로 맞춤형 조언을
+                  제공합니다
+                </p>
+              </div>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  개인별 맞춤 조언
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  실전 연습 방법
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  단계별 실력 향상
+                </li>
+              </ul>
+            </div>
+
+            {/* 실시간 모니터링 카드 */}
+            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-indigo-100 md:col-span-2 lg:col-span-1">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-8 h-8 text-white" />
+                </div>
+                <h3
+                  className="text-xl font-bold text-gray-900 mb-2"
+                  style={{ fontFamily: "Paperozi, sans-serif" }}
+                >
+                  실시간 모니터링
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  연습 과정을 실시간으로 추적하고 진전 상황을 시각적으로
+                  확인하세요
+                </p>
+              </div>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  실시간 성능 지표
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  진전도 차트
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  목표 달성 추적
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <Link href="/vocal-analysis">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-4 px-8"
+                style={{ fontFamily: "Paperozi, sans-serif" }}
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                AI음악분석 체험하기
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* 모든 악기 한곳에서 Section */}
       <section className="py-20 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -444,143 +581,6 @@ export default function HomePage() {
                 #레어악기
               </span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* AI음악분석 Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <h2
-              className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
-              style={{ fontFamily: "Paperozi, sans-serif" }}
-            >
-              <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                AI음악분석으로 완성하는 당신의 음악
-              </span>
-            </h2>
-            <p
-              className="text-xl text-gray-600 max-w-3xl mx-auto"
-              style={{ fontFamily: "Paperozi, sans-serif" }}
-            >
-              최첨단 AI 기술과 현직 프로의 전문 피드백으로 음악 실력을 한 단계
-              업그레이드하세요
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* AI 분석 카드 */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-purple-100">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
-                <h3
-                  className="text-xl font-bold text-gray-900 mb-2"
-                  style={{ fontFamily: "Paperozi, sans-serif" }}
-                >
-                  AI 음성 분석
-                </h3>
-                <p className="text-gray-600 text-sm">
-                  고급 AI 알고리즘이 당신의 음성과 연주를 정밀 분석하여 개선점을
-                  찾아드립니다
-                </p>
-              </div>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  음정 정확도 분석
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  리듬감 측정
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  음색 품질 평가
-                </li>
-              </ul>
-            </div>
-
-            {/* 전문가 피드백 카드 */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-blue-100">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-white" />
-                </div>
-                <h3
-                  className="text-xl font-bold text-gray-900 mb-2"
-                  style={{ fontFamily: "Paperozi, sans-serif" }}
-                >
-                  현직 프로 피드백
-                </h3>
-                <p className="text-gray-600 text-sm">
-                  음악계 현직 전문가들이 AI 분석 결과를 바탕으로 맞춤형 조언을
-                  제공합니다
-                </p>
-              </div>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  개인별 맞춤 조언
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  실전 연습 방법
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  단계별 실력 향상
-                </li>
-              </ul>
-            </div>
-
-            {/* 실시간 모니터링 카드 */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-indigo-100 md:col-span-2 lg:col-span-1">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-8 h-8 text-white" />
-                </div>
-                <h3
-                  className="text-xl font-bold text-gray-900 mb-2"
-                  style={{ fontFamily: "Paperozi, sans-serif" }}
-                >
-                  실시간 모니터링
-                </h3>
-                <p className="text-gray-600 text-sm">
-                  연습 과정을 실시간으로 추적하고 진전 상황을 시각적으로
-                  확인하세요
-                </p>
-              </div>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  실시간 성능 지표
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  진전도 차트
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  목표 달성 추적
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="text-center mt-12">
-            <Link href="/vocal-analysis">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl py-4 px-8"
-                style={{ fontFamily: "Paperozi, sans-serif" }}
-              >
-                <Sparkles className="w-5 h-5 mr-2" />
-                AI음악분석 체험하기
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
