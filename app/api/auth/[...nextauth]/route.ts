@@ -1,20 +1,64 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { NextAuthOptions } from "next-auth";
+import { signIn as firebaseSignIn } from "../../../../lib/auth";
 
-// 환경변수 체크 (개발 환경에서만)
-if (process.env.NODE_ENV === 'development' && (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET)) {
-  throw new Error("Google OAuth 환경변수가 설정되지 않았습니다!");
-}
+// 환경변수 체크 (개발 환경에서만) - Google OAuth는 선택사항
+// if (
+//   process.env.NODE_ENV === "development" &&
+//   (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET)
+// ) {
+//   throw new Error("Google OAuth 환경변수가 설정되지 않았습니다!");
+// }
 
 const authOptions: NextAuthOptions = {
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      })
-    ] : []),
+    // 자체 회원 로그인
+    CredentialsProvider({
+      id: "credentials",
+      name: "credentials",
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.username || !credentials?.password) {
+          return null;
+        }
+
+        try {
+          // Firebase Auth를 통한 실제 사용자 인증
+          const user = await firebaseSignIn(
+            credentials.username,
+            credentials.password
+          );
+
+          if (user) {
+            return {
+              id: user.uid,
+              email: user.email,
+              name: user.displayName || user.email?.split("@")[0] || "사용자",
+              image: user.photoURL,
+            };
+          }
+        } catch (error) {
+          console.error("Firebase 로그인 실패:", error);
+          return null;
+        }
+
+        return null;
+      },
+    }),
+    // 구글 로그인
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
@@ -50,6 +94,7 @@ const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30일
   },
+  secret: process.env.NEXTAUTH_SECRET,
   events: {
     async signOut({ token }) {
       console.log("로그아웃 이벤트:", token?.sub);

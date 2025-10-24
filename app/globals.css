@@ -22,12 +22,20 @@
   font-display: swap;
 }
 
-/* YeogiOttaeJalnan Font */
+/* Mujeokhaebeong Font */
 @font-face {
-  font-family: "YeogiOttaeJalnan";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_four@1.2/JalnanOTF00.woff")
-    format("woff");
-  font-weight: normal;
+  font-family: "Mujeokhaebeong";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2502-1@1.0/MarinesRegular.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Mujeokhaebeong";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2502-1@1.0/MarinesBold.woff2")
+    format("woff2");
+  font-weight: 700;
   font-display: swap;
 }
 

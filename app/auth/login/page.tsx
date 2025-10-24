@@ -81,17 +81,22 @@ export default function LoginPage() {
     try {
       console.log("🔐 로그인 시도 시작:", data.username);
 
-      // username을 email로 변환하여 signIn 호출
-      const loginData = {
+      // NextAuth의 signIn 함수 사용
+      const result = await nextAuthSignIn("credentials", {
         username: data.username,
         password: data.password,
-      };
+        redirect: false,
+      });
 
-      console.log("📤 signIn 함수 호출:", loginData);
-      const result = await signIn(loginData);
-      console.log("✅ 로그인 성공:", result);
+      console.log("📤 NextAuth signIn 결과:", result);
 
-      router.push("/");
+      if (result?.error) {
+        console.error("❌ 로그인 실패:", result.error);
+        setLoginError("아이디 또는 비밀번호가 올바르지 않습니다.");
+      } else if (result?.ok) {
+        console.log("✅ 로그인 성공");
+        router.push("/");
+      }
     } catch (error) {
       console.error("❌ 로그인 실패:", error);
       setLoginError(

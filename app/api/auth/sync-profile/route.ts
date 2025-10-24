@@ -4,7 +4,8 @@ import { getFirebaseDb } from "../../../../lib/api/firebase-ultra-safe";
 
 export async function POST(request: NextRequest) {
   try {
-    const { uid, email, name, image, provider, providerId } = await request.json();
+    const { uid, email, name, image, provider, providerId } =
+      await request.json();
 
     if (!uid || !email) {
       return NextResponse.json(
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
       email,
       displayName: name || email.split("@")[0] || "사용자",
       photoURL: image || undefined,
-      provider: provider || "google",
+      provider: provider || "credentials",
       providerId: providerId || uid,
       isEmailVerified: true,
       role: "user",
@@ -32,10 +33,14 @@ export async function POST(request: NextRequest) {
 
     if (userSnap.exists()) {
       // 기존 사용자 - 프로필 업데이트
-      await setDoc(userRef, {
-        ...userData,
-        lastLoginAt: new Date(),
-      }, { merge: true });
+      await setDoc(
+        userRef,
+        {
+          ...userData,
+          lastLoginAt: new Date(),
+        },
+        { merge: true }
+      );
       console.log("기존 사용자 프로필 업데이트 완료:", uid);
     } else {
       // 신규 사용자 - 프로필 생성
