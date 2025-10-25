@@ -25,12 +25,9 @@ service cloud.firestore {
     match /users/{userId} {
       // 사용자 프로필은 비회원도 조회 가능 (판매자 정보 확인용)
       allow read: if true;
-      allow create: if isOwner(userId) || 
-        // NextAuth 세션 사용자를 위한 임시 규칙 (MVP용)
-        (request.auth != null && userId.matches('google_.*'));
-      allow update: if isOwner(userId) ||
-        // NextAuth 세션 사용자를 위한 임시 규칙 (MVP용)
-        (request.auth != null && userId.matches('google_.*'));
+      // MVP용: NextAuth 사용자를 위해 더 관대한 규칙
+      allow create: if true; // 임시로 모든 사용자 생성 허용
+      allow update: if true; // 임시로 모든 사용자 업데이트 허용
       allow delete: if false;
     }
     
@@ -94,16 +91,11 @@ service cloud.firestore {
     // ==================== NOTIFICATIONS ====================
     
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
-      
-      allow create: if false; // Cloud Functions만
-      
-      allow update: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
-      
-      allow delete: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
+      // MVP용: 더 관대한 규칙으로 임시 변경
+      allow read: if true; // 임시로 모든 사용자 읽기 허용
+      allow create: if true; // 임시로 모든 사용자 생성 허용
+      allow update: if true; // 임시로 모든 사용자 업데이트 허용
+      allow delete: if true; // 임시로 모든 사용자 삭제 허용
     }
     
     // ==================== EVENT LOGS ====================

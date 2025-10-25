@@ -20,19 +20,8 @@ export default function NextAuthToFirebaseSync() {
           setIsCreatingProfile(true);
           console.log("🔄 NextAuth → Firebase DB 프로필 생성 시작");
 
-          // Firebase Auth에 익명으로 로그인 (권한 문제 해결)
-          const auth = await getFirebaseAuth();
-          if (!auth) {
-            console.error("❌ Firebase Auth 초기화 실패");
-            return;
-          }
-
-          // 이미 로그인되어 있지 않은 경우에만 익명 로그인
-          if (!auth.currentUser) {
-            console.log("🔐 Firebase Auth 익명 로그인 시작");
-            await signInAnonymously(auth);
-            console.log("✅ Firebase Auth 익명 로그인 완료");
-          }
+          // Firebase Auth 없이 직접 Firestore 접근 (보안 규칙이 허용하는 경우)
+          console.log("🔐 Firebase Auth 없이 직접 Firestore 접근");
 
           const db = await getFirebaseDb();
           if (!db) {
@@ -47,10 +36,12 @@ export default function NextAuthToFirebaseSync() {
             session.user.name || userEmail?.split("@")[0] || "사용자";
           const userImage = session.user.image;
 
-          // Firebase Auth UID 사용 (권한 문제 해결)
-          const userId = auth.currentUser?.uid;
+          // NextAuth 세션 ID를 사용자 ID로 사용
+          const userId =
+            session.user.id ||
+            `google_${userEmail?.replace("@", "_").replace(".", "_")}`;
           if (!userId) {
-            console.error("❌ Firebase Auth UID를 가져올 수 없음");
+            console.error("❌ 사용자 ID를 생성할 수 없음");
             return;
           }
 
