@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Ria", "Inter", "system-ui", "sans-serif"],
+        sans: ["GMarketSans", "Inter", "system-ui", "sans-serif"],
       },
       textShadow: {
         lg: "2px 2px 4px rgba(0,0,0,0.1)",

@@ -203,7 +203,15 @@ export function SellerTransactionPageClient({
           <p className="text-gray-600 mb-4">
             거래 관리 페이지를 이용하려면 로그인해주세요.
           </p>
-          <Button onClick={() => router.push("/auth/login")}>로그인하기</Button>
+          <Button
+            onClick={() =>
+              router.push(
+                `/auth/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`
+              )
+            }
+          >
+            로그인하기
+          </Button>
         </div>
       </div>
     );

@@ -53,6 +53,14 @@ const nextConfig = {
         child_process: false,
         crypto: false,
       };
+
+      // AWS SDK를 클라이언트 사이드에서 제외
+      config.externals = config.externals || [];
+      config.externals.push({
+        "aws-sdk": "aws-sdk",
+        "aws-sdk/clients/s3": "aws-sdk/clients/s3",
+        "aws-sdk/clients/ses": "aws-sdk/clients/ses",
+      });
     }
 
     return config;

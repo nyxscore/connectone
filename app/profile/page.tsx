@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../lib/hooks/useAuth";
+import { useSession } from "next-auth/react";
 import {
   getUserProfile,
   uploadAvatar,
@@ -43,6 +44,7 @@ import toast from "react-hot-toast";
 import { INSTRUMENT_CATEGORIES } from "../../data/constants/index";
 import { EmailInputModal } from "../../components/auth/EmailInputModal";
 import { PhoneInputModal } from "../../components/auth/PhoneInputModal";
+import { EditNicknameModal } from "../../components/profile/EditNicknameModal";
 import { Star } from "lucide-react";
 import {
   updatePassword,
@@ -262,7 +264,12 @@ export default function MyProfilePage() {
     updateUser,
     refreshUser,
   } = useAuth();
+  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
+
+  // NextAuth 세션이 있으면 Firebase Auth 대신 사용
+  const isAuthenticated = currentUser || session?.user;
+  const isLoading = authLoading || sessionStatus === "loading";
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [myItems, setMyItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -278,6 +285,7 @@ export default function MyProfilePage() {
   // 인증 모달 상태
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [showPhoneInput, setShowPhoneInput] = useState(false);
+  const [showNicknameEdit, setShowNicknameEdit] = useState(false);
 
   // 비밀번호 변경 상태
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -301,17 +309,17 @@ export default function MyProfilePage() {
   const [reviewsLoading, setReviewsLoading] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !currentUser) {
+    if (!isLoading && !isAuthenticated) {
       router.push("/auth/login?next=/profile");
       return;
     }
 
-    if (currentUser) {
+    if (isAuthenticated) {
       loadProfile();
       loadMyItems();
       loadReviews();
     }
-  }, [currentUser, authLoading, router]);
+  }, [isAuthenticated, isLoading, router]);
 
   // 외부 클릭 시 메뉴 닫기
 
@@ -564,6 +572,31 @@ export default function MyProfilePage() {
     }
   };
 
+  // 닉네임 변경 함수
+  const handleNicknameUpdate = async (newNickname: string) => {
+    if (!currentUser) {
+      toast.error("로그인이 필요합니다.");
+      return;
+    }
+
+    try {
+      const result = await updateUserProfile(currentUser.uid, {
+        nickname: newNickname,
+      });
+
+      if (result.success) {
+        toast.success("닉네임이 변경되었습니다.");
+        setProfile(prev => (prev ? { ...prev, nickname: newNickname } : null));
+        await refreshUser();
+      } else {
+        toast.error(result.error || "닉네임 변경에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("닉네임 변경 실패:", error);
+      toast.error("닉네임 변경 중 오류가 발생했습니다.");
+    }
+  };
+
   const handleAvatarUpload = async (photoURL: string) => {
     if (!currentUser) return;
 
@@ -657,7 +690,7 @@ export default function MyProfilePage() {
     return categoryInfo?.label || category;
   };
 
-  if (authLoading || loading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -764,6 +797,7 @@ export default function MyProfilePage() {
               user={profile}
               isOwnProfile={true}
               onUpdate={handleProfileUpdate}
+              onEditNickname={() => setShowNicknameEdit(true)}
             />
 
             {/* 배송지 관리 */}
@@ -1165,6 +1199,17 @@ export default function MyProfilePage() {
             toast.success("이메일 인증이 완료되었습니다!");
             refreshUser(); // 사용자 정보 새로고침
           }}
+        />
+      )}
+
+      {/* 닉네임 수정 모달 */}
+      {currentUser && (
+        <EditNicknameModal
+          isOpen={showNicknameEdit}
+          onClose={() => setShowNicknameEdit(false)}
+          currentNickname={profile?.nickname || currentUser.nickname || ""}
+          userId={currentUser.uid}
+          onUpdate={handleNicknameUpdate}
         />
       )}
 

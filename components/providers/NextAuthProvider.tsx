@@ -11,3 +11,4 @@ export default function NextAuthProvider({ children }: NextAuthProviderProps) {
   return <SessionProvider>{children}</SessionProvider>;
 }
 
+

@@ -101,12 +101,12 @@ export const handleSNSLogin = async (
 };
 
 /**
- * 구글 로그인 (리디렉션 방식)
+ * 구글 로그인 (팝업 방식)
  */
-export const loginWithGoogle = async (): Promise<void> => {
+export const loginWithGoogle = async (): Promise<SNSUserProfile> => {
   try {
-    await signInWithGoogleRedirect();
-    // 리디렉션 방식이므로 결과를 반환하지 않음
+    const result = await signInWithGoogle();
+    return await handleSNSLogin(result.user, "google");
   } catch (error: any) {
     console.error("구글 로그인 오류:", error);
 
@@ -122,6 +122,10 @@ export const loginWithGoogle = async (): Promise<void> => {
     } else if (error.code === "auth/too-many-requests") {
       throw new Error(
         "너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요."
+      );
+    } else if (error.code === "auth/unauthorized-domain") {
+      throw new Error(
+        "인증되지 않은 도메인입니다. Firebase 콘솔에서 도메인을 추가해주세요."
       );
     }
 

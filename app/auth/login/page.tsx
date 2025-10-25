@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -23,6 +23,7 @@ import { getPasswordStrength } from "../../../lib/utils/passwordValidation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
@@ -81,29 +82,52 @@ export default function LoginPage() {
     try {
       console.log("🔐 로그인 시도 시작:", data.username);
 
-      // NextAuth의 signIn 함수 사용
-      const result = await nextAuthSignIn("credentials", {
-        username: data.username,
-        password: data.password,
-        redirect: false,
-      });
-
-      console.log("📤 NextAuth signIn 결과:", result);
-
-      if (result?.error) {
-        console.error("❌ 로그인 실패:", result.error);
-        setLoginError("아이디 또는 비밀번호가 올바르지 않습니다.");
-      } else if (result?.ok) {
-        console.log("✅ 로그인 성공");
-        router.push("/");
-      }
-    } catch (error) {
-      console.error("❌ 로그인 실패:", error);
-      setLoginError(
-        error instanceof Error
-          ? error.message
-          : "로그인 중 오류가 발생했습니다."
+      // 클라이언트사이드 Firebase Auth 사용
+      const { signInWithEmailAndPassword } = await import("firebase/auth");
+      const { getFirebaseAuth } = await import(
+        "../../../lib/api/firebase-ultra-safe"
       );
+
+      const auth = getFirebaseAuth();
+
+      // 사용자명을 이메일로 변환 (Firebase Auth는 이메일로만 로그인 가능)
+      // 사용자명이 이미 이메일인 경우 그대로 사용, 아니면 @connectone.local 추가
+      const email = data.username.includes("@")
+        ? data.username
+        : `${data.username}@connectone.local`;
+
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        data.password
+      );
+
+      if (userCredential.user) {
+        console.log("✅ 로그인 성공!");
+        toast.success("로그인 성공!");
+
+        // 이전 페이지로 리다이렉트 (callbackUrl 파라미터 확인)
+        const callbackUrl = searchParams.get("callbackUrl") || "/";
+        console.log("🔄 리다이렉트:", callbackUrl);
+        router.push(callbackUrl);
+      }
+    } catch (error: any) {
+      console.error("❌ 로그인 실패:", error);
+
+      // Firebase Auth 오류 메시지 매핑
+      if (error.code === "auth/user-not-found") {
+        setLoginError("등록되지 않은 이메일입니다.");
+      } else if (error.code === "auth/wrong-password") {
+        setLoginError("비밀번호가 올바르지 않습니다.");
+      } else if (error.code === "auth/invalid-email") {
+        setLoginError("올바르지 않은 이메일 형식입니다.");
+      } else if (error.code === "auth/too-many-requests") {
+        setLoginError(
+          "너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요."
+        );
+      } else {
+        setLoginError("로그인 중 오류가 발생했습니다.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -148,9 +172,13 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setSnsLoading("google");
     try {
+      // 이전 페이지로 리다이렉트 (callbackUrl 파라미터 확인)
+      const callbackUrl = searchParams.get("callbackUrl") || "/";
+      console.log("🔄 Google 로그인 리다이렉트:", callbackUrl);
+
       // NextAuth가 자동으로 리다이렉트 처리하도록 함
       await nextAuthSignIn("google", {
-        callbackUrl: "/",
+        callbackUrl: callbackUrl,
         redirect: true, // NextAuth가 자동으로 리다이렉트 처리
       });
       // 이 코드는 실행되지 않음 (리다이렉트되므로)

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../lib/hooks/useAuth";
+import { useSession } from "next-auth/react";
 import { ItemDetailModal } from "../../../components/items/ItemDetailModal";
 import { ItemCard } from "../../../components/items/ItemCard";
 import EditProductModal from "../../../components/product/EditProductModal";
@@ -23,7 +24,12 @@ import toast from "react-hot-toast";
 
 function MyItemsPageContent() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
+  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
+
+  // NextAuth 세션이 있으면 Firebase Auth 대신 사용
+  const isAuthenticated = currentUser || session?.user;
+  const isLoading = authLoading || sessionStatus === "loading";
   const searchParams = useSearchParams();
   const [myItems, setMyItems] = useState<any[]>([]);
   const [filteredItems, setFilteredItems] = useState<any[]>([]);
@@ -128,18 +134,18 @@ function MyItemsPageContent() {
 
   // 데이터 로드 useEffect (함수 정의 후에 위치)
   useEffect(() => {
-    if (!authLoading && !currentUser && !targetUserId) {
+    if (!isLoading && !isAuthenticated && !targetUserId) {
       router.push("/auth/login?next=/profile/items");
       return;
     }
 
-    if (currentUser || targetUserId) {
+    if (isAuthenticated || targetUserId) {
       loadMyItems();
       loadPaymentCompletedItems();
     }
   }, [
-    currentUser,
-    authLoading,
+    isAuthenticated,
+    isLoading,
     targetUserId,
     activeTab,
     loadMyItems,
@@ -239,7 +245,7 @@ function MyItemsPageContent() {
     }
   };
 
-  if (authLoading || loading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

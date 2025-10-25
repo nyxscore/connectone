@@ -194,6 +194,7 @@ export const getGoogleProvider = () => {
       // 커스텀 파라미터 추가
       _googleProvider.setCustomParameters({
         prompt: "select_account",
+        access_type: "offline",
       });
       console.log("✅ Google Provider 초기화 성공");
     } catch (error) {

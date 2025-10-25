@@ -136,7 +136,13 @@ function BookingContent() {
           <p className="text-gray-600 mb-6">
             레슨 예약을 하려면 로그인해주세요.
           </p>
-          <Button onClick={() => router.push("/auth/login?next=/lessons")}>
+          <Button
+            onClick={() =>
+              router.push(
+                `/auth/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`
+              )
+            }
+          >
             로그인하기
           </Button>
         </div>
@@ -366,5 +372,3 @@ export default function BookingPage() {
     </Suspense>
   );
 }
-
-

@@ -3,9 +3,10 @@ import "./globals.css";
 import { Header } from "../components/layout/Header";
 import { Toast } from "../components/ui/Toast";
 import NextAuthProvider from "../components/providers/NextAuthProvider";
-import { Analytics } from '@vercel/analytics/react';
-import VisitorTracker from '../components/analytics/VisitorTracker';
-import { Footer } from '../components/ui/Footer';
+import { Analytics } from "@vercel/analytics/react";
+import VisitorTracker from "../components/analytics/VisitorTracker";
+import { Footer } from "../components/ui/Footer";
+import NextAuthToFirebaseSync from "../components/auth/NextAuthToFirebaseSync";
 // import { ChatNotificationProvider } from "../components/notifications/ChatNotificationProvider"; // Disabled chat notifications
 
 export const metadata: Metadata = {
@@ -18,8 +19,10 @@ export const metadata: Metadata = {
     apple: "/favicon.svg",
   },
   openGraph: {
-    title: "ConnecTone - 모든 악기 중고거래 플랫폼 | 기타, 피아노, 드럼, 국악기",
-    description: "기타, 피아노, 드럼, 관악기, 현악기, 음향장비, 국악기 등 모든 악기와 음악용품을 안전하게 거래하세요. AI 감정시스템과 안전거래로 믿을 수 있는 중고 악기 거래 플랫폼",
+    title:
+      "ConnecTone - 모든 악기 중고거래 플랫폼 | 기타, 피아노, 드럼, 국악기",
+    description:
+      "기타, 피아노, 드럼, 관악기, 현악기, 음향장비, 국악기 등 모든 악기와 음악용품을 안전하게 거래하세요. AI 감정시스템과 안전거래로 믿을 수 있는 중고 악기 거래 플랫폼",
     url: "https://connect-tone.com",
     siteName: "ConnecTone",
     images: [
@@ -35,8 +38,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ConnecTone - 모든 악기 중고거래 플랫폼 | 기타, 피아노, 드럼, 국악기",
-    description: "기타, 피아노, 드럼, 관악기, 현악기, 음향장비, 국악기 등 모든 악기와 음악용품을 안전하게 거래하세요. AI 감정시스템과 안전거래로 믿을 수 있는 중고 악기 거래 플랫폼",
+    title:
+      "ConnecTone - 모든 악기 중고거래 플랫폼 | 기타, 피아노, 드럼, 국악기",
+    description:
+      "기타, 피아노, 드럼, 관악기, 현악기, 음향장비, 국악기 등 모든 악기와 음악용품을 안전하게 거래하세요. AI 감정시스템과 안전거래로 믿을 수 있는 중고 악기 거래 플랫폼",
     images: ["https://connect-tone.com/logo1.png"],
   },
   robots: {
@@ -73,17 +78,22 @@ export default function RootLayout({
           crossOrigin="anonymous"
           async
         ></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if (typeof window !== 'undefined' && window.Kakao && !window.Kakao.isInitialized()) {
-                window.Kakao.init('${process.env.NEXT_PUBLIC_KAKAO_JS_KEY || ""}');
-              }
-            `,
-          }}
-        />
+        {process.env.NEXT_PUBLIC_KAKAO_JS_KEY && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if (typeof window !== 'undefined' && window.Kakao && !window.Kakao.isInitialized()) {
+                  window.Kakao.init('${process.env.NEXT_PUBLIC_KAKAO_JS_KEY}');
+                }
+              `,
+            }}
+          />
+        )}
         {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQCN3WYQK6"></script>
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-BQCN3WYQK6"
+        ></script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -98,6 +108,7 @@ export default function RootLayout({
       <body className="font-sans antialiased bg-gray-50">
         <NextAuthProvider>
           {/* <ChatNotificationProvider> */}
+          <NextAuthToFirebaseSync />
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">{children}</main>

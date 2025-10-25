@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "../../lib/hooks/useAuth";
+import { useSession } from "next-auth/react";
 import { Button } from "../ui/Button";
 import { useRouter } from "next/navigation";
 import {
@@ -32,7 +33,24 @@ import { Notification } from "../../data/types";
 
 export function ProfileDropdown() {
   const { user, loading, logout } = useAuth();
+  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
+
+  // NextAuth 세션이 있으면 Firebase Auth 대신 사용
+  const isAuthenticated = user || session?.user;
+  const isLoading = loading || sessionStatus === "loading";
+  const currentUser = user || session?.user;
+
+  // 디버깅용 로그
+  console.log(
+    "ProfileDropdown - user:",
+    user?.uid,
+    "session:",
+    session?.user?.email,
+    "loading:",
+    isLoading
+  );
+
   const [isOpen, setIsOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -115,7 +133,16 @@ export function ProfileDropdown() {
   const handleLogout = async () => {
     try {
       setIsOpen(false);
-      await logout();
+      if (user) {
+        // Firebase Auth 로그아웃
+        await logout();
+      } else if (session) {
+        // NextAuth 로그아웃
+        const { signOut } = await import("next-auth/react");
+        await signOut();
+      }
+      toast.success("로그아웃되었습니다.");
+      router.push("/");
     } catch (error) {
       console.error("로그아웃 실패:", error);
       toast.error("로그아웃 중 오류가 발생했습니다.");
@@ -182,7 +209,7 @@ export function ProfileDropdown() {
     );
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return (
       <div className="flex items-center space-x-2">
         <Link href="/auth/login">
@@ -202,27 +229,27 @@ export function ProfileDropdown() {
         className="flex items-center space-x-2 hover:bg-gray-50 rounded-lg p-2 transition-colors"
       >
         <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-          {user.profileImage ? (
+          {currentUser?.image || user?.profileImage ? (
             <img
-              src={user.profileImage}
-              alt={user.nickname}
+              src={currentUser?.image || user?.profileImage}
+              alt={currentUser?.name || user?.nickname}
               className="w-full h-full object-cover"
             />
           ) : (
             <span className="text-sm font-medium text-gray-600">
-              {user.nickname?.charAt(0)?.toUpperCase()}
+              {(currentUser?.name || user?.nickname)?.charAt(0)?.toUpperCase()}
             </span>
           )}
         </div>
         <div className="hidden sm:flex flex-col items-start">
           <span className="text-sm font-medium text-gray-700">
-            {user.nickname}
+            {currentUser?.name || user?.nickname}
           </span>
           <span className="text-xs text-blue-600 font-semibold flex items-center gap-1">
             <span className="inline-flex items-center justify-center w-4 h-4 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full text-white text-xs font-bold shadow-sm">
               P
             </span>
-            {(user.points || 0).toLocaleString()} 포인트
+            {(user?.points || 0).toLocaleString()} 포인트
           </span>
         </div>
         <ChevronDown className="w-4 h-4 text-gray-500" />
@@ -235,21 +262,23 @@ export function ProfileDropdown() {
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                {user.profileImage ? (
+                {currentUser?.image || user?.profileImage ? (
                   <img
-                    src={user.profileImage}
-                    alt={user.nickname}
+                    src={currentUser?.image || user?.profileImage}
+                    alt={currentUser?.name || user?.nickname}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-lg font-medium text-gray-600">
-                    {user.nickname?.charAt(0)?.toUpperCase()}
+                    {(currentUser?.name || user?.nickname)
+                      ?.charAt(0)
+                      ?.toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="flex-1">
                 <div className="text-sm font-medium text-gray-900">
-                  {user.nickname}
+                  {currentUser?.name || user?.nickname}
                 </div>
                 {/* 이메일 제거됨 */}
               </div>
@@ -269,106 +298,108 @@ export function ProfileDropdown() {
                 </span>
               </div>
               <span className="text-lg font-bold text-blue-600">
-                {(user.points || 0).toLocaleString()} 포인트
+                {(user?.points || 0).toLocaleString()} 포인트
               </span>
             </Link>
           </div>
 
-          {/* 알림 섹션 (접을 수 있음) */}
-          <div className="border-b border-gray-100">
-            <button
-              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-              className="flex items-center justify-between w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-            >
-              <div className="flex items-center">
-                <Bell className="w-4 h-4 mr-3" />
-                알림
-                {unreadNotificationCount > 0 && (
-                  <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
-                    {unreadNotificationCount}
-                  </span>
+          {/* 알림 섹션 (Firebase Auth 사용자만) */}
+          {user?.uid && (
+            <div className="border-b border-gray-100">
+              <button
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                className="flex items-center justify-between w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <div className="flex items-center">
+                  <Bell className="w-4 h-4 mr-3" />
+                  알림
+                  {unreadNotificationCount > 0 && (
+                    <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
+                      {unreadNotificationCount}
+                    </span>
+                  )}
+                </div>
+                {isNotificationOpen ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
                 )}
-              </div>
-              {isNotificationOpen ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </button>
+              </button>
 
-            {/* 알림 목록 */}
-            {isNotificationOpen && (
-              <div className="px-2 pb-2 max-h-64 overflow-y-auto">
-                {isLoadingNotifications ? (
-                  <div className="px-3 py-4 text-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                    <p className="text-xs text-gray-500">
-                      알림을 불러오는 중...
-                    </p>
-                  </div>
-                ) : notifications.length > 0 ? (
-                  <>
-                    <div className="flex justify-end px-2 py-1">
-                      <button
-                        onClick={handleDeleteAllNotifications}
-                        className="text-xs text-red-600 hover:text-red-700"
-                      >
-                        모두 삭제
-                      </button>
+              {/* 알림 목록 */}
+              {isNotificationOpen && (
+                <div className="px-2 pb-2 max-h-64 overflow-y-auto">
+                  {isLoadingNotifications ? (
+                    <div className="px-3 py-4 text-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                      <p className="text-xs text-gray-500">
+                        알림을 불러오는 중...
+                      </p>
                     </div>
-                    {notifications.map(notification => (
-                      <div
-                        key={notification.id}
-                        className={`flex items-start justify-between px-3 py-2 rounded-lg group cursor-pointer transition-colors ${
-                          notification.isRead
-                            ? "hover:bg-gray-50"
-                            : "bg-blue-50 hover:bg-blue-100"
-                        }`}
-                        onClick={() => handleNotificationClick(notification)}
-                      >
-                        <div className="flex-1 pr-2">
-                          {/* 읽지 않은 알림은 진한 파란색, 읽은 알림은 회색 */}
-                          <p
-                            className={`text-xs ${
-                              notification.isRead
-                                ? "text-gray-600"
-                                : "text-blue-900 font-medium"
-                            }`}
-                          >
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {notification.createdAt &&
-                              new Date(
-                                notification.createdAt.seconds * 1000
-                              ).toLocaleString("ko-KR", {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                          </p>
-                        </div>
+                  ) : notifications.length > 0 ? (
+                    <>
+                      <div className="flex justify-end px-2 py-1">
                         <button
-                          onClick={e => {
-                            e.stopPropagation(); // 알림 클릭 이벤트 방지
-                            handleDeleteNotification(notification.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                          onClick={handleDeleteAllNotifications}
+                          className="text-xs text-red-600 hover:text-red-700"
                         >
-                          <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-600" />
+                          모두 삭제
                         </button>
                       </div>
-                    ))}
-                  </>
-                ) : (
-                  <div className="px-3 py-4 text-center">
-                    <p className="text-xs text-gray-500">알림이 없습니다</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                      {notifications.map(notification => (
+                        <div
+                          key={notification.id}
+                          className={`flex items-start justify-between px-3 py-2 rounded-lg group cursor-pointer transition-colors ${
+                            notification.isRead
+                              ? "hover:bg-gray-50"
+                              : "bg-blue-50 hover:bg-blue-100"
+                          }`}
+                          onClick={() => handleNotificationClick(notification)}
+                        >
+                          <div className="flex-1 pr-2">
+                            {/* 읽지 않은 알림은 진한 파란색, 읽은 알림은 회색 */}
+                            <p
+                              className={`text-xs ${
+                                notification.isRead
+                                  ? "text-gray-600"
+                                  : "text-blue-900 font-medium"
+                              }`}
+                            >
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {notification.createdAt &&
+                                new Date(
+                                  notification.createdAt.seconds * 1000
+                                ).toLocaleString("ko-KR", {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                            </p>
+                          </div>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation(); // 알림 클릭 이벤트 방지
+                              handleDeleteNotification(notification.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                          >
+                            <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-600" />
+                          </button>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="px-3 py-4 text-center">
+                      <p className="text-xs text-gray-500">알림이 없습니다</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 프로필 보기 */}
           <div className="py-1 border-b border-gray-100">

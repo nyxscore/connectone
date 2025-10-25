@@ -794,11 +794,14 @@ export function EnhancedChatModal({
             const basicProfile = {
               uid: otherUid,
               nickname: chatData.otherUser.nickname,
-              profileImage: chatData.otherUser.profileImage,
+              photoURL: chatData.otherUser.profileImage,
               email: chatData.otherUser.email || "",
               phoneNumber: "",
               region: "",
-              bio: "",
+              grade: "C" as const,
+              tradesCount: 0,
+              reviewsCount: 0,
+              responseRate: 0,
               createdAt: new Date(),
               updatedAt: new Date(),
             };
@@ -816,25 +819,28 @@ export function EnhancedChatModal({
           setOtherUserProfile(mappedUser as UserProfile);
         }
 
-        // 프로필 로딩 완료
-        setProfileLoading(false);
-
         // 프로필이 없는 경우 fallback 설정
-        if (!otherUserProfile) {
-          console.log("🔄 프로필 로딩 완료 후 fallback 설정");
+        if (!otherUser) {
+          console.log("🔄 프로필 로딩 실패 - fallback 설정");
           const fallbackProfile = {
             uid: otherUid,
             nickname: chatData.otherUser.nickname,
-            profileImage: chatData.otherUser.profileImage,
+            photoURL: chatData.otherUser.profileImage,
             email: chatData.otherUser.email || "",
             phoneNumber: "",
-            region: "",
-            bio: "",
+            region: "지역 정보 없음",
+            grade: "C" as const,
+            tradesCount: 0,
+            reviewsCount: 0,
+            responseRate: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
           };
           setOtherUserProfile(fallbackProfile as UserProfile);
         }
+
+        // 프로필 로딩 완료
+        setProfileLoading(false);
 
         // 아이템 정보 가져오기
         console.log("아이템 정보 가져오기:", chatData.itemId);
@@ -4155,26 +4161,40 @@ export function EnhancedChatModal({
                         </div>
                       </div>
                     </div>
-                  ) : (
+                  ) : otherUserProfile ? (
                     <SellerProfileCard
-                      sellerProfile={otherUserProfile || {
-                        uid: chatData.otherUser.uid,
-                        nickname: chatData.otherUser.nickname,
-                        profileImage: chatData.otherUser.profileImage,
-                        email: chatData.otherUser.email || "",
-                        phoneNumber: "",
-                        region: "",
-                        bio: "",
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                      }}
+                      sellerProfile={otherUserProfile}
                       seller={{
                         displayName: chatData.otherUser.nickname,
                       }}
-                      region={otherUserProfile?.region || "지역 정보 없음"}
+                      region={otherUserProfile.region || "지역 정보 없음"}
                       onClick={() => setShowOtherProfileModal(true)}
                       showClickable={true}
                     />
+                  ) : (
+                    <div className="bg-white rounded-lg border p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                          {chatData.otherUser.profileImage ? (
+                            <img
+                              src={chatData.otherUser.profileImage}
+                              alt={chatData.otherUser.nickname}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-6 h-6 text-gray-500" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">
+                            {chatData.otherUser.nickname}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            상대방 정보를 불러올 수 없습니다.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -4831,7 +4851,8 @@ export function EnhancedChatModal({
                   <div className="flex flex-wrap gap-2">
                     {(() => {
                       const tradeTypes = [];
-                      const currentTradeType = chatData?.tradeType || tradeType || "직거래";
+                      const currentTradeType =
+                        chatData?.tradeType || tradeType || "직거래";
 
                       console.log("현재 거래 유형:", currentTradeType); // 디버그용
 

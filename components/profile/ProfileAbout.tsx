@@ -18,12 +18,14 @@ interface ProfileAboutProps {
   user: UserProfile;
   isOwnProfile: boolean;
   onUpdate?: (updatedUser: UserProfile) => void;
+  onEditNickname?: () => void;
 }
 
 export function ProfileAbout({
   user,
   isOwnProfile,
   onUpdate,
+  onEditNickname,
 }: ProfileAboutProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -181,6 +183,24 @@ export function ProfileAbout({
           </form>
         ) : (
           <div className="space-y-4">
+            {/* 닉네임 */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-1 flex items-center justify-between">
+                닉네임
+                {isOwnProfile && onEditNickname && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onEditNickname}
+                    className="text-blue-600 hover:text-blue-700 p-1"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                )}
+              </h3>
+              <p className="text-gray-900">{user.nickname}</p>
+            </div>
+
             {/* 거래 지역 */}
             {user.region && (
               <div>
